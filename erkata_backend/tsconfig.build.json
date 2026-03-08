@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "exclude": [
+    "node_modules",
+    "test",
+    "dist",
+    "**/*spec.ts",
+    "prisma.config.ts",
+    "prisma/seed.ts",
+    "src/requests",
+    "src/transactions",
+    "src/mediation",
+    "src/common/events"
+  ]
+}

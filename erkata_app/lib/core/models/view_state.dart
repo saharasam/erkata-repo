@@ -1,0 +1,15 @@
+enum ViewState {
+  auth,
+  home,
+  newRequest,
+  tracking,
+  payment,
+  profile,
+  agentDashboard,
+  agentSubscription,
+  agentCommission,
+  agentCommunication,
+  operatorDashboard,
+  operatorAssignment,
+  operatorMediation,
+}

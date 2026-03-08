@@ -1,0 +1,444 @@
+{
+  "depends_on": [
+    "topology"
+  ],
+  "edge_count": 0,
+  "layers": {
+    "application": [
+      {
+        "confidence": 0.3,
+        "depth": 1,
+        "fanin": 0,
+        "fanout": 2,
+        "file": "App.tsx",
+        "layer": "application",
+        "method": "dag"
+      },
+      {
+        "confidence": 0.3,
+        "depth": 1,
+        "fanin": 0,
+        "fanout": 1,
+        "file": "components/DashboardLayout.tsx",
+        "layer": "application",
+        "method": "dag"
+      },
+      {
+        "confidence": 0.3,
+        "depth": 1,
+        "fanin": 0,
+        "fanout": 2,
+        "file": "components/SettingsView.tsx",
+        "layer": "application",
+        "method": "dag"
+      },
+      {
+        "confidence": 0.3,
+        "depth": 1,
+        "fanin": 0,
+        "fanout": 1,
+        "file": "components/super-admin/AdminManagement.tsx",
+        "layer": "application",
+        "method": "dag"
+      },
+      {
+        "confidence": 0.3,
+        "depth": 1,
+        "fanin": 0,
+        "fanout": 1,
+        "file": "components/super-admin/BroadcastNotices.tsx",
+        "layer": "application",
+        "method": "dag"
+      },
+      {
+        "confidence": 0.3,
+        "depth": 1,
+        "fanin": 0,
+        "fanout": 1,
+        "file": "components/super-admin/ConfigFlags.tsx",
+        "layer": "application",
+        "method": "dag"
+      },
+      {
+        "confidence": 0.3,
+        "depth": 1,
+        "fanin": 0,
+        "fanout": 1,
+        "file": "components/super-admin/EmergencyArchive.tsx",
+        "layer": "application",
+        "method": "dag"
+      },
+      {
+        "confidence": 0.3,
+        "depth": 1,
+        "fanin": 0,
+        "fanout": 1,
+        "file": "components/super-admin/FinalResolutions.tsx",
+        "layer": "application",
+        "method": "dag"
+      },
+      {
+        "confidence": 0.3,
+        "depth": 1,
+        "fanin": 0,
+        "fanout": 1,
+        "file": "components/super-admin/GlobalRightsOversight.tsx",
+        "layer": "application",
+        "method": "dag"
+      },
+      {
+        "confidence": 0.3,
+        "depth": 1,
+        "fanin": 0,
+        "fanout": 1,
+        "file": "components/super-admin/OperatorOversight.tsx",
+        "layer": "application",
+        "method": "dag"
+      },
+      {
+        "confidence": 0.3,
+        "depth": 1,
+        "fanin": 0,
+        "fanout": 2,
+        "file": "components/UtilitySidebar.tsx",
+        "layer": "application",
+        "method": "dag"
+      },
+      {
+        "confidence": 0.3,
+        "depth": 1,
+        "fanin": 0,
+        "fanout": 1,
+        "file": "contexts/AuthContext.tsx",
+        "layer": "application",
+        "method": "dag"
+      },
+      {
+        "confidence": 0.3,
+        "depth": 1,
+        "fanin": 0,
+        "fanout": 1,
+        "file": "index.tsx",
+        "layer": "application",
+        "method": "dag"
+      },
+      {
+        "confidence": 0.3,
+        "depth": 1,
+        "fanin": 0,
+        "fanout": 3,
+        "file": "pages/AgentDashboard.tsx",
+        "layer": "application",
+        "method": "dag"
+      },
+      {
+        "confidence": 0.3,
+        "depth": 1,
+        "fanin": 0,
+        "fanout": 2,
+        "file": "pages/CustomerDashboard.tsx",
+        "layer": "application",
+        "method": "dag"
+      },
+      {
+        "confidence": 0.3,
+        "depth": 1,
+        "fanin": 0,
+        "fanout": 1,
+        "file": "pages/Login.tsx",
+        "layer": "application",
+        "method": "dag"
+      },
+      {
+        "confidence": 0.3,
+        "depth": 1,
+        "fanin": 0,
+        "fanout": 2,
+        "file": "pages/OperatorDashboard.tsx",
+        "layer": "application",
+        "method": "dag"
+      },
+      {
+        "confidence": 0.3,
+        "depth": 1,
+        "fanin": 0,
+        "fanout": 1,
+        "file": "pages/Register.tsx",
+        "layer": "application",
+        "method": "dag"
+      },
+      {
+        "confidence": 0.3,
+        "depth": 1,
+        "fanin": 0,
+        "fanout": 1,
+        "file": "pages/RequestIntake.tsx",
+        "layer": "application",
+        "method": "dag"
+      }
+    ],
+    "domain": [
+    ],
+    "infrastructure": [
+      {
+        "confidence": 0.8,
+        "depth": 0,
+        "fanin": 0,
+        "fanout": 0,
+        "file": "components/admin/AdminAgentList.tsx",
+        "layer": "infrastructure",
+        "method": "dag"
+      },
+      {
+        "confidence": 0.8,
+        "depth": 0,
+        "fanin": 0,
+        "fanout": 0,
+        "file": "components/admin/AdminOperatorList.tsx",
+        "layer": "infrastructure",
+        "method": "dag"
+      },
+      {
+        "confidence": 0.8,
+        "depth": 0,
+        "fanin": 0,
+        "fanout": 0,
+        "file": "components/admin/AdminSidebar.tsx",
+        "layer": "infrastructure",
+        "method": "dag"
+      },
+      {
+        "confidence": 0.8,
+        "depth": 0,
+        "fanin": 0,
+        "fanout": 0,
+        "file": "components/admin/EscalatedBundles.tsx",
+        "layer": "infrastructure",
+        "method": "dag"
+      },
+      {
+        "confidence": 0.8,
+        "depth": 0,
+        "fanin": 0,
+        "fanout": 0,
+        "file": "components/admin/PendingActions.tsx",
+        "layer": "infrastructure",
+        "method": "dag"
+      },
+      {
+        "confidence": 0.8,
+        "depth": 0,
+        "fanin": 0,
+        "fanout": 0,
+        "file": "components/admin/ProposalHistory.tsx",
+        "layer": "infrastructure",
+        "method": "dag"
+      },
+      {
+        "confidence": 0.8,
+        "depth": 0,
+        "fanin": 0,
+        "fanout": 0,
+        "file": "components/admin/SystemHealth.tsx",
+        "layer": "infrastructure",
+        "method": "dag"
+      },
+      {
+        "confidence": 0.8,
+        "depth": 0,
+        "fanin": 0,
+        "fanout": 0,
+        "file": "components/admin/ZoneCoverage.tsx",
+        "layer": "infrastructure",
+        "method": "dag"
+      },
+      {
+        "confidence": 0.8,
+        "depth": 0,
+        "fanin": 0,
+        "fanout": 0,
+        "file": "components/CustomSelect.tsx",
+        "layer": "infrastructure",
+        "method": "dag"
+      },
+      {
+        "confidence": 0.8,
+        "depth": 0,
+        "fanin": 0,
+        "fanout": 0,
+        "file": "components/FeedbackForm.tsx",
+        "layer": "infrastructure",
+        "method": "dag"
+      },
+      {
+        "confidence": 0.8,
+        "depth": 0,
+        "fanin": 0,
+        "fanout": 0,
+        "file": "components/Footer.tsx",
+        "layer": "infrastructure",
+        "method": "dag"
+      },
+      {
+        "confidence": 0.8,
+        "depth": 0,
+        "fanin": 0,
+        "fanout": 0,
+        "file": "components/Navbar.tsx",
+        "layer": "infrastructure",
+        "method": "dag"
+      },
+      {
+        "confidence": 0.8,
+        "depth": 0,
+        "fanin": 0,
+        "fanout": 0,
+        "file": "components/NotificationsPanel.tsx",
+        "layer": "infrastructure",
+        "method": "dag"
+      },
+      {
+        "confidence": 0.8,
+        "depth": 0,
+        "fanin": 0,
+        "fanout": 0,
+        "file": "components/StatusBadge.tsx",
+        "layer": "infrastructure",
+        "method": "dag"
+      },
+      {
+        "confidence": 0.8,
+        "depth": 0,
+        "fanin": 0,
+        "fanout": 0,
+        "file": "components/super-admin/AuditLog.tsx",
+        "layer": "infrastructure",
+        "method": "dag"
+      },
+      {
+        "confidence": 0.8,
+        "depth": 0,
+        "fanin": 0,
+        "fanout": 0,
+        "file": "components/super-admin/SuperAdminSidebar.tsx",
+        "layer": "infrastructure",
+        "method": "dag"
+      },
+      {
+        "confidence": 0.8,
+        "depth": 0,
+        "fanin": 0,
+        "fanout": 0,
+        "file": "components/super-admin/SystemAnalytics.tsx",
+        "layer": "infrastructure",
+        "method": "dag"
+      },
+      {
+        "confidence": 0.8,
+        "depth": 0,
+        "fanin": 0,
+        "fanout": 0,
+        "file": "contexts/ModalContext.tsx",
+        "layer": "infrastructure",
+        "method": "dag"
+      },
+      {
+        "confidence": 0.8,
+        "depth": 0,
+        "fanin": 0,
+        "fanout": 0,
+        "file": "pages/About.tsx",
+        "layer": "infrastructure",
+        "method": "dag"
+      },
+      {
+        "confidence": 0.8,
+        "depth": 0,
+        "fanin": 0,
+        "fanout": 0,
+        "file": "pages/AdminDashboard.tsx",
+        "layer": "infrastructure",
+        "method": "dag"
+      },
+      {
+        "confidence": 0.8,
+        "depth": 0,
+        "fanin": 0,
+        "fanout": 0,
+        "file": "pages/Contact.tsx",
+        "layer": "infrastructure",
+        "method": "dag"
+      },
+      {
+        "confidence": 0.8,
+        "depth": 0,
+        "fanin": 0,
+        "fanout": 0,
+        "file": "pages/Landing.tsx",
+        "layer": "infrastructure",
+        "method": "dag"
+      },
+      {
+        "confidence": 0.8,
+        "depth": 0,
+        "fanin": 0,
+        "fanout": 0,
+        "file": "pages/Privacy.tsx",
+        "layer": "infrastructure",
+        "method": "dag"
+      },
+      {
+        "confidence": 0.8,
+        "depth": 0,
+        "fanin": 0,
+        "fanout": 0,
+        "file": "pages/SuperAdminDashboard.tsx",
+        "layer": "infrastructure",
+        "method": "dag"
+      },
+      {
+        "confidence": 0.8,
+        "depth": 0,
+        "fanin": 0,
+        "fanout": 0,
+        "file": "pages/Terms.tsx",
+        "layer": "infrastructure",
+        "method": "dag"
+      },
+      {
+        "confidence": 0.8,
+        "depth": 0,
+        "fanin": 0,
+        "fanout": 0,
+        "file": "utils/api.ts",
+        "layer": "infrastructure",
+        "method": "dag"
+      },
+      {
+        "confidence": 0.8,
+        "depth": 0,
+        "fanin": 0,
+        "fanout": 0,
+        "file": "utils/mockData.ts",
+        "layer": "infrastructure",
+        "method": "dag"
+      },
+      {
+        "confidence": 0.8,
+        "depth": 0,
+        "fanin": 0,
+        "fanout": 0,
+        "file": "vite.config.ts",
+        "layer": "infrastructure",
+        "method": "dag"
+      }
+    ],
+    "ui": [
+    ],
+    "unresolvable": [
+    ]
+  },
+  "name": "ownership",
+  "symbol_count": 0,
+  "topology_hash": "57501e5c6808b3e14852a4ea21dc7873abf9409032a06f9b740c973e83f62cf7"
+}

@@ -1,0 +1,389 @@
+prisma:tryLoadEnv Environment variables not found at null +7ms
+prisma:tryLoadEnv Environment variables loaded from D:\work\erkta\erkata_backend\.env +1ms
+prisma:client checkPlatformCaching:postinstall false +1ms
+prisma:client checkPlatformCaching:ciName undefined +1ms
+prisma:tryLoadEnv Environment variables not found at null +0ms
+prisma:tryLoadEnv Environment variables loaded from D:\work\erkta\erkata_backend\.env +0ms
+prisma:client dirname D:\work\erkta\erkata_backend\node_modules\.prisma\client +0ms
+prisma:client relativePath ../../../prisma +1ms
+prisma:client cwd D:\work\erkta\erkata_backend\prisma +0ms
+prisma:client clientVersion 6.0.0 +0ms
+prisma:client:libraryEngine internalSetup +1ms
+--- Agent Flow Verification ---
+prisma:client Prisma Client call: +3ms
+prisma:client prisma.profile.findFirst({
+  where: {
+    role: "agent"
+  }
+}) +0ms
+prisma:client Generated request: +0ms
+prisma:client {
+  "modelName": "Profile",
+  "action": "findFirst",
+  "query": {
+    "arguments": {
+      "where": {
+        "role": "agent"
+      }
+    },
+    "selection": {
+      "$composites": true,
+      "$scalars": true
+    }
+  }
+}
+ +1ms
+prisma:client:libraryEngine sending request, this.libraryStarted: false +0ms
+prisma:client:engines:resolveEnginePath enginePath D:\work\erkta\erkata_backend\node_modules\.prisma\client\query_engine-windows.dll.node +0ms
+prisma:client:libraryEngine library starting +5ms
+prisma:client:libraryEngine library started +959ms
+Using Agent: sam sum (281813e7-e3f4-44bc-b135-5ab9ca0e4fde)
+prisma:client Prisma Client call: +673ms
+prisma:client prisma.match.findMany({
+  where: {
+    agentId: "281813e7-e3f4-44bc-b135-5ab9ca0e4fde"
+  }
+}) +0ms
+prisma:client Generated request: +0ms
+prisma:client {
+  "modelName": "Match",
+  "action": "findMany",
+  "query": {
+    "arguments": {
+      "where": {
+        "agentId": "281813e7-e3f4-44bc-b135-5ab9ca0e4fde"
+      }
+    },
+    "selection": {
+      "$composites": true,
+      "$scalars": true
+    }
+  }
+}
+ +0ms
+prisma:client:libraryEngine sending request, this.libraryStarted: true +0ms
+Jobs before: 1
+prisma:client Prisma Client call: +917ms
+prisma:client prisma.request.findFirst({
+  where: {
+    status: "pending"
+  }
+}) +0ms
+prisma:client Generated request: +0ms
+prisma:client {
+  "modelName": "Request",
+  "action": "findFirst",
+  "query": {
+    "arguments": {
+      "where": {
+        "status": "pending"
+      }
+    },
+    "selection": {
+      "$composites": true,
+      "$scalars": true
+    }
+  }
+}
+ +0ms
+prisma:client:libraryEngine sending request, this.libraryStarted: true +0ms
+Creating test request...
+prisma:client Prisma Client call: +1009ms
+prisma:client prisma.zone.findFirst({}) +0ms
+prisma:client Generated request: +0ms
+prisma:client {
+  "modelName": "Zone",
+  "action": "findFirst",
+  "query": {
+    "arguments": {},
+    "selection": {
+      "$composites": true,
+      "$scalars": true
+    }
+  }
+}
+ +0ms
+prisma:client:libraryEngine sending request, this.libraryStarted: true +0ms
+prisma:client Prisma Client call: +1856ms
+prisma:client prisma.profile.findFirst({
+  where: {
+    role: "customer"
+  }
+}) +0ms
+prisma:client Generated request: +0ms
+prisma:client {
+  "modelName": "Profile",
+  "action": "findFirst",
+  "query": {
+    "arguments": {
+      "where": {
+        "role": "customer"
+      }
+    },
+    "selection": {
+      "$composites": true,
+      "$scalars": true
+    }
+  }
+}
+ +0ms
+prisma:client:libraryEngine sending request, this.libraryStarted: true +0ms
+prisma:client Prisma Client call: +2552ms
+prisma:client prisma.request.create({
+  data: {
+    customerId: "920cf08a-a03e-40d4-8248-1d762f5f3d4f",
+    category: "Real Estate",
+    description: "Test Verification Request",
+    budgetMax: new Prisma.Decimal("50000"),
+    status: "pending",
+    zoneId: "11111111-1111-1111-1111-121111111111",
+    woreda: "01"
+  }
+}) +1ms
+prisma:client Generated request: +0ms
+prisma:client {
+  "modelName": "Request",
+  "action": "createOne",
+  "query": {
+    "arguments": {
+      "data": {
+        "customerId": "920cf08a-a03e-40d4-8248-1d762f5f3d4f",
+        "category": "Real Estate",
+        "description": "Test Verification Request",
+        "budgetMax": {
+          "$type": "Decimal",
+          "value": "50000"
+        },
+        "status": "pending",
+        "zoneId": "11111111-1111-1111-1111-121111111111",
+        "woreda": "01"
+      }
+    },
+    "selection": {
+      "$composites": true,
+      "$scalars": true
+    }
+  }
+}
+ +0ms
+prisma:client:libraryEngine sending request, this.libraryStarted: true +0ms
+Using Request: 4d66f1a0-b91a-45f7-8bd8-5f2a3336fb32
+prisma:client Prisma Client call: +2412ms
+prisma:client prisma.profile.findFirst({
+  where: {
+    role: "operator"
+  }
+}) +1ms
+prisma:client Generated request: +0ms
+prisma:client {
+  "modelName": "Profile",
+  "action": "findFirst",
+  "query": {
+    "arguments": {
+      "where": {
+        "role": "operator"
+      }
+    },
+    "selection": {
+      "$composites": true,
+      "$scalars": true
+    }
+  }
+}
+ +0ms
+prisma:client:libraryEngine sending request, this.libraryStarted: true +0ms
+Assigning agent...
+prisma:client Prisma Client call: +695ms
+prisma:client prisma.match.create({
+  data: {
+    requestId: "4d66f1a0-b91a-45f7-8bd8-5f2a3336fb32",
+    agentId: "281813e7-e3f4-44bc-b135-5ab9ca0e4fde",
+    operatorId: "33333333-3333-3333-3333-333333333333",
+    status: "assigned"
+  }
+}) +0ms
+prisma:client Generated request: +0ms
+prisma:client {
+  "modelName": "Match",
+  "action": "createOne",
+  "query": {
+    "arguments": {
+      "data": {
+        "requestId": "4d66f1a0-b91a-45f7-8bd8-5f2a3336fb32",
+        "agentId": "281813e7-e3f4-44bc-b135-5ab9ca0e4fde",
+        "operatorId": "33333333-3333-3333-3333-333333333333",
+        "status": "assigned"
+      }
+    },
+    "selection": {
+      "$composites": true,
+      "$scalars": true
+    }
+  }
+}
+ +0ms
+prisma:client:libraryEngine sending request, this.libraryStarted: true +0ms
+prisma:client Prisma Client call: +779ms
+prisma:client prisma.request.update({
+  where: {
+    id: "4d66f1a0-b91a-45f7-8bd8-5f2a3336fb32"
+  },
+  data: {
+    status: "matched"
+  }
+}) +0ms
+prisma:client Generated request: +0ms
+prisma:client {
+  "modelName": "Request",
+  "action": "updateOne",
+  "query": {
+    "arguments": {
+      "where": {
+        "id": "4d66f1a0-b91a-45f7-8bd8-5f2a3336fb32"
+      },
+      "data": {
+        "status": "matched"
+      }
+    },
+    "selection": {
+      "$composites": true,
+      "$scalars": true
+    }
+  }
+}
+ +0ms
+prisma:client:libraryEngine sending request, this.libraryStarted: true +0ms
+Match created: 98e5ff8f-5ce8-4a56-9a14-02dabda0f4c0
+Accepting assignment...
+prisma:client Prisma Client call: +1690ms
+prisma:client prisma.match.update({
+  where: {
+    id: "98e5ff8f-5ce8-4a56-9a14-02dabda0f4c0"
+  },
+  data: {
+    status: "accepted"
+  }
+}) +1ms
+prisma:client Generated request: +0ms
+prisma:client {
+  "modelName": "Match",
+  "action": "updateOne",
+  "query": {
+    "arguments": {
+      "where": {
+        "id": "98e5ff8f-5ce8-4a56-9a14-02dabda0f4c0"
+      },
+      "data": {
+        "status": "accepted"
+      }
+    },
+    "selection": {
+      "$composites": true,
+      "$scalars": true
+    }
+  }
+}
+ +0ms
+prisma:client:libraryEngine sending request, this.libraryStarted: true +0ms
+prisma:client Prisma Client call: +694ms
+prisma:client prisma.request.update({
+  where: {
+    id: "4d66f1a0-b91a-45f7-8bd8-5f2a3336fb32"
+  },
+  data: {
+    status: "in_progress"
+  }
+}) +0ms
+prisma:client Generated request: +0ms
+prisma:client {
+  "modelName": "Request",
+  "action": "updateOne",
+  "query": {
+    "arguments": {
+      "where": {
+        "id": "4d66f1a0-b91a-45f7-8bd8-5f2a3336fb32"
+      },
+      "data": {
+        "status": "in_progress"
+      }
+    },
+    "selection": {
+      "$composites": true,
+      "$scalars": true
+    }
+  }
+}
+ +0ms
+prisma:client:libraryEngine sending request, this.libraryStarted: true +0ms
+prisma:client Prisma Client call: +1281ms
+prisma:client prisma.transaction.upsert({
+  where: {
+    matchId: "98e5ff8f-5ce8-4a56-9a14-02dabda0f4c0"
+  },
+  update: {},
+  create: {
+    matchId: "98e5ff8f-5ce8-4a56-9a14-02dabda0f4c0",
+    amount: new Prisma.Decimal("50000"),
+    currency: "ETB",
+    status: "pending"
+  }
+}) +0ms
+prisma:client Generated request: +0ms
+prisma:client {
+  "modelName": "Transaction",
+  "action": "upsertOne",
+  "query": {
+    "arguments": {
+      "where": {
+        "matchId": "98e5ff8f-5ce8-4a56-9a14-02dabda0f4c0"
+      },
+      "update": {},
+      "create": {
+        "matchId": "98e5ff8f-5ce8-4a56-9a14-02dabda0f4c0",
+        "amount": {
+          "$type": "Decimal",
+          "value": "50000"
+        },
+        "currency": "ETB",
+        "status": "pending"
+      }
+    },
+    "selection": {
+      "$composites": true,
+      "$scalars": true
+    }
+  }
+}
+ +0ms
+prisma:client:libraryEngine sending request, this.libraryStarted: true +0ms
+prisma:client:request_handler {
+  "name": "PrismaClientKnownRequestError",
+  "code": "P2028",
+  "clientVersion": "6.0.0",
+  "meta": {
+    "error": "Transaction already closed: A query cannot be executed on an expired transaction. The timeout for this transaction was 5000 ms, however 5569 ms passed since the start of the transaction. Consider increasing the interactive transaction timeout or doing less work in the transaction."
+  }
+} +3593ms
+PrismaClientKnownRequestError: 
+Invalid `tx.transaction.upsert()` invocation in
+D:\work\erkta\erkata_backend\verify_agent_flow.ts:99:26
+
+  96   where: { id: request.id },
+  97   data: { status: RequestStatus.in_progress },
+  98 });
+ΓåÆ 99 await tx.transaction.upsert(
+Transaction API error: Transaction already closed: A query cannot be executed on an expired transaction. The timeout for this transaction was 5000 ms, however 5569 ms passed since the start of the transaction. Consider increasing the interactive transaction timeout or doing less work in the transaction.
+    at Mn.handleRequestError (D:\work\erkta\erkata_backend\node_modules\@prisma\client\runtime\library.js:121:7338)
+    at Mn.handleAndLogRequestError (D:\work\erkta\erkata_backend\node_modules\@prisma\client\runtime\library.js:121:6663)
+    at Mn.request (D:\work\erkta\erkata_backend\node_modules\@prisma\client\runtime\library.js:121:6370)
+    at async l (D:\work\erkta\erkata_backend\node_modules\@prisma\client\runtime\library.js:130:9633)
+    at async D:\work\erkta\erkata_backend\verify_agent_flow.ts:99:5
+    at async Proxy._transactionWithCallback (D:\work\erkta\erkata_backend\node_modules\@prisma\client\runtime\library.js:130:8000)
+    at async main (D:\work\erkta\erkata_backend\verify_agent_flow.ts:90:3) {
+  code: 'P2028',
+  clientVersion: '6.0.0',
+  meta: {
+    modelName: 'Transaction',
+    error: 'Transaction already closed: A query cannot be executed on an expired transaction. The timeout for this transaction was 5000 ms, however 5569 ms passed since the start of the transaction. Consider increasing the interactive transaction timeout or doing less work in the transaction.'
+  }
+}

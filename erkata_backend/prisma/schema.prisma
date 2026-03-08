@@ -1,0 +1,267 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum UserRole {
+  super_admin
+  admin
+  operator
+  agent
+  customer
+}
+
+enum RequestType {
+  real_estate
+  furniture
+}
+
+enum RequestStatus {
+  pending
+  matched
+  in_progress
+  completed
+  cancelled
+  ESCALATED
+}
+
+enum MatchStatus {
+  assigned
+  accepted
+  rejected
+  completed
+}
+
+enum TransactionStatus {
+  pending
+  paid
+  failed
+}
+
+model Zone {
+  id        String    @id @default(uuid())
+  name      String
+  city      String?   @default("Addis Ababa")
+  isActive  Boolean   @default(true) @map("is_active")
+  profiles  Profile[]
+  requests  Request[]
+  agentZones AgentZone[]
+  
+  @@map("zones")
+}
+
+enum Tier {
+  FREE
+  PEACE
+  LOVE
+  UNITY
+  ABUNDANT_LIFE
+}
+
+model Profile {
+  id        String   @id @db.Uuid // References auth.users(id)
+  fullName  String   @map("full_name")
+  phone     String
+  role      UserRole @default(customer)
+  tier      Tier     @default(FREE)
+  isActive  Boolean  @default(true) @map("is_active")
+  zoneId    String?  @map("zone_id")
+  zone      Zone?    @relation(fields: [zoneId], references: [id])
+  
+  walletBalance Decimal @default(0) @db.Decimal(12, 2) @map("wallet_balance")
+  
+  referredById String? @map("referred_by_id") @db.Uuid
+  referredBy   Profile? @relation("Referrals", fields: [referredById], references: [id])
+  referrals    Profile[] @relation("Referrals")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  // Relations for Agent and Referral tracking
+  agentZones AgentZone[]
+  referralLink ReferralLink?
+  
+  customerRequests Request[] @relation("CustomerRequests")
+  agentMatches    Match[]   @relation("AgentMatches")
+  operatorMatches Match[]   @relation("OperatorMatches")
+  feedbacks           Feedback[]
+  resolutionProposals ResolutionProposal[]
+  finalResolutions     FinalResolution[]
+  auditLogs           AuditLog[]
+  
+  @@map("profiles")
+}
+
+model AgentZone {
+  id          String   @id @default(uuid())
+  agentId     String   @map("agent_id") @db.Uuid
+  agent       Profile  @relation(fields: [agentId], references: [id])
+  zoneId      String?  @map("zone_id")
+  zone        Zone?    @relation(fields: [zoneId], references: [id])
+  kifleKetema String   @map("kifle_ketema")
+  woreda      String   @map("woreda")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@unique([agentId, zoneId, woreda])
+  @@map("agent_zones")
+}
+
+model ReferralLink {
+  id         String   @id @default(uuid())
+  referrerId String   @unique @map("referrer_id") @db.Uuid
+  referrer   Profile  @relation(fields: [referrerId], references: [id])
+  code       String   @unique
+  tier       Tier     @default(FREE)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@map("referral_links")
+}
+
+model Request {
+  id          String        @id @default(uuid())
+  customerId  String        @map("customer_id") @db.Uuid
+  customer    Profile       @relation("CustomerRequests", fields: [customerId], references: [id])
+  type        RequestType   @default(real_estate)
+  category    String
+  description String?
+  budgetMin   Decimal?      @db.Decimal(12, 2) @map("budget_min")
+  budgetMax   Decimal?      @db.Decimal(12, 2) @map("budget_max")
+  zoneId      String        @map("zone_id")
+  zone        Zone          @relation(fields: [zoneId], references: [id])
+  woreda      String?
+  status      RequestStatus @default(pending)
+  createdAt   DateTime      @default(now()) @map("created_at")
+  matches     Match[]
+  
+  @@index([customerId])
+  @@index([zoneId, status])
+  @@map("requests")
+}
+
+// Business rule: All requests must specify zone for agent routing
+model Match {
+  id         String      @id @default(uuid())
+  requestId  String      @map("request_id")
+  request    Request     @relation(fields: [requestId], references: [id])
+  agentId    String      @map("agent_id") @db.Uuid
+  agent      Profile     @relation("AgentMatches", fields: [agentId], references: [id])
+  operatorId String      @map("operator_id") @db.Uuid
+  operator   Profile     @relation("OperatorMatches", fields: [operatorId], references: [id])
+  status     MatchStatus @default(assigned)
+  assignedAt DateTime    @default(now()) @map("assigned_at")
+  transaction Transaction?
+  
+  @@unique([requestId, agentId])
+  @@index([agentId, status])
+  @@index([requestId])
+  @@map("matches")
+}
+
+model Transaction {
+  id               String            @id @default(uuid())
+  matchId          String            @unique @map("match_id")
+  match            Match             @relation(fields: [matchId], references: [id])
+  amount           Decimal           @db.Decimal(12, 2)
+  currency         String            @default("ETB")
+  commissionRate   Decimal           @default(0.05) @db.Decimal(12, 2) @map("commission_rate")
+  commissionAmount Decimal?          @db.Decimal(12, 2) @map("commission_amount") // Application-side calculation
+  status           TransactionStatus @default(pending)
+  paymentProofUrl  String?           @map("payment_proof_url")
+  createdAt        DateTime          @default(now()) @map("created_at")
+  
+  feedbacks        Feedback[]
+  feedbackBundle   FeedbackBundle?
+  
+  @@index([matchId])
+  @@index([status])
+  @@map("transactions")
+}
+
+enum FeedbackBundleState {
+  WAITING_BOTH
+  WAITING_AGENT
+  WAITING_CUSTOMER
+  BUNDLED
+  PROPOSED
+  RESOLVED
+  REJECTED
+  TIMED_OUT
+}
+
+model Feedback {
+  id            String   @id @default(uuid())
+  transactionId String   @map("transaction_id")
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+  authorId      String   @map("author_id") @db.Uuid
+  author        Profile  @relation(fields: [authorId], references: [id])
+  content       String
+  rating        Int
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@map("feedbacks")
+}
+
+model FeedbackBundle {
+  id            String              @id @default(uuid())
+  transactionId String              @unique @map("transaction_id")
+  transaction   Transaction         @relation(fields: [transactionId], references: [id])
+  state         FeedbackBundleState @default(WAITING_BOTH)
+  stateHistory  Json?               @map("state_history") // Array of { from, to, at, by, reason }
+  createdAt     DateTime            @default(now()) @map("created_at")
+  proposals     ResolutionProposal[]
+
+  @@map("feedback_bundles")
+}
+
+model ResolutionProposal {
+  id           String   @id @default(uuid())
+  bundleId     String   @map("bundle_id")
+  bundle       FeedbackBundle @relation(fields: [bundleId], references: [id])
+  proposedById String   @map("proposed_by_id") @db.Uuid
+  proposedBy   Profile  @relation(fields: [proposedById], references: [id])
+  proposedText String   @map("proposed_text")
+  createdAt    DateTime @default(now()) @map("created_at")
+  finalResolution FinalResolution?
+
+  @@map("resolution_proposals")
+}
+
+model FinalResolution {
+  id            String   @id @default(uuid())
+  proposalId    String   @unique @map("proposal_id")
+  proposal      ResolutionProposal @relation(fields: [proposalId], references: [id])
+  approved      Boolean
+  comment       String?
+  finalizedById String   @map("finalized_by_id") @db.Uuid
+  finalizedBy   Profile  @relation(fields: [finalizedById], references: [id])
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@map("final_resolutions")
+}
+
+model AuditLog {
+  id            String   @id @default(uuid())
+  actorId       String?  @map("actor_id") @db.Uuid
+  actor         Profile? @relation(fields: [actorId], references: [id])
+  action        String
+  targetTable   String?  @map("target_table")
+  targetId      String?  @map("target_id")
+  transactionId String?  @map("transaction_id") // Optional link to transaction
+  metadata      Json?
+  createdAt     DateTime @default(now()) @map("created_at")
+  
+  @@map("audit_logs")
+}
+
+model SystemConfig {
+  key         String   @id
+  value       Json
+  description String?
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("system_configs")
+}

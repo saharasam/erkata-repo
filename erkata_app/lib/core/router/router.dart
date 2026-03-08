@@ -1,0 +1,191 @@
+import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../features/auth/state/auth_provider.dart';
+import '../../core/models/user_role.dart';
+import '../../features/auth/screens/auth_screen.dart';
+import '../../features/customer/screens/home_screen.dart';
+import '../../features/customer/screens/request_intake_screen.dart';
+import '../../features/customer/screens/request_status_screen.dart';
+import '../../features/customer/screens/payment_screen.dart';
+import '../../features/customer/screens/profile_screen.dart';
+import '../../features/agent/screens/agent_dashboard_screen.dart';
+import '../../features/agent/screens/agent_subscription_screen.dart';
+import '../../features/agent/screens/agent_commission_screen.dart';
+import '../../features/agent/screens/agent_communication_screen.dart';
+import '../../features/agent/screens/agent_profile_screen.dart';
+import '../../features/agent/screens/agent_history_screen.dart';
+import '../../features/agent/screens/agent_request_detail_screen.dart';
+import '../../features/agent/screens/agent_business_verification_screen.dart';
+import '../../features/agent/screens/agent_payout_settings_screen.dart';
+import '../../core/models/service_request.dart';
+import '../../features/auth/screens/otp_verification_screen.dart';
+import '../../core/components/scaffold_with_nav_bar.dart';
+import '../../features/customer/screens/settings_screen.dart';
+import '../../features/customer/screens/notifications_screen.dart';
+import '../../shared/screens/about_screen.dart';
+import '../../shared/screens/contact_screen.dart';
+import '../../shared/screens/privacy_screen.dart';
+import '../../features/auth/screens/splash_screen.dart';
+import '../../shared/screens/terms_screen.dart';
+import '../../shared/screens/feedback_form_screen.dart';
+
+final routerProvider = Provider<GoRouter>((ref) {
+  final authState = ref.watch(authProvider);
+
+  return GoRouter(
+    initialLocation: '/',
+    redirect: (context, state) {
+      final isAuth = authState.isAuthenticated;
+      final isAuthRoute = state.uri.toString().startsWith('/auth');
+      final isSplashRoute = state.uri.toString() == '/';
+
+      if (!isAuth && !isAuthRoute && !isSplashRoute) {
+        return '/auth';
+      }
+
+      if (isAuth && isAuthRoute) {
+        switch (authState.role) {
+          case UserRole.customer:
+            return '/home';
+          case UserRole.agent:
+            return '/agent';
+
+          case null:
+            return null;
+        }
+      }
+
+      return null;
+    },
+    routes: [
+      GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
+      GoRoute(
+        path: '/auth',
+        builder: (context, state) => const AuthScreen(),
+        routes: [
+          GoRoute(
+            path: 'otp',
+            builder: (context, state) {
+              final role = state.extra as UserRole? ?? UserRole.customer;
+              return OtpVerificationScreen(role: role);
+            },
+          ),
+        ],
+      ),
+      ShellRoute(
+        builder: (context, state, child) {
+          return ScaffoldWithNavBar(
+            location: state.uri.toString(),
+            child: child,
+          );
+        },
+        routes: [
+          GoRoute(
+            path: '/home',
+            builder: (context, state) => const HomeScreen(),
+          ),
+          GoRoute(
+            path: '/agent',
+            builder: (context, state) => const AgentDashboardScreen(),
+            routes: [
+              GoRoute(
+                path: 'subscription',
+                builder: (context, state) => const AgentSubscriptionScreen(),
+              ),
+              GoRoute(
+                path: 'commission',
+                builder: (context, state) => const AgentCommissionScreen(),
+              ),
+              GoRoute(
+                path: 'communication',
+                builder: (context, state) => const AgentCommunicationScreen(),
+              ),
+              GoRoute(
+                path: 'profile',
+                builder: (context, state) => const AgentProfileScreen(),
+              ),
+              GoRoute(
+                path: 'history',
+                builder: (context, state) => const AgentHistoryScreen(),
+              ),
+              GoRoute(
+                path: 'request/:id',
+                builder: (context, state) {
+                  final id = state.pathParameters['id']!;
+                  final req = state.extra as ServiceRequest?;
+                  return AgentRequestDetailScreen(requestId: id, request: req);
+                },
+              ),
+              GoRoute(
+                path: 'business',
+                builder: (context, state) =>
+                    const AgentBusinessVerificationScreen(),
+              ),
+              GoRoute(
+                path: 'payout',
+                builder: (context, state) => const AgentPayoutSettingsScreen(),
+              ),
+              // Reuse customer settings screen for now
+              GoRoute(
+                path: 'settings',
+                builder: (context, state) => const SettingsScreen(),
+              ),
+            ],
+          ),
+          GoRoute(
+            path: '/request/status',
+            builder: (context, state) => const RequestStatusScreen(),
+          ),
+          GoRoute(
+            path: '/payment',
+            builder: (context, state) => const PaymentScreen(),
+          ),
+          GoRoute(
+            path: '/profile',
+            builder: (context, state) => const ProfileScreen(),
+          ),
+          GoRoute(
+            path: '/settings',
+            builder: (context, state) => const SettingsScreen(),
+          ),
+          GoRoute(
+            path: '/notifications',
+            builder: (context, state) => const NotificationsScreen(),
+          ),
+          GoRoute(
+            path: '/about',
+            builder: (context, state) => const AboutScreen(),
+          ),
+          GoRoute(
+            path: '/contact',
+            builder: (context, state) => const ContactScreen(),
+          ),
+          GoRoute(
+            path: '/privacy',
+            builder: (context, state) => const PrivacyScreen(),
+          ),
+          GoRoute(
+            path: '/terms',
+            builder: (context, state) => const TermsScreen(),
+          ),
+          GoRoute(
+            path: '/feedback',
+            builder: (context, state) {
+              final extra = state.extra as Map<String, dynamic>;
+              return FeedbackFormScreen(
+                requestId: extra['requestId'],
+                recipientName: extra['recipientName'],
+                role: extra['role'],
+              );
+            },
+          ),
+        ],
+      ),
+      // Request Intake is full screen, so outside the shell
+      GoRoute(
+        path: '/request/new',
+        builder: (context, state) => const RequestIntakeScreen(),
+      ),
+    ],
+  );
+});

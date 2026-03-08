@@ -1,0 +1,931 @@
+{
+  "dependencyDirections": [
+    {
+      "cycle": false,
+      "direction": "downstream",
+      "from": "App.tsx",
+      "to": "contexts/AuthContext"
+    },
+    {
+      "cycle": false,
+      "direction": "downstream",
+      "from": "App.tsx",
+      "to": "contexts/ModalContext"
+    },
+    {
+      "cycle": false,
+      "direction": "downstream",
+      "from": "components/DashboardLayout.tsx",
+      "to": "contexts/AuthContext"
+    },
+    {
+      "cycle": false,
+      "direction": "downstream",
+      "from": "components/SettingsView.tsx",
+      "to": "contexts/AuthContext"
+    },
+    {
+      "cycle": false,
+      "direction": "downstream",
+      "from": "components/SettingsView.tsx",
+      "to": "contexts/ModalContext"
+    },
+    {
+      "cycle": false,
+      "direction": "downstream",
+      "from": "components/super-admin/AdminManagement.tsx",
+      "to": "contexts/ModalContext"
+    },
+    {
+      "cycle": false,
+      "direction": "downstream",
+      "from": "components/super-admin/BroadcastNotices.tsx",
+      "to": "contexts/ModalContext"
+    },
+    {
+      "cycle": false,
+      "direction": "downstream",
+      "from": "components/super-admin/ConfigFlags.tsx",
+      "to": "contexts/ModalContext"
+    },
+    {
+      "cycle": false,
+      "direction": "downstream",
+      "from": "components/super-admin/EmergencyArchive.tsx",
+      "to": "contexts/ModalContext"
+    },
+    {
+      "cycle": false,
+      "direction": "downstream",
+      "from": "components/super-admin/FinalResolutions.tsx",
+      "to": "contexts/ModalContext"
+    },
+    {
+      "cycle": false,
+      "direction": "downstream",
+      "from": "components/super-admin/GlobalRightsOversight.tsx",
+      "to": "contexts/ModalContext"
+    },
+    {
+      "cycle": false,
+      "direction": "downstream",
+      "from": "components/super-admin/OperatorOversight.tsx",
+      "to": "contexts/ModalContext"
+    },
+    {
+      "cycle": false,
+      "direction": "downstream",
+      "from": "components/UtilitySidebar.tsx",
+      "to": "contexts/AuthContext"
+    },
+    {
+      "cycle": false,
+      "direction": "downstream",
+      "from": "components/UtilitySidebar.tsx",
+      "to": "contexts/ModalContext"
+    },
+    {
+      "cycle": false,
+      "direction": "downstream",
+      "from": "contexts/AuthContext.tsx",
+      "to": "utils/api"
+    },
+    {
+      "cycle": false,
+      "direction": "downstream",
+      "from": "index.tsx",
+      "to": "index.css"
+    },
+    {
+      "cycle": false,
+      "direction": "downstream",
+      "from": "pages/AgentDashboard.tsx",
+      "to": "components/FeedbackForm"
+    },
+    {
+      "cycle": false,
+      "direction": "downstream",
+      "from": "pages/AgentDashboard.tsx",
+      "to": "contexts/ModalContext"
+    },
+    {
+      "cycle": false,
+      "direction": "downstream",
+      "from": "pages/AgentDashboard.tsx",
+      "to": "utils/mockData"
+    },
+    {
+      "cycle": false,
+      "direction": "downstream",
+      "from": "pages/CustomerDashboard.tsx",
+      "to": "components/FeedbackForm"
+    },
+    {
+      "cycle": false,
+      "direction": "downstream",
+      "from": "pages/CustomerDashboard.tsx",
+      "to": "utils/mockData"
+    },
+    {
+      "cycle": false,
+      "direction": "downstream",
+      "from": "pages/Login.tsx",
+      "to": "contexts/AuthContext"
+    },
+    {
+      "cycle": false,
+      "direction": "downstream",
+      "from": "pages/OperatorDashboard.tsx",
+      "to": "contexts/ModalContext"
+    },
+    {
+      "cycle": false,
+      "direction": "downstream",
+      "from": "pages/OperatorDashboard.tsx",
+      "to": "utils/mockData"
+    },
+    {
+      "cycle": false,
+      "direction": "downstream",
+      "from": "pages/Register.tsx",
+      "to": "contexts/AuthContext"
+    },
+    {
+      "cycle": false,
+      "direction": "downstream",
+      "from": "pages/RequestIntake.tsx",
+      "to": "contexts/AuthContext"
+    }
+  ],
+  "depends_on": [
+    "topology"
+  ],
+  "edge_count": 31,
+  "importGraph": [
+    {
+      "kind": "import",
+      "referenceName": "AuthProvider",
+      "resolved": true,
+      "sourceFile": "App.tsx",
+      "sourceSymbolId": "App.tsx",
+      "targetFile": "contexts/AuthContext",
+      "targetSymbolId": "contexts/AuthContext.tsx#component#AuthProvider#0"
+    },
+    {
+      "kind": "import",
+      "referenceName": "ProtectedRoute",
+      "resolved": true,
+      "sourceFile": "App.tsx",
+      "sourceSymbolId": "App.tsx",
+      "targetFile": "contexts/AuthContext",
+      "targetSymbolId": "contexts/AuthContext.tsx#component#ProtectedRoute#0"
+    },
+    {
+      "kind": "import",
+      "referenceName": "ModalProvider",
+      "resolved": true,
+      "sourceFile": "App.tsx",
+      "sourceSymbolId": "App.tsx",
+      "targetFile": "contexts/ModalContext",
+      "targetSymbolId": "contexts/ModalContext.tsx#component#ModalProvider#0"
+    },
+    {
+      "kind": "import",
+      "referenceName": "useAuth",
+      "resolved": true,
+      "sourceFile": "components/DashboardLayout.tsx",
+      "sourceSymbolId": "components/DashboardLayout.tsx",
+      "targetFile": "contexts/AuthContext",
+      "targetSymbolId": "contexts/AuthContext.tsx#hook#useAuth#0"
+    },
+    {
+      "kind": "import",
+      "referenceName": "useAuth",
+      "resolved": true,
+      "sourceFile": "components/SettingsView.tsx",
+      "sourceSymbolId": "components/SettingsView.tsx",
+      "targetFile": "contexts/AuthContext",
+      "targetSymbolId": "contexts/AuthContext.tsx#hook#useAuth#0"
+    },
+    {
+      "kind": "import",
+      "referenceName": "useModal",
+      "resolved": true,
+      "sourceFile": "components/SettingsView.tsx",
+      "sourceSymbolId": "components/SettingsView.tsx",
+      "targetFile": "contexts/ModalContext",
+      "targetSymbolId": "contexts/ModalContext.tsx#hook#useModal#0"
+    },
+    {
+      "kind": "import",
+      "referenceName": "useModal",
+      "resolved": true,
+      "sourceFile": "components/super-admin/AdminManagement.tsx",
+      "sourceSymbolId": "components/super-admin/AdminManagement.tsx",
+      "targetFile": "contexts/ModalContext",
+      "targetSymbolId": "contexts/ModalContext.tsx#hook#useModal#0"
+    },
+    {
+      "kind": "import",
+      "referenceName": "useModal",
+      "resolved": true,
+      "sourceFile": "components/super-admin/BroadcastNotices.tsx",
+      "sourceSymbolId": "components/super-admin/BroadcastNotices.tsx",
+      "targetFile": "contexts/ModalContext",
+      "targetSymbolId": "contexts/ModalContext.tsx#hook#useModal#0"
+    },
+    {
+      "kind": "import",
+      "referenceName": "useModal",
+      "resolved": true,
+      "sourceFile": "components/super-admin/ConfigFlags.tsx",
+      "sourceSymbolId": "components/super-admin/ConfigFlags.tsx",
+      "targetFile": "contexts/ModalContext",
+      "targetSymbolId": "contexts/ModalContext.tsx#hook#useModal#0"
+    },
+    {
+      "kind": "import",
+      "referenceName": "useModal",
+      "resolved": true,
+      "sourceFile": "components/super-admin/EmergencyArchive.tsx",
+      "sourceSymbolId": "components/super-admin/EmergencyArchive.tsx",
+      "targetFile": "contexts/ModalContext",
+      "targetSymbolId": "contexts/ModalContext.tsx#hook#useModal#0"
+    },
+    {
+      "kind": "import",
+      "referenceName": "useModal",
+      "resolved": true,
+      "sourceFile": "components/super-admin/FinalResolutions.tsx",
+      "sourceSymbolId": "components/super-admin/FinalResolutions.tsx",
+      "targetFile": "contexts/ModalContext",
+      "targetSymbolId": "contexts/ModalContext.tsx#hook#useModal#0"
+    },
+    {
+      "kind": "import",
+      "referenceName": "useModal",
+      "resolved": true,
+      "sourceFile": "components/super-admin/GlobalRightsOversight.tsx",
+      "sourceSymbolId": "components/super-admin/GlobalRightsOversight.tsx",
+      "targetFile": "contexts/ModalContext",
+      "targetSymbolId": "contexts/ModalContext.tsx#hook#useModal#0"
+    },
+    {
+      "kind": "import",
+      "referenceName": "useModal",
+      "resolved": true,
+      "sourceFile": "components/super-admin/OperatorOversight.tsx",
+      "sourceSymbolId": "components/super-admin/OperatorOversight.tsx",
+      "targetFile": "contexts/ModalContext",
+      "targetSymbolId": "contexts/ModalContext.tsx#hook#useModal#0"
+    },
+    {
+      "kind": "import",
+      "referenceName": "useAuth",
+      "resolved": true,
+      "sourceFile": "components/UtilitySidebar.tsx",
+      "sourceSymbolId": "components/UtilitySidebar.tsx",
+      "targetFile": "contexts/AuthContext",
+      "targetSymbolId": "contexts/AuthContext.tsx#hook#useAuth#0"
+    },
+    {
+      "kind": "import",
+      "referenceName": "useModal",
+      "resolved": true,
+      "sourceFile": "components/UtilitySidebar.tsx",
+      "sourceSymbolId": "components/UtilitySidebar.tsx",
+      "targetFile": "contexts/ModalContext",
+      "targetSymbolId": "contexts/ModalContext.tsx#hook#useModal#0"
+    },
+    {
+      "kind": "import",
+      "referenceName": "setAccessToken",
+      "resolved": true,
+      "sourceFile": "contexts/AuthContext.tsx",
+      "sourceSymbolId": "contexts/AuthContext.tsx",
+      "targetFile": "utils/api",
+      "targetSymbolId": "utils/api.ts#function#setAccessToken#0"
+    },
+    {
+      "kind": "import",
+      "referenceName": "*",
+      "resolved": true,
+      "sourceFile": "index.tsx",
+      "sourceSymbolId": "index.tsx",
+      "targetFile": "index.css",
+      "targetSymbolId": "index.css#*"
+    },
+    {
+      "kind": "import",
+      "referenceName": "FeedbackData",
+      "resolved": true,
+      "sourceFile": "pages/AgentDashboard.tsx",
+      "sourceSymbolId": "pages/AgentDashboard.tsx",
+      "targetFile": "components/FeedbackForm",
+      "targetSymbolId": "components/FeedbackForm.tsx#interface#FeedbackData#0"
+    },
+    {
+      "kind": "import",
+      "referenceName": "useModal",
+      "resolved": true,
+      "sourceFile": "pages/AgentDashboard.tsx",
+      "sourceSymbolId": "pages/AgentDashboard.tsx",
+      "targetFile": "contexts/ModalContext",
+      "targetSymbolId": "contexts/ModalContext.tsx#hook#useModal#0"
+    },
+    {
+      "kind": "import",
+      "referenceName": "agentEarnings",
+      "resolved": true,
+      "sourceFile": "pages/AgentDashboard.tsx",
+      "sourceSymbolId": "pages/AgentDashboard.tsx",
+      "targetFile": "utils/mockData",
+      "targetSymbolId": "utils/mockData.ts#variable#agentEarnings#0"
+    },
+    {
+      "kind": "import",
+      "referenceName": "agentReferrals",
+      "resolved": true,
+      "sourceFile": "pages/AgentDashboard.tsx",
+      "sourceSymbolId": "pages/AgentDashboard.tsx",
+      "targetFile": "utils/mockData",
+      "targetSymbolId": "utils/mockData.ts#variable#agentReferrals#0"
+    },
+    {
+      "kind": "import",
+      "referenceName": "agentRequests",
+      "resolved": true,
+      "sourceFile": "pages/AgentDashboard.tsx",
+      "sourceSymbolId": "pages/AgentDashboard.tsx",
+      "targetFile": "utils/mockData",
+      "targetSymbolId": "utils/mockData.ts#variable#agentRequests#0"
+    },
+    {
+      "kind": "import",
+      "referenceName": "FeedbackData",
+      "resolved": true,
+      "sourceFile": "pages/CustomerDashboard.tsx",
+      "sourceSymbolId": "pages/CustomerDashboard.tsx",
+      "targetFile": "components/FeedbackForm",
+      "targetSymbolId": "components/FeedbackForm.tsx#interface#FeedbackData#0"
+    },
+    {
+      "kind": "import",
+      "referenceName": "agentRequests",
+      "resolved": true,
+      "sourceFile": "pages/CustomerDashboard.tsx",
+      "sourceSymbolId": "pages/CustomerDashboard.tsx",
+      "targetFile": "utils/mockData",
+      "targetSymbolId": "utils/mockData.ts#variable#agentRequests#0"
+    },
+    {
+      "kind": "import",
+      "referenceName": "useAuth",
+      "resolved": true,
+      "sourceFile": "pages/Login.tsx",
+      "sourceSymbolId": "pages/Login.tsx",
+      "targetFile": "contexts/AuthContext",
+      "targetSymbolId": "contexts/AuthContext.tsx#hook#useAuth#0"
+    },
+    {
+      "kind": "import",
+      "referenceName": "useModal",
+      "resolved": true,
+      "sourceFile": "pages/OperatorDashboard.tsx",
+      "sourceSymbolId": "pages/OperatorDashboard.tsx",
+      "targetFile": "contexts/ModalContext",
+      "targetSymbolId": "contexts/ModalContext.tsx#hook#useModal#0"
+    },
+    {
+      "kind": "import",
+      "referenceName": "operatorActiveTransactions",
+      "resolved": true,
+      "sourceFile": "pages/OperatorDashboard.tsx",
+      "sourceSymbolId": "pages/OperatorDashboard.tsx",
+      "targetFile": "utils/mockData",
+      "targetSymbolId": "utils/mockData.ts#variable#operatorActiveTransactions#0"
+    },
+    {
+      "kind": "import",
+      "referenceName": "operatorPendingRequests",
+      "resolved": true,
+      "sourceFile": "pages/OperatorDashboard.tsx",
+      "sourceSymbolId": "pages/OperatorDashboard.tsx",
+      "targetFile": "utils/mockData",
+      "targetSymbolId": "utils/mockData.ts#variable#operatorPendingRequests#0"
+    },
+    {
+      "kind": "import",
+      "referenceName": "operatorZoneActivity",
+      "resolved": true,
+      "sourceFile": "pages/OperatorDashboard.tsx",
+      "sourceSymbolId": "pages/OperatorDashboard.tsx",
+      "targetFile": "utils/mockData",
+      "targetSymbolId": "utils/mockData.ts#variable#operatorZoneActivity#0"
+    },
+    {
+      "kind": "import",
+      "referenceName": "useAuth",
+      "resolved": true,
+      "sourceFile": "pages/Register.tsx",
+      "sourceSymbolId": "pages/Register.tsx",
+      "targetFile": "contexts/AuthContext",
+      "targetSymbolId": "contexts/AuthContext.tsx#hook#useAuth#0"
+    },
+    {
+      "kind": "import",
+      "referenceName": "useAuth",
+      "resolved": true,
+      "sourceFile": "pages/RequestIntake.tsx",
+      "sourceSymbolId": "pages/RequestIntake.tsx",
+      "targetFile": "contexts/AuthContext",
+      "targetSymbolId": "contexts/AuthContext.tsx#hook#useAuth#0"
+    }
+  ],
+  "moduleGraph": [
+  ],
+  "name": "dependencies",
+  "symbol_count": 33,
+  "symbol_index_fragment": [
+    {
+      "declaring_module": "unknown",
+      "effect_types": [
+      ],
+      "kind": "unknown",
+      "known_effects": [
+      ],
+      "layer": "unresolvable",
+      "lifecycle_scope": "transient",
+      "reachable_from_entry": false,
+      "resolvable": false,
+      "signature_hash": "0000000000000000",
+      "symbol_id": "App.tsx",
+      "type_boundary": "unknown"
+    },
+    {
+      "declaring_module": "unknown",
+      "effect_types": [
+      ],
+      "kind": "unknown",
+      "known_effects": [
+      ],
+      "layer": "unresolvable",
+      "lifecycle_scope": "transient",
+      "reachable_from_entry": false,
+      "resolvable": false,
+      "signature_hash": "0000000000000000",
+      "symbol_id": "components/DashboardLayout.tsx",
+      "type_boundary": "unknown"
+    },
+    {
+      "declaring_module": "unknown",
+      "effect_types": [
+      ],
+      "kind": "unknown",
+      "known_effects": [
+      ],
+      "layer": "unresolvable",
+      "lifecycle_scope": "transient",
+      "reachable_from_entry": false,
+      "resolvable": false,
+      "signature_hash": "0000000000000000",
+      "symbol_id": "components/SettingsView.tsx",
+      "type_boundary": "unknown"
+    },
+    {
+      "declaring_module": "unknown",
+      "effect_types": [
+      ],
+      "kind": "unknown",
+      "known_effects": [
+      ],
+      "layer": "unresolvable",
+      "lifecycle_scope": "transient",
+      "reachable_from_entry": false,
+      "resolvable": false,
+      "signature_hash": "0000000000000000",
+      "symbol_id": "components/super-admin/AdminManagement.tsx",
+      "type_boundary": "unknown"
+    },
+    {
+      "declaring_module": "unknown",
+      "effect_types": [
+      ],
+      "kind": "unknown",
+      "known_effects": [
+      ],
+      "layer": "unresolvable",
+      "lifecycle_scope": "transient",
+      "reachable_from_entry": false,
+      "resolvable": false,
+      "signature_hash": "0000000000000000",
+      "symbol_id": "components/super-admin/BroadcastNotices.tsx",
+      "type_boundary": "unknown"
+    },
+    {
+      "declaring_module": "unknown",
+      "effect_types": [
+      ],
+      "kind": "unknown",
+      "known_effects": [
+      ],
+      "layer": "unresolvable",
+      "lifecycle_scope": "transient",
+      "reachable_from_entry": false,
+      "resolvable": false,
+      "signature_hash": "0000000000000000",
+      "symbol_id": "components/super-admin/ConfigFlags.tsx",
+      "type_boundary": "unknown"
+    },
+    {
+      "declaring_module": "unknown",
+      "effect_types": [
+      ],
+      "kind": "unknown",
+      "known_effects": [
+      ],
+      "layer": "unresolvable",
+      "lifecycle_scope": "transient",
+      "reachable_from_entry": false,
+      "resolvable": false,
+      "signature_hash": "0000000000000000",
+      "symbol_id": "components/super-admin/EmergencyArchive.tsx",
+      "type_boundary": "unknown"
+    },
+    {
+      "declaring_module": "unknown",
+      "effect_types": [
+      ],
+      "kind": "unknown",
+      "known_effects": [
+      ],
+      "layer": "unresolvable",
+      "lifecycle_scope": "transient",
+      "reachable_from_entry": false,
+      "resolvable": false,
+      "signature_hash": "0000000000000000",
+      "symbol_id": "components/super-admin/FinalResolutions.tsx",
+      "type_boundary": "unknown"
+    },
+    {
+      "declaring_module": "unknown",
+      "effect_types": [
+      ],
+      "kind": "unknown",
+      "known_effects": [
+      ],
+      "layer": "unresolvable",
+      "lifecycle_scope": "transient",
+      "reachable_from_entry": false,
+      "resolvable": false,
+      "signature_hash": "0000000000000000",
+      "symbol_id": "components/super-admin/GlobalRightsOversight.tsx",
+      "type_boundary": "unknown"
+    },
+    {
+      "declaring_module": "unknown",
+      "effect_types": [
+      ],
+      "kind": "unknown",
+      "known_effects": [
+      ],
+      "layer": "unresolvable",
+      "lifecycle_scope": "transient",
+      "reachable_from_entry": false,
+      "resolvable": false,
+      "signature_hash": "0000000000000000",
+      "symbol_id": "components/super-admin/OperatorOversight.tsx",
+      "type_boundary": "unknown"
+    },
+    {
+      "declaring_module": "unknown",
+      "effect_types": [
+      ],
+      "kind": "unknown",
+      "known_effects": [
+      ],
+      "layer": "unresolvable",
+      "lifecycle_scope": "transient",
+      "reachable_from_entry": false,
+      "resolvable": false,
+      "signature_hash": "0000000000000000",
+      "symbol_id": "components/UtilitySidebar.tsx",
+      "type_boundary": "unknown"
+    },
+    {
+      "declaring_module": "unknown",
+      "effect_types": [
+      ],
+      "kind": "unknown",
+      "known_effects": [
+      ],
+      "layer": "unresolvable",
+      "lifecycle_scope": "transient",
+      "reachable_from_entry": false,
+      "resolvable": false,
+      "signature_hash": "0000000000000000",
+      "symbol_id": "contexts/AuthContext.tsx",
+      "type_boundary": "unknown"
+    },
+    {
+      "declaring_module": "unknown",
+      "effect_types": [
+      ],
+      "kind": "unknown",
+      "known_effects": [
+      ],
+      "layer": "unresolvable",
+      "lifecycle_scope": "transient",
+      "reachable_from_entry": false,
+      "resolvable": false,
+      "signature_hash": "0000000000000000",
+      "symbol_id": "index.tsx",
+      "type_boundary": "unknown"
+    },
+    {
+      "declaring_module": "unknown",
+      "effect_types": [
+      ],
+      "kind": "unknown",
+      "known_effects": [
+      ],
+      "layer": "unresolvable",
+      "lifecycle_scope": "transient",
+      "reachable_from_entry": false,
+      "resolvable": false,
+      "signature_hash": "0000000000000000",
+      "symbol_id": "pages/AgentDashboard.tsx",
+      "type_boundary": "unknown"
+    },
+    {
+      "declaring_module": "unknown",
+      "effect_types": [
+      ],
+      "kind": "unknown",
+      "known_effects": [
+      ],
+      "layer": "unresolvable",
+      "lifecycle_scope": "transient",
+      "reachable_from_entry": false,
+      "resolvable": false,
+      "signature_hash": "0000000000000000",
+      "symbol_id": "pages/CustomerDashboard.tsx",
+      "type_boundary": "unknown"
+    },
+    {
+      "declaring_module": "unknown",
+      "effect_types": [
+      ],
+      "kind": "unknown",
+      "known_effects": [
+      ],
+      "layer": "unresolvable",
+      "lifecycle_scope": "transient",
+      "reachable_from_entry": false,
+      "resolvable": false,
+      "signature_hash": "0000000000000000",
+      "symbol_id": "pages/Login.tsx",
+      "type_boundary": "unknown"
+    },
+    {
+      "declaring_module": "unknown",
+      "effect_types": [
+      ],
+      "kind": "unknown",
+      "known_effects": [
+      ],
+      "layer": "unresolvable",
+      "lifecycle_scope": "transient",
+      "reachable_from_entry": false,
+      "resolvable": false,
+      "signature_hash": "0000000000000000",
+      "symbol_id": "pages/OperatorDashboard.tsx",
+      "type_boundary": "unknown"
+    },
+    {
+      "declaring_module": "unknown",
+      "effect_types": [
+      ],
+      "kind": "unknown",
+      "known_effects": [
+      ],
+      "layer": "unresolvable",
+      "lifecycle_scope": "transient",
+      "reachable_from_entry": false,
+      "resolvable": false,
+      "signature_hash": "0000000000000000",
+      "symbol_id": "pages/Register.tsx",
+      "type_boundary": "unknown"
+    },
+    {
+      "declaring_module": "unknown",
+      "effect_types": [
+      ],
+      "kind": "unknown",
+      "known_effects": [
+      ],
+      "layer": "unresolvable",
+      "lifecycle_scope": "transient",
+      "reachable_from_entry": false,
+      "resolvable": false,
+      "signature_hash": "0000000000000000",
+      "symbol_id": "pages/RequestIntake.tsx",
+      "type_boundary": "unknown"
+    },
+    {
+      "declaring_module": "unknown",
+      "effect_types": [
+      ],
+      "kind": "unknown",
+      "known_effects": [
+      ],
+      "layer": "unresolvable",
+      "lifecycle_scope": "transient",
+      "reachable_from_entry": false,
+      "resolvable": false,
+      "signature_hash": "0000000000000000",
+      "symbol_id": "contexts/AuthContext.tsx#component#AuthProvider#0",
+      "type_boundary": "unknown"
+    },
+    {
+      "declaring_module": "unknown",
+      "effect_types": [
+      ],
+      "kind": "unknown",
+      "known_effects": [
+      ],
+      "layer": "unresolvable",
+      "lifecycle_scope": "transient",
+      "reachable_from_entry": false,
+      "resolvable": false,
+      "signature_hash": "0000000000000000",
+      "symbol_id": "contexts/AuthContext.tsx#component#ProtectedRoute#0",
+      "type_boundary": "unknown"
+    },
+    {
+      "declaring_module": "unknown",
+      "effect_types": [
+      ],
+      "kind": "unknown",
+      "known_effects": [
+      ],
+      "layer": "unresolvable",
+      "lifecycle_scope": "transient",
+      "reachable_from_entry": false,
+      "resolvable": false,
+      "signature_hash": "0000000000000000",
+      "symbol_id": "contexts/ModalContext.tsx#component#ModalProvider#0",
+      "type_boundary": "unknown"
+    },
+    {
+      "declaring_module": "unknown",
+      "effect_types": [
+      ],
+      "kind": "unknown",
+      "known_effects": [
+      ],
+      "layer": "unresolvable",
+      "lifecycle_scope": "transient",
+      "reachable_from_entry": false,
+      "resolvable": false,
+      "signature_hash": "0000000000000000",
+      "symbol_id": "contexts/AuthContext.tsx#hook#useAuth#0",
+      "type_boundary": "unknown"
+    },
+    {
+      "declaring_module": "unknown",
+      "effect_types": [
+      ],
+      "kind": "unknown",
+      "known_effects": [
+      ],
+      "layer": "unresolvable",
+      "lifecycle_scope": "transient",
+      "reachable_from_entry": false,
+      "resolvable": false,
+      "signature_hash": "0000000000000000",
+      "symbol_id": "contexts/ModalContext.tsx#hook#useModal#0",
+      "type_boundary": "unknown"
+    },
+    {
+      "declaring_module": "utils",
+      "effect_types": [
+      ],
+      "kind": "function",
+      "layer": "infrastructure",
+      "lifecycle_scope": "singleton",
+      "reachable_from_entry": false,
+      "resolvable": true,
+      "signature_hash": "c0c13078ea311251",
+      "symbol_id": "utils/api.ts#function#setAccessToken#0",
+      "type_boundary": "service"
+    },
+    {
+      "declaring_module": "unknown",
+      "effect_types": [
+      ],
+      "kind": "unknown",
+      "known_effects": [
+      ],
+      "layer": "unresolvable",
+      "lifecycle_scope": "transient",
+      "reachable_from_entry": false,
+      "resolvable": false,
+      "signature_hash": "0000000000000000",
+      "symbol_id": "index.css#*",
+      "type_boundary": "unknown"
+    },
+    {
+      "declaring_module": "components",
+      "effect_types": [
+      ],
+      "kind": "interface",
+      "layer": "infrastructure",
+      "lifecycle_scope": "singleton",
+      "reachable_from_entry": false,
+      "resolvable": true,
+      "signature_hash": "fa8afe4abaf212fa",
+      "symbol_id": "components/FeedbackForm.tsx#interface#FeedbackData#0",
+      "type_boundary": "dto"
+    },
+    {
+      "declaring_module": "utils",
+      "effect_types": [
+      ],
+      "kind": "variable",
+      "layer": "infrastructure",
+      "lifecycle_scope": "singleton",
+      "reachable_from_entry": false,
+      "resolvable": true,
+      "signature_hash": "fa8afe4abaf212fa",
+      "symbol_id": "utils/mockData.ts#variable#agentEarnings#0",
+      "type_boundary": "dto"
+    },
+    {
+      "declaring_module": "utils",
+      "effect_types": [
+      ],
+      "kind": "variable",
+      "layer": "infrastructure",
+      "lifecycle_scope": "singleton",
+      "reachable_from_entry": false,
+      "resolvable": true,
+      "signature_hash": "fa8afe4abaf212fa",
+      "symbol_id": "utils/mockData.ts#variable#agentReferrals#0",
+      "type_boundary": "dto"
+    },
+    {
+      "declaring_module": "utils",
+      "effect_types": [
+      ],
+      "kind": "variable",
+      "layer": "infrastructure",
+      "lifecycle_scope": "singleton",
+      "reachable_from_entry": false,
+      "resolvable": true,
+      "signature_hash": "fa8afe4abaf212fa",
+      "symbol_id": "utils/mockData.ts#variable#agentRequests#0",
+      "type_boundary": "dto"
+    },
+    {
+      "declaring_module": "utils",
+      "effect_types": [
+      ],
+      "kind": "variable",
+      "layer": "infrastructure",
+      "lifecycle_scope": "singleton",
+      "reachable_from_entry": false,
+      "resolvable": true,
+      "signature_hash": "fa8afe4abaf212fa",
+      "symbol_id": "utils/mockData.ts#variable#operatorActiveTransactions#0",
+      "type_boundary": "dto"
+    },
+    {
+      "declaring_module": "utils",
+      "effect_types": [
+      ],
+      "kind": "variable",
+      "layer": "infrastructure",
+      "lifecycle_scope": "singleton",
+      "reachable_from_entry": false,
+      "resolvable": true,
+      "signature_hash": "fa8afe4abaf212fa",
+      "symbol_id": "utils/mockData.ts#variable#operatorPendingRequests#0",
+      "type_boundary": "dto"
+    },
+    {
+      "declaring_module": "utils",
+      "effect_types": [
+      ],
+      "kind": "variable",
+      "layer": "infrastructure",
+      "lifecycle_scope": "singleton",
+      "reachable_from_entry": false,
+      "resolvable": true,
+      "signature_hash": "fa8afe4abaf212fa",
+      "symbol_id": "utils/mockData.ts#variable#operatorZoneActivity#0",
+      "type_boundary": "dto"
+    }
+  ],
+  "topology_hash": "b7a8ebc4d6f51e9fa99075a4c643803297e0531f8d08ef9e9e92c0e981b05ee6"
+}

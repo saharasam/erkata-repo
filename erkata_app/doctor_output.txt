@@ -1,0 +1,41 @@
+[ΓêÜ] Flutter (Channel stable, 3.38.9, on Microsoft Windows [Version 10.0.26200.7840], locale en-US) [234ms]
+    ΓÇó Flutter version 3.38.9 on channel stable at C:\flutter
+    ΓÇó Upstream repository https://github.com/flutter/flutter.git
+    ΓÇó Framework revision 67323de285 (2 weeks ago), 2026-01-28 13:43:12 -0800
+    ΓÇó Engine revision 587c18f873
+    ΓÇó Dart version 3.10.8
+    ΓÇó DevTools version 2.51.1
+    ΓÇó Feature flags: enable-web, enable-linux-desktop, enable-macos-desktop, enable-windows-desktop, enable-android, enable-ios, cli-animations, enable-native-assets, omit-legacy-version-file, enable-lldb-debugging
+
+[ΓêÜ] Windows Version (11 Pro 64-bit, 25H2, 2009) [1,392ms]
+
+[!] Android toolchain - develop for Android devices (Android SDK version 36.1.0) [316ms]
+    ΓÇó Android SDK at C:\Users\samue\AppData\Local\Android\sdk
+    ΓÇó Emulator version 36.3.10.0 (build_id 14472402) (CL:N/A)
+    ΓÇó Platform android-36, build-tools 36.1.0
+    ΓÇó Java binary at: C:\Program Files\Android\Android Studio1\jbr\bin\java
+      This is the JDK bundled with the latest Android Studio installation on this machine.
+      To manually set the JDK path, use: `flutter config --jdk-dir="path/to/jdk"`.
+    ΓÇó Java version OpenJDK Runtime Environment (build 21.0.5+-12932927-b750.29)
+    X Android license status unknown.
+      Run `flutter doctor --android-licenses` to accept the SDK licenses.
+      See https://flutter.dev/to/windows-android-setup for more details.
+
+[ΓêÜ] Chrome - develop for the web [62ms]
+    ΓÇó Chrome at C:\Program Files\Google\Chrome\Application\chrome.exe
+
+[ΓêÜ] Visual Studio - develop Windows apps (Visual Studio Professional 2022 17.14.0) [61ms]
+    ΓÇó Visual Studio at C:\Program Files\Microsoft Visual Studio\2022\Professional
+    ΓÇó Visual Studio Professional 2022 version 17.14.36109.1
+    ΓÇó Windows 10 SDK version 10.0.26100.0
+
+[ΓêÜ] Connected device (4 available) [313ms]
+    ΓÇó SM G970U1 (mobile) ΓÇó R38R900G2BW ΓÇó android-arm64  ΓÇó Android 12 (API 31)
+    ΓÇó Windows (desktop)  ΓÇó windows     ΓÇó windows-x64    ΓÇó Microsoft Windows [Version 10.0.26200.7840]
+    ΓÇó Chrome (web)       ΓÇó chrome      ΓÇó web-javascript ΓÇó Google Chrome 144.0.7559.132
+    ΓÇó Edge (web)         ΓÇó edge        ΓÇó web-javascript ΓÇó Microsoft Edge 144.0.3719.115
+
+[ΓêÜ] Network resources [2.9s]
+    ΓÇó All expected network resources are available.
+
+! Doctor found issues in 1 category.

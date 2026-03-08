@@ -1,0 +1,1148 @@
+SCF-L2.5 UNIFIED ARTIFACT — recursive bash fallback for stoa compile
+Generated: 2026-02-26T06:58:53.593Z
+Repository: D:\work\erkta
+Note: Multi-package / Monorepo mode enabled.
+
+
+===== [1] SCAN — File Discovery =====
+
+Too many parameters - build|.dart_tool|node_modules|ios|android|dist|.next|.stoa|coverage
+
+
+
+===== [2-3] PARSE + EXTRACT — Symbols =====
+
+# Classes & Interfaces
+[erkata_app/lib/main.dart] class MyApp extends ConsumerWidget {
+[erkata_backend/src/app.controller.ts] export class AppController {
+[erkata_backend/src/app.module.ts] export class AppModule {}
+[erkata_backend/src/app.service.ts] @Injectable()
+[erkata_backend/src/app.service.ts] export class AppService {
+[erkata_web/components/CustomSelect.tsx] interface Option {
+[erkata_web/components/CustomSelect.tsx] interface CustomSelectProps {
+[erkata_web/components/DashboardLayout.tsx] interface DashboardLayoutProps {
+[erkata_web/components/FeedbackForm.tsx] interface FeedbackFormProps {
+[erkata_web/components/NotificationsPanel.tsx] interface Notification {
+[erkata_web/components/NotificationsPanel.tsx] interface NotificationsPanelProps {
+[erkata_web/components/SettingsView.tsx] interface SettingsViewProps {
+[erkata_web/components/StatusBadge.tsx] interface StatusBadgeProps {
+[erkata_web/components/UtilitySidebar.tsx] interface UtilitySidebarProps {
+[erkata_web/pages/Register.tsx] interface RegisterProps {
+[erkata_web/contexts/AuthContext.tsx] interface User {
+[erkata_web/contexts/AuthContext.tsx] interface AuthContextType {
+[erkata_web/contexts/AuthContext.tsx] interface ProtectedRouteProps {
+[erkata_web/contexts/ModalContext.tsx] interface ModalOptions {
+[erkata_web/contexts/ModalContext.tsx] interface ModalContextType {
+[erkata_app/react mvp/components/AgentCommission.tsx] interface AgentCommissionProps {
+[erkata_app/react mvp/components/AgentCommunication.tsx] interface AgentCommunicationProps {
+[erkata_app/react mvp/components/AgentDashboard.tsx] interface AgentDashboardProps {
+[erkata_app/react mvp/components/AgentSubscription.tsx] interface AgentSubscriptionProps {
+[erkata_app/react mvp/components/AuthView.tsx] interface AuthViewProps {
+[erkata_app/react mvp/components/HomeView.tsx] interface HomeViewProps {
+[erkata_app/react mvp/components/Navigation.tsx] interface NavigationProps {
+[erkata_app/react mvp/components/OperatorAssignment.tsx] interface OperatorAssignmentProps {
+[erkata_app/react mvp/components/OperatorDashboard.tsx] interface OperatorDashboardProps {
+[erkata_app/react mvp/components/OperatorMediation.tsx] interface OperatorMediationProps {
+[erkata_app/react mvp/components/PaymentView.tsx] interface PaymentViewProps {
+[erkata_app/react mvp/components/ProfileView.tsx] interface ProfileViewProps {
+[erkata_app/react mvp/components/RequestIntake.tsx] interface RequestIntakeProps {
+[erkata_app/react mvp/components/RequestStatus.tsx] interface RequestStatusProps {
+[erkata_backend/src/auth/auth.controller.ts] export class AuthController {
+[erkata_backend/src/auth/auth.module.ts] export class AuthModule {}
+[erkata_backend/src/auth/auth.service.ts] @Injectable()
+[erkata_backend/src/auth/auth.service.ts] export class AuthService {
+[erkata_backend/src/mediation/mediation.controller.ts] export class MediationController {
+[erkata_backend/src/mediation/mediation.module.ts] export class MediationModule {}
+[erkata_backend/src/mediation/mediation.processor.ts] export class MediationProcessor extends WorkerHost {
+[erkata_backend/src/mediation/mediation.service.ts] @Injectable()
+[erkata_backend/src/mediation/mediation.service.ts] export class MediationService {
+[erkata_backend/src/prisma/prisma.module.ts] export class PrismaModule {}
+[erkata_backend/src/prisma/prisma.service.ts] @Injectable()
+[erkata_backend/src/prisma/prisma.service.ts] export class PrismaService extends PrismaClient implements OnModuleInit {
+[erkata_backend/src/requests/requests.controller.ts] export class RequestsController {
+[erkata_backend/src/requests/requests.module.ts] export class RequestsModule {}
+[erkata_backend/src/requests/requests.service.ts] @Injectable()
+[erkata_backend/src/requests/requests.service.ts] export class RequestsService {
+[erkata_backend/src/transactions/transactions.controller.ts] export class TransactionsController {
+[erkata_backend/src/transactions/transactions.module.ts] export class TransactionsModule {}
+[erkata_backend/src/transactions/transactions.service.ts] @Injectable()
+[erkata_backend/src/transactions/transactions.service.ts] export class TransactionsService {
+[erkata_backend/src/users/users.controller.ts] export class UsersController {
+[erkata_backend/src/users/users.module.ts] export class UsersModule {}
+[erkata_backend/src/users/users.service.ts] @Injectable()
+[erkata_backend/src/users/users.service.ts] export class UsersService {
+[erkata_web/components/admin/AdminAgentList.tsx] interface Agent {
+[erkata_web/components/admin/AdminOperatorList.tsx] interface Operator {
+[erkata_web/components/admin/AdminSidebar.tsx] interface AdminSidebarProps {
+[erkata_web/components/admin/EscalatedBundles.tsx] interface FeedbackBundle {
+[erkata_web/components/admin/ProposalHistory.tsx] interface Proposal {
+[erkata_web/components/admin/ZoneCoverage.tsx] interface ZoneData {
+[erkata_web/components/super-admin/AdminManagement.tsx] interface AdminUser {
+[erkata_web/components/super-admin/EmergencyArchive.tsx] interface AbandonedCase {
+[erkata_web/components/super-admin/FinalResolutions.tsx] interface ProposedBundle {
+[erkata_web/components/super-admin/GlobalRightsOversight.tsx] interface AgentRecord {
+[erkata_web/components/super-admin/OperatorOversight.tsx] interface OperatorPerformance {
+[erkata_web/components/super-admin/SuperAdminSidebar.tsx] interface SuperAdminSidebarProps {
+[erkata_app/lib/core/components/scaffold_with_nav_bar.dart] class ScaffoldWithNavBar extends ConsumerWidget {
+[erkata_app/lib/core/models/location_option.dart] class LocationOption {
+[erkata_app/lib/core/models/service_request.dart] class ServiceRequest {
+[erkata_app/lib/core/theme/app_theme.dart] class AppTheme {
+[erkata_app/lib/core/theme/colors.dart] class AppColors {
+[erkata_app/lib/shared/screens/about_screen.dart] class AboutScreen extends StatelessWidget {
+[erkata_app/lib/shared/screens/contact_screen.dart] class ContactScreen extends StatefulWidget {
+[erkata_app/lib/shared/screens/feedback_form_screen.dart] class FeedbackFormScreen extends HookWidget {
+[erkata_app/lib/shared/screens/privacy_screen.dart] class PrivacyScreen extends StatelessWidget {
+[erkata_app/lib/shared/screens/terms_screen.dart] class TermsScreen extends StatelessWidget {
+[erkata_app/lib/shared/widgets/custom_text_field.dart] class CustomTextField extends StatelessWidget {
+[erkata_app/lib/shared/widgets/primary_button.dart] class PrimaryButton extends StatelessWidget {
+[erkata_backend/src/auth/guards/jwt-auth.guard.ts] @Injectable()
+[erkata_backend/src/auth/guards/jwt-auth.guard.ts] export class JwtAuthGuard extends AuthGuard('jwt') {}
+[erkata_backend/src/auth/guards/local-auth.guard.ts] @Injectable()
+[erkata_backend/src/auth/guards/local-auth.guard.ts] export class LocalAuthGuard extends AuthGuard('local') {}
+[erkata_backend/src/auth/guards/roles.guard.ts] @Injectable()
+[erkata_backend/src/auth/guards/roles.guard.ts] export class RolesGuard implements CanActivate {
+[erkata_backend/src/auth/strategies/jwt.strategy.ts] @Injectable()
+[erkata_backend/src/auth/strategies/jwt.strategy.ts] export class JwtStrategy extends PassportStrategy(Strategy) {
+[erkata_backend/src/auth/strategies/local.strategy.ts] @Injectable()
+[erkata_backend/src/auth/strategies/local.strategy.ts] export class LocalStrategy extends PassportStrategy(Strategy) {
+[erkata_backend/src/common/events/request.events.ts] @Injectable()
+[erkata_backend/src/common/events/request.events.ts] export class RequestEventListener {
+[erkata_backend/src/common/middleware/mock-user.middleware.ts] @Injectable()
+[erkata_backend/src/common/middleware/mock-user.middleware.ts] export class MockUserMiddleware implements NestMiddleware {
+[erkata_app/lib/features/agent/screens/agent_business_verification_screen.dart] class AgentBusinessVerificationScreen extends StatelessWidget {
+[erkata_app/lib/features/agent/screens/agent_commission_screen.dart] class AgentCommissionScreen extends StatelessWidget {
+[erkata_app/lib/features/agent/screens/agent_communication_screen.dart] class AgentCommunicationScreen extends StatelessWidget {
+[erkata_app/lib/features/agent/screens/agent_dashboard_screen.dart] class AgentDashboardScreen extends StatelessWidget {
+[erkata_app/lib/features/agent/screens/agent_history_screen.dart] class AgentHistoryScreen extends StatelessWidget {
+[erkata_app/lib/features/agent/screens/agent_payout_settings_screen.dart] class AgentPayoutSettingsScreen extends StatelessWidget {
+[erkata_app/lib/features/agent/screens/agent_profile_screen.dart] class AgentProfileScreen extends ConsumerWidget {
+[erkata_app/lib/features/agent/screens/agent_request_detail_screen.dart] class AgentRequestDetailScreen extends StatelessWidget {
+[erkata_app/lib/features/agent/screens/agent_subscription_screen.dart] class AgentSubscriptionScreen extends StatelessWidget {
+[erkata_app/lib/features/auth/screens/auth_screen.dart] class AuthScreen extends HookConsumerWidget {
+[erkata_app/lib/features/auth/screens/otp_verification_screen.dart] class OtpVerificationScreen extends HookConsumerWidget {
+[erkata_app/lib/features/auth/state/auth_provider.dart] class AuthState {
+[erkata_app/lib/features/auth/state/auth_provider.dart] class AuthNotifier extends StateNotifier<AuthState> {
+[erkata_app/lib/features/customer/screens/home_screen.dart] class HomeScreen extends StatelessWidget {
+[erkata_app/lib/features/customer/screens/notifications_screen.dart] class NotificationsScreen extends StatefulWidget {
+[erkata_app/lib/features/customer/screens/payment_screen.dart] class PaymentScreen extends HookWidget {
+[erkata_app/lib/features/customer/screens/profile_screen.dart] class ProfileScreen extends ConsumerWidget {
+[erkata_app/lib/features/customer/screens/request_intake_screen.dart] class RequestFormData {
+[erkata_app/lib/features/customer/screens/request_intake_screen.dart] class RequestIntakeScreen extends HookConsumerWidget {
+[erkata_app/lib/features/customer/screens/request_status_screen.dart] class RequestStatusScreen extends HookWidget {
+[erkata_app/lib/features/customer/screens/settings_screen.dart] class SettingsScreen extends StatefulWidget {
+
+# Functions & Methods
+[erkata_backend/test-prisma.ts] async function main() {
+[erkata_backend/prisma/seed.ts] async function main() {
+[erkata_backend/src/main.ts] async function bootstrap() {
+[erkata_app/lib/main.dart] void main() {
+[erkata_app/test/widget_test.dart] void main() {
+[erkata_app/lib/shared/screens/contact_screen.dart] void dispose() {
+[erkata_app/lib/features/agent/screens/agent_commission_screen.dart] void paint(Canvas canvas, Size size) {
+[erkata_app/lib/features/auth/state/auth_provider.dart] void login(UserRole role) {
+[erkata_app/lib/features/auth/state/auth_provider.dart] void logout() {
+
+
+===== [4] RESOLVE — Import Graph =====
+
+[erkata_app/lib/core/components/scaffold_with_nav_bar.dart] import '../../features/auth/state/auth_provider.dart';
+[erkata_app/lib/core/components/scaffold_with_nav_bar.dart] import '../models/user_role.dart';
+[erkata_app/lib/core/components/scaffold_with_nav_bar.dart] import '../theme/colors.dart';
+[erkata_app/lib/core/components/scaffold_with_nav_bar.dart] import 'package:flutter/material.dart';
+[erkata_app/lib/core/components/scaffold_with_nav_bar.dart] import 'package:flutter_riverpod/flutter_riverpod.dart';
+[erkata_app/lib/core/components/scaffold_with_nav_bar.dart] import 'package:go_router/go_router.dart';
+[erkata_app/lib/core/constants/constants.dart] import 'package:erkata_app/core/models/location_option.dart';
+[erkata_app/lib/core/constants/constants.dart] import 'package:erkata_app/core/models/request_status.dart';
+[erkata_app/lib/core/constants/constants.dart] import 'package:erkata_app/core/models/request_type.dart';
+[erkata_app/lib/core/constants/constants.dart] import 'package:erkata_app/core/models/service_request.dart';
+[erkata_app/lib/core/models/service_request.dart] import 'package:erkata_app/core/models/request_status.dart';
+[erkata_app/lib/core/models/service_request.dart] import 'package:erkata_app/core/models/request_type.dart';
+[erkata_app/lib/core/router/router.dart] import '../../core/components/scaffold_with_nav_bar.dart';
+[erkata_app/lib/core/router/router.dart] import '../../core/models/service_request.dart';
+[erkata_app/lib/core/router/router.dart] import '../../core/models/user_role.dart';
+[erkata_app/lib/core/router/router.dart] import '../../features/agent/screens/agent_business_verification_screen.dart';
+[erkata_app/lib/core/router/router.dart] import '../../features/agent/screens/agent_commission_screen.dart';
+[erkata_app/lib/core/router/router.dart] import '../../features/agent/screens/agent_communication_screen.dart';
+[erkata_app/lib/core/router/router.dart] import '../../features/agent/screens/agent_dashboard_screen.dart';
+[erkata_app/lib/core/router/router.dart] import '../../features/agent/screens/agent_history_screen.dart';
+[erkata_app/lib/core/router/router.dart] import '../../features/agent/screens/agent_payout_settings_screen.dart';
+[erkata_app/lib/core/router/router.dart] import '../../features/agent/screens/agent_profile_screen.dart';
+[erkata_app/lib/core/router/router.dart] import '../../features/agent/screens/agent_request_detail_screen.dart';
+[erkata_app/lib/core/router/router.dart] import '../../features/agent/screens/agent_subscription_screen.dart';
+[erkata_app/lib/core/router/router.dart] import '../../features/auth/screens/auth_screen.dart';
+[erkata_app/lib/core/router/router.dart] import '../../features/auth/screens/otp_verification_screen.dart';
+[erkata_app/lib/core/router/router.dart] import '../../features/auth/state/auth_provider.dart';
+[erkata_app/lib/core/router/router.dart] import '../../features/customer/screens/home_screen.dart';
+[erkata_app/lib/core/router/router.dart] import '../../features/customer/screens/notifications_screen.dart';
+[erkata_app/lib/core/router/router.dart] import '../../features/customer/screens/payment_screen.dart';
+[erkata_app/lib/core/router/router.dart] import '../../features/customer/screens/profile_screen.dart';
+[erkata_app/lib/core/router/router.dart] import '../../features/customer/screens/request_intake_screen.dart';
+[erkata_app/lib/core/router/router.dart] import '../../features/customer/screens/request_status_screen.dart';
+[erkata_app/lib/core/router/router.dart] import '../../features/customer/screens/settings_screen.dart';
+[erkata_app/lib/core/router/router.dart] import '../../shared/screens/about_screen.dart';
+[erkata_app/lib/core/router/router.dart] import '../../shared/screens/contact_screen.dart';
+[erkata_app/lib/core/router/router.dart] import '../../shared/screens/feedback_form_screen.dart';
+[erkata_app/lib/core/router/router.dart] import '../../shared/screens/privacy_screen.dart';
+[erkata_app/lib/core/router/router.dart] import '../../shared/screens/terms_screen.dart';
+[erkata_app/lib/core/router/router.dart] import 'package:flutter_riverpod/flutter_riverpod.dart';
+[erkata_app/lib/core/router/router.dart] import 'package:go_router/go_router.dart';
+[erkata_app/lib/core/theme/app_theme.dart] import 'colors.dart';
+[erkata_app/lib/core/theme/app_theme.dart] import 'package:flutter/material.dart';
+[erkata_app/lib/core/theme/app_theme.dart] import 'package:google_fonts/google_fonts.dart';
+[erkata_app/lib/core/theme/colors.dart] import 'package:flutter/material.dart';
+[erkata_app/lib/features/agent/screens/agent_business_verification_screen.dart] import '../../../core/theme/colors.dart';
+[erkata_app/lib/features/agent/screens/agent_business_verification_screen.dart] import 'package:flutter/material.dart';
+[erkata_app/lib/features/agent/screens/agent_commission_screen.dart] import '../../../core/theme/colors.dart';
+[erkata_app/lib/features/agent/screens/agent_commission_screen.dart] import 'package:flutter/material.dart';
+[erkata_app/lib/features/agent/screens/agent_commission_screen.dart] import 'package:go_router/go_router.dart';
+[erkata_app/lib/features/agent/screens/agent_communication_screen.dart] import '../../../core/theme/colors.dart';
+[erkata_app/lib/features/agent/screens/agent_communication_screen.dart] import '../../../shared/widgets/primary_button.dart';
+[erkata_app/lib/features/agent/screens/agent_communication_screen.dart] import 'package:flutter/material.dart';
+[erkata_app/lib/features/agent/screens/agent_communication_screen.dart] import 'package:go_router/go_router.dart';
+[erkata_app/lib/features/agent/screens/agent_dashboard_screen.dart] import 'package:erkata_app/core/constants/constants.dart';
+[erkata_app/lib/features/agent/screens/agent_dashboard_screen.dart] import 'package:erkata_app/core/models/request_status.dart';
+[erkata_app/lib/features/agent/screens/agent_dashboard_screen.dart] import 'package:erkata_app/core/models/request_type.dart';
+[erkata_app/lib/features/agent/screens/agent_dashboard_screen.dart] import 'package:erkata_app/core/models/service_request.dart';
+[erkata_app/lib/features/agent/screens/agent_dashboard_screen.dart] import 'package:erkata_app/core/models/user_role.dart';
+[erkata_app/lib/features/agent/screens/agent_dashboard_screen.dart] import 'package:erkata_app/core/theme/colors.dart';
+[erkata_app/lib/features/agent/screens/agent_dashboard_screen.dart] import 'package:flutter/material.dart';
+[erkata_app/lib/features/agent/screens/agent_dashboard_screen.dart] import 'package:go_router/go_router.dart';
+[erkata_app/lib/features/agent/screens/agent_history_screen.dart] import '../../../core/constants/constants.dart';
+[erkata_app/lib/features/agent/screens/agent_history_screen.dart] import '../../../core/models/request_status.dart';
+[erkata_app/lib/features/agent/screens/agent_history_screen.dart] import '../../../core/models/service_request.dart';
+[erkata_app/lib/features/agent/screens/agent_history_screen.dart] import '../../../core/theme/colors.dart';
+[erkata_app/lib/features/agent/screens/agent_history_screen.dart] import 'package:flutter/material.dart';
+[erkata_app/lib/features/agent/screens/agent_history_screen.dart] import 'package:go_router/go_router.dart';
+[erkata_app/lib/features/agent/screens/agent_payout_settings_screen.dart] import '../../../core/theme/colors.dart';
+[erkata_app/lib/features/agent/screens/agent_payout_settings_screen.dart] import 'package:flutter/material.dart';
+[erkata_app/lib/features/agent/screens/agent_profile_screen.dart] import '../../../core/theme/colors.dart';
+[erkata_app/lib/features/agent/screens/agent_profile_screen.dart] import '../../auth/state/auth_provider.dart';
+[erkata_app/lib/features/agent/screens/agent_profile_screen.dart] import 'package:flutter/material.dart';
+[erkata_app/lib/features/agent/screens/agent_profile_screen.dart] import 'package:flutter_riverpod/flutter_riverpod.dart';
+[erkata_app/lib/features/agent/screens/agent_profile_screen.dart] import 'package:go_router/go_router.dart';
+[erkata_app/lib/features/agent/screens/agent_request_detail_screen.dart] import '../../../core/constants/constants.dart';
+[erkata_app/lib/features/agent/screens/agent_request_detail_screen.dart] import '../../../core/models/request_status.dart';
+[erkata_app/lib/features/agent/screens/agent_request_detail_screen.dart] import '../../../core/models/service_request.dart';
+[erkata_app/lib/features/agent/screens/agent_request_detail_screen.dart] import '../../../core/theme/colors.dart';
+[erkata_app/lib/features/agent/screens/agent_request_detail_screen.dart] import 'package:flutter/material.dart';
+[erkata_app/lib/features/agent/screens/agent_request_detail_screen.dart] import 'package:go_router/go_router.dart';
+[erkata_app/lib/features/agent/screens/agent_subscription_screen.dart] import '../../../core/theme/colors.dart';
+[erkata_app/lib/features/agent/screens/agent_subscription_screen.dart] import '../../../shared/widgets/primary_button.dart';
+[erkata_app/lib/features/agent/screens/agent_subscription_screen.dart] import 'package:flutter/material.dart';
+[erkata_app/lib/features/agent/screens/agent_subscription_screen.dart] import 'package:go_router/go_router.dart';
+[erkata_app/lib/features/auth/screens/auth_screen.dart] import '../../../core/models/user_role.dart';
+[erkata_app/lib/features/auth/screens/auth_screen.dart] import '../../../core/theme/colors.dart';
+[erkata_app/lib/features/auth/screens/auth_screen.dart] import '../../../shared/widgets/custom_text_field.dart';
+[erkata_app/lib/features/auth/screens/auth_screen.dart] import '../../../shared/widgets/primary_button.dart';
+[erkata_app/lib/features/auth/screens/auth_screen.dart] import 'package:flutter/material.dart';
+[erkata_app/lib/features/auth/screens/auth_screen.dart] import 'package:flutter_hooks/flutter_hooks.dart';
+[erkata_app/lib/features/auth/screens/auth_screen.dart] import 'package:go_router/go_router.dart';
+[erkata_app/lib/features/auth/screens/auth_screen.dart] import 'package:hooks_riverpod/hooks_riverpod.dart';
+[erkata_app/lib/features/auth/screens/auth_screen.dart] import 'package:styled_widget/styled_widget.dart';
+[erkata_app/lib/features/auth/screens/otp_verification_screen.dart] import '../../../core/models/user_role.dart';
+[erkata_app/lib/features/auth/screens/otp_verification_screen.dart] import '../../../core/theme/colors.dart';
+[erkata_app/lib/features/auth/screens/otp_verification_screen.dart] import '../../../shared/widgets/primary_button.dart';
+[erkata_app/lib/features/auth/screens/otp_verification_screen.dart] import '../state/auth_provider.dart';
+[erkata_app/lib/features/auth/screens/otp_verification_screen.dart] import 'package:flutter/material.dart';
+[erkata_app/lib/features/auth/screens/otp_verification_screen.dart] import 'package:flutter_hooks/flutter_hooks.dart';
+[erkata_app/lib/features/auth/screens/otp_verification_screen.dart] import 'package:go_router/go_router.dart';
+[erkata_app/lib/features/auth/screens/otp_verification_screen.dart] import 'package:hooks_riverpod/hooks_riverpod.dart';
+[erkata_app/lib/features/auth/screens/otp_verification_screen.dart] import 'package:styled_widget/styled_widget.dart';
+[erkata_app/lib/features/auth/state/auth_provider.dart] import '../../../core/models/user_role.dart';
+[erkata_app/lib/features/auth/state/auth_provider.dart] import 'package:flutter_riverpod/flutter_riverpod.dart';
+[erkata_app/lib/features/customer/screens/home_screen.dart] import 'package:erkata_app/core/constants/constants.dart';
+[erkata_app/lib/features/customer/screens/home_screen.dart] import 'package:erkata_app/core/models/request_status.dart';
+[erkata_app/lib/features/customer/screens/home_screen.dart] import 'package:erkata_app/core/models/user_role.dart';
+[erkata_app/lib/features/customer/screens/home_screen.dart] import 'package:erkata_app/core/theme/colors.dart';
+[erkata_app/lib/features/customer/screens/home_screen.dart] import 'package:flutter/material.dart';
+[erkata_app/lib/features/customer/screens/home_screen.dart] import 'package:go_router/go_router.dart';
+[erkata_app/lib/features/customer/screens/notifications_screen.dart] import '../../../core/theme/colors.dart';
+[erkata_app/lib/features/customer/screens/notifications_screen.dart] import 'package:flutter/material.dart';
+[erkata_app/lib/features/customer/screens/payment_screen.dart] import '../../../core/theme/colors.dart';
+[erkata_app/lib/features/customer/screens/payment_screen.dart] import '../../../shared/widgets/primary_button.dart';
+[erkata_app/lib/features/customer/screens/payment_screen.dart] import 'package:flutter/material.dart';
+[erkata_app/lib/features/customer/screens/payment_screen.dart] import 'package:flutter_hooks/flutter_hooks.dart';
+[erkata_app/lib/features/customer/screens/payment_screen.dart] import 'package:go_router/go_router.dart';
+[erkata_app/lib/features/customer/screens/profile_screen.dart] import '../../../core/theme/colors.dart';
+[erkata_app/lib/features/customer/screens/profile_screen.dart] import '../../auth/state/auth_provider.dart';
+[erkata_app/lib/features/customer/screens/profile_screen.dart] import 'package:flutter/material.dart';
+[erkata_app/lib/features/customer/screens/profile_screen.dart] import 'package:flutter_riverpod/flutter_riverpod.dart';
+[erkata_app/lib/features/customer/screens/profile_screen.dart] import 'package:go_router/go_router.dart';
+[erkata_app/lib/features/customer/screens/request_intake_screen.dart] import '../../../core/constants/constants.dart';
+[erkata_app/lib/features/customer/screens/request_intake_screen.dart] import '../../../core/models/request_type.dart';
+[erkata_app/lib/features/customer/screens/request_intake_screen.dart] import '../../../core/theme/colors.dart';
+[erkata_app/lib/features/customer/screens/request_intake_screen.dart] import '../../../shared/widgets/primary_button.dart';
+[erkata_app/lib/features/customer/screens/request_intake_screen.dart] import 'package:flutter/material.dart';
+[erkata_app/lib/features/customer/screens/request_intake_screen.dart] import 'package:flutter_hooks/flutter_hooks.dart';
+[erkata_app/lib/features/customer/screens/request_intake_screen.dart] import 'package:go_router/go_router.dart';
+[erkata_app/lib/features/customer/screens/request_intake_screen.dart] import 'package:hooks_riverpod/hooks_riverpod.dart';
+[erkata_app/lib/features/customer/screens/request_status_screen.dart] import 'package:erkata_app/core/constants/constants.dart';
+[erkata_app/lib/features/customer/screens/request_status_screen.dart] import 'package:erkata_app/core/models/request_status.dart';
+[erkata_app/lib/features/customer/screens/request_status_screen.dart] import 'package:erkata_app/core/models/request_type.dart';
+[erkata_app/lib/features/customer/screens/request_status_screen.dart] import 'package:erkata_app/core/models/service_request.dart';
+[erkata_app/lib/features/customer/screens/request_status_screen.dart] import 'package:erkata_app/core/theme/colors.dart';
+[erkata_app/lib/features/customer/screens/request_status_screen.dart] import 'package:flutter/material.dart';
+[erkata_app/lib/features/customer/screens/request_status_screen.dart] import 'package:flutter_hooks/flutter_hooks.dart';
+[erkata_app/lib/features/customer/screens/settings_screen.dart] import '../../../core/theme/colors.dart';
+[erkata_app/lib/features/customer/screens/settings_screen.dart] import 'package:flutter/material.dart';
+[erkata_app/lib/main.dart] import 'core/router/router.dart';
+[erkata_app/lib/main.dart] import 'core/theme/app_theme.dart';
+[erkata_app/lib/main.dart] import 'package:flutter/material.dart';
+[erkata_app/lib/main.dart] import 'package:flutter_riverpod/flutter_riverpod.dart';
+[erkata_app/lib/shared/screens/about_screen.dart] import '../../../core/theme/colors.dart';
+[erkata_app/lib/shared/screens/about_screen.dart] import 'package:flutter/material.dart';
+[erkata_app/lib/shared/screens/contact_screen.dart] import '../../../core/theme/colors.dart';
+[erkata_app/lib/shared/screens/contact_screen.dart] import 'package:flutter/material.dart';
+[erkata_app/lib/shared/screens/feedback_form_screen.dart] import '../../core/models/user_role.dart';
+[erkata_app/lib/shared/screens/feedback_form_screen.dart] import '../../core/theme/colors.dart';
+[erkata_app/lib/shared/screens/feedback_form_screen.dart] import 'package:flutter/material.dart';
+[erkata_app/lib/shared/screens/feedback_form_screen.dart] import 'package:flutter_hooks/flutter_hooks.dart';
+[erkata_app/lib/shared/screens/privacy_screen.dart] import '../../../core/theme/colors.dart';
+[erkata_app/lib/shared/screens/privacy_screen.dart] import 'package:flutter/material.dart';
+[erkata_app/lib/shared/screens/terms_screen.dart] import '../../../core/theme/colors.dart';
+[erkata_app/lib/shared/screens/terms_screen.dart] import 'package:flutter/material.dart';
+[erkata_app/lib/shared/widgets/custom_text_field.dart] import '../../core/theme/colors.dart';
+[erkata_app/lib/shared/widgets/custom_text_field.dart] import 'package:flutter/material.dart';
+[erkata_app/lib/shared/widgets/primary_button.dart] import '../../core/theme/colors.dart';
+[erkata_app/lib/shared/widgets/primary_button.dart] import 'package:flutter/material.dart';
+[erkata_app/react mvp/App.tsx] import AgentCommission from './components/AgentCommission';
+[erkata_app/react mvp/App.tsx] import AgentCommunication from './components/AgentCommunication';
+[erkata_app/react mvp/App.tsx] import AgentDashboard from './components/AgentDashboard';
+[erkata_app/react mvp/App.tsx] import AgentSubscription from './components/AgentSubscription';
+[erkata_app/react mvp/App.tsx] import AuthView from './components/AuthView';
+[erkata_app/react mvp/App.tsx] import HomeView from './components/HomeView';
+[erkata_app/react mvp/App.tsx] import Navigation from './components/Navigation';
+[erkata_app/react mvp/App.tsx] import OperatorAssignment from './components/OperatorAssignment';
+[erkata_app/react mvp/App.tsx] import OperatorDashboard from './components/OperatorDashboard';
+[erkata_app/react mvp/App.tsx] import OperatorMediation from './components/OperatorMediation';
+[erkata_app/react mvp/App.tsx] import PaymentView from './components/PaymentView';
+[erkata_app/react mvp/App.tsx] import ProfileView from './components/ProfileView';
+[erkata_app/react mvp/App.tsx] import React, { useState } from 'react';
+[erkata_app/react mvp/App.tsx] import RequestIntake from './components/RequestIntake';
+[erkata_app/react mvp/App.tsx] import RequestStatusView from './components/RequestStatus';
+[erkata_app/react mvp/App.tsx] import { ViewState, UserRole } from './types';
+[erkata_app/react mvp/components/AgentCommission.tsx] import React from 'react';
+[erkata_app/react mvp/components/AgentCommission.tsx] import { ArrowLeft, TrendingUp, Download, CheckCircle2 } from 'lucide-react';
+[erkata_app/react mvp/components/AgentCommission.tsx] import { ViewState } from '../types';
+[erkata_app/react mvp/components/AgentCommission.tsx] import { motion } from 'framer-motion';
+[erkata_app/react mvp/components/AgentCommunication.tsx] import React from 'react';
+[erkata_app/react mvp/components/AgentCommunication.tsx] import { ArrowLeft, Phone, Mail, MessageCircle, MessageSquare } from 'lucide-react';
+[erkata_app/react mvp/components/AgentCommunication.tsx] import { ViewState } from '../types';
+[erkata_app/react mvp/components/AgentDashboard.tsx] import React from 'react';
+[erkata_app/react mvp/components/AgentDashboard.tsx] import { MOCK_REQUESTS } from '../constants';
+[erkata_app/react mvp/components/AgentDashboard.tsx] import { MapPin, Clock, DollarSign, Check, X, Filter } from 'lucide-react';
+[erkata_app/react mvp/components/AgentDashboard.tsx] import { ViewState, ServiceRequest, RequestType, RequestStatus } from '../types';
+[erkata_app/react mvp/components/AgentDashboard.tsx] import { motion } from 'framer-motion';
+[erkata_app/react mvp/components/AgentSubscription.tsx] import React from 'react';
+[erkata_app/react mvp/components/AgentSubscription.tsx] import { ArrowLeft, CheckCircle2, Zap, Map } from 'lucide-react';
+[erkata_app/react mvp/components/AgentSubscription.tsx] import { ViewState } from '../types';
+[erkata_app/react mvp/components/AgentSubscription.tsx] import { motion } from 'framer-motion';
+[erkata_app/react mvp/components/AuthView.tsx] import React, { useState } from 'react';
+[erkata_app/react mvp/components/AuthView.tsx] import { ArrowRight, UserCircle, Briefcase } from 'lucide-react';
+[erkata_app/react mvp/components/AuthView.tsx] import { UserRole } from '../types';
+[erkata_app/react mvp/components/AuthView.tsx] import { motion } from 'framer-motion';
+[erkata_app/react mvp/components/HomeView.tsx] import React from 'react';
+[erkata_app/react mvp/components/HomeView.tsx] import { ArrowRight, Sparkles, MapPin, Search, PlusCircle } from 'lucide-react';
+[erkata_app/react mvp/components/HomeView.tsx] import { MOCK_REQUESTS } from '../constants';
+[erkata_app/react mvp/components/HomeView.tsx] import { ViewState, ServiceRequest, RequestStatus } from '../types';
+[erkata_app/react mvp/components/HomeView.tsx] import { motion } from 'framer-motion';
+[erkata_app/react mvp/components/Navigation.tsx] import React from 'react';
+[erkata_app/react mvp/components/Navigation.tsx] import { Home, Activity, User, CreditCard, LayoutDashboard, Zap, TrendingUp, Phone } from 'lucide-react';
+[erkata_app/react mvp/components/Navigation.tsx] import { ViewState, UserRole } from '../types';
+[erkata_app/react mvp/components/OperatorAssignment.tsx] import React from 'react';
+[erkata_app/react mvp/components/OperatorAssignment.tsx] import { ArrowLeft, MapPin, Zap, Star, MoreHorizontal } from 'lucide-react';
+[erkata_app/react mvp/components/OperatorAssignment.tsx] import { ViewState } from '../types';
+[erkata_app/react mvp/components/OperatorAssignment.tsx] import { motion } from 'framer-motion';
+[erkata_app/react mvp/components/OperatorDashboard.tsx] import React, { useState } from 'react';
+[erkata_app/react mvp/components/OperatorDashboard.tsx] import { MOCK_REQUESTS } from '../constants';
+[erkata_app/react mvp/components/OperatorDashboard.tsx] import { Search, Filter, MoreVertical, CheckCircle, XCircle, UserPlus, SlidersHorizontal } from 'lucide-react';
+[erkata_app/react mvp/components/OperatorDashboard.tsx] import { ViewState, ServiceRequest, RequestStatus } from '../types';
+[erkata_app/react mvp/components/OperatorMediation.tsx] import React from 'react';
+[erkata_app/react mvp/components/OperatorMediation.tsx] import { ArrowLeft, MessageSquareWarning, Flag, CheckCircle, Clock, Paperclip, Send } from 'lucide-react';
+[erkata_app/react mvp/components/OperatorMediation.tsx] import { ViewState } from '../types';
+[erkata_app/react mvp/components/PaymentView.tsx] import React, { useState } from 'react';
+[erkata_app/react mvp/components/PaymentView.tsx] import { ArrowLeft, Lock, CreditCard, ShieldCheck, QrCode, Smartphone } from 'lucide-react';
+[erkata_app/react mvp/components/PaymentView.tsx] import { ViewState } from '../types';
+[erkata_app/react mvp/components/PaymentView.tsx] import { motion } from 'framer-motion';
+[erkata_app/react mvp/components/ProfileView.tsx] import React from 'react';
+[erkata_app/react mvp/components/ProfileView.tsx] import { User, Bell, Shield, CircleHelp, LogOut, ChevronRight, Settings } from 'lucide-react';
+[erkata_app/react mvp/components/ProfileView.tsx] import { ViewState } from '../types';
+[erkata_app/react mvp/components/ProfileView.tsx] import { motion } from 'framer-motion';
+[erkata_app/react mvp/components/RequestIntake.tsx] import React, { useState } from 'react';
+[erkata_app/react mvp/components/RequestIntake.tsx] import { ArrowLeft, Home, Sofa, Check, ChevronRight, Upload, Calendar, Clock, Plus, Minus, MapPin, Building, Bed, Briefcase, Lamp } from 'lucide-react';
+[erkata_app/react mvp/components/RequestIntake.tsx] import { KIFLE_KETEMAS } from '../constants';
+[erkata_app/react mvp/components/RequestIntake.tsx] import { ViewState, RequestType } from '../types';
+[erkata_app/react mvp/components/RequestIntake.tsx] import { motion, AnimatePresence } from 'framer-motion';
+[erkata_app/react mvp/components/RequestStatus.tsx] import React, { useState } from 'react';
+[erkata_app/react mvp/components/RequestStatus.tsx] import { ArrowLeft, CheckCircle2, Circle, Clock, Package, UserCheck, RefreshCcw, ChevronRight, Filter } from 'lucide-react';
+[erkata_app/react mvp/components/RequestStatus.tsx] import { MOCK_REQUESTS } from '../constants';
+[erkata_app/react mvp/components/RequestStatus.tsx] import { ViewState, ServiceRequest, RequestStatus } from '../types';
+[erkata_app/react mvp/components/RequestStatus.tsx] import { motion, AnimatePresence } from 'framer-motion';
+[erkata_app/react mvp/constants.ts] import { LocationOption, RequestStatus, RequestType, ServiceRequest } from './types';
+[erkata_app/react mvp/index.tsx] import App from './App';
+[erkata_app/react mvp/index.tsx] import React from 'react';
+[erkata_app/react mvp/index.tsx] import ReactDOM from 'react-dom/client';
+[erkata_app/react mvp/vite.config.ts] import path from 'path';
+[erkata_app/react mvp/vite.config.ts] import react from '@vitejs/plugin-react';
+[erkata_app/react mvp/vite.config.ts] import { defineConfig, loadEnv } from 'vite';
+[erkata_app/test/widget_test.dart] import 'package:erkata_app/main.dart';
+[erkata_app/test/widget_test.dart] import 'package:flutter/material.dart';
+[erkata_app/test/widget_test.dart] import 'package:flutter_test/flutter_test.dart';
+[erkata_backend/prisma.config.ts] import "dotenv/config";
+[erkata_backend/prisma.config.ts] import { defineConfig } from "prisma/config";
+[erkata_backend/prisma/seed.ts] import * as bcrypt from 'bcrypt';
+[erkata_backend/prisma/seed.ts] import { PrismaClient, UserRole } from '@prisma/client';
+[erkata_backend/src/app.controller.spec.ts] import { AppController } from './app.controller';
+[erkata_backend/src/app.controller.spec.ts] import { AppService } from './app.service';
+[erkata_backend/src/app.controller.spec.ts] import { Test, TestingModule } from '@nestjs/testing';
+[erkata_backend/src/app.controller.ts] import { AppService } from './app.service';
+[erkata_backend/src/app.controller.ts] import { Controller, Get } from '@nestjs/common';
+[erkata_backend/src/app.module.ts] import { AppController } from './app.controller';
+[erkata_backend/src/app.module.ts] import { AppService } from './app.service';
+[erkata_backend/src/app.module.ts] import { AuthModule } from './auth/auth.module';
+[erkata_backend/src/app.module.ts] import { BullModule } from '@nestjs/bullmq';
+[erkata_backend/src/app.module.ts] import { EventEmitterModule } from '@nestjs/event-emitter';
+[erkata_backend/src/app.module.ts] import { MediationModule } from './mediation/mediation.module';
+[erkata_backend/src/app.module.ts] import { Module } from '@nestjs/common';
+[erkata_backend/src/app.module.ts] import { PrismaModule } from './prisma/prisma.module';
+[erkata_backend/src/app.module.ts] import { RequestEventListener } from './common/events/request.events';
+[erkata_backend/src/app.module.ts] import { RequestsModule } from './requests/requests.module';
+[erkata_backend/src/app.module.ts] import { TransactionsModule } from './transactions/transactions.module';
+[erkata_backend/src/app.module.ts] import { UsersModule } from './users/users.module';
+[erkata_backend/src/app.service.ts] import { Injectable } from '@nestjs/common';
+[erkata_backend/src/auth/auth.controller.ts] import type { Response, Request } from 'express';
+[erkata_backend/src/auth/auth.controller.ts] import { AuthService } from './auth.service';
+[erkata_backend/src/auth/auth.controller.ts] import { Controller, Post, Body, Res, UseGuards, Req, UnauthorizedException } from '@nestjs/common';
+[erkata_backend/src/auth/auth.controller.ts] import { LocalAuthGuard } from './guards/local-auth.guard';
+[erkata_backend/src/auth/auth.controller.ts] import { UserRole } from '@prisma/client';
+[erkata_backend/src/auth/auth.module.ts] import { AuthController } from './auth.controller';
+[erkata_backend/src/auth/auth.module.ts] import { AuthService } from './auth.service';
+[erkata_backend/src/auth/auth.module.ts] import { JwtModule } from '@nestjs/jwt';
+[erkata_backend/src/auth/auth.module.ts] import { JwtStrategy } from './strategies/jwt.strategy';
+[erkata_backend/src/auth/auth.module.ts] import { LocalStrategy } from './strategies/local.strategy';
+[erkata_backend/src/auth/auth.module.ts] import { Module } from '@nestjs/common';
+[erkata_backend/src/auth/auth.module.ts] import { PassportModule } from '@nestjs/passport';
+[erkata_backend/src/auth/auth.module.ts] import { PrismaModule } from '../prisma/prisma.module';
+[erkata_backend/src/auth/auth.service.ts] import * as bcrypt from 'bcrypt';
+[erkata_backend/src/auth/auth.service.ts] import { Injectable, UnauthorizedException } from '@nestjs/common';
+[erkata_backend/src/auth/auth.service.ts] import { JwtService } from '@nestjs/jwt';
+[erkata_backend/src/auth/auth.service.ts] import { PrismaService } from '../prisma/prisma.service';
+[erkata_backend/src/auth/auth.service.ts] import { Response } from 'express';
+[erkata_backend/src/auth/auth.service.ts] import { UserRole } from '@prisma/client';
+[erkata_backend/src/auth/guards/jwt-auth.guard.ts] import { AuthGuard } from '@nestjs/passport';
+[erkata_backend/src/auth/guards/jwt-auth.guard.ts] import { Injectable } from '@nestjs/common';
+[erkata_backend/src/auth/guards/local-auth.guard.ts] import { AuthGuard } from '@nestjs/passport';
+[erkata_backend/src/auth/guards/local-auth.guard.ts] import { Injectable } from '@nestjs/common';
+[erkata_backend/src/auth/guards/require-permission.decorator.ts] import { Action } from '../permissions';
+[erkata_backend/src/auth/guards/require-permission.decorator.ts] import { SetMetadata } from '@nestjs/common';
+[erkata_backend/src/auth/guards/roles.decorator.ts] import { SetMetadata } from '@nestjs/common';
+[erkata_backend/src/auth/guards/roles.decorator.ts] import { UserRole } from '@prisma/client';
+[erkata_backend/src/auth/guards/roles.guard.ts] import { Action, PermissionMatrix } from '../permissions';
+[erkata_backend/src/auth/guards/roles.guard.ts] import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
+[erkata_backend/src/auth/guards/roles.guard.ts] import { ROLES_KEY } from './roles.decorator';
+[erkata_backend/src/auth/guards/roles.guard.ts] import { Reflector } from '@nestjs/core';
+[erkata_backend/src/auth/guards/roles.guard.ts] import { UserRole } from '@prisma/client';
+[erkata_backend/src/auth/strategies/jwt.strategy.ts] import { ExtractJwt, Strategy } from 'passport-jwt';
+[erkata_backend/src/auth/strategies/jwt.strategy.ts] import { Injectable } from '@nestjs/common';
+[erkata_backend/src/auth/strategies/jwt.strategy.ts] import { PassportStrategy } from '@nestjs/passport';
+[erkata_backend/src/auth/strategies/local.strategy.ts] import { AuthService } from '../auth.service';
+[erkata_backend/src/auth/strategies/local.strategy.ts] import { Injectable, UnauthorizedException } from '@nestjs/common';
+[erkata_backend/src/auth/strategies/local.strategy.ts] import { PassportStrategy } from '@nestjs/passport';
+[erkata_backend/src/auth/strategies/local.strategy.ts] import { Strategy } from 'passport-local';
+[erkata_backend/src/common/events/request.events.ts] import { Injectable } from '@nestjs/common';
+[erkata_backend/src/common/events/request.events.ts] import { OnEvent } from '@nestjs/event-emitter';
+[erkata_backend/src/common/middleware/mock-user.middleware.ts] import { Injectable, NestMiddleware } from '@nestjs/common';
+[erkata_backend/src/common/middleware/mock-user.middleware.ts] import { Request, Response, NextFunction } from 'express';
+[erkata_backend/src/main.ts] import * as dotenv from 'dotenv';
+[erkata_backend/src/main.ts] import cookieParser from 'cookie-parser';
+[erkata_backend/src/main.ts] import { AppModule } from './app.module';
+[erkata_backend/src/main.ts] import { NestFactory } from '@nestjs/core';
+[erkata_backend/src/mediation/mediation.controller.ts] import { Action } from '../auth/permissions';
+[erkata_backend/src/mediation/mediation.controller.ts] import { Controller, Post, Patch, Param, Body, Req, UseGuards } from '@nestjs/common';
+[erkata_backend/src/mediation/mediation.controller.ts] import { MediationService } from './mediation.service';
+[erkata_backend/src/mediation/mediation.controller.ts] import { RolesGuard, RequirePermission, JwtAuthGuard } from '../auth/guards';
+[erkata_backend/src/mediation/mediation.module.ts] import { BullModule } from '@nestjs/bullmq';
+[erkata_backend/src/mediation/mediation.module.ts] import { MediationController } from './mediation.controller';
+[erkata_backend/src/mediation/mediation.module.ts] import { MediationProcessor } from './mediation.processor';
+[erkata_backend/src/mediation/mediation.module.ts] import { MediationService } from './mediation.service';
+[erkata_backend/src/mediation/mediation.module.ts] import { Module } from '@nestjs/common';
+[erkata_backend/src/mediation/mediation.processor.ts] import { FeedbackBundleState } from '@prisma/client';
+[erkata_backend/src/mediation/mediation.processor.ts] import { Job } from 'bullmq';
+[erkata_backend/src/mediation/mediation.processor.ts] import { PrismaService } from '../prisma/prisma.service';
+[erkata_backend/src/mediation/mediation.processor.ts] import { Processor, WorkerHost } from '@nestjs/bullmq';
+[erkata_backend/src/mediation/mediation.service.ts] import { FeedbackBundleState, UserRole } from '@prisma/client';
+[erkata_backend/src/mediation/mediation.service.ts] import { InjectQueue } from '@nestjs/bullmq';
+[erkata_backend/src/mediation/mediation.service.ts] import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+[erkata_backend/src/mediation/mediation.service.ts] import { PrismaService } from '../prisma/prisma.service';
+[erkata_backend/src/mediation/mediation.service.ts] import { Queue } from 'bullmq';
+[erkata_backend/src/prisma/prisma.module.ts] import { Global, Module } from '@nestjs/common';
+[erkata_backend/src/prisma/prisma.module.ts] import { PrismaService } from './prisma.service';
+[erkata_backend/src/prisma/prisma.service.ts] import 'dotenv/config';
+[erkata_backend/src/prisma/prisma.service.ts] import { Injectable, OnModuleInit } from '@nestjs/common';
+[erkata_backend/src/prisma/prisma.service.ts] import { PrismaClient } from '@prisma/client';
+[erkata_backend/src/requests/requests.controller.ts] import {
+[erkata_backend/src/requests/requests.controller.ts] import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+[erkata_backend/src/requests/requests.controller.ts] import { RequestsService, type CreateRequestDto } from './requests.service';
+[erkata_backend/src/requests/requests.controller.ts] import { Roles } from '../auth/guards/roles.decorator';
+[erkata_backend/src/requests/requests.controller.ts] import { RolesGuard } from '../auth/guards/roles.guard';
+[erkata_backend/src/requests/requests.controller.ts] import { UserRole } from '@prisma/client';
+[erkata_backend/src/requests/requests.module.ts] import { Module } from '@nestjs/common';
+[erkata_backend/src/requests/requests.module.ts] import { PrismaModule } from '../prisma/prisma.module';
+[erkata_backend/src/requests/requests.module.ts] import { RequestsController } from './requests.controller';
+[erkata_backend/src/requests/requests.module.ts] import { RequestsService } from './requests.service';
+[erkata_backend/src/requests/requests.service.ts] import {
+[erkata_backend/src/requests/requests.service.ts] import { EventEmitter2 } from '@nestjs/event-emitter';
+[erkata_backend/src/requests/requests.service.ts] import { PrismaService } from '../prisma/prisma.service';
+[erkata_backend/src/transactions/transactions.controller.ts] import {
+[erkata_backend/src/transactions/transactions.controller.ts] import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+[erkata_backend/src/transactions/transactions.controller.ts] import { Roles } from '../auth/guards/roles.decorator';
+[erkata_backend/src/transactions/transactions.controller.ts] import { RolesGuard } from '../auth/guards/roles.guard';
+[erkata_backend/src/transactions/transactions.controller.ts] import { TransactionsService } from './transactions.service';
+[erkata_backend/src/transactions/transactions.controller.ts] import { UserRole } from '@prisma/client';
+[erkata_backend/src/transactions/transactions.module.ts] import { Module } from '@nestjs/common';
+[erkata_backend/src/transactions/transactions.module.ts] import { PrismaModule } from '../prisma/prisma.module';
+[erkata_backend/src/transactions/transactions.module.ts] import { TransactionsController } from './transactions.controller';
+[erkata_backend/src/transactions/transactions.module.ts] import { TransactionsService } from './transactions.service';
+[erkata_backend/src/transactions/transactions.service.ts] import {
+[erkata_backend/src/transactions/transactions.service.ts] import { EventEmitter2 } from '@nestjs/event-emitter';
+[erkata_backend/src/transactions/transactions.service.ts] import { PrismaService } from '../prisma/prisma.service';
+[erkata_backend/src/transactions/transactions.service.ts] import { TransactionStatus, RequestStatus } from '@prisma/client';
+[erkata_backend/src/users/users.controller.ts] import { Action } from '../auth/permissions';
+[erkata_backend/src/users/users.controller.ts] import { Controller, Post, Patch, Param, Body, UseGuards } from '@nestjs/common';
+[erkata_backend/src/users/users.controller.ts] import { RolesGuard, RequirePermission, JwtAuthGuard } from '../auth/guards';
+[erkata_backend/src/users/users.controller.ts] import { UsersService } from './users.service';
+[erkata_backend/src/users/users.module.ts] import { Module } from '@nestjs/common';
+[erkata_backend/src/users/users.module.ts] import { UsersController } from './users.controller';
+[erkata_backend/src/users/users.module.ts] import { UsersService } from './users.service';
+[erkata_backend/src/users/users.service.ts] import { Injectable, NotFoundException } from '@nestjs/common';
+[erkata_backend/src/users/users.service.ts] import { PrismaService } from '../prisma/prisma.service';
+[erkata_backend/src/users/users.service.ts] import { UserRole } from '@prisma/client';
+[erkata_backend/test-prisma.ts] import { PrismaClient } from '@prisma/client';
+[erkata_backend/test/app.e2e-spec.ts] import request from 'supertest';
+[erkata_backend/test/app.e2e-spec.ts] import { App } from 'supertest/types';
+[erkata_backend/test/app.e2e-spec.ts] import { AppModule } from './../src/app.module';
+[erkata_backend/test/app.e2e-spec.ts] import { INestApplication } from '@nestjs/common';
+[erkata_backend/test/app.e2e-spec.ts] import { Test, TestingModule } from '@nestjs/testing';
+[erkata_web/App.tsx] import About from './pages/About';
+[erkata_web/App.tsx] import AdminDashboard from './pages/AdminDashboard';
+[erkata_web/App.tsx] import AgentDashboard from './pages/AgentDashboard';
+[erkata_web/App.tsx] import Contact from './pages/Contact';
+[erkata_web/App.tsx] import CustomerDashboard from './pages/CustomerDashboard';
+[erkata_web/App.tsx] import Landing from './pages/Landing';
+[erkata_web/App.tsx] import Login from './pages/Login';
+[erkata_web/App.tsx] import OperatorDashboard from './pages/OperatorDashboard';
+[erkata_web/App.tsx] import Privacy from './pages/Privacy';
+[erkata_web/App.tsx] import React, { Suspense } from 'react';
+[erkata_web/App.tsx] import Register from './pages/Register';
+[erkata_web/App.tsx] import RequestIntake from './pages/RequestIntake';
+[erkata_web/App.tsx] import SuperAdminDashboard from './pages/SuperAdminDashboard';
+[erkata_web/App.tsx] import Terms from './pages/Terms';
+[erkata_web/App.tsx] import { AuthProvider, ProtectedRoute } from './contexts/AuthContext';
+[erkata_web/App.tsx] import { HashRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom';
+[erkata_web/App.tsx] import { ModalProvider } from './contexts/ModalContext';
+[erkata_web/App.tsx] import { motion, AnimatePresence } from 'framer-motion';
+[erkata_web/components/CustomSelect.tsx] import React, { useState, useRef, useEffect } from 'react';
+[erkata_web/components/CustomSelect.tsx] import { ChevronDown, Check } from 'lucide-react';
+[erkata_web/components/CustomSelect.tsx] import { motion, AnimatePresence } from 'framer-motion';
+[erkata_web/components/DashboardLayout.tsx] import NotificationsPanel from './NotificationsPanel';
+[erkata_web/components/DashboardLayout.tsx] import React, { ReactNode, useState } from 'react';
+[erkata_web/components/DashboardLayout.tsx] import SettingsView from './SettingsView';
+[erkata_web/components/DashboardLayout.tsx] import UtilitySidebar from './UtilitySidebar';
+[erkata_web/components/DashboardLayout.tsx] import { LogOut, Menu, X, ChevronRight, ChevronLeft, Bell, Search, Settings } from 'lucide-react';
+[erkata_web/components/DashboardLayout.tsx] import { motion, AnimatePresence } from 'framer-motion';
+[erkata_web/components/DashboardLayout.tsx] import { useAuth } from '../contexts/AuthContext';
+[erkata_web/components/DashboardLayout.tsx] import { useNavigate, useLocation } from 'react-router-dom';
+[erkata_web/components/FeedbackForm.tsx] import React, { useState } from 'react';
+[erkata_web/components/FeedbackForm.tsx] import { Star, MessageSquare, AlertCircle, CheckCircle2, X } from 'lucide-react';
+[erkata_web/components/FeedbackForm.tsx] import { motion, AnimatePresence } from 'framer-motion';
+[erkata_web/components/Footer.tsx] import React from 'react';
+[erkata_web/components/Footer.tsx] import { Instagram, Twitter, Linkedin, Facebook } from 'lucide-react';
+[erkata_web/components/Footer.tsx] import { Link } from 'react-router-dom';
+[erkata_web/components/Navbar.tsx] import React, { useState, useEffect } from 'react';
+[erkata_web/components/Navbar.tsx] import { Link } from 'react-router-dom';
+[erkata_web/components/Navbar.tsx] import { Menu, X } from 'lucide-react';
+[erkata_web/components/Navbar.tsx] import { motion, AnimatePresence } from 'framer-motion';
+[erkata_web/components/NotificationsPanel.tsx] import React from 'react';
+[erkata_web/components/NotificationsPanel.tsx] import { Bell, Info, AlertTriangle, CheckCircle, X } from 'lucide-react';
+[erkata_web/components/NotificationsPanel.tsx] import { motion, AnimatePresence } from 'framer-motion';
+[erkata_web/components/SettingsView.tsx] import React, { useState } from 'react';
+[erkata_web/components/SettingsView.tsx] import { User, Bell, Shield, Mail, Lock, Phone, Globe, Moon } from 'lucide-react';
+[erkata_web/components/SettingsView.tsx] import { motion } from 'framer-motion';
+[erkata_web/components/SettingsView.tsx] import { useAuth } from '../contexts/AuthContext';
+[erkata_web/components/SettingsView.tsx] import { useModal } from '../contexts/ModalContext';
+[erkata_web/components/StatusBadge.tsx] import React from 'react';
+[erkata_web/components/UtilitySidebar.tsx] import React, { useState } from 'react';
+[erkata_web/components/UtilitySidebar.tsx] import { Calendar, StickyNote, MessageCircle, X, Globe, User, LogOut } from 'lucide-react';
+[erkata_web/components/UtilitySidebar.tsx] import { motion, AnimatePresence } from 'framer-motion';
+[erkata_web/components/UtilitySidebar.tsx] import { useAuth } from '../contexts/AuthContext';
+[erkata_web/components/UtilitySidebar.tsx] import { useModal } from '../contexts/ModalContext';
+[erkata_web/components/UtilitySidebar.tsx] import { useNavigate } from 'react-router-dom';
+[erkata_web/components/admin/AdminAgentList.tsx] import React, { useState } from 'react';
+[erkata_web/components/admin/AdminAgentList.tsx] import { Search, MapPin, Award, MoreHorizontal, ShieldOff, ShieldCheck } from 'lucide-react';
+[erkata_web/components/admin/AdminOperatorList.tsx] import React from 'react';
+[erkata_web/components/admin/AdminOperatorList.tsx] import { Activity, Users, Clock } from 'lucide-react';
+[erkata_web/components/admin/AdminSidebar.tsx] import React from 'react';
+[erkata_web/components/admin/EscalatedBundles.tsx] import React, { useState } from 'react';
+[erkata_web/components/admin/EscalatedBundles.tsx] import { AlertTriangle, FileText, Send, CheckCircle2, Clock } from 'lucide-react';
+[erkata_web/components/admin/PendingActions.tsx] import React from 'react';
+[erkata_web/components/admin/PendingActions.tsx] import { AlertCircle, ArrowRight, UserPlus, FileText } from 'lucide-react';
+[erkata_web/components/admin/ProposalHistory.tsx] import React from 'react';
+[erkata_web/components/admin/ProposalHistory.tsx] import { FileText, CheckCircle, XCircle, Clock } from 'lucide-react';
+[erkata_web/components/admin/SystemHealth.tsx] import React from 'react';
+[erkata_web/components/admin/SystemHealth.tsx] import { Activity, AlertCircle, Clock, Users } from 'lucide-react';
+[erkata_web/components/admin/ZoneCoverage.tsx] import React from 'react';
+[erkata_web/components/admin/ZoneCoverage.tsx] import { Map, AlertTriangle } from 'lucide-react';
+[erkata_web/components/super-admin/AdminManagement.tsx] import React, { useState } from 'react';
+[erkata_web/components/super-admin/AdminManagement.tsx] import {
+[erkata_web/components/super-admin/AdminManagement.tsx] import { useModal } from '../../contexts/ModalContext';
+[erkata_web/components/super-admin/AuditLog.tsx] import React, { useState } from 'react';
+[erkata_web/components/super-admin/AuditLog.tsx] import { History, Search, Filter, Download, ShieldAlert, User, Clock } from 'lucide-react';
+[erkata_web/components/super-admin/BroadcastNotices.tsx] import React, { useState } from 'react';
+[erkata_web/components/super-admin/BroadcastNotices.tsx] import { Megaphone, Users, Calendar, Send, History, Search, Trash2 } from 'lucide-react';
+[erkata_web/components/super-admin/BroadcastNotices.tsx] import { useModal } from '../../contexts/ModalContext';
+[erkata_web/components/super-admin/ConfigFlags.tsx] import React, { useState } from 'react';
+[erkata_web/components/super-admin/ConfigFlags.tsx] import { Settings2, ShieldCheck, AlertTriangle, Lock, Zap, Clock, TrendingUp, ShieldAlert } from 'lucide-react';
+[erkata_web/components/super-admin/ConfigFlags.tsx] import { useModal } from '../../contexts/ModalContext';
+[erkata_web/components/super-admin/EmergencyArchive.tsx] import React, { useState } from 'react';
+[erkata_web/components/super-admin/EmergencyArchive.tsx] import {
+[erkata_web/components/super-admin/EmergencyArchive.tsx] import { useModal } from '../../contexts/ModalContext';
+[erkata_web/components/super-admin/FinalResolutions.tsx] import React, { useState } from 'react';
+[erkata_web/components/super-admin/FinalResolutions.tsx] import {
+[erkata_web/components/super-admin/FinalResolutions.tsx] import { motion, AnimatePresence } from 'framer-motion';
+[erkata_web/components/super-admin/FinalResolutions.tsx] import { useModal } from '../../contexts/ModalContext';
+[erkata_web/components/super-admin/GlobalRightsOversight.tsx] import React, { useState } from 'react';
+[erkata_web/components/super-admin/GlobalRightsOversight.tsx] import {
+[erkata_web/components/super-admin/GlobalRightsOversight.tsx] import { useModal } from '../../contexts/ModalContext';
+[erkata_web/components/super-admin/OperatorOversight.tsx] import React, { useState } from 'react';
+[erkata_web/components/super-admin/OperatorOversight.tsx] import {
+[erkata_web/components/super-admin/OperatorOversight.tsx] import { useModal } from '../../contexts/ModalContext';
+[erkata_web/components/super-admin/SuperAdminSidebar.tsx] import React from 'react';
+[erkata_web/components/super-admin/SuperAdminSidebar.tsx] import {
+[erkata_web/components/super-admin/SystemAnalytics.tsx] import React from 'react';
+[erkata_web/components/super-admin/SystemAnalytics.tsx] import { BarChart4, TrendingUp, Users, FileText, ArrowUpRight, ArrowDownRight, Globe } from 'lucide-react';
+[erkata_web/contexts/AuthContext.tsx] import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+[erkata_web/contexts/AuthContext.tsx] import api, { setAccessToken } from '../utils/api';
+[erkata_web/contexts/AuthContext.tsx] import { useNavigate } from 'react-router-dom';
+[erkata_web/contexts/ModalContext.tsx] import React, { createContext, useContext, useState, ReactNode } from 'react';
+[erkata_web/contexts/ModalContext.tsx] import { AlertCircle, CheckCircle2, Info } from 'lucide-react';
+[erkata_web/contexts/ModalContext.tsx] import { motion, AnimatePresence } from 'framer-motion';
+[erkata_web/index.tsx] import './index.css';
+[erkata_web/index.tsx] import App from './App';
+[erkata_web/index.tsx] import React from 'react';
+[erkata_web/index.tsx] import ReactDOM from 'react-dom/client';
+[erkata_web/pages/About.tsx] import Footer from '../components/Footer';
+[erkata_web/pages/About.tsx] import Navbar from '../components/Navbar';
+[erkata_web/pages/About.tsx] import React from 'react';
+[erkata_web/pages/About.tsx] import { motion } from 'framer-motion';
+[erkata_web/pages/AdminDashboard.tsx] import AdminAgentList from '../components/admin/AdminAgentList';
+[erkata_web/pages/AdminDashboard.tsx] import AdminOperatorList from '../components/admin/AdminOperatorList';
+[erkata_web/pages/AdminDashboard.tsx] import AdminSidebar from '../components/admin/AdminSidebar';
+[erkata_web/pages/AdminDashboard.tsx] import DashboardLayout from '../components/DashboardLayout';
+[erkata_web/pages/AdminDashboard.tsx] import EscalatedBundles from '../components/admin/EscalatedBundles';
+[erkata_web/pages/AdminDashboard.tsx] import PendingActions from '../components/admin/PendingActions';
+[erkata_web/pages/AdminDashboard.tsx] import ProposalHistory from '../components/admin/ProposalHistory';
+[erkata_web/pages/AdminDashboard.tsx] import React, { useState } from 'react';
+[erkata_web/pages/AdminDashboard.tsx] import SystemHealth from '../components/admin/SystemHealth';
+[erkata_web/pages/AdminDashboard.tsx] import ZoneCoverage from '../components/admin/ZoneCoverage';
+[erkata_web/pages/AdminDashboard.tsx] import { motion, AnimatePresence } from 'framer-motion';
+[erkata_web/pages/AgentDashboard.tsx] import DashboardLayout from '../components/DashboardLayout';
+[erkata_web/pages/AgentDashboard.tsx] import FeedbackForm, { FeedbackData } from '../components/FeedbackForm';
+[erkata_web/pages/AgentDashboard.tsx] import React, { useState, useEffect } from 'react';
+[erkata_web/pages/AgentDashboard.tsx] import {
+[erkata_web/pages/AgentDashboard.tsx] import { motion, AnimatePresence } from 'framer-motion';
+[erkata_web/pages/AgentDashboard.tsx] import { useModal } from '../contexts/ModalContext';
+[erkata_web/pages/AgentDashboard.tsx] import { useSearchParams } from 'react-router-dom';
+[erkata_web/pages/Contact.tsx] import Footer from '../components/Footer';
+[erkata_web/pages/Contact.tsx] import Navbar from '../components/Navbar';
+[erkata_web/pages/Contact.tsx] import React from 'react';
+[erkata_web/pages/Contact.tsx] import { Mail, Phone, MapPin } from 'lucide-react';
+[erkata_web/pages/Contact.tsx] import { motion } from 'framer-motion';
+[erkata_web/pages/CustomerDashboard.tsx] import DashboardLayout from '../components/DashboardLayout';
+[erkata_web/pages/CustomerDashboard.tsx] import FeedbackForm, { FeedbackData } from '../components/FeedbackForm';
+[erkata_web/pages/CustomerDashboard.tsx] import React, { useState } from 'react';
+[erkata_web/pages/CustomerDashboard.tsx] import { Package, Clock, CheckCircle, Star, MessageSquare } from 'lucide-react';
+[erkata_web/pages/CustomerDashboard.tsx] import { agentRequests } from '../utils/mockData';
+[erkata_web/pages/CustomerDashboard.tsx] import { motion, AnimatePresence } from 'framer-motion';
+[erkata_web/pages/CustomerDashboard.tsx] import { useLocation } from 'react-router-dom';
+[erkata_web/pages/Landing.tsx] import Footer from '../components/Footer';
+[erkata_web/pages/Landing.tsx] import Navbar from '../components/Navbar';
+[erkata_web/pages/Landing.tsx] import React from 'react';
+[erkata_web/pages/Landing.tsx] import {
+[erkata_web/pages/Landing.tsx] import { Link } from 'react-router-dom';
+[erkata_web/pages/Landing.tsx] import { motion } from 'framer-motion';
+[erkata_web/pages/Login.tsx] import React, { useState, useEffect } from 'react';
+[erkata_web/pages/Login.tsx] import { ArrowLeft, Mail, Lock, ShieldCheck, MessageSquare } from 'lucide-react';
+[erkata_web/pages/Login.tsx] import { Link, useNavigate, useLocation } from 'react-router-dom';
+[erkata_web/pages/Login.tsx] import { motion, AnimatePresence } from 'framer-motion';
+[erkata_web/pages/Login.tsx] import { useAuth } from '../contexts/AuthContext';
+[erkata_web/pages/OperatorDashboard.tsx] import CustomSelect from '../components/CustomSelect';
+[erkata_web/pages/OperatorDashboard.tsx] import DashboardLayout from '../components/DashboardLayout';
+[erkata_web/pages/OperatorDashboard.tsx] import React, { useState } from 'react';
+[erkata_web/pages/OperatorDashboard.tsx] import {
+[erkata_web/pages/OperatorDashboard.tsx] import { motion, AnimatePresence } from 'framer-motion';
+[erkata_web/pages/OperatorDashboard.tsx] import { operatorPendingRequests, operatorActiveTransactions, operatorZoneActivity } from '../utils/mockData';
+[erkata_web/pages/OperatorDashboard.tsx] import { useModal } from '../contexts/ModalContext';
+[erkata_web/pages/OperatorDashboard.tsx] import { useSearchParams } from 'react-router-dom';
+[erkata_web/pages/Privacy.tsx] import Footer from '../components/Footer';
+[erkata_web/pages/Privacy.tsx] import Navbar from '../components/Navbar';
+[erkata_web/pages/Privacy.tsx] import React from 'react';
+[erkata_web/pages/Privacy.tsx] import { motion } from 'framer-motion';
+[erkata_web/pages/Register.tsx] import CustomSelect from '../components/CustomSelect';
+[erkata_web/pages/Register.tsx] import React, { useState, useEffect } from 'react';
+[erkata_web/pages/Register.tsx] import { ArrowLeft, User, Mail, Phone, Lock, CheckCircle2, ShieldCheck } from 'lucide-react';
+[erkata_web/pages/Register.tsx] import { Link, useNavigate, useLocation } from 'react-router-dom';
+[erkata_web/pages/Register.tsx] import { motion, AnimatePresence } from 'framer-motion';
+[erkata_web/pages/Register.tsx] import { useAuth } from '../contexts/AuthContext';
+[erkata_web/pages/RequestIntake.tsx] import CustomSelect from '../components/CustomSelect';
+[erkata_web/pages/RequestIntake.tsx] import Footer from '../components/Footer';
+[erkata_web/pages/RequestIntake.tsx] import Navbar from '../components/Navbar';
+[erkata_web/pages/RequestIntake.tsx] import React, { useState, useEffect } from 'react';
+[erkata_web/pages/RequestIntake.tsx] import {
+[erkata_web/pages/RequestIntake.tsx] import { motion, AnimatePresence } from 'framer-motion';
+[erkata_web/pages/RequestIntake.tsx] import { useAuth } from '../contexts/AuthContext';
+[erkata_web/pages/RequestIntake.tsx] import { useNavigate, Link } from 'react-router-dom';
+[erkata_web/pages/SuperAdminDashboard.tsx] import AdminManagement from '../components/super-admin/AdminManagement';
+[erkata_web/pages/SuperAdminDashboard.tsx] import AuditLog from '../components/super-admin/AuditLog';
+[erkata_web/pages/SuperAdminDashboard.tsx] import BroadcastNotices from '../components/super-admin/BroadcastNotices';
+[erkata_web/pages/SuperAdminDashboard.tsx] import ConfigFlags from '../components/super-admin/ConfigFlags';
+[erkata_web/pages/SuperAdminDashboard.tsx] import DashboardLayout from '../components/DashboardLayout';
+[erkata_web/pages/SuperAdminDashboard.tsx] import EmergencyArchive from '../components/super-admin/EmergencyArchive';
+[erkata_web/pages/SuperAdminDashboard.tsx] import FinalResolutions from '../components/super-admin/FinalResolutions';
+[erkata_web/pages/SuperAdminDashboard.tsx] import GlobalRightsOversight from '../components/super-admin/GlobalRightsOversight';
+[erkata_web/pages/SuperAdminDashboard.tsx] import OperatorOversight from '../components/super-admin/OperatorOversight';
+[erkata_web/pages/SuperAdminDashboard.tsx] import React, { useState } from 'react';
+[erkata_web/pages/SuperAdminDashboard.tsx] import SuperAdminSidebar from '../components/super-admin/SuperAdminSidebar';
+[erkata_web/pages/SuperAdminDashboard.tsx] import SystemAnalytics from '../components/super-admin/SystemAnalytics';
+[erkata_web/pages/SuperAdminDashboard.tsx] import {
+[erkata_web/pages/SuperAdminDashboard.tsx] import { motion, AnimatePresence } from 'framer-motion';
+[erkata_web/pages/Terms.tsx] import Footer from '../components/Footer';
+[erkata_web/pages/Terms.tsx] import Navbar from '../components/Navbar';
+[erkata_web/pages/Terms.tsx] import React from 'react';
+[erkata_web/pages/Terms.tsx] import { motion } from 'framer-motion';
+[erkata_web/utils/api.ts] import axios from 'axios';
+[erkata_web/vite.config.ts] import path from 'path';
+[erkata_web/vite.config.ts] import react from '@vitejs/plugin-react';
+[erkata_web/vite.config.ts] import { defineConfig, loadEnv } from 'vite';
+
+
+===== [5] DI LIFT — DI Graph =====
+
+[erkata_web/App.tsx] import { AuthProvider, ProtectedRoute } from './contexts/AuthContext';
+[erkata_web/App.tsx] import { ModalProvider } from './contexts/ModalContext';
+[erkata_web/App.tsx] <AuthProvider>
+[erkata_web/App.tsx] <ModalProvider>
+[erkata_web/App.tsx] </ModalProvider>
+[erkata_web/App.tsx] </AuthProvider>
+[erkata_app/lib/main.dart] runApp(const ProviderScope(child: MyApp()));
+[erkata_app/lib/main.dart] final router = ref.watch(routerProvider);
+[erkata_backend/src/app.service.ts] @Injectable()
+[erkata_web/contexts/AuthContext.tsx] export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+[erkata_web/contexts/AuthContext.tsx] <AuthContext.Provider value={{ user, login, logout, signup, isAuthenticated: !!user, isLoading }}>
+[erkata_web/contexts/AuthContext.tsx] </AuthContext.Provider>
+[erkata_web/contexts/AuthContext.tsx] throw new Error('useAuth must be used within AuthProvider');
+[erkata_web/contexts/ModalContext.tsx] export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+[erkata_web/contexts/ModalContext.tsx] <ModalContext.Provider value={{ showAlert, showConfirm }}>
+[erkata_web/contexts/ModalContext.tsx] </ModalContext.Provider>
+[erkata_web/contexts/ModalContext.tsx] throw new Error('useModal must be used within ModalProvider');
+[erkata_web/pages/Login.tsx] // but AuthProvider handles the navigation in useEffect normally anyway.
+[erkata_backend/src/auth/auth.service.ts] @Injectable()
+[erkata_backend/src/mediation/mediation.service.ts] @Injectable()
+[erkata_backend/src/mediation/mediation.service.ts] @InjectQueue('mediation') private mediationQueue: Queue,
+[erkata_backend/src/prisma/prisma.service.ts] @Injectable()
+[erkata_backend/src/requests/requests.service.ts] @Injectable()
+[erkata_backend/src/transactions/transactions.service.ts] @Injectable()
+[erkata_backend/src/users/users.service.ts] @Injectable()
+[erkata_app/lib/core/components/scaffold_with_nav_bar.dart] final authState = ref.watch(authProvider);
+[erkata_app/lib/core/router/router.dart] final routerProvider = Provider<GoRouter>((ref) {
+[erkata_app/lib/core/router/router.dart] final authState = ref.watch(authProvider);
+[erkata_backend/src/auth/guards/jwt-auth.guard.ts] @Injectable()
+[erkata_backend/src/auth/guards/local-auth.guard.ts] @Injectable()
+[erkata_backend/src/auth/guards/roles.guard.ts] @Injectable()
+[erkata_backend/src/auth/strategies/jwt.strategy.ts] @Injectable()
+[erkata_backend/src/auth/strategies/local.strategy.ts] @Injectable()
+[erkata_backend/src/common/events/request.events.ts] @Injectable()
+[erkata_backend/src/common/middleware/mock-user.middleware.ts] @Injectable()
+[erkata_app/lib/features/agent/screens/agent_profile_screen.dart] ref.read(authProvider.notifier).logout();
+[erkata_app/lib/features/auth/screens/otp_verification_screen.dart] ref.read(authProvider.notifier).login(role);
+[erkata_app/lib/features/auth/state/auth_provider.dart] final authProvider = StateNotifierProvider<AuthNotifier, AuthState>((ref) {
+[erkata_app/lib/features/customer/screens/profile_screen.dart] ref.read(authProvider.notifier).logout();
+
+
+===== [6-7] NORMALIZE + GRAPH — Constructor Surface =====
+
+[empty]
+
+
+===== [8] SCC — Reactive/Event Paths =====
+
+[erkata_web/components/SettingsView.tsx] <h4 className="font-bold text-sm">Two-Factor Authentication</h4>
+[erkata_web/pages/AgentDashboard.tsx] <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Location</span>
+[erkata_web/pages/Landing.tsx] <li className="flex items-center"><CheckCircle2 className="w-4 h-4 mr-2 text-erkata-secondary"/> Agent tier & specialization</li>
+[erkata_web/pages/Landing.tsx] <p className="text-gray-500 font-medium">Zone Rights Visualization</p>
+[erkata_web/pages/Landing.tsx] <p className="text-lg text-gray-600">No hidden direct contact before validation</p>
+[erkata_web/pages/OperatorDashboard.tsx] <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 px-1">Urgent Attention</h3>
+[erkata_web/pages/OperatorDashboard.tsx] <span className="text-[10px] font-bold text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded">Escalation</span>
+[erkata_web/pages/RequestIntake.tsx] <label className="text-xs font-bold uppercase tracking-widest text-gray-500 ml-4">Detailed Description</label>
+[erkata_backend/test/app.e2e-spec.ts] let app: INestApplication<App>;
+[erkata_app/react mvp/components/AgentSubscription.tsx] <h1 className="text-lg font-bold text-gray-800">Subscription</h1>
+[erkata_app/react mvp/components/AgentSubscription.tsx] <p className="font-semibold text-gray-800 text-sm">Monthly Subscription</p>
+[erkata_app/react mvp/components/OperatorDashboard.tsx] <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Location</th>
+[erkata_app/react mvp/components/OperatorMediation.tsx] <span className="text-xs text-gray-400 block mb-1">Reason</span>
+[erkata_app/react mvp/components/RequestIntake.tsx] <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-2">Condition</label>
+[erkata_app/react mvp/components/RequestIntake.tsx] <span className="text-gray-500">Location</span>
+[erkata_web/components/admin/ProposalHistory.tsx] <th className="px-6 py-4 font-semibold text-slate-600">My Recommendation</th>
+[erkata_web/components/super-admin/ConfigFlags.tsx] <p className="text-[10px] text-indigo-400 font-bold uppercase tracking-widest">Global Mediation</p>
+[erkata_web/components/super-admin/EmergencyArchive.tsx] <th className="px-6 py-4">Classification</th>
+[erkata_web/components/super-admin/EmergencyArchive.tsx] <th className="px-6 py-4 text-right">Action</th>
+[erkata_web/components/super-admin/FinalResolutions.tsx] <p className="text-xs font-bold text-slate-700 mb-1 truncate">{bundle.woreda} Zone Escalation</p>
+[erkata_web/components/super-admin/FinalResolutions.tsx] <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-3">Authority Verification</label>
+[erkata_web/components/super-admin/GlobalRightsOversight.tsx] <th className="px-8 py-5 text-right">Tier Action</th>
+[erkata_web/components/super-admin/SystemAnalytics.tsx] <h4 className="text-xl font-black mb-6">Regional Distribution</h4>
+[erkata_app/lib/shared/screens/contact_screen.dart] child: DropdownButton<String>(
+[erkata_app/lib/features/agent/screens/agent_subscription_screen.dart] valueColor: const AlwaysStoppedAnimation<Color>(AppColors.ethioGreen),
+[erkata_app/lib/features/customer/screens/request_intake_screen.dart] valueColor: const AlwaysStoppedAnimation<Color>(AppColors.ethioAccent),
+[erkata_app/lib/features/customer/screens/settings_screen.dart] trailing: DropdownButton<String>(
+
+
+===== [9] LAYER CLASSIFY — Attributions =====
+
+UI/Presentation Layer: 73 matches
+erkata_web/components/CustomSelect.tsx
+erkata_web/components/DashboardLayout.tsx
+erkata_web/components/FeedbackForm.tsx
+erkata_web/components/Footer.tsx
+erkata_web/components/Navbar.tsx
+erkata_web/components/NotificationsPanel.tsx
+erkata_web/components/SettingsView.tsx
+erkata_web/components/StatusBadge.tsx
+erkata_web/components/UtilitySidebar.tsx
+erkata_web/pages/About.tsx
+erkata_web/pages/AdminDashboard.tsx
+erkata_web/pages/AgentDashboard.tsx
+erkata_web/pages/Contact.tsx
+erkata_web/pages/CustomerDashboard.tsx
+erkata_web/pages/Landing.tsx
+  ... and 58 more
+
+Core/Infrastructure Layer: 11 matches
+erkata_app/lib/core/components/scaffold_with_nav_bar.dart
+erkata_app/lib/core/constants/constants.dart
+erkata_app/lib/core/models/location_option.dart
+erkata_app/lib/core/models/request_status.dart
+erkata_app/lib/core/models/request_type.dart
+erkata_app/lib/core/models/service_request.dart
+erkata_app/lib/core/models/user_role.dart
+erkata_app/lib/core/models/view_state.dart
+erkata_app/lib/core/router/router.dart
+erkata_app/lib/core/theme/app_theme.dart
+erkata_app/lib/core/theme/colors.dart
+
+
+
+===== [10] ENTRY POINTS — main/runApp/bootstrap =====
+
+[erkata_backend/prisma.config.ts] import { defineConfig } from "prisma/config";
+[erkata_backend/prisma.config.ts] export default defineConfig({
+[erkata_app/lib/main.dart] void main() {
+[erkata_app/lib/main.dart] runApp(const ProviderScope(child: MyApp()));
+[erkata_web/vite.config.ts] import { defineConfig, loadEnv } from 'vite';
+[erkata_web/vite.config.ts] export default defineConfig(({ mode }) => {
+[erkata_app/test/widget_test.dart] void main() {
+[erkata_app/react mvp/vite.config.ts] import { defineConfig, loadEnv } from 'vite';
+[erkata_app/react mvp/vite.config.ts] export default defineConfig(({ mode }) => {
+
+
+===== [11] EFFECTS — Mutation Surface =====
+
+[erkata_app/react mvp/App.tsx] import React, { useState } from 'react';
+[erkata_app/react mvp/App.tsx] const [currentView, setCurrentView] = useState<ViewState>(ViewState.AUTH);
+[erkata_app/react mvp/App.tsx] const [userRole, setUserRole] = useState<UserRole | null>(null);
+[erkata_web/contexts/AuthContext.tsx] import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+[erkata_web/contexts/AuthContext.tsx] const [user, setUser] = useState<User | null>(null);
+[erkata_web/contexts/AuthContext.tsx] const [isLoading, setIsLoading] = useState(true);
+[erkata_web/contexts/AuthContext.tsx] useEffect(() => {
+[erkata_web/contexts/AuthContext.tsx] useEffect(() => {
+[erkata_web/contexts/ModalContext.tsx] import React, { createContext, useContext, useState, ReactNode } from 'react';
+[erkata_web/contexts/ModalContext.tsx] const [isOpen, setIsOpen] = useState(false);
+[erkata_web/contexts/ModalContext.tsx] const [modalType, setModalType] = useState<ModalType>('alert');
+[erkata_web/contexts/ModalContext.tsx] const [options, setOptions] = useState<ModalOptions | null>(null);
+[erkata_web/contexts/ModalContext.tsx] const [resolver, setResolver] = useState<((value: any) => void) | null>(null);
+[erkata_web/components/CustomSelect.tsx] import React, { useState, useRef, useEffect } from 'react';
+[erkata_web/components/CustomSelect.tsx] const [isOpen, setIsOpen] = useState(false);
+[erkata_web/components/CustomSelect.tsx] useEffect(() => {
+[erkata_web/components/DashboardLayout.tsx] import React, { ReactNode, useState } from 'react';
+[erkata_web/components/DashboardLayout.tsx] const [sidebarOpen, setSidebarOpen] = useState(false);
+[erkata_web/components/DashboardLayout.tsx] const [rightPanelOpen, setRightPanelOpen] = useState(true);
+[erkata_web/components/DashboardLayout.tsx] const [showSettings, setShowSettings] = useState(false);
+[erkata_web/components/DashboardLayout.tsx] const [showNotifications, setShowNotifications] = useState(false);
+[erkata_web/components/FeedbackForm.tsx] import React, { useState } from 'react';
+[erkata_web/components/FeedbackForm.tsx] const [rating, setRating] = useState(0);
+[erkata_web/components/FeedbackForm.tsx] const [hoverRating, setHoverRating] = useState(0);
+[erkata_web/components/FeedbackForm.tsx] const [comment, setComment] = useState('');
+[erkata_web/components/FeedbackForm.tsx] const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+[erkata_web/components/FeedbackForm.tsx] const [isSubmitted, setIsSubmitted] = useState(false);
+[erkata_web/components/Navbar.tsx] import React, { useState, useEffect } from 'react';
+[erkata_web/components/Navbar.tsx] const [isOpen, setIsOpen] = useState(false);
+[erkata_web/components/Navbar.tsx] const [scrolled, setScrolled] = useState(false);
+[erkata_web/components/Navbar.tsx] useEffect(() => {
+[erkata_web/components/SettingsView.tsx] import React, { useState } from 'react';
+[erkata_web/components/SettingsView.tsx] const [activeTab, setActiveTab] = useState<'profile' | 'notifications' | 'security'>('profile');
+[erkata_web/components/SettingsView.tsx] const [notifications, setNotifications] = useState({
+[erkata_web/components/UtilitySidebar.tsx] import React, { useState } from 'react';
+[erkata_web/components/UtilitySidebar.tsx] const [activeTool, setActiveTool] = useState<string | null>(null);
+[erkata_web/pages/AdminDashboard.tsx] import React, { useState } from 'react';
+[erkata_web/pages/AdminDashboard.tsx] const [currentView, setCurrentView] = useState('overview');
+[erkata_web/pages/AgentDashboard.tsx] import React, { useState, useEffect } from 'react';
+[erkata_web/pages/AgentDashboard.tsx] const [activeTab, setActiveTab] = useState<'assigned' | 'in-progress' | 'history'>('assigned');
+[erkata_web/pages/AgentDashboard.tsx] const [requests, setRequests] = useState(agentRequests);
+[erkata_web/pages/AgentDashboard.tsx] const [feedbackRequest, setFeedbackRequest] = useState<{id: string, customerName: string} | null>(null);
+[erkata_web/pages/CustomerDashboard.tsx] import React, { useState } from 'react';
+[erkata_web/pages/CustomerDashboard.tsx] const [requests, setRequests] = useState(agentRequests.map(r => ({ ...r, status: r.status === 'completed' ? 'delivered' : r.status })));
+[erkata_web/pages/CustomerDashboard.tsx] const [feedbackRequest, setFeedbackRequest] = useState<{id: string, agentName: string} | null>(null);
+[erkata_web/pages/Login.tsx] import React, { useState, useEffect } from 'react';
+[erkata_web/pages/Login.tsx] const [email, setEmail] = useState('');
+[erkata_web/pages/Login.tsx] const [password, setPassword] = useState('');
+[erkata_web/pages/Login.tsx] const [error, setError] = useState('');
+[erkata_web/pages/Login.tsx] const [hasDraft, setHasDraft] = useState(false);
+[erkata_web/pages/Login.tsx] useEffect(() => {
+[erkata_web/pages/Login.tsx] // but AuthProvider handles the navigation in useEffect normally anyway.
+[erkata_web/pages/OperatorDashboard.tsx] import React, { useState } from 'react';
+[erkata_web/pages/OperatorDashboard.tsx] const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
+[erkata_web/pages/OperatorDashboard.tsx] const [pendingRequests, setPendingRequests] = useState(operatorPendingRequests);
+[erkata_web/pages/OperatorDashboard.tsx] const [activeTransactions, setActiveTransactions] = useState(operatorActiveTransactions);
+[erkata_web/pages/Register.tsx] import React, { useState, useEffect } from 'react';
+[erkata_web/pages/Register.tsx] const [role, setRole] = useState<Role>(initialRole);
+[erkata_web/pages/Register.tsx] const [formData, setFormData] = useState({
+[erkata_web/pages/Register.tsx] const [isSubmitting, setIsSubmitting] = useState(false);
+[erkata_web/pages/Register.tsx] const [error, setError] = useState('');
+[erkata_web/pages/Register.tsx] useEffect(() => {
+[erkata_web/pages/RequestIntake.tsx] import React, { useState, useEffect } from 'react';
+[erkata_web/pages/RequestIntake.tsx] const [step, setStep] = useState(0);
+[erkata_web/pages/RequestIntake.tsx] const [intent, setIntent] = useState<RequestIntent>(null);
+[erkata_web/pages/RequestIntake.tsx] const [formData, setFormData] = useState({
+[erkata_web/pages/RequestIntake.tsx] const [isSubmitting, setIsSubmitting] = useState(false);
+[erkata_web/pages/RequestIntake.tsx] useEffect(() => {
+[erkata_web/pages/SuperAdminDashboard.tsx] import React, { useState } from 'react';
+[erkata_web/pages/SuperAdminDashboard.tsx] const [currentView, setCurrentView] = useState('resolutions');
+[erkata_app/react mvp/components/AuthView.tsx] import React, { useState } from 'react';
+[erkata_app/react mvp/components/AuthView.tsx] const [isLogin, setIsLogin] = useState(true);
+[erkata_app/react mvp/components/AuthView.tsx] const [selectedRole, setSelectedRole] = useState<UserRole>(UserRole.CUSTOMER);
+[erkata_app/react mvp/components/OperatorDashboard.tsx] import React, { useState } from 'react';
+[erkata_app/react mvp/components/OperatorDashboard.tsx] const [searchTerm, setSearchTerm] = useState('');
+[erkata_app/react mvp/components/PaymentView.tsx] import React, { useState } from 'react';
+[erkata_app/react mvp/components/PaymentView.tsx] const [method, setMethod] = useState<'telebirr' | 'chapa' | 'card'>('telebirr');
+[erkata_app/react mvp/components/RequestIntake.tsx] import React, { useState } from 'react';
+[erkata_app/react mvp/components/RequestIntake.tsx] const [step, setStep] = useState(1);
+[erkata_app/react mvp/components/RequestIntake.tsx] const [formData, setFormData] = useState({
+[erkata_app/react mvp/components/RequestStatus.tsx] import React, { useState } from 'react';
+[erkata_app/react mvp/components/RequestStatus.tsx] const [selectedRequest, setSelectedRequest] = useState<ServiceRequest | null>(null);
+[erkata_backend/src/requests/requests.service.ts] this.eventEmitter.emit('request.created', request);
+[erkata_backend/src/requests/requests.service.ts] this.eventEmitter.emit('transaction.created', { transaction, agentId });
+[erkata_backend/src/transactions/transactions.service.ts] this.eventEmitter.emit('transaction.accepted', updated);
+[erkata_backend/src/transactions/transactions.service.ts] this.eventEmitter.emit('transaction.declined', { transactionId, agentId });
+[erkata_backend/src/transactions/transactions.service.ts] this.eventEmitter.emit('transaction.completed', result);
+[erkata_app/lib/shared/screens/contact_screen.dart] setState(() => _submitted = true);
+[erkata_app/lib/shared/screens/contact_screen.dart] onPressed: () => setState(() {
+[erkata_app/lib/shared/screens/contact_screen.dart] onChanged: (v) => setState(() => _selectedTopic = v!),
+[erkata_app/lib/shared/screens/feedback_form_screen.dart] final rating = useState(0);
+[erkata_app/lib/shared/screens/feedback_form_screen.dart] final selectedCategories = useState<List<String>>([]);
+[erkata_app/lib/shared/screens/feedback_form_screen.dart] final isSubmitted = useState(false);
+[erkata_web/components/admin/AdminAgentList.tsx] import React, { useState } from 'react';
+[erkata_web/components/admin/AdminAgentList.tsx] const [agents, setAgents] = useState<Agent[]>(MOCK_AGENTS);
+[erkata_web/components/admin/AdminAgentList.tsx] const [searchTerm, setSearchTerm] = useState('');
+[erkata_web/components/admin/AdminAgentList.tsx] const [actionMenuOpen, setActionMenuOpen] = useState<string | null>(null);
+[erkata_web/components/admin/EscalatedBundles.tsx] import React, { useState } from 'react';
+[erkata_web/components/admin/EscalatedBundles.tsx] const [bundles, setBundles] = useState<FeedbackBundle[]>(MOCK_BUNDLES);
+[erkata_web/components/admin/EscalatedBundles.tsx] const [selectedBundle, setSelectedBundle] = useState<FeedbackBundle | null>(null);
+[erkata_web/components/admin/EscalatedBundles.tsx] const [proposalText, setProposalText] = useState('');
+[erkata_web/components/admin/EscalatedBundles.tsx] const [showSuccess, setShowSuccess] = useState(false);
+[erkata_web/components/admin/PendingActions.tsx] const [actions, setActions] = React.useState([
+[erkata_web/components/admin/PendingActions.tsx] const [message, setMessage] = React.useState('');
+[erkata_web/components/super-admin/AdminManagement.tsx] import React, { useState } from 'react';
+[erkata_web/components/super-admin/AdminManagement.tsx] const [searchTerm, setSearchTerm] = useState('');
+[erkata_web/components/super-admin/AuditLog.tsx] import React, { useState } from 'react';
+[erkata_web/components/super-admin/BroadcastNotices.tsx] import React, { useState } from 'react';
+[erkata_web/components/super-admin/BroadcastNotices.tsx] const [title, setTitle] = useState('');
+[erkata_web/components/super-admin/BroadcastNotices.tsx] const [target, setTarget] = useState('everyone');
+[erkata_web/components/super-admin/ConfigFlags.tsx] import React, { useState } from 'react';
+[erkata_web/components/super-admin/ConfigFlags.tsx] const [flags, setFlags] = useState({
+[erkata_web/components/super-admin/EmergencyArchive.tsx] import React, { useState } from 'react';
+[erkata_web/components/super-admin/EmergencyArchive.tsx] const [selectedId, setSelectedId] = useState<string | null>(null);
+[erkata_web/components/super-admin/FinalResolutions.tsx] import React, { useState } from 'react';
+[erkata_web/components/super-admin/FinalResolutions.tsx] const [selectedBundle, setSelectedBundle] = useState<ProposedBundle | null>(null);
+[erkata_web/components/super-admin/FinalResolutions.tsx] const [comment, setComment] = useState('');
+[erkata_web/components/super-admin/GlobalRightsOversight.tsx] import React, { useState } from 'react';
+[erkata_web/components/super-admin/GlobalRightsOversight.tsx] const [searchTerm, setSearchTerm] = useState('');
+[erkata_web/components/super-admin/OperatorOversight.tsx] import React, { useState } from 'react';
+[erkata_web/components/super-admin/OperatorOversight.tsx] const [searchTerm, setSearchTerm] = useState('');
+[erkata_app/lib/features/auth/screens/auth_screen.dart] final isLogin = useState(true);
+[erkata_app/lib/features/auth/screens/auth_screen.dart] final selectedRole = useState<UserRole>(UserRole.customer);
+[erkata_app/lib/features/auth/screens/auth_screen.dart] final profileImage = useState<String?>(null);
+[erkata_app/lib/features/customer/screens/notifications_screen.dart] setState(() {
+[erkata_app/lib/features/customer/screens/notifications_screen.dart] setState(() => notification.read = true);
+[erkata_app/lib/features/customer/screens/payment_screen.dart] final method = useState('telebirr');
+[erkata_app/lib/features/customer/screens/request_intake_screen.dart] final step = useState(1);
+[erkata_app/lib/features/customer/screens/request_intake_screen.dart] final formData = useState(RequestFormData());
+[erkata_app/lib/features/customer/screens/request_intake_screen.dart] useEffect(() {
+[erkata_app/lib/features/customer/screens/request_status_screen.dart] final selectedRequest = useState<ServiceRequest?>(null);
+[erkata_app/lib/features/customer/screens/settings_screen.dart] onChanged: (v) => setState(() => _pushNotifications = v),
+[erkata_app/lib/features/customer/screens/settings_screen.dart] onChanged: (v) => setState(() => _emailNotifications = v),
+[erkata_app/lib/features/customer/screens/settings_screen.dart] onChanged: (v) => setState(() => _smsNotifications = v),
+[erkata_app/lib/features/customer/screens/settings_screen.dart] onChanged: (v) => setState(() => _requestUpdates = v),
+[erkata_app/lib/features/customer/screens/settings_screen.dart] onChanged: (v) => setState(() => _paymentAlerts = v),
+[erkata_app/lib/features/customer/screens/settings_screen.dart] onChanged: (v) => setState(() => _promotionalMessages = v),
+[erkata_app/lib/features/customer/screens/settings_screen.dart] onChanged: (v) => setState(() => _twoFactorAuth = v),
+[erkata_app/lib/features/customer/screens/settings_screen.dart] onChanged: (v) => setState(() => _biometricLogin = v),
+[erkata_app/lib/features/customer/screens/settings_screen.dart] onChanged: (v) => setState(() => _selectedLanguage = v!),
+[erkata_app/lib/features/customer/screens/settings_screen.dart] onChanged: (v) => setState(() => _darkMode = v),
+
+
+===== [12] COMPOSE — Metadata & Deps =====
+
+
+--- erkata_backend/package.json ---
+name: erkata_backend
+version: 0.0.1
+deps: @nestjs/bullmq, @nestjs/common, @nestjs/core, @nestjs/event-emitter, @nestjs/jwt, @nestjs/passport, @nestjs/platform-express, bcrypt, bullmq, cookie-parser, dotenv, ioredis, passport, passport-jwt, passport-local, reflect-metadata, rxjs
+
+--- erkata_app/pubspec.yaml ---
+
+--- erkata_web/package.json ---
+name: erkata---mediation-platform
+version: 0.0.0
+deps: axios, framer-motion, lucide-react, react, react-dom, react-router-dom
+
+--- erkata_app/react mvp/package.json ---
+name: addishome-services
+version: 0.0.0
+deps: react, lucide-react, react-dom, framer-motion
+
+
+===== [13] STATE MAP — API & Persistence =====
+
+[erkata_backend/prisma.config.ts] import { defineConfig } from "prisma/config";
+[erkata_backend/prisma.config.ts] schema: "prisma/schema.prisma",
+[erkata_backend/test-prisma.ts] import { PrismaClient } from '@prisma/client';
+[erkata_backend/test-prisma.ts] const prisma = new PrismaClient();
+[erkata_backend/test-prisma.ts] const count = await prisma.user.count();
+[erkata_backend/test-prisma.ts] await prisma.$disconnect();
+[erkata_backend/prisma/seed.ts] import { PrismaClient, UserRole } from '@prisma/client';
+[erkata_backend/prisma/seed.ts] const prisma = new PrismaClient();
+[erkata_backend/prisma/seed.ts] await prisma.user.upsert({
+[erkata_backend/prisma/seed.ts] await prisma.$disconnect();
+[erkata_backend/src/app.module.ts] import { PrismaModule } from './prisma/prisma.module';
+[erkata_backend/src/main.ts] origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+[erkata_web/components/Footer.tsx] <a href="https://twitter.com/erkata" target="_blank" rel="noopener noreferrer"><Twitter className="w-5 h-5 hover:text-white cursor-pointer transition-colors" /></a>
+[erkata_web/components/Footer.tsx] <a href="https://facebook.com/erkata" target="_blank" rel="noopener noreferrer"><Facebook className="w-5 h-5 hover:text-white cursor-pointer transition-colors" /></a>
+[erkata_web/components/Footer.tsx] <a href="https://linkedin.com/company/erkata" target="_blank" rel="noopener noreferrer"><Linkedin className="w-5 h-5 hover:text-white cursor-pointer transition-colors" /></a>
+[erkata_web/components/Footer.tsx] <a href="https://instagram.com/erkata" target="_blank" rel="noopener noreferrer"><Instagram className="w-5 h-5 hover:text-white cursor-pointer transition-colors" /></a>
+[erkata_web/components/StatusBadge.tsx] // Grey = completed/archived
+[erkata_web/pages/AgentDashboard.tsx] <div className="absolute inset-0 bg-[url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Addis_Ababa_districts.png/800px-Addis_Ababa_districts.png')] bg-cover bg-center grayscale opacity-20 group-hover:opacity-30 group-hover:scale-110 transition-all duration-700" />
+[erkata_web/pages/Landing.tsx] <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+[erkata_web/pages/Landing.tsx] <div className="absolute inset-0 opacity-10 bg-[url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Ethiopia_adm_location_map.svg/1024px-Ethiopia_adm_location_map.svg.png')] bg-cover bg-center"></div>
+[erkata_web/pages/Login.tsx] src="https://images.unsplash.com/photo-1497366216548-37526070297c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1769&q=80"
+[erkata_web/pages/Privacy.tsx] we may collect from you across our website, https://erkata.com, and other sites we own and operate.
+[erkata_web/pages/Register.tsx] src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?ixlib=rb-4.0.3&auto=format&fit=crop&w=1770&q=80"
+[erkata_web/pages/SuperAdminDashboard.tsx] import EmergencyArchive from '../components/super-admin/EmergencyArchive';
+[erkata_web/pages/SuperAdminDashboard.tsx] {currentView === 'emergency' && <EmergencyArchive />}
+[erkata_web/pages/Terms.tsx] By accessing the website at https://erkata.com, you are agreeing to be bound by these terms of service,
+[erkata_web/utils/api.ts] import axios from 'axios';
+[erkata_web/utils/api.ts] const api = axios.create({
+[erkata_web/utils/api.ts] baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000',
+[erkata_web/utils/api.ts] const res = await axios.post(
+[erkata_web/utils/api.ts] `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/auth/refresh`,
+[erkata_backend/src/auth/auth.controller.ts] import { UserRole } from '@prisma/client';
+[erkata_backend/src/auth/auth.module.ts] import { PrismaModule } from '../prisma/prisma.module';
+[erkata_backend/src/auth/auth.service.ts] import { PrismaService } from '../prisma/prisma.service';
+[erkata_backend/src/auth/auth.service.ts] import { UserRole } from '@prisma/client';
+[erkata_backend/src/auth/auth.service.ts] private readonly prisma: PrismaService,
+[erkata_backend/src/auth/auth.service.ts] const user = await this.prisma.user.findUnique({ where: { email } });
+[erkata_backend/src/auth/auth.service.ts] // Set Refresh Token in httpOnly cookie
+[erkata_backend/src/auth/auth.service.ts] httpOnly: true,
+[erkata_backend/src/auth/auth.service.ts] const user = await this.prisma.user.findUnique({ where: { id: payload.sub } });
+[erkata_backend/src/auth/auth.service.ts] return this.prisma.user.create({
+[erkata_backend/src/mediation/mediation.processor.ts] import { PrismaService } from '../prisma/prisma.service';
+[erkata_backend/src/mediation/mediation.processor.ts] import { FeedbackBundleState } from '@prisma/client';
+[erkata_backend/src/mediation/mediation.processor.ts] constructor(private prisma: PrismaService) {
+[erkata_backend/src/mediation/mediation.processor.ts] const bundle = await this.prisma.feedbackBundle.findUnique({
+[erkata_backend/src/mediation/mediation.processor.ts] await this.prisma.feedbackBundle.update({
+[erkata_backend/src/mediation/mediation.processor.ts] await this.prisma.auditLog.create({
+[erkata_backend/src/mediation/mediation.service.ts] import { PrismaService } from '../prisma/prisma.service';
+[erkata_backend/src/mediation/mediation.service.ts] import { FeedbackBundleState, UserRole } from '@prisma/client';
+[erkata_backend/src/mediation/mediation.service.ts] private prisma: PrismaService,
+[erkata_backend/src/mediation/mediation.service.ts] const transaction = await this.prisma.transaction.findUnique({
+[erkata_backend/src/mediation/mediation.service.ts] const author = await this.prisma.user.findUnique({ where: { id: authorId } });
+[erkata_backend/src/mediation/mediation.service.ts] const feedback = await this.prisma.feedback.create({
+[erkata_backend/src/mediation/mediation.service.ts] const feedbacks = await this.prisma.feedback.findMany({
+[erkata_backend/src/mediation/mediation.service.ts] await this.prisma.feedbackBundle.upsert({
+[erkata_backend/src/mediation/mediation.service.ts] await this.prisma.transaction.update({
+[erkata_backend/src/mediation/mediation.service.ts] await this.prisma.auditLog.create({
+[erkata_backend/src/mediation/mediation.service.ts] const bundle = await this.prisma.feedbackBundle.findUnique({ where: { id: bundleId } });
+[erkata_backend/src/mediation/mediation.service.ts] const proposal = await this.prisma.resolutionProposal.create({
+[erkata_backend/src/mediation/mediation.service.ts] await this.prisma.feedbackBundle.update({
+[erkata_backend/src/mediation/mediation.service.ts] const proposal = await this.prisma.resolutionProposal.findUnique({
+[erkata_backend/src/mediation/mediation.service.ts] const actor = await this.prisma.user.findUnique({ where: { id: actorId } });
+[erkata_backend/src/mediation/mediation.service.ts] const final = await this.prisma.finalResolution.create({
+[erkata_backend/src/mediation/mediation.service.ts] await this.prisma.feedbackBundle.update({
+[erkata_backend/src/mediation/mediation.service.ts] await this.prisma.auditLog.create({
+[erkata_backend/src/prisma/prisma.module.ts] import { PrismaService } from './prisma.service';
+[erkata_backend/src/prisma/prisma.service.ts] import { PrismaClient } from '@prisma/client';
+[erkata_backend/src/requests/requests.controller.ts] import { UserRole } from '@prisma/client';
+[erkata_backend/src/requests/requests.controller.ts] // Operator fetches eligible agents for a given zone before assigning
+[erkata_backend/src/requests/requests.module.ts] import { PrismaModule } from '../prisma/prisma.module';
+[erkata_backend/src/requests/requests.service.ts] import { PrismaService } from '../prisma/prisma.service';
+[erkata_backend/src/requests/requests.service.ts] } from '@prisma/client';
+[erkata_backend/src/requests/requests.service.ts] private readonly prisma: PrismaService,
+[erkata_backend/src/requests/requests.service.ts] const request = await this.prisma.serviceRequest.create({
+[erkata_backend/src/requests/requests.service.ts] const requests = await this.prisma.serviceRequest.findMany({
+[erkata_backend/src/requests/requests.service.ts] const request = await this.prisma.serviceRequest.findUnique({
+[erkata_backend/src/requests/requests.service.ts] const agent = await this.prisma.user.findUnique({
+[erkata_backend/src/requests/requests.service.ts] return this.prisma.$transaction(async (tx) => {
+[erkata_backend/src/requests/requests.service.ts] const request = await this.prisma.serviceRequest.findUnique({
+[erkata_backend/src/requests/requests.service.ts] const zones = await this.prisma.agentZone.findMany({
+[erkata_backend/src/requests/requests.service.ts] return this.prisma.serviceRequest.findMany({
+[erkata_backend/src/transactions/transactions.controller.ts] import { UserRole } from '@prisma/client';
+[erkata_backend/src/transactions/transactions.controller.ts] // Agent fetches their assigned jobs
+[erkata_backend/src/transactions/transactions.module.ts] import { PrismaModule } from '../prisma/prisma.module';
+[erkata_backend/src/transactions/transactions.service.ts] import { PrismaService } from '../prisma/prisma.service';
+[erkata_backend/src/transactions/transactions.service.ts] import { TransactionStatus, RequestStatus } from '@prisma/client';
+[erkata_backend/src/transactions/transactions.service.ts] private readonly prisma: PrismaService,
+[erkata_backend/src/transactions/transactions.service.ts] const transaction = await this.prisma.transaction.findUnique({
+[erkata_backend/src/transactions/transactions.service.ts] const updated = await this.prisma.$transaction(async (tx) => {
+[erkata_backend/src/transactions/transactions.service.ts] const transaction = await this.prisma.transaction.findUnique({
+[erkata_backend/src/transactions/transactions.service.ts] await this.prisma.$transaction(async (tx) => {
+[erkata_backend/src/transactions/transactions.service.ts] const transaction = await this.prisma.transaction.findUnique({
+[erkata_backend/src/transactions/transactions.service.ts] const result = await this.prisma.$transaction(async (tx) => {
+[erkata_backend/src/transactions/transactions.service.ts] // ── Agent fetches their assigned jobs ────────────────────────────────────
+[erkata_backend/src/transactions/transactions.service.ts] const transactions = await this.prisma.transaction.findMany({
+[erkata_backend/src/users/users.service.ts] import { PrismaService } from '../prisma/prisma.service';
+[erkata_backend/src/users/users.service.ts] import { UserRole } from '@prisma/client';
+[erkata_backend/src/users/users.service.ts] constructor(private prisma: PrismaService) {}
+[erkata_backend/src/users/users.service.ts] const agent = await this.prisma.user.findUnique({
+[erkata_backend/src/users/users.service.ts] return this.prisma.agentZone.create({
+[erkata_backend/src/users/users.service.ts] return this.prisma.referralLink.upsert({
+[erkata_web/components/super-admin/EmergencyArchive.tsx] Archive,
+[erkata_web/components/super-admin/EmergencyArchive.tsx] const EmergencyArchive: React.FC = () => {
+[erkata_web/components/super-admin/EmergencyArchive.tsx] const handleArchive = async () => {
+[erkata_web/components/super-admin/EmergencyArchive.tsx] const reason = prompt('Please enter the mandatory reason for emergency archive (min 10 chars):');
+[erkata_web/components/super-admin/EmergencyArchive.tsx] message: `Reason: "${reason}". Final confirmation for emergency archive of ${selectedId}.`,
+[erkata_web/components/super-admin/EmergencyArchive.tsx] confirmText: 'Permanently Archive',
+[erkata_web/components/super-admin/EmergencyArchive.tsx] message: `Case ${selectedId} has been archived with code EMERGENCY_ARCHIVE_NO_DECISION.`,
+[erkata_web/components/super-admin/EmergencyArchive.tsx] <h3 className="text-lg font-black text-red-900 tracking-tight">Break-Glass Archive Facility</h3>
+[erkata_web/components/super-admin/EmergencyArchive.tsx] <Archive className="w-4 h-4" />
+[erkata_web/components/super-admin/EmergencyArchive.tsx] onClick={handleArchive}
+[erkata_web/components/super-admin/EmergencyArchive.tsx] Emergency Archive Selection
+[erkata_web/components/super-admin/EmergencyArchive.tsx] export default EmergencyArchive;
+[erkata_web/components/super-admin/SuperAdminSidebar.tsx] Archive,
+[erkata_web/components/super-admin/SuperAdminSidebar.tsx] { id: 'emergency', label: 'Emergency Archive', icon: Archive },
+[erkata_backend/src/auth/guards/roles.decorator.ts] import { UserRole } from '@prisma/client';
+[erkata_backend/src/auth/guards/roles.guard.ts] import { UserRole } from '@prisma/client';
+[erkata_app/lib/features/agent/screens/agent_request_detail_screen.dart] // in real app, fetch from ID
+
+
+===== GENERATION SUMMARY =====
+
+Total sections: 11
+Shell-native: 1
+JS fallback: 10
+Generated at: 2026-02-26T06:58:53.842Z
