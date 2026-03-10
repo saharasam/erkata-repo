@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/theme/colors.dart';
+import '../../../shared/widgets/erkata_screen_header.dart';
 import '../../../shared/widgets/primary_button.dart';
 
 class PaymentScreen extends HookWidget {
@@ -12,277 +13,336 @@ class PaymentScreen extends HookWidget {
     final method = useState('telebirr');
 
     return Scaffold(
-      backgroundColor: AppColors.offWhite,
-      appBar: AppBar(
-        title: const Text(
-          'Secure Payment',
-          style: TextStyle(
-            color: AppColors.primaryNavy,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 1,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.primaryNavy),
-          onPressed: () => context.pop(),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.only(
-          left: 20,
-          right: 20,
-          top: 20,
-          bottom: 120,
-        ),
+      body: SafeArea(
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Amount Card
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: AppColors.primaryNavy,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primaryNavy.withOpacity(0.3),
-                    spreadRadius: 2,
-                    blurRadius: 10,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Total Amount Due',
-                    style: TextStyle(color: Colors.grey, fontSize: 14),
-                  ),
-                  const SizedBox(height: 8),
-                  RichText(
-                    text: const TextSpan(
-                      text: '1,500.00 ',
-                      style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                      children: [
-                        TextSpan(
-                          text: 'ETB',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.normal,
-                            color: AppColors.primaryNavy,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Divider(color: Colors.white.withOpacity(0.1)),
-                  const SizedBox(height: 16),
-                  const Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'Service Fee (10%)',
-                        style: TextStyle(color: Colors.grey, fontSize: 13),
-                      ),
-                      Text(
-                        '150.00 ETB',
-                        style: TextStyle(color: Colors.white, fontSize: 13),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+            // Custom Header
+            ErkataScreenHeader(
+              title: 'Secure Payment',
+              subtitle: 'Review and confirm your payment',
+              onActionTap: () => context.pop(),
             ),
-            const SizedBox(height: 24),
 
-            // Method Selection
-            const Text(
-              'SELECT METHOD',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey,
-                letterSpacing: 1.2,
-              ),
-            ),
-            const SizedBox(height: 12),
-            _MethodButton(
-              id: 'telebirr',
-              label: 'Telebirr',
-              subLabel: 'Mobile Wallet',
-              icon: Icons.smartphone,
-              color: AppColors.primaryNavy,
-              isSelected: method.value == 'telebirr',
-              onTap: () => method.value = 'telebirr',
-            ),
-            const SizedBox(height: 12),
-            _MethodButton(
-              id: 'chapa',
-              label: 'Chapa',
-              subLabel: 'Local Cards / Bank Transfer',
-              icon: Icons.shield,
-              color: AppColors.successGreen,
-              isSelected: method.value == 'chapa',
-              onTap: () => method.value = 'chapa',
-            ),
-            const SizedBox(height: 24),
-
-            // Dynamic Content
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              child: Container(
-                key: ValueKey(method.value),
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey[200]!),
+            // Scrollable body
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.only(
+                  left: 20,
+                  right: 20,
+                  top: 4,
+                  bottom: 120,
                 ),
-                child: method.value == 'telebirr'
-                    ? const Column(
-                        children: [
-                          Icon(
-                            Icons.qr_code_2,
-                            size: 100,
-                            color: Colors.black87,
-                          ),
-                          SizedBox(height: 16),
-                          Text(
-                            'Scan to Pay',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          Text(
-                            'Use your Telebirr SuperApp',
-                            style: TextStyle(color: Colors.grey, fontSize: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Amount Card
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        gradient: AppColors.primaryGradient,
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primaryNavy.withValues(alpha: 0.3),
+                            spreadRadius: 2,
+                            blurRadius: 20,
+                            offset: const Offset(0, 10),
                           ),
                         ],
-                      )
-                    : Column(
+                      ),
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'CARD NUMBER',
+                          Text(
+                            'Total Amount Due',
                             style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey,
+                              color: AppColors.pureWhite.withValues(alpha: 0.7),
+                              fontSize: 14,
                             ),
                           ),
                           const SizedBox(height: 8),
-                          TextField(
-                            decoration: InputDecoration(
-                              hintText: '0000 0000 0000 0000',
-                              filled: true,
-                              fillColor: Colors.grey[50],
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide.none,
+                          RichText(
+                            text: const TextSpan(
+                              text: '1,500.00 ',
+                              style: TextStyle(
+                                fontSize: 32,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.pureWhite,
                               ),
-                              prefixIcon: const Icon(
-                                Icons.credit_card,
-                                size: 20,
-                              ),
+                              children: [
+                                TextSpan(
+                                  text: 'ETB',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.normal,
+                                    color: Colors.white70,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                           const SizedBox(height: 16),
+                          Divider(
+                            color: AppColors.pureWhite.withValues(alpha: 0.15),
+                          ),
+                          const SizedBox(height: 12),
                           Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      'EXPIRY',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    TextField(
-                                      decoration: InputDecoration(
-                                        hintText: 'MM/YY',
-                                        filled: true,
-                                        fillColor: Colors.grey[50],
-                                        border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                          borderSide: BorderSide.none,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
+                              Text(
+                                'Service Fee (10%)',
+                                style: TextStyle(
+                                  color: AppColors.pureWhite.withValues(
+                                    alpha: 0.6,
+                                  ),
+                                  fontSize: 13,
                                 ),
                               ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      'CVV',
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.grey,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    TextField(
-                                      decoration: InputDecoration(
-                                        hintText: '123',
-                                        filled: true,
-                                        fillColor: Colors.grey[50],
-                                        border: OutlineInputBorder(
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                          borderSide: BorderSide.none,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
+                              const Text(
+                                '150.00 ETB',
+                                style: TextStyle(
+                                  color: AppColors.pureWhite,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ],
                           ),
                         ],
                       ),
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Pay Button
-            PrimaryButton(
-              text: 'Pay 1,500.00 ETB',
-              icon: Icons.lock,
-              onPressed: () {},
-            ),
-            const SizedBox(height: 16),
-            const Center(
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.verified_user, size: 14, color: Colors.grey),
-                  SizedBox(width: 4),
-                  Text(
-                    'ENCRYPTED & SECURE',
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.grey,
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 24),
+
+                    // Method Selection
+                    Text(
+                      'SELECT METHOD',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    _MethodButton(
+                      id: 'telebirr',
+                      label: 'Telebirr',
+                      subLabel: 'Mobile Wallet',
+                      icon: Icons.smartphone,
+                      color: AppColors.primaryNavy,
+                      isSelected: method.value == 'telebirr',
+                      onTap: () => method.value = 'telebirr',
+                    ),
+                    const SizedBox(height: 12),
+                    _MethodButton(
+                      id: 'chapa',
+                      label: 'Chapa',
+                      subLabel: 'Local Cards / Bank Transfer',
+                      icon: Icons.shield,
+                      color: AppColors.successGreen,
+                      isSelected: method.value == 'chapa',
+                      onTap: () => method.value = 'chapa',
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Dynamic Content
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 300),
+                      child: Container(
+                        key: ValueKey(method.value),
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.outlineVariant,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.shadow.withValues(alpha: 0.05),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: method.value == 'telebirr'
+                            ? Column(
+                                children: [
+                                  Icon(
+                                    Icons.qr_code_2,
+                                    size: 100,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurface,
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'Scan to Pay',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Use your Telebirr SuperApp',
+                                    style: TextStyle(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              )
+                            : Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'CARD NUMBER',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  TextField(
+                                    decoration: InputDecoration(
+                                      hintText: '0000 0000 0000 0000',
+                                      filled: true,
+                                      fillColor: Theme.of(
+                                        context,
+                                      ).colorScheme.surface,
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        borderSide: BorderSide.none,
+                                      ),
+                                      prefixIcon: const Icon(
+                                        Icons.credit_card,
+                                        size: 20,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'EXPIRY',
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.bold,
+                                                color: Theme.of(
+                                                  context,
+                                                ).colorScheme.onSurfaceVariant,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            TextField(
+                                              decoration: InputDecoration(
+                                                hintText: 'MM/YY',
+                                                filled: true,
+                                                fillColor: Theme.of(
+                                                  context,
+                                                ).colorScheme.surface,
+                                                border: OutlineInputBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                  borderSide: BorderSide.none,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'CVV',
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                fontWeight: FontWeight.bold,
+                                                color: Theme.of(
+                                                  context,
+                                                ).colorScheme.onSurfaceVariant,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            TextField(
+                                              decoration: InputDecoration(
+                                                hintText: '123',
+                                                filled: true,
+                                                fillColor: Theme.of(
+                                                  context,
+                                                ).colorScheme.surface,
+                                                border: OutlineInputBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(12),
+                                                  borderSide: BorderSide.none,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Pay Button
+                    PrimaryButton(
+                      text: 'Pay 1,500.00 ETB',
+                      icon: Icons.lock,
+                      onPressed: () {},
+                    ),
+                    const SizedBox(height: 16),
+                    Center(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.verified_user,
+                            size: 14,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            'ENCRYPTED & SECURE',
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
@@ -315,22 +375,36 @@ class _MethodButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isSelected ? color.withOpacity(0.05) : Colors.white,
+          color: isSelected
+              ? color.withValues(alpha: 0.05)
+              : Theme.of(context).colorScheme.surface,
           border: Border.all(
-            color: isSelected ? color : Colors.grey[200]!,
+            color: isSelected
+                ? color
+                : Theme.of(context).colorScheme.outlineVariant,
             width: 2,
           ),
           borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Theme.of(
+                context,
+              ).colorScheme.shadow.withValues(alpha: 0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, color: color, size: 20),
@@ -342,15 +416,18 @@ class _MethodButton extends StatelessWidget {
                 children: [
                   Text(
                     label,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
-                      color: AppColors.primaryNavy,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
                   Text(
                     subLabel,
-                    style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontSize: 12,
+                    ),
                   ),
                 ],
               ),
@@ -361,7 +438,9 @@ class _MethodButton extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: isSelected ? color : Colors.grey[300]!,
+                  color: isSelected
+                      ? color
+                      : Theme.of(context).colorScheme.outline,
                   width: 2,
                 ),
               ),

@@ -59,14 +59,14 @@ class FeedbackFormScreen extends HookWidget {
                 Container(
                   width: 80,
                   height: 80,
-                  decoration: BoxDecoration(
-                    color: Colors.green[50],
+                  decoration: const BoxDecoration(
+                    color: AppColors.successGreenLight,
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
+                  child: const Icon(
                     Icons.check_circle,
                     size: 48,
-                    color: Colors.green[600],
+                    color: AppColors.successGreen,
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -82,7 +82,7 @@ class FeedbackFormScreen extends HookWidget {
                 Text(
                   'Thank you for providing your feedback. It has been securely sent to our regional operator for verification.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey[600], fontSize: 16),
+                  style: TextStyle(color: AppColors.darkGrey, fontSize: 16),
                 ),
                 const SizedBox(height: 32),
                 SizedBox(
@@ -133,7 +133,7 @@ class FeedbackFormScreen extends HookWidget {
           children: [
             Text(
               'How would you rate your experience with $recipientName?',
-              style: TextStyle(color: Colors.grey[600], fontSize: 16),
+              style: const TextStyle(color: AppColors.darkGrey, fontSize: 16),
             ),
             const SizedBox(height: 8),
             Text(
@@ -141,7 +141,7 @@ class FeedbackFormScreen extends HookWidget {
               style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
-                color: Colors.grey,
+                color: AppColors.mediumGrey,
                 letterSpacing: 1,
               ),
             ),
@@ -161,7 +161,7 @@ class FeedbackFormScreen extends HookWidget {
                       size: 48,
                       color: rating.value >= starValue
                           ? AppColors.primaryGold
-                          : Colors.grey[200],
+                          : AppColors.softGrey,
                     ),
                   ),
                 );
@@ -174,7 +174,7 @@ class FeedbackFormScreen extends HookWidget {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
-                color: Colors.grey,
+                color: AppColors.mediumGrey,
                 letterSpacing: 1,
               ),
             ),
@@ -192,18 +192,22 @@ class FeedbackFormScreen extends HookWidget {
                       vertical: 10,
                     ),
                     decoration: BoxDecoration(
-                      color: isSelected ? AppColors.primaryNavy : Colors.white,
+                      color: isSelected
+                          ? AppColors.primaryNavy
+                          : AppColors.pureWhite,
                       borderRadius: BorderRadius.circular(24),
                       border: Border.all(
                         color: isSelected
                             ? AppColors.primaryNavy
-                            : Colors.grey[200]!,
+                            : AppColors.softGrey,
                       ),
                     ),
                     child: Text(
                       category,
                       style: TextStyle(
-                        color: isSelected ? Colors.white : Colors.grey[600],
+                        color: isSelected
+                            ? AppColors.pureWhite
+                            : AppColors.darkGrey,
                         fontSize: 13,
                         fontWeight: FontWeight.bold,
                       ),
@@ -229,9 +233,9 @@ class FeedbackFormScreen extends HookWidget {
               maxLines: 5,
               decoration: InputDecoration(
                 hintText: 'Share details about your experience...',
-                hintStyle: TextStyle(color: Colors.grey[400]),
+                hintStyle: const TextStyle(color: AppColors.mediumGrey),
                 filled: true,
-                fillColor: Colors.grey[50],
+                fillColor: AppColors.bgLight,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
                   borderSide: BorderSide.none,
@@ -249,7 +253,7 @@ class FeedbackFormScreen extends HookWidget {
                     : () => isSubmitted.value = true,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primaryNavy,
-                  disabledBackgroundColor: Colors.grey[200],
+                  disabledBackgroundColor: AppColors.softGrey,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),
                   ),
@@ -260,7 +264,7 @@ class FeedbackFormScreen extends HookWidget {
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 16,
-                    color: Colors.white,
+                    color: AppColors.pureWhite,
                   ),
                 ),
               ),
@@ -270,20 +274,24 @@ class FeedbackFormScreen extends HookWidget {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.blue[50],
+                color: AppColors.infoBlueLight,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.info_outline, size: 18, color: Colors.blue[600]),
+                  const Icon(
+                    Icons.info_outline,
+                    size: 18,
+                    color: AppColors.infoBlue,
+                  ),
                   const SizedBox(width: 12),
                   const Expanded(
                     child: Text(
                       'Note: Your feedback is part of the 5-step escalation chain. It will be bundled with the other party\'s feedback before being reviewed by management.',
                       style: TextStyle(
                         fontSize: 11,
-                        color: Colors.blue,
+                        color: AppColors.infoBlue,
                         height: 1.5,
                         fontWeight: FontWeight.w500,
                       ),

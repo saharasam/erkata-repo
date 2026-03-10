@@ -49,7 +49,6 @@ class ProfileScreen extends ConsumerWidget {
     ];
 
     return Scaffold(
-      backgroundColor: AppColors.offWhite,
       body: SingleChildScrollView(
         padding: const EdgeInsets.only(bottom: 100),
         child: Column(
@@ -62,17 +61,17 @@ class ProfileScreen extends ConsumerWidget {
                 left: 24,
                 right: 24,
               ),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: const BorderRadius.only(
                   bottomLeft: Radius.circular(40),
                   bottomRight: Radius.circular(40),
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black12,
+                    color: Theme.of(context).shadowColor.withValues(alpha: 0.1),
                     blurRadius: 10,
-                    offset: Offset(0, 5),
+                    offset: const Offset(0, 5),
                   ),
                 ],
               ),
@@ -84,23 +83,25 @@ class ProfileScreen extends ConsumerWidget {
                         width: 96,
                         height: 96,
                         decoration: BoxDecoration(
-                          color: AppColors.primaryNavy,
+                          color: Theme.of(context).colorScheme.primary,
                           shape: BoxShape.circle,
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.primaryNavy.withOpacity(0.3),
+                              color: Theme.of(
+                                context,
+                              ).shadowColor.withValues(alpha: 0.3),
                               blurRadius: 10,
                               offset: const Offset(0, 5),
                             ),
                           ],
                         ),
-                        child: const Center(
+                        child: Center(
                           child: Text(
                             'A',
                             style: TextStyle(
                               fontSize: 36,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              color: Theme.of(context).colorScheme.onPrimary,
                             ),
                           ),
                         ),
@@ -113,14 +114,17 @@ class ProfileScreen extends ConsumerWidget {
                           child: Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
-                              color: AppColors.primaryNavy,
+                              color: Theme.of(context).colorScheme.primary,
                               shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 4),
+                              border: Border.all(
+                                color: Theme.of(context).colorScheme.surface,
+                                width: 4,
+                              ),
                             ),
-                            child: const Icon(
+                            child: Icon(
                               Icons.settings,
                               size: 14,
-                              color: Colors.white,
+                              color: Theme.of(context).colorScheme.onPrimary,
                             ),
                           ),
                         ),
@@ -128,17 +132,20 @@ class ProfileScreen extends ConsumerWidget {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  const Text(
+                  Text(
                     'Abebe Kebede',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.primaryNavy,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),
-                  const Text(
+                  Text(
                     'abebe.k@example.com',
-                    style: TextStyle(color: Colors.grey, fontSize: 14),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontSize: 14,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   Row(
@@ -146,14 +153,22 @@ class ProfileScreen extends ConsumerWidget {
                     children: [
                       _Badge(
                         text: 'Verified User',
-                        color: Colors.green,
-                        bgColor: Colors.green[50]!,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.greenAccent
+                            : AppColors.successGreen,
+                        bgColor: Theme.of(context).brightness == Brightness.dark
+                            ? AppColors.successGreenLight.withValues(alpha: 0.1)
+                            : AppColors.successGreenLight,
                       ),
                       const SizedBox(width: 12),
-                      const _Badge(
+                      _Badge(
                         text: 'Member since 2023',
-                        color: Colors.grey,
-                        bgColor: Color(0xFFF3F4F6),
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.grey[300]!
+                            : AppColors.mediumGrey,
+                        bgColor: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.grey[800]!
+                            : AppColors.lightGreySurface,
                       ), // gray-100
                     ],
                   ),
@@ -183,17 +198,22 @@ class ProfileScreen extends ConsumerWidget {
                       ref.read(authProvider.notifier).logout();
                       context.go('/auth');
                     },
-                    icon: const Icon(Icons.logout, color: Colors.red),
-                    label: const Text(
+                    icon: Icon(
+                      Icons.logout,
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                    label: Text(
                       'Log Out',
                       style: TextStyle(
-                        color: Colors.red,
+                        color: Theme.of(context).colorScheme.error,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     style: TextButton.styleFrom(
                       padding: const EdgeInsets.all(16),
-                      backgroundColor: Colors.red[50],
+                      backgroundColor: Theme.of(
+                        context,
+                      ).colorScheme.errorContainer,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
@@ -204,7 +224,10 @@ class ProfileScreen extends ConsumerWidget {
                   const SizedBox(height: 32),
                   Text(
                     'Version 1.0.2',
-                    style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                    style: TextStyle(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      fontSize: 12,
+                    ),
                   ),
                 ],
               ),
@@ -265,7 +288,7 @@ class _MenuItem extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       child: Material(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
           onTap: onTap,
@@ -277,10 +300,16 @@ class _MenuItem extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.grey[50],
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(icon, size: 20, color: Colors.grey[600]),
+                  child: Icon(
+                    icon,
+                    size: 20,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
@@ -289,20 +318,27 @@ class _MenuItem extends StatelessWidget {
                     children: [
                       Text(
                         label,
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.w600,
                           fontSize: 14,
-                          color: AppColors.primaryNavy,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
                       Text(
                         sub,
-                        style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontSize: 12,
+                        ),
                       ),
                     ],
                   ),
                 ),
-                Icon(Icons.chevron_right, color: Colors.grey[300], size: 18),
+                Icon(
+                  Icons.chevron_right,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  size: 18,
+                ),
               ],
             ),
           ),

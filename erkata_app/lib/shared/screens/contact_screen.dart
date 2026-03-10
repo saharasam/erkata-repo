@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/theme/colors.dart';
+import '../../../shared/widgets/erkata_screen_header.dart';
 
 class ContactScreen extends StatefulWidget {
   const ContactScreen({super.key});
@@ -30,7 +31,7 @@ class _ContactScreenState extends State<ContactScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please fill in all fields'),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.errorRed,
         ),
       );
       return;
@@ -41,23 +42,22 @@ class _ContactScreenState extends State<ContactScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.offWhite,
-      appBar: AppBar(
-        title: const Text(
-          'Contact Us',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: AppColors.primaryNavy,
-          ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            ErkataScreenHeader(
+              title: 'Contact Us',
+              subtitle: 'Get in touch with support',
+              onActionTap: () => Navigator.of(context).pop(),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: _submitted ? _buildSuccess() : _buildForm(),
+              ),
+            ),
+          ],
         ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        scrolledUnderElevation: 1,
-        iconTheme: const IconThemeData(color: AppColors.primaryNavy),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
-        child: _submitted ? _buildSuccess() : _buildForm(),
       ),
     );
   }
@@ -71,11 +71,15 @@ class _ContactScreenState extends State<ContactScreen> {
           Container(
             width: 80,
             height: 80,
-            decoration: BoxDecoration(
-              color: Colors.green[50],
+            decoration: const BoxDecoration(
+              color: AppColors.successGreenLight,
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.check_circle, size: 48, color: Colors.green[600]),
+            child: const Icon(
+              Icons.check_circle,
+              size: 48,
+              color: AppColors.successGreen,
+            ),
           ),
           const SizedBox(height: 24),
           const Text(
@@ -89,7 +93,10 @@ class _ContactScreenState extends State<ContactScreen> {
           const SizedBox(height: 12),
           Text(
             'We\'ll get back to you shortly.',
-            style: TextStyle(color: Colors.grey[600], fontSize: 16),
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontSize: 16,
+            ),
           ),
           const SizedBox(height: 32),
           TextButton(
@@ -145,12 +152,12 @@ class _ContactScreenState extends State<ContactScreen> {
         const SizedBox(height: 32),
 
         // Form
-        const Text(
+        Text(
           'Send us a message',
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: AppColors.primaryNavy,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
         const SizedBox(height: 16),
@@ -169,16 +176,18 @@ class _ContactScreenState extends State<ContactScreen> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Colors.grey[200]!),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.outlineVariant,
+            ),
           ),
           child: DropdownButtonHideUnderline(
             child: DropdownButton<String>(
               value: _selectedTopic,
               isExpanded: true,
-              style: const TextStyle(
-                color: AppColors.primaryNavy,
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface,
                 fontSize: 14,
               ),
               items:
@@ -203,21 +212,27 @@ class _ContactScreenState extends State<ContactScreen> {
           maxLines: 5,
           decoration: InputDecoration(
             hintText: 'Your message...',
-            hintStyle: TextStyle(color: Colors.grey[400]),
+            hintStyle: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
             filled: true,
-            fillColor: Colors.white,
+            fillColor: Theme.of(context).colorScheme.surface,
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: Colors.grey[200]!),
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: BorderSide(color: Colors.grey[200]!),
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.outlineVariant,
+              ),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(14),
-              borderSide: const BorderSide(
-                color: AppColors.primaryNavy,
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.primary,
                 width: 2,
               ),
             ),
@@ -232,8 +247,8 @@ class _ContactScreenState extends State<ContactScreen> {
           child: ElevatedButton(
             onPressed: _submitForm,
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryNavy,
-              foregroundColor: Colors.white,
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Theme.of(context).colorScheme.onPrimary,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),
               ),
@@ -261,21 +276,34 @@ class _ContactScreenState extends State<ContactScreen> {
       keyboardType: keyboardType,
       decoration: InputDecoration(
         hintText: hint,
-        hintStyle: TextStyle(color: Colors.grey[400]),
-        prefixIcon: Icon(icon, color: Colors.grey[400], size: 20),
+        hintStyle: TextStyle(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+        prefixIcon: Icon(
+          icon,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+          size: 20,
+        ),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: Theme.of(context).colorScheme.surface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: Colors.grey[200]!),
+          borderSide: BorderSide(
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: Colors.grey[200]!),
+          borderSide: BorderSide(
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: AppColors.primaryNavy, width: 2),
+          borderSide: BorderSide(
+            color: Theme.of(context).colorScheme.primary,
+            width: 2,
+          ),
         ),
       ),
     );
@@ -298,11 +326,11 @@ class _ContactInfoCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Theme.of(context).shadowColor.withValues(alpha: 0.04),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -313,7 +341,7 @@ class _ContactInfoCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: AppColors.primaryNavy.withOpacity(0.1),
+              color: AppColors.primaryNavy.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: AppColors.primaryNavy, size: 20),
@@ -326,7 +354,7 @@ class _ContactInfoCard extends StatelessWidget {
                 Text(
                   label,
                   style: TextStyle(
-                    color: Colors.grey[500],
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                   ),
@@ -334,8 +362,8 @@ class _ContactInfoCard extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   value,
-                  style: const TextStyle(
-                    color: AppColors.primaryNavy,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontSize: 13,
                     fontWeight: FontWeight.bold,
                   ),

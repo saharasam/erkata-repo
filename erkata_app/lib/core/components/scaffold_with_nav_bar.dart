@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../theme/colors.dart';
+
 import '../models/user_role.dart';
 import '../../features/auth/state/auth_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -106,14 +106,16 @@ class _CustomBottomNavBar extends StatelessWidget {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(
           16,
         ), // Rounded-2xl in React (usually 16px)
-        border: Border.all(color: Colors.grey[100]!),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withAlpha(13), // slightly lighter shadow
+            color: Theme.of(
+              context,
+            ).shadowColor.withValues(alpha: 0.05), // slightly lighter shadow
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -187,7 +189,11 @@ class _NavBarItem extends StatelessWidget {
         width: 56,
         height: 56,
         decoration: BoxDecoration(
-          color: isActive ? AppColors.primaryNavyLight : Colors.transparent,
+          color: isActive
+              ? Theme.of(
+                  context,
+                ).colorScheme.primaryContainer.withValues(alpha: 0.5)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
@@ -203,7 +209,9 @@ class _NavBarItem extends StatelessWidget {
                   child: Icon(
                     isActive ? item.activeIcon : item.icon,
                     size: 24,
-                    color: isActive ? AppColors.primaryNavy : Colors.grey[400],
+                    color: isActive
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 );
               },
@@ -216,7 +224,9 @@ class _NavBarItem extends StatelessWidget {
                 fontSize: 10,
                 fontWeight: FontWeight.w500,
                 letterSpacing: 0.5,
-                color: isActive ? AppColors.primaryNavy : Colors.grey[400],
+                color: isActive
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
               ),
             ),
           ],

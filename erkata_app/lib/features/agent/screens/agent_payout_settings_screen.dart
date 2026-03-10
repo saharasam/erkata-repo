@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme/colors.dart';
+import '../../../shared/widgets/erkata_screen_header.dart';
 
 class AgentPayoutSettingsScreen extends StatelessWidget {
   const AgentPayoutSettingsScreen({super.key});
@@ -7,41 +7,43 @@ class AgentPayoutSettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.offWhite,
-      appBar: AppBar(
-        title: const Text(
-          'Payout Settings',
-          style: TextStyle(
-            color: AppColors.primaryNavy,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.primaryNavy),
-      ),
-      body: Center(
+      body: SafeArea(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.account_balance_outlined,
-              size: 64,
-              color: Colors.grey[400],
+            ErkataScreenHeader(
+              title: 'Payout Settings',
+              subtitle: 'Manage your bank accounts and withdrawal methods.',
+              onActionTap: () => Navigator.of(context).pop(),
             ),
-            const SizedBox(height: 16),
-            Text(
-              'Payout Settings',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey[600],
+            Expanded(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.account_balance_outlined,
+                      size: 64,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Payout Settings',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Manage your bank accounts and withdrawal methods.',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Manage your bank accounts and withdrawal methods.',
-              style: TextStyle(color: Colors.grey[500]),
             ),
           ],
         ),

@@ -121,7 +121,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
               ),
             ),
             filled: true,
-            fillColor: Colors.white,
+            fillColor: AppColors.pureWhite,
           ),
         ),
       ],

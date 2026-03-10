@@ -4,6 +4,7 @@ import '../../../core/constants/constants.dart';
 import '../../../core/models/request_status.dart';
 import '../../../core/models/service_request.dart';
 import '../../../core/theme/colors.dart';
+import '../../../shared/widgets/erkata_screen_header.dart';
 
 class AgentHistoryScreen extends StatelessWidget {
   const AgentHistoryScreen({super.key});
@@ -18,27 +19,27 @@ class AgentHistoryScreen extends StatelessWidget {
         .toList();
 
     return Scaffold(
-      backgroundColor: AppColors.offWhite,
-      appBar: AppBar(
-        title: const Text(
-          'History',
-          style: TextStyle(
-            color: AppColors.primaryNavy,
-            fontWeight: FontWeight.bold,
-          ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            ErkataScreenHeader(
+              title: 'History',
+              subtitle: 'Your past requests',
+              onActionTap: () => context.pop(),
+            ),
+            Expanded(
+              child: ListView.separated(
+                padding: const EdgeInsets.all(20),
+                itemCount: historyRequests.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 16),
+                itemBuilder: (context, index) {
+                  final req = historyRequests[index];
+                  return _HistoryTile(req: req);
+                },
+              ),
+            ),
+          ],
         ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.primaryNavy),
-      ),
-      body: ListView.separated(
-        padding: const EdgeInsets.all(20),
-        itemCount: historyRequests.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 16),
-        itemBuilder: (context, index) {
-          final req = historyRequests[index];
-          return _HistoryTile(req: req);
-        },
       ),
     );
   }
@@ -56,9 +57,11 @@ class _HistoryTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[200]!),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -68,7 +71,10 @@ class _HistoryTile extends StatelessWidget {
               children: [
                 Text(
                   req.date,
-                  style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontSize: 12,
+                  ),
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(
@@ -76,7 +82,9 @@ class _HistoryTile extends StatelessWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.green[50],
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppColors.successGreenLight.withValues(alpha: 0.1)
+                        : Colors.green[50],
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -93,16 +101,19 @@ class _HistoryTile extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               req.title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
-                color: AppColors.primaryNavy,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 4),
             Text(
               '${req.type.label} • ${req.location}',
-              style: TextStyle(color: Colors.grey[600], fontSize: 13),
+              style: TextStyle(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontSize: 13,
+              ),
             ),
             const SizedBox(height: 12),
             Row(
@@ -118,7 +129,11 @@ class _HistoryTile extends StatelessWidget {
                   ),
                 ),
                 const Spacer(),
-                Icon(Icons.chevron_right, size: 20, color: Colors.grey[300]),
+                Icon(
+                  Icons.chevron_right,
+                  size: 20,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
               ],
             ),
           ],

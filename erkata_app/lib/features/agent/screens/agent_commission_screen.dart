@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/colors.dart';
+import '../../../shared/widgets/erkata_screen_header.dart';
 
 class AgentCommissionScreen extends StatelessWidget {
   const AgentCommissionScreen({super.key});
@@ -9,216 +10,232 @@ class AgentCommissionScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.offWhite,
-      appBar: AppBar(
-        title: const Text(
-          'Earnings',
-          style: TextStyle(
-            color: AppColors.primaryNavy,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 1,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.primaryNavy),
-          onPressed: () => context.pop(),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.only(
-          left: 20,
-          right: 20,
-          top: 20,
-          bottom: 120,
-        ),
+      body: SafeArea(
         child: Column(
           children: [
-            // Total Earned Card
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: Colors.grey[100]!),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 4,
-                    offset: Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.green[50],
-                          borderRadius: BorderRadius.circular(8),
+            ErkataScreenHeader(
+              title: 'Earnings',
+              subtitle: 'Your revenue and payouts',
+              onActionTap: () => context.pop(),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.only(
+                  left: 20,
+                  right: 20,
+                  top: 20,
+                  bottom: 120,
+                ),
+                child: Column(
+                  children: [
+                    // Total Earned Card
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surface,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.outlineVariant,
                         ),
-                        child: const Icon(
-                          Icons.trending_up,
-                          color: AppColors.successGreen,
-                          size: 20,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Theme.of(
+                              context,
+                            ).shadowColor.withValues(alpha: 0.04),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: AppColors.successGreen.withValues(
+                                    alpha: 0.1,
+                                  ),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(
+                                  Icons.trending_up,
+                                  color: AppColors.successGreen,
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Total Revenue',
+                                style: TextStyle(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          RichText(
+                            text: TextSpan(
+                              text: '45,200 ',
+                              style: TextStyle(
+                                fontSize: 32,
+                                fontWeight: FontWeight.bold,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                              children: [
+                                TextSpan(
+                                  text: 'ETB',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.normal,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.arrow_upward,
+                                size: 14,
+                                color: AppColors.successGreen,
+                              ),
+                              Text(
+                                '12.5% ',
+                                style: TextStyle(
+                                  color: AppColors.successGreen,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              Text(
+                                'vs last month',
+                                style: TextStyle(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Weekly Performance Chart
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surface,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.outlineVariant,
                         ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Theme.of(
+                              context,
+                            ).shadowColor.withValues(alpha: 0.04),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 12),
-                      const Text(
-                        'Total Revenue',
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontWeight: FontWeight.w600,
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Weekly Performance',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).colorScheme.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 24),
+                          const SizedBox(
+                            height: 200,
+                            width: double.infinity,
+                            child: _RevenueChart(),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  RichText(
-                    text: const TextSpan(
-                      text: '45,200 ',
-                      style: TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.primaryNavy,
-                      ),
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Breakdown Grid
+                    Row(
                       children: [
-                        TextSpan(
-                          text: 'ETB',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.normal,
-                            color: Colors.grey,
+                        Expanded(
+                          child: _InfoCard(
+                            label: 'Pending',
+                            value: '8,500 ETB',
+                            valueColor: Colors.orange,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: _InfoCard(
+                            label: 'Withdrawable',
+                            value: '36,700 ETB',
+                            valueColor: Theme.of(context).colorScheme.primary,
                           ),
                         ),
                       ],
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Row(
-                    children: [
-                      Icon(
-                        Icons.arrow_upward,
-                        size: 14,
-                        color: AppColors.successGreen,
-                      ),
-                      Text(
-                        '12.5% ',
+                    const SizedBox(height: 24),
+
+                    // Recent Transactions
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'RECENT TRANSACTIONS',
                         style: TextStyle(
-                          color: AppColors.successGreen,
-                          fontWeight: FontWeight.bold,
                           fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          letterSpacing: 1.2,
                         ),
                       ),
-                      Text(
-                        'vs last month',
-                        style: TextStyle(color: Colors.grey, fontSize: 12),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Weekly Performance Chart
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: Colors.grey[100]!),
-                boxShadow: const [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 4,
-                    offset: Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Weekly Performance',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primaryNavy,
                     ),
-                  ),
-                  const SizedBox(height: 24),
-                  const SizedBox(
-                    height: 200,
-                    width: double.infinity,
-                    child: _RevenueChart(),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            // Breakdown Grid
-            Row(
-              children: [
-                Expanded(
-                  child: _InfoCard(
-                    label: 'Pending',
-                    value: '8,500 ETB',
-                    valueColor: Colors.orange,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _InfoCard(
-                    label: 'Withdrawable',
-                    value: '36,700 ETB',
-                    valueColor: AppColors.primaryNavy,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-
-            // Recent Transactions
-            const Align(
-              alignment: Alignment.centerLeft,
-              child: Text(
-                'RECENT TRANSACTIONS',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.grey,
-                  letterSpacing: 1.2,
+                    const SizedBox(height: 12),
+                    Column(
+                      children: [
+                        _TransactionItem(
+                          desc: 'Commission - REQ-2023-001',
+                          amount: '+ 2,500 ETB',
+                          date: 'Today, 10:30 AM',
+                          isCredit: true,
+                        ),
+                        const SizedBox(height: 12),
+                        _TransactionItem(
+                          desc: 'Payout to Telebirr',
+                          amount: '- 10,000 ETB',
+                          date: 'Yesterday',
+                          isCredit: false,
+                        ),
+                        const SizedBox(height: 12),
+                        _TransactionItem(
+                          desc: 'Commission - REQ-2023-005',
+                          amount: '+ 1,800 ETB',
+                          date: 'Oct 22',
+                          isCredit: true,
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-            ),
-            const SizedBox(height: 12),
-            Column(
-              children: [
-                _TransactionItem(
-                  desc: 'Commission - REQ-2023-001',
-                  amount: '+ 2,500 ETB',
-                  date: 'Today, 10:30 AM',
-                  isCredit: true,
-                ),
-                const SizedBox(height: 12),
-                _TransactionItem(
-                  desc: 'Payout to Telebirr',
-                  amount: '- 10,000 ETB',
-                  date: 'Yesterday',
-                  isCredit: false,
-                ),
-                const SizedBox(height: 12),
-                _TransactionItem(
-                  desc: 'Commission - REQ-2023-005',
-                  amount: '+ 1,800 ETB',
-                  date: 'Oct 22',
-                  isCredit: true,
-                ),
-              ],
             ),
           ],
         ),
@@ -243,17 +260,27 @@ class _InfoCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[100]!),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 2, offset: Offset(0, 1)),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).shadowColor.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
           const SizedBox(height: 4),
           Text(
             value,
@@ -288,11 +315,15 @@ class _TransactionItem extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[100]!),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 2, offset: Offset(0, 1)),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+        boxShadow: [
+          BoxShadow(
+            color: Theme.of(context).shadowColor.withValues(alpha: 0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: Row(
@@ -300,12 +331,16 @@ class _TransactionItem extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: isCredit ? Colors.green[50] : Colors.grey[100],
+              color: isCredit
+                  ? AppColors.successGreen.withValues(alpha: 0.1)
+                  : Theme.of(context).colorScheme.surfaceContainerHighest,
               shape: BoxShape.circle,
             ),
             child: Icon(
               isCredit ? Icons.check_circle_outline : Icons.arrow_downward,
-              color: isCredit ? Colors.green : Colors.grey,
+              color: isCredit
+                  ? AppColors.successGreen
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
               size: 20,
             ),
           ),
@@ -316,14 +351,17 @@ class _TransactionItem extends StatelessWidget {
               children: [
                 Text(
                   desc,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: AppColors.darkGrey,
+                    color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
                 Text(
                   date,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ],
             ),
@@ -332,7 +370,9 @@ class _TransactionItem extends StatelessWidget {
             amount,
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              color: isCredit ? AppColors.successGreen : AppColors.darkGrey,
+              color: isCredit
+                  ? AppColors.successGreen
+                  : Theme.of(context).colorScheme.onSurface,
             ),
           ),
         ],
@@ -346,11 +386,21 @@ class _RevenueChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(size: Size.infinite, painter: _ChartPainter());
+    return CustomPaint(
+      size: Size.infinite,
+      painter: _ChartPainter(
+        gridColor: Theme.of(context).colorScheme.outlineVariant,
+        dotColor: Theme.of(context).colorScheme.surface,
+      ),
+    );
   }
 }
 
 class _ChartPainter extends CustomPainter {
+  final Color gridColor;
+  final Color dotColor;
+
+  _ChartPainter({required this.gridColor, required this.dotColor});
   @override
   void paint(Canvas canvas, Size size) {
     final data = [1200, 2100, 1800, 2800, 2400, 3800, 3200];
@@ -368,8 +418,8 @@ class _ChartPainter extends CustomPainter {
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
-          AppColors.successGreen.withOpacity(0.2),
-          AppColors.successGreen.withOpacity(0.0),
+          AppColors.successGreen.withValues(alpha: 0.2),
+          AppColors.successGreen.withValues(alpha: 0.0),
         ],
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
 
@@ -378,7 +428,7 @@ class _ChartPainter extends CustomPainter {
 
     // Grid lines
     final gridPaint = Paint()
-      ..color = Colors.grey[200]!
+      ..color = gridColor
       ..strokeWidth = 1;
     canvas.drawLine(
       Offset(0, size.height),
@@ -419,7 +469,7 @@ class _ChartPainter extends CustomPainter {
     for (int i = 0; i < data.length; i++) {
       final x = i * widthStep;
       final y = size.height - (data[i] / max) * size.height;
-      canvas.drawCircle(Offset(x, y), 4, Paint()..color = Colors.white);
+      canvas.drawCircle(Offset(x, y), 4, Paint()..color = dotColor);
       canvas.drawCircle(
         Offset(x, y),
         4,

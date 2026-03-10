@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../core/theme/colors.dart';
+import '../../../shared/widgets/erkata_screen_header.dart';
 
 class _NotificationItem {
   final String id;
@@ -102,7 +102,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
-  Color _getIconColor(String type) {
+  Color _getIconColor(String type, BuildContext context) {
     switch (type) {
       case 'success':
         return Colors.green;
@@ -111,21 +111,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       case 'alert':
         return Colors.red;
       default:
-        return AppColors.primaryNavy;
+        return Theme.of(context).colorScheme.primary;
     }
   }
 
-  Color _getIconBgColor(String type) {
-    switch (type) {
-      case 'success':
-        return Colors.green[50]!;
-      case 'warning':
-        return Colors.amber[50]!;
-      case 'alert':
-        return Colors.red[50]!;
-      default:
-        return Colors.blue[50]!;
-    }
+  Color _getIconBgColor(String type, BuildContext context) {
+    return _getIconColor(type, context).withValues(alpha: 0.15);
   }
 
   @override
@@ -133,144 +124,168 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final unreadCount = _notifications.where((n) => !n.read).length;
 
     return Scaffold(
-      backgroundColor: AppColors.offWhite,
-      appBar: AppBar(
-        title: const Text(
-          'Notifications',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: AppColors.primaryNavy,
-          ),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        scrolledUnderElevation: 1,
-        iconTheme: const IconThemeData(color: AppColors.primaryNavy),
-        actions: [
-          if (unreadCount > 0)
-            TextButton(
-              onPressed: _markAllRead,
-              child: const Text(
-                'Mark all read',
-                style: TextStyle(
-                  color: AppColors.primaryNavy,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 12,
-                ),
-              ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            ErkataScreenHeader(
+              title: 'Notifications',
+              subtitle: 'Latest updates and alerts',
+              customAction: unreadCount > 0
+                  ? TextButton(
+                      onPressed: _markAllRead,
+                      child: Text(
+                        'Mark all read',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    )
+                  : null,
             ),
-        ],
-      ),
-      body: _notifications.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.notifications_off_outlined,
-                    size: 64,
-                    color: Colors.grey[300],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'No notifications',
-                    style: TextStyle(
-                      color: Colors.grey[500],
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    "You're all caught up!",
-                    style: TextStyle(color: Colors.grey[400], fontSize: 14),
-                  ),
-                ],
-              ),
-            )
-          : ListView.separated(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              itemCount: _notifications.length,
-              separatorBuilder: (_, __) => const Divider(height: 1, indent: 76),
-              itemBuilder: (context, index) {
-                final notification = _notifications[index];
-                return Container(
-                  color: notification.read
-                      ? Colors.transparent
-                      : Colors.blue.withOpacity(0.03),
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 8,
-                    ),
-                    leading: Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: _getIconBgColor(notification.type),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Icon(
-                        _getIcon(notification.type),
-                        color: _getIconColor(notification.type),
-                        size: 22,
-                      ),
-                    ),
-                    title: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            notification.title,
+            Expanded(
+              child: _notifications.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.notifications_off_outlined,
+                            size: 64,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant
+                                .withValues(alpha: 0.5),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No notifications',
                             style: TextStyle(
-                              fontWeight: notification.read
-                                  ? FontWeight.w500
-                                  : FontWeight.bold,
+                              color: Theme.of(context).colorScheme.onSurface,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            "You're all caught up!",
+                            style: TextStyle(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onSurfaceVariant,
                               fontSize: 14,
-                              color: AppColors.primaryNavy,
                             ),
                           ),
-                        ),
-                        if (!notification.read)
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: const BoxDecoration(
-                              color: AppColors.primaryNavy,
-                              shape: BoxShape.circle,
+                        ],
+                      ),
+                    )
+                  : ListView.separated(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      itemCount: _notifications.length,
+                      separatorBuilder: (_, __) => Divider(
+                        height: 1,
+                        indent: 76,
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                      ),
+                      itemBuilder: (context, index) {
+                        final notification = _notifications[index];
+                        return Container(
+                          color: notification.read
+                              ? Colors.transparent
+                              : Theme.of(context).colorScheme.primaryContainer
+                                    .withValues(alpha: 0.2),
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 8,
                             ),
+                            leading: Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                color: _getIconBgColor(
+                                  notification.type,
+                                  context,
+                                ),
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: Icon(
+                                _getIcon(notification.type),
+                                color: _getIconColor(
+                                  notification.type,
+                                  context,
+                                ),
+                                size: 22,
+                              ),
+                            ),
+                            title: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    notification.title,
+                                    style: TextStyle(
+                                      fontWeight: notification.read
+                                          ? FontWeight.w500
+                                          : FontWeight.bold,
+                                      fontSize: 14,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurface,
+                                    ),
+                                  ),
+                                ),
+                                if (!notification.read)
+                                  Container(
+                                    width: 8,
+                                    height: 8,
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.primary,
+                                      shape: BoxShape.circle,
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const SizedBox(height: 4),
+                                Text(
+                                  notification.message,
+                                  style: TextStyle(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
+                                    fontSize: 13,
+                                    height: 1.4,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Text(
+                                  notification.time,
+                                  style: TextStyle(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            onTap: () {
+                              setState(() => notification.read = true);
+                            },
                           ),
-                      ],
+                        );
+                      },
                     ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 4),
-                        Text(
-                          notification.message,
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 13,
-                            height: 1.4,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          notification.time,
-                          style: TextStyle(
-                            color: Colors.grey[400],
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
-                    ),
-                    onTap: () {
-                      setState(() => notification.read = true);
-                    },
-                  ),
-                );
-              },
             ),
+          ],
+        ),
+      ),
     );
   }
 }

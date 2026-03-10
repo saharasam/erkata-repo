@@ -6,6 +6,7 @@ import 'package:erkata_app/core/models/request_type.dart';
 import 'package:erkata_app/core/models/service_request.dart';
 import 'package:erkata_app/core/models/user_role.dart';
 import 'package:erkata_app/core/theme/colors.dart';
+import 'package:erkata_app/shared/widgets/erkata_screen_header.dart';
 
 class AgentDashboardScreen extends StatelessWidget {
   const AgentDashboardScreen({super.key});
@@ -27,215 +28,228 @@ class AgentDashboardScreen extends StatelessWidget {
         .toList();
 
     return Scaffold(
-      backgroundColor: AppColors.offWhite,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 20,
-            bottom: 120,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Agent Dashboard',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.primaryNavy,
-                        ),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        'You have active assignments.',
-                        style: TextStyle(color: Colors.grey, fontSize: 14),
-                      ),
+        child: Column(
+          children: [
+            ErkataScreenHeader(
+              title: 'Agent Dashboard',
+              subtitle: 'You have active assignments.',
+              customAction: GestureDetector(
+                onTap: () => context.push('/agent/profile'),
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primary,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.surface,
+                      width: 2,
+                    ),
+                    boxShadow: const [
+                      BoxShadow(color: Colors.black26, blurRadius: 4),
                     ],
                   ),
-                  GestureDetector(
-                    onTap: () => context.push('/agent/profile'),
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryNavy,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2),
-                        boxShadow: const [
-                          BoxShadow(color: Colors.black26, blurRadius: 4),
-                        ],
-                      ),
-                      child: const Center(
-                        child: Text(
-                          'AG',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                  child: Center(
+                    child: Text(
+                      'AG',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 32),
-
-              // Stats Cards
-              Row(
-                children: [
-                  Expanded(
-                    child: _StatCard(
-                      label: 'Active Leads',
-                      value: '${incomingRequests.length + activeTasks.length}',
-                      valueColor: AppColors.primaryNavy,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _StatCard(
-                      label: 'Conversion Rate',
-                      value: '68%',
-                      valueColor: AppColors.successGreen,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 32),
-
-              // Active Tasks Feed
-              if (activeTasks.isNotEmpty) ...[
-                const Text(
-                  'Active Tasks',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primaryNavy,
                   ),
                 ),
-                const SizedBox(height: 16),
-                ListView.separated(
-                  physics: const NeverScrollableScrollPhysics(),
-                  shrinkWrap: true,
-                  itemCount: activeTasks.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 16),
-                  itemBuilder: (context, index) {
-                    final req = activeTasks[index];
-                    return _RequestTile(
-                      req: req,
-                      actions: [
+              ),
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.only(
+                  left: 20,
+                  right: 20,
+                  bottom: 120,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 12),
+
+                    // Stats Cards
+                    Row(
+                      children: [
                         Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () {
-                              context.push(
-                                '/feedback',
-                                extra: {
-                                  'requestId': req.id,
-                                  'recipientName': 'Requestor',
-                                  'role': UserRole.agent,
-                                },
-                              );
-                            },
-                            icon: const Icon(
-                              Icons.check_circle_outline,
-                              size: 16,
-                            ),
-                            label: const Text('Complete & Feedback'),
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              backgroundColor: AppColors.primaryGold,
-                              foregroundColor: AppColors.primaryNavy,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
+                          child: _StatCard(
+                            label: 'Active Leads',
+                            value:
+                                '${incomingRequests.length + activeTasks.length}',
+                            valueColor: AppColors.primaryNavy,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: _StatCard(
+                            label: 'Conversion Rate',
+                            value: '68%',
+                            valueColor: AppColors.successGreen,
                           ),
                         ),
                       ],
-                    );
-                  },
-                ),
-                const SizedBox(height: 32),
-              ],
-
-              // Assignment Feed Header
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'Incoming Requests',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primaryNavy,
                     ),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.filter_list, color: Colors.grey),
-                    onPressed: () {},
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
+                    const SizedBox(height: 32),
 
-              // Feed
-              ListView.separated(
-                physics: const NeverScrollableScrollPhysics(),
-                shrinkWrap: true,
-                itemCount: incomingRequests.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 16),
-                itemBuilder: (context, index) {
-                  final req = incomingRequests[index];
-                  return _RequestTile(
-                    req: req,
-                    actions: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () {},
-                          icon: const Icon(Icons.close, size: 16),
-                          label: const Text('Decline'),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            foregroundColor: Colors.grey[600],
-                            side: BorderSide(color: Colors.grey[200]!),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
+                    // Active Tasks Feed
+                    if (activeTasks.isNotEmpty) ...[
+                      Text(
+                        'Active Tasks',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () {},
-                          icon: const Icon(Icons.check, size: 16),
-                          label: const Text('Accept'),
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            backgroundColor: AppColors.primaryGold,
-                            foregroundColor: AppColors.primaryNavy,
-                            elevation: 2,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                        ),
+                      const SizedBox(height: 16),
+                      ListView.separated(
+                        physics: const NeverScrollableScrollPhysics(),
+                        shrinkWrap: true,
+                        itemCount: activeTasks.length,
+                        separatorBuilder: (_, _) => const SizedBox(height: 16),
+                        itemBuilder: (context, index) {
+                          final req = activeTasks[index];
+                          return _RequestTile(
+                            req: req,
+                            actions: [
+                              Expanded(
+                                child: ElevatedButton.icon(
+                                  onPressed: () {
+                                    context.push(
+                                      '/feedback',
+                                      extra: {
+                                        'requestId': req.id,
+                                        'recipientName': 'Requestor',
+                                        'role': UserRole.agent,
+                                      },
+                                    );
+                                  },
+                                  icon: const Icon(
+                                    Icons.check_circle_outline,
+                                    size: 16,
+                                  ),
+                                  label: const Text('Complete & Feedback'),
+                                  style: ElevatedButton.styleFrom(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                    ),
+                                    backgroundColor: Theme.of(
+                                      context,
+                                    ).colorScheme.secondary,
+                                    foregroundColor: Theme.of(
+                                      context,
+                                    ).colorScheme.onSecondary,
+                                    elevation: 0,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
                       ),
+                      const SizedBox(height: 32),
                     ],
-                  );
-                },
+
+                    // Assignment Feed Header
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Incoming Requests',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).colorScheme.onSurface,
+                          ),
+                        ),
+                        IconButton(
+                          icon: Icon(
+                            Icons.filter_list,
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                          ),
+                          onPressed: () {},
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Feed
+                    ListView.separated(
+                      physics: const NeverScrollableScrollPhysics(),
+                      shrinkWrap: true,
+                      itemCount: incomingRequests.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 16),
+                      itemBuilder: (context, index) {
+                        final req = incomingRequests[index];
+                        return _RequestTile(
+                          req: req,
+                          actions: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                onPressed: () {},
+                                icon: const Icon(Icons.close, size: 16),
+                                label: const Text('Decline'),
+                                style: OutlinedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
+                                  foregroundColor: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                  side: BorderSide(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.outlineVariant,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                onPressed: () {},
+                                icon: const Icon(Icons.check, size: 16),
+                                label: const Text('Accept'),
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
+                                  backgroundColor: Theme.of(
+                                    context,
+                                  ).colorScheme.secondary,
+                                  foregroundColor: Theme.of(
+                                    context,
+                                  ).colorScheme.onSecondary,
+                                  elevation: 2,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ],
+                ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -255,9 +269,11 @@ class _RequestTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.grey[200]!),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
           boxShadow: const [
             BoxShadow(
               color: Colors.black12,
@@ -279,16 +295,20 @@ class _RequestTile extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: req.type == RequestType.property
-                        ? Colors.blue[50]
-                        : Colors.orange[50],
+                        ? Colors.blue.withValues(alpha: 0.1)
+                        : Colors.orange.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
                     req.type.label.toUpperCase(),
                     style: TextStyle(
                       color: req.type == RequestType.property
-                          ? AppColors.primaryNavy
-                          : Colors.orange[800],
+                          ? (Theme.of(context).brightness == Brightness.dark
+                                ? Colors.blue[300]
+                                : AppColors.primaryNavy)
+                          : (Theme.of(context).brightness == Brightness.dark
+                                ? Colors.orange[300]
+                                : Colors.orange[800]),
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 1,
@@ -310,41 +330,58 @@ class _RequestTile extends StatelessWidget {
             const SizedBox(height: 12),
             Text(
               req.title,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: AppColors.primaryNavy,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             Text(
               '#${req.id}',
-              style: const TextStyle(fontSize: 14, color: Colors.grey),
+              style: TextStyle(
+                fontSize: 14,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
             const SizedBox(height: 16),
 
             Row(
               children: [
-                const Icon(Icons.location_on, size: 16, color: Colors.grey),
+                Icon(
+                  Icons.location_on,
+                  size: 16,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
                 const SizedBox(width: 4),
                 Text(
                   req.location,
-                  style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontSize: 14,
+                  ),
                 ),
               ],
             ),
             const SizedBox(height: 8),
             Row(
               children: [
-                const Icon(Icons.attach_money, size: 16, color: Colors.grey),
+                Icon(
+                  Icons.attach_money,
+                  size: 16,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
                 const SizedBox(width: 4),
                 Text(
                   req.budget,
-                  style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontSize: 14,
+                  ),
                 ),
               ],
             ),
             const SizedBox(height: 20),
-            Divider(color: Colors.grey[100]),
+            Divider(color: Theme.of(context).colorScheme.outlineVariant),
             const SizedBox(height: 16),
 
             Row(children: actions),
@@ -371,9 +408,9 @@ class _StatCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[100]!),
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
         boxShadow: const [
           BoxShadow(color: Colors.black12, blurRadius: 2, offset: Offset(0, 1)),
         ],
@@ -381,7 +418,13 @@ class _StatCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
           const SizedBox(height: 4),
           Text(
             value,
