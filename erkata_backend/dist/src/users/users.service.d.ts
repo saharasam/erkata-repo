@@ -9,7 +9,7 @@ export declare class UsersService {
             id: string;
             createdAt: Date;
             fullName: string;
-            role: import(".prisma/client").$Enums.UserRole;
+            role: import("@prisma/client").$Enums.UserRole;
         }[];
         agentZones: {
             id: string;
@@ -22,7 +22,7 @@ export declare class UsersService {
         referralLink: {
             id: string;
             createdAt: Date;
-            tier: import(".prisma/client").$Enums.Tier;
+            tier: import("@prisma/client").$Enums.Tier;
             referrerId: string;
             code: string;
         } | null;
@@ -32,8 +32,8 @@ export declare class UsersService {
         createdAt: Date;
         fullName: string;
         phone: string;
-        role: import(".prisma/client").$Enums.UserRole;
-        tier: import(".prisma/client").$Enums.Tier;
+        role: import("@prisma/client").$Enums.UserRole;
+        tier: import("@prisma/client").$Enums.Tier;
         isActive: boolean;
         walletBalance: Prisma.Decimal;
         referredById: string | null;
@@ -77,7 +77,7 @@ export declare class UsersService {
         referralLink: {
             id: string;
             createdAt: Date;
-            tier: import(".prisma/client").$Enums.Tier;
+            tier: import("@prisma/client").$Enums.Tier;
             referrerId: string;
             code: string;
         } | null;
@@ -87,8 +87,8 @@ export declare class UsersService {
         createdAt: Date;
         fullName: string;
         phone: string;
-        role: import(".prisma/client").$Enums.UserRole;
-        tier: import(".prisma/client").$Enums.Tier;
+        role: import("@prisma/client").$Enums.UserRole;
+        tier: import("@prisma/client").$Enums.Tier;
         isActive: boolean;
         walletBalance: Prisma.Decimal;
         referredById: string | null;
@@ -105,7 +105,7 @@ export declare class UsersService {
     updateTier(callerRole: UserRole, agentId: string, tier: string): Promise<{
         id: string;
         createdAt: Date;
-        tier: import(".prisma/client").$Enums.Tier;
+        tier: import("@prisma/client").$Enums.Tier;
         referrerId: string;
         code: string;
     }>;
@@ -117,8 +117,8 @@ export declare class UsersService {
         createdAt: Date;
         fullName: string;
         phone: string;
-        role: import(".prisma/client").$Enums.UserRole;
-        tier: import(".prisma/client").$Enums.Tier;
+        role: import("@prisma/client").$Enums.UserRole;
+        tier: import("@prisma/client").$Enums.Tier;
         isActive: boolean;
         walletBalance: Prisma.Decimal;
         referredById: string | null;
@@ -129,8 +129,8 @@ export declare class UsersService {
         createdAt: Date;
         fullName: string;
         phone: string;
-        role: import(".prisma/client").$Enums.UserRole;
-        tier: import(".prisma/client").$Enums.Tier;
+        role: import("@prisma/client").$Enums.UserRole;
+        tier: import("@prisma/client").$Enums.Tier;
         isActive: boolean;
         walletBalance: Prisma.Decimal;
         referredById: string | null;

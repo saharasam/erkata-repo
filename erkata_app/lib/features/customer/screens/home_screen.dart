@@ -14,17 +14,17 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 90),
-        child: FloatingActionButton(
-          onPressed: () {
-            context.push('/request/new');
-          },
-          backgroundColor: AppColors.primaryNavy,
-          child: const Icon(
-            Icons.add_circle,
-            size: 28,
-            color: AppColors.primaryGoldLight,
-          ),
-        ),
+        // child: FloatingActionButton(
+        //   onPressed: () {
+        //     context.push('/request/new');
+        //   },
+        //   backgroundColor: AppColors.accentGold,
+        //   child: const Icon(
+        //     Icons.add_circle,
+        //     size: 28,
+        //     color: AppColors.brandGoldLight,
+        //   ),
+        // ),
       ),
       body: SafeArea(
         child: Column(
@@ -92,7 +92,7 @@ class HomeScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.primaryNavy.withAlpha(77),
+                            color: AppColors.brandPrimary.withAlpha(77),
                             blurRadius: 20,
                             offset: const Offset(0, 10),
                           ),
@@ -113,7 +113,7 @@ class HomeScreen extends StatelessWidget {
                           const Text(
                             'Explore premium apartments available now.',
                             style: TextStyle(
-                              color: AppColors.primaryGoldLight,
+                              color: AppColors.brandGoldLight,
                               fontSize: 14,
                             ),
                           ),
@@ -123,8 +123,8 @@ class HomeScreen extends StatelessWidget {
                               context.push('/request/new');
                             },
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.pureWhite,
-                              foregroundColor: AppColors.primaryNavy,
+                              backgroundColor: AppColors.brandGold,
+                              foregroundColor: AppColors.brandPrimary,
                               elevation: 0,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -161,7 +161,7 @@ class HomeScreen extends StatelessWidget {
                             context.go('/request/status');
                           },
                           style: TextButton.styleFrom(
-                            foregroundColor: AppColors.primaryNavy,
+                            foregroundColor: AppColors.brandPrimary,
                           ),
                           child: const Row(
                             children: [
@@ -312,7 +312,7 @@ class HomeScreen extends StatelessWidget {
                                         child: Text(
                                           request.budget,
                                           style: const TextStyle(
-                                            color: AppColors.primaryNavy,
+                                            color: AppColors.brandPrimary,
                                             fontSize: 12,
                                             fontWeight: FontWeight.w500,
                                           ),

@@ -21,6 +21,7 @@ const mediation_module_1 = require("./mediation/mediation.module");
 const core_1 = require("@nestjs/core");
 const audit_interceptor_1 = require("./common/interceptors/audit.interceptor");
 const common_module_1 = require("./common/common.module");
+const admin_module_1 = require("./admin/admin.module");
 let AppModule = class AppModule {
     configure(consumer) {
         consumer
@@ -50,6 +51,7 @@ exports.AppModule = AppModule = __decorate([
                 },
             }),
             common_module_1.CommonModule,
+            admin_module_1.AdminModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [

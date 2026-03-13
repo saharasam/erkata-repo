@@ -236,7 +236,7 @@ class _RequestCard extends StatelessWidget {
                         child: Text(
                           request.budget,
                           style: const TextStyle(
-                            color: AppColors.primaryNavy,
+                            color: AppColors.brandPrimary,
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
                           ),
@@ -284,7 +284,7 @@ class _StatusBadge extends StatelessWidget {
     switch (status) {
       case RequestStatus.newRequest:
         bg = AppColors.infoBlueLight;
-        text = AppColors.primaryNavy;
+        text = AppColors.brandPrimary;
       case RequestStatus.assigned:
         bg = AppColors.warningOrangeLight;
         text = AppColors.warningOrange;
@@ -550,8 +550,8 @@ class _RequestDetailView extends StatelessWidget {
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(14),
                           ),
-                          foregroundColor: AppColors.primaryNavy,
-                          side: const BorderSide(color: AppColors.primaryNavy),
+                          foregroundColor: AppColors.brandPrimary,
+                          side: const BorderSide(color: AppColors.brandPrimary),
                         ),
                       ),
                     ),

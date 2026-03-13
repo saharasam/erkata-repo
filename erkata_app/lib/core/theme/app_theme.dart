@@ -3,150 +3,173 @@ import 'package:google_fonts/google_fonts.dart';
 import 'colors.dart';
 
 class AppTheme {
-  // ===========================================================================
+  // =====================================================
   // LIGHT THEME
-  // ===========================================================================
+  // =====================================================
+
   static ThemeData get lightTheme {
+    const scheme = ColorScheme(
+      brightness: Brightness.light,
+
+      primary: AppColors.brandPrimary,
+      onPrimary: Colors.white,
+      primaryContainer: AppColors.brandPrimaryLight,
+      onPrimaryContainer: AppColors.brandPrimaryDark,
+
+      secondary: AppColors.brandGold,
+      onSecondary: Colors.white,
+      secondaryContainer: AppColors.brandGoldLight,
+      onSecondaryContainer: AppColors.brandPrimaryDark,
+
+      tertiary: AppColors.brandSky,
+      onTertiary: Colors.white,
+      tertiaryContainer: AppColors.surfaceSecondary,
+      onTertiaryContainer: AppColors.textPrimary,
+
+      error: AppColors.error,
+      onError: Colors.white,
+      errorContainer: AppColors.errorLight,
+      onErrorContainer: AppColors.error,
+
+      surface: AppColors.surface,
+      onSurface: AppColors.textPrimary,
+
+      surfaceContainerHighest: AppColors.surfaceSecondary,
+      onSurfaceVariant: AppColors.textSecondary,
+
+      outline: AppColors.border,
+      outlineVariant: AppColors.border,
+
+      shadow: Colors.black,
+      scrim: Colors.black54,
+
+      inverseSurface: AppColors.textPrimary,
+      onInverseSurface: Colors.white,
+      inversePrimary: AppColors.brandPrimaryLight,
+    );
+
     return ThemeData(
-      primaryColor: AppColors.deepNavy,
-      scaffoldBackgroundColor: AppColors.bgLight,
-      colorScheme: const ColorScheme(
-        brightness: Brightness.light,
-        // Primary brand → navy
-        primary: AppColors.deepNavy,
-        onPrimary: AppColors.pureWhite,
-        primaryContainer: AppColors.primaryNavyLight,
-        onPrimaryContainer: AppColors.deepNavy,
-        // Secondary brand → gold
-        secondary: AppColors.primaryGold,
-        onSecondary: AppColors.pureWhite,
-        secondaryContainer: AppColors.primaryGoldLight,
-        onSecondaryContainer: AppColors.deepNavy,
-        // Tertiary (unused, safe fallback)
-        tertiary: AppColors.accentGold,
-        onTertiary: AppColors.pureWhite,
-        tertiaryContainer: AppColors.primaryGoldLight,
-        onTertiaryContainer: AppColors.deepNavy,
-        // Error
-        error: AppColors.errorRed,
-        onError: AppColors.pureWhite,
-        errorContainer: AppColors.errorRedLight,
-        onErrorContainer: AppColors.errorRed,
-        // Surfaces
-        surface: AppColors.pureWhite,
-        onSurface: AppColors.charcoal,
-        surfaceContainerHighest: AppColors.lightGreySurface,
-        onSurfaceVariant: AppColors.slate,
-        // Outline
-        outline: AppColors.borderColor,
-        outlineVariant: AppColors.softGrey,
-        // Scrim / shadow
-        scrim: AppColors.darkOverlay,
-        shadow: AppColors.pureBlack,
-        // Inverse
-        inverseSurface: AppColors.charcoal,
-        onInverseSurface: AppColors.pureWhite,
-        inversePrimary: AppColors.primaryNavyLight,
-      ),
+      useMaterial3: true,
+      colorScheme: scheme,
+      primaryColor: scheme.primary,
+      scaffoldBackgroundColor: AppColors.background,
+
       textTheme: GoogleFonts.plusJakartaSansTextTheme().apply(
-        bodyColor: AppColors.darkGrey,
-        displayColor: AppColors.deepNavy,
-        decorationColor: AppColors.mediumGrey,
+        bodyColor: AppColors.textPrimary,
+        displayColor: AppColors.textPrimary,
       ),
+
       appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.primaryNavy,
-        foregroundColor: AppColors.pureWhite,
+        backgroundColor: AppColors.brandPrimary,
+        foregroundColor: Colors.white,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
       ),
-      dividerTheme: const DividerThemeData(color: AppColors.borderColor),
-      iconTheme: const IconThemeData(color: AppColors.slate),
-      useMaterial3: true,
+
+      cardTheme: const CardThemeData(
+        color: AppColors.surface,
+        elevation: 0,
+        margin: EdgeInsets.zero,
+      ),
+
+      dividerTheme: const DividerThemeData(color: AppColors.border),
+
+      iconTheme: const IconThemeData(color: AppColors.textSecondary),
+
+      inputDecorationTheme: const InputDecorationTheme(
+        filled: true,
+        fillColor: AppColors.surfaceSecondary,
+        border: OutlineInputBorder(
+          borderSide: BorderSide(color: AppColors.border),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: AppColors.border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderSide: BorderSide(color: AppColors.brandPrimary),
+        ),
+      ),
     );
   }
 
-  // ===========================================================================
+  // =====================================================
   // DARK THEME
-  // Uses a GitHub-inspired dark palette: very dark backgrounds, gold accents,
-  // soft off-white text — no auto-generated colors from fromSeed.
-  // ===========================================================================
+  // =====================================================
+
   static ThemeData get darkTheme {
+    const scheme = ColorScheme(
+      brightness: Brightness.dark,
+
+      primary: AppColors.brandGold,
+      onPrimary: Colors.black,
+      primaryContainer: AppColors.surfaceDarkElevated,
+      onPrimaryContainer: AppColors.brandGold,
+
+      secondary: AppColors.brandGoldDark,
+      onSecondary: Colors.black,
+      secondaryContainer: AppColors.surfaceDarkElevated,
+      onSecondaryContainer: AppColors.textPrimaryDark,
+
+      tertiary: AppColors.brandSky,
+      onTertiary: Colors.white,
+      tertiaryContainer: AppColors.surfaceDark,
+      onTertiaryContainer: AppColors.textPrimaryDark,
+
+      error: AppColors.error,
+      onError: Colors.black,
+      errorContainer: Color(0xFF5C2323),
+      onErrorContainer: Color(0xFFFFB3B3),
+
+      surface: AppColors.surfaceDark,
+      onSurface: AppColors.textPrimaryDark,
+
+      surfaceContainerHighest: AppColors.surfaceDarkElevated,
+      onSurfaceVariant: AppColors.textSecondaryDark,
+
+      outline: AppColors.borderDark,
+      outlineVariant: AppColors.borderDark,
+
+      shadow: Colors.black,
+      scrim: Colors.black87,
+
+      inverseSurface: AppColors.textPrimaryDark,
+      onInverseSurface: AppColors.backgroundDark,
+      inversePrimary: AppColors.brandPrimary,
+    );
+
     return ThemeData(
-      primaryColor: AppColors.goldDark,
-      scaffoldBackgroundColor: AppColors.bgDark,
-      colorScheme: const ColorScheme(
-        brightness: Brightness.dark,
-        // Primary brand → bright gold (readable on dark)
-        primary: AppColors.goldDark,
-        onPrimary: AppColors.pureBlack,
-        primaryContainer: AppColors.surfaceDarkElevated,
-        onPrimaryContainer: AppColors.goldDark,
-        // Secondary → muted amber
-        secondary: AppColors.accentGold,
-        onSecondary: AppColors.pureBlack,
-        secondaryContainer: AppColors.chipDark,
-        onSecondaryContainer: AppColors.onDarkPrimary,
-        // Tertiary → subtle warm tone
-        tertiary: AppColors.onDarkSecondary,
-        onTertiary: AppColors.bgDark,
-        tertiaryContainer: AppColors.surfaceDark,
-        onTertiaryContainer: AppColors.onDarkPrimary,
-        // Error
-        error: Color(0xFFFF6B6B),
-        onError: AppColors.pureBlack,
-        errorContainer: Color(0xFF5C2323),
-        onErrorContainer: Color(0xFFFFB3B3),
-        // Surfaces
-        surface: AppColors.surfaceDark,
-        onSurface: AppColors.onDarkPrimary,
-        surfaceContainerHighest: AppColors.surfaceDarkElevated,
-        onSurfaceVariant: AppColors.onDarkSecondary,
-        // Outline
-        outline: AppColors.borderDark,
-        outlineVariant: AppColors.onDarkDisabled,
-        // Scrim / shadow
-        scrim: AppColors.darkScrim,
-        shadow: AppColors.pureBlack,
-        // Inverse (Snackbars, tooltips)
-        inverseSurface: AppColors.onDarkPrimary,
-        onInverseSurface: AppColors.bgDark,
-        inversePrimary: AppColors.primaryNavy,
-      ),
+      useMaterial3: true,
+      colorScheme: scheme,
+      primaryColor: scheme.primary,
+      scaffoldBackgroundColor: AppColors.backgroundDark,
+
       textTheme: GoogleFonts.plusJakartaSansTextTheme().apply(
-        bodyColor: AppColors.onDarkPrimary,
-        displayColor: AppColors.onDarkPrimary,
-        decorationColor: AppColors.onDarkSecondary,
+        bodyColor: AppColors.textPrimaryDark,
+        displayColor: AppColors.textPrimaryDark,
       ),
+
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.surfaceDark,
-        foregroundColor: AppColors.onDarkPrimary,
+        foregroundColor: AppColors.textPrimaryDark,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
       ),
+
       cardTheme: const CardThemeData(
         color: AppColors.surfaceDarkElevated,
         elevation: 0,
         margin: EdgeInsets.zero,
       ),
+
       dividerTheme: const DividerThemeData(color: AppColors.borderDark),
-      iconTheme: const IconThemeData(color: AppColors.onDarkSecondary),
-      switchTheme: SwitchThemeData(
-        thumbColor: WidgetStateProperty.resolveWith(
-          (s) => s.contains(WidgetState.selected)
-              ? AppColors.goldDark
-              : AppColors.onDarkSecondary,
-        ),
-        trackColor: WidgetStateProperty.resolveWith(
-          (s) => s.contains(WidgetState.selected)
-              ? AppColors.goldDark.withValues(alpha: 0.4)
-              : AppColors.borderDark,
-        ),
-      ),
+
+      iconTheme: const IconThemeData(color: AppColors.textSecondaryDark),
+
       inputDecorationTheme: const InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.inputDark,
+        fillColor: AppColors.surfaceDark,
         border: OutlineInputBorder(
           borderSide: BorderSide(color: AppColors.borderDark),
         ),
@@ -154,12 +177,22 @@ class AppTheme {
           borderSide: BorderSide(color: AppColors.borderDark),
         ),
         focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: AppColors.goldDark),
+          borderSide: BorderSide(color: AppColors.brandGold),
         ),
-        hintStyle: TextStyle(color: AppColors.onDarkSecondary),
-        labelStyle: TextStyle(color: AppColors.onDarkSecondary),
       ),
-      useMaterial3: true,
+
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith(
+          (s) => s.contains(WidgetState.selected)
+              ? AppColors.brandGold
+              : AppColors.textSecondaryDark,
+        ),
+        trackColor: WidgetStateProperty.resolveWith(
+          (s) => s.contains(WidgetState.selected)
+              ? AppColors.brandGold.withValues(alpha: 0.4)
+              : AppColors.borderDark,
+        ),
+      ),
     );
   }
 }

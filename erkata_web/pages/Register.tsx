@@ -23,17 +23,24 @@ const Register: React.FC<RegisterProps> = ({ initialRole = 'customer' }) => {
   const [error, setError] = useState('');
 
   const navigate = useNavigate();
-  const location = useLocation();
-  const { signup } = useAuth();
+  const queryParams = new URLSearchParams(location.search);
+  const inviteToken = queryParams.get('token');
+  const invitedEmail = queryParams.get('email');
+  const invitedRole = queryParams.get('role') as Role | null;
 
   const isFromRequest = (location.state as any)?.fromRequest;
 
-  // Lock role to 'customer' if coming from request intake
+  // Handle invite logic or request intake logic
   useEffect(() => {
     if (isFromRequest) {
       setRole('customer');
+    } else if (inviteToken && invitedRole) {
+      setRole(invitedRole);
+      if (invitedEmail) {
+        setFormData(prev => ({ ...prev, email: invitedEmail }));
+      }
     }
-  }, [isFromRequest]);
+  }, [isFromRequest, inviteToken, invitedRole, invitedEmail]);
 
   const handleRegister = async () => {
     setError('');
@@ -50,6 +57,7 @@ const Register: React.FC<RegisterProps> = ({ initialRole = 'customer' }) => {
         email: formData.email,
         password: formData.password,
         role: role,
+        inviteToken: inviteToken || undefined,
       });
       
       // Post-registration: Redirect to login
@@ -136,9 +144,27 @@ const Register: React.FC<RegisterProps> = ({ initialRole = 'customer' }) => {
             <motion.div variants={itemVariants} className="mb-10">
               <h1 className="text-4xl md:text-5xl font-medium mb-3 text-erkata-text">Get Started</h1>
               <p className="text-gray-500 text-lg">
-                {isFromRequest ? 'Create an account to finish your request.' : 'Select your role to begin.'}
+                {isFromRequest 
+                  ? 'Create an account to finish your request.' 
+                  : inviteToken 
+                    ? `You've been invited as an ${role}.` 
+                    : 'Select your role to begin.'}
               </p>
             </motion.div>
+
+            {inviteToken && (
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="mb-8 p-4 bg-indigo-50 border border-indigo-100 rounded-2xl flex items-center gap-3"
+              >
+                <ShieldCheck className="w-6 h-6 text-indigo-600" />
+                <div>
+                  <p className="text-xs font-bold text-indigo-900 uppercase tracking-widest">Verified Invite</p>
+                  <p className="text-[10px] text-indigo-700 font-medium">This link grants administrative access for {invitedEmail}.</p>
+                </div>
+              </motion.div>
+            )}
 
 
             {error && (
@@ -151,7 +177,7 @@ const Register: React.FC<RegisterProps> = ({ initialRole = 'customer' }) => {
               </motion.div>
             )}
 
-            {!isFromRequest && (
+            {!isFromRequest && !inviteToken && (
             <motion.div variants={itemVariants} className="flex bg-white p-2 rounded-full border border-gray-100 mb-10 shadow-sm relative z-10">
               <div className="absolute inset-0 p-2 pointer-events-none">
                  <motion.div 
@@ -223,7 +249,8 @@ const Register: React.FC<RegisterProps> = ({ initialRole = 'customer' }) => {
                     value={formData.email}
                     onChange={(e) => updateField('email', e.target.value)}
                     required
-                    className="w-full px-8 py-4 bg-white rounded-full border border-gray-100 shadow-sm outline-none focus:ring-2 focus:ring-black/5 focus:border-black transition-all pl-14 text-gray-800"
+                    readOnly={!!inviteToken}
+                    className={`w-full px-8 py-4 bg-white rounded-full border border-gray-100 shadow-sm outline-none focus:ring-2 focus:ring-black/5 focus:border-black transition-all pl-14 text-gray-800 ${inviteToken ? 'opacity-70 cursor-not-allowed' : ''}`}
                   />
                   <Mail className="w-5 h-5 text-gray-400 absolute left-6 top-1/2 transform -translate-y-1/2 group-focus-within:text-black transition-colors" />
                 </div>

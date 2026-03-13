@@ -16,6 +16,7 @@ export interface RegisterDto {
   password: string;
   role?: string;
   tier?: string;
+  inviteToken?: string;
 }
 
 @Controller('auth')

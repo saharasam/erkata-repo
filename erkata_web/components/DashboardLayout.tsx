@@ -11,8 +11,10 @@ interface DashboardLayoutProps {
   children: ReactNode;
   sidebarContent: ReactNode;
   rightPanelContent?: ReactNode;
-  role: 'agent' | 'operator' | 'admin' | 'customer';
+  role: 'agent' | 'operator' | 'admin' | 'customer' | 'super_admin';
   onSettingsClick?: () => void;
+  currentView?: string;
+  onViewChange?: (view: string) => void;
 }
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ 
@@ -20,7 +22,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   sidebarContent, 
   rightPanelContent,
   role,
-  onSettingsClick 
+  onSettingsClick,
+  currentView,
+  onViewChange
 }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -92,6 +96,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           <UtilitySidebar 
             onSettingsClick={() => setShowSettings(true)}
             onNotificationsClick={() => setShowNotifications(true)}
+            currentView={currentView}
+            onViewChange={onViewChange}
           />
       </div>
 
@@ -101,12 +107,19 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           fixed lg:static inset-y-0 left-0 z-40
           w-72 bg-white/80 backdrop-blur-2xl border-r border-white/40 shadow-xl lg:shadow-none
           flex flex-col
+          ${sidebarOpen ? 'flex' : 'hidden lg:flex'}
         `}
         initial={false}
-        animate={sidebarOpen ? "open" : "closed"}
-        variants={sidebarVariants}
+        animate={(sidebarOpen || sidebarContent) ? "open" : "lg:open"}
+        variants={{
+            ...sidebarVariants,
+            "lg:open": { 
+              x: sidebarContent ? 0 : '-100%', 
+              opacity: sidebarContent ? 1 : 0, 
+              display: sidebarContent ? 'flex' : 'none' 
+            }
+        }}
         transition={{ type: 'spring', damping: 20, stiffness: 150 }}
-        style={{ transform: undefined }} // Reset transform for desktop
       >
         {/* Desktop reset for visibility */}
         <div className="hidden lg:block absolute inset-0 -z-10 bg-gradient-to-b from-white/60 to-white/30" />
@@ -123,7 +136,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                   Erkata
                 </motion.h2>
                 <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">
-                  {role === 'agent' ? 'Agent Workspace' : role === 'operator' ? 'Operator Console' : 'System Admin'}
+                  {role === 'agent' ? 'Agent Workspace' : role === 'operator' ? 'Operator Console' : role === 'super_admin' ? 'Final Authority' : 'System Admin'}
                 </p>
               </div>
             </div>
@@ -138,10 +151,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           {/* User Profile Snippet */}
           <div className="bg-white/50 border border-white/60 rounded-xl p-3 flex items-center gap-3 shadow-sm">
              <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-bold text-sm border-2 border-white shadow-sm">
-                {user?.name?.charAt(0) || 'U'}
+                {user?.fullName?.charAt(0) || 'U'}
              </div>
              <div className="min-w-0 flex-1">
-                <p className="text-sm font-bold text-slate-800 truncate">{user?.name}</p>
+                <p className="text-sm font-bold text-slate-800 truncate">{user?.fullName}</p>
                 <div className="flex items-center gap-1.5">
                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
                    <p className="text-xs text-slate-500 font-medium truncate">Online</p>
@@ -176,8 +189,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       <div className="flex-1 flex flex-col min-w-0 h-full relative overflow-hidden">
         {/* Decorative Background */}
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none -z-10">
-           <div className={`absolute top-[-20%] left-[-10%] w-[50%] h-[50%] ${role === 'admin' ? 'bg-indigo-100/40' : 'bg-blue-100/40'} rounded-full blur-[120px]`} />
-           <div className={`absolute bottom-[-20%] right-[-10%] w-[40%] h-[40%] ${role === 'admin' ? 'bg-blue-100/40' : 'bg-teal-100/40'} rounded-full blur-[120px]`} />
+            <div className={`absolute top-[-20%] left-[-10%] w-[50%] h-[50%] ${(role === 'admin' || role === 'super_admin') ? 'bg-indigo-100/40' : 'bg-blue-100/40'} rounded-full blur-[120px]`} />
+            <div className={`absolute bottom-[-20%] right-[-10%] w-[40%] h-[40%] ${(role === 'admin' || role === 'super_admin') ? 'bg-blue-100/40' : 'bg-teal-100/40'} rounded-full blur-[120px]`} />
         </div>
 
         {/* Top Header (Mobile Only / Global Tools) */}

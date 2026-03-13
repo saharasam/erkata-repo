@@ -124,7 +124,7 @@ class TermsScreen extends StatelessWidget {
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: AppColors.primaryNavy,
+              color: AppColors.brandPrimary,
             ),
           ),
           const SizedBox(height: 8),

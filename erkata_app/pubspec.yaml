@@ -43,6 +43,13 @@ dependencies:
   json_annotation: ^4.9.0
   styled_widget: ^0.4.1
   lottie: ^3.3.2
+  dio: ^5.4.3
+  dio_cookie_manager: ^3.1.1
+  cookie_jar: ^4.0.8
+  flutter_secure_storage: ^9.0.0
+  jwt_decoder: ^2.0.1
+  connectivity_plus: ^6.0.3
+  path_provider: ^2.1.2
 
 dev_dependencies:
   flutter_test:
@@ -54,6 +61,10 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  build_runner: ^2.4.8
+  freezed: ^2.4.7
+  json_serializable: ^6.7.1
+  mocktail: ^1.0.3
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

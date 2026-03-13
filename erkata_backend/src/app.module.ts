@@ -13,6 +13,7 @@ import { MediationModule } from './mediation/mediation.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor';
 import { CommonModule } from './common/common.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { CommonModule } from './common/common.module';
       },
     }),
     CommonModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [

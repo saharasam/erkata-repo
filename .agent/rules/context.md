@@ -310,21 +310,4 @@ These are the top 5 critical features required for Version 1 to function accordi
 - I can submit a rating and text review regarding the service received.
 
 ---
-
-## 4. Database Schema (Relational)
-
-This schema is designed for **PostgreSQL** to handle complex relationships and zoning data.
-
-### 4.1 Users & Auth
-
-- **`users`**: `id`, `email`, `phone_number` (Ethiopian format), `password_hash`, `role` (super_admin, admin, operator, agent, customer), `referrer_id` (self-referencing FK), `created_at`.
-- **`profiles_agent`**: `user_id`, `package_tier` (enum: Free, Peace, Love, Unity, Abundant), `wallet_balance`, `verification_status`.
-
-### 4.2 Geography & Zoning
-
-- **`locations`**: `id`, `region` (e.g., Addis Ababa), `kifle_ketema` (e.g., Bole), `woreda` (e.g., 03).
-- **`agent_zone_rights`**: `id`, `agent_id`, `location_id`. (Constraint: Count cannot exceed package limit).
-
-### 4.3 Request Engine
-
-- **`requests`**: `id`, `customer_id`, `category` (Real Estate/Furniture), `specifications` (JSONB for flexible form data), `status` (Open, As
+ErkataPlatformDevelopmentAdvisor(v3)YouaretheDevelopmentAdvisorforErkata.Enforcearchitecture,authorityhierarchy,single-levelMLMlogic,anddisciplinedexecutionfora12-weekMVP.Erkataisarequest-drivenbrokerageforRealEstateandFurnitureinEthiopia.NOPUBLICLISTINGS.AlltransactionsstartfromCustomerRequestsorAgentPackages.Agentsareprimaryactors;OperatorsrouteRequestsbyZoneandPackage.Roles:Customer/Seller,Agent,Operator,Admin,SuperAdmin.Hierarchystrict;nobypass.SuperAdmindefinesMLM%,tax,packages,zones.Adminverifiesusers,approvespackagesandwithdrawals,monitorsledgers.OperatorroutesRequests;nofinancialaccess.Agentbuypackages,fulfillRequests,referAgents,withdrawearnings.Single-levelMLM:directreferreronly.Packagereferralcommission;RealEstatefulfillmentdirect+referreroverride;Furnituredirectonly.MVP:walletledger,taxlogic,requestrouting,auditlogs,anti-self/circularreferrals.ScopefreezeWeek1.DeployWeek12.

@@ -137,8 +137,8 @@ class AgentRequestDetailScreen extends StatelessWidget {
                                 padding: const EdgeInsets.symmetric(
                                   vertical: 16,
                                 ),
-                                backgroundColor: AppColors.primaryGold,
-                                foregroundColor: AppColors.primaryNavy,
+                                backgroundColor: AppColors.backgroundDark,
+                                foregroundColor: AppColors.brandPrimary,
                               ),
                               child: const Text('Accept Request'),
                             ),
@@ -188,7 +188,7 @@ class _StatusBadge extends StatelessWidget {
       case RequestStatus.assigned:
         color = Theme.of(context).brightness == Brightness.dark
             ? Colors.blue[300]!
-            : AppColors.primaryNavy;
+            : AppColors.brandPrimary;
         bgColor = Theme.of(context).brightness == Brightness.dark
             ? Colors.blue.withValues(alpha: 0.1)
             : Colors.blue[50]!;

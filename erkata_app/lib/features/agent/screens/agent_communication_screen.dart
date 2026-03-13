@@ -96,7 +96,7 @@ class AgentCommunicationScreen extends StatelessWidget {
                               _ContactButton(
                                 icon: Icons.message,
                                 label: 'SMS',
-                                color: AppColors.primaryNavy,
+                                color: AppColors.brandPrimary,
                               ),
                               SizedBox(width: 16),
                               _ContactButton(

@@ -29,11 +29,13 @@ class AboutScreen extends StatelessWidget {
                       width: 80,
                       height: 80,
                       decoration: BoxDecoration(
-                        color: AppColors.primaryNavy,
+                        color: AppColors.brandPrimary,
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.primaryNavy.withValues(alpha: 0.3),
+                            color: AppColors.brandPrimary.withValues(
+                              alpha: 0.3,
+                            ),
                             blurRadius: 20,
                             offset: const Offset(0, 8),
                           ),
@@ -56,7 +58,7 @@ class AboutScreen extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.primaryNavy,
+                        color: AppColors.brandPrimary,
                       ),
                     ),
                     const SizedBox(height: 4),

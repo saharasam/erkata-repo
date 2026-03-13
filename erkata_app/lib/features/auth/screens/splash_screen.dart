@@ -1,8 +1,6 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:lottie/lottie.dart';
 import '../../../core/theme/colors.dart';
 import '../state/auth_provider.dart';
@@ -30,20 +28,13 @@ class SplashScreen extends HookConsumerWidget {
           ),
         );
 
-    // 🔹 4. Smart Navigation with Auth State
+    // 🔹 4. Hydrate auth state from secure storage
     useEffect(() {
-      final timer = Timer(const Duration(seconds: 3), () async {
-        final authState = ref.read(authProvider);
-
-        // Determine next route based on auth state
-        final nextRoute = authState.isAuthenticated ? '/home' : '/auth';
-
-        if (context.mounted) {
-          context.go(nextRoute);
-        }
+      Future.microtask(() async {
+        // ApiClient is already initialized in main() — just hydrate auth state
+        await ref.read(authProvider.notifier).hydrate();
       });
-
-      return timer.cancel;
+      return null;
     }, const []);
 
     return Scaffold(
@@ -58,7 +49,7 @@ class SplashScreen extends HookConsumerWidget {
             opacity: fadeController,
             child: Center(
               child: Semantics(
-                label: 'Gojo app loading',
+                label: 'Erkata app loading',
                 excludeSemantics: false,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -135,7 +126,7 @@ class _AnimatedBackground extends HookWidget {
           colors: [
             AppColors.deepNavy,
             AppColors.deepNavy.withValues(alpha: 0.9),
-            AppColors.primaryGold.withValues(alpha: 0.05),
+            AppColors.brandGold.withValues(alpha: 0.05),
           ],
           stops: const [0.0, 0.7, 1.0],
         ),
@@ -158,11 +149,11 @@ class _LogoWidget extends StatelessWidget {
         width: 120,
         height: 120,
         decoration: BoxDecoration(
-          color: AppColors.primaryGold,
+          color: AppColors.brandGold,
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primaryGold.withValues(alpha: 0.4),
+              color: AppColors.brandGold.withValues(alpha: 0.4),
               blurRadius: 20,
               spreadRadius: 2,
             ),
@@ -187,7 +178,7 @@ class _BrandText extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         const Text(
-          'Gojo',
+          'Erkata',
           style: TextStyle(
             fontSize: 32,
             fontWeight: FontWeight.w700,

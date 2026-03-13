@@ -272,7 +272,7 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: AppColors.primaryNavy),
+        Icon(icon, size: 18, color: AppColors.brandPrimary),
         const SizedBox(width: 8),
         Text(
           title,

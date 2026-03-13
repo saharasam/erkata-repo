@@ -18,7 +18,13 @@ class ScaffoldWithNavBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
-    final role = authState.role;
+    // Map String role from backend to UserRole enum
+    final roleStr = authState.user?.role;
+    final UserRole? role = switch (roleStr) {
+      'agent' => UserRole.agent,
+      'customer' => UserRole.customer,
+      _ => authState.isAuthenticated ? UserRole.customer : null,
+    };
 
     // Don't show nav bar if no role (e.g. still loading or error state, though router should handle redirect)
     if (role == null) return child;

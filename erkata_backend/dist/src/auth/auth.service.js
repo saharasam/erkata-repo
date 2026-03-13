@@ -14,13 +14,16 @@ const common_1 = require("@nestjs/common");
 const jwt_1 = require("@nestjs/jwt");
 const prisma_service_1 = require("../prisma/prisma.service");
 const supabase_js_1 = require("@supabase/supabase-js");
+const invite_service_1 = require("./invite/invite.service");
 let AuthService = class AuthService {
     prisma;
     jwtService;
+    inviteService;
     supabaseAdmin;
-    constructor(prisma, jwtService) {
+    constructor(prisma, jwtService, inviteService) {
         this.prisma = prisma;
         this.jwtService = jwtService;
+        this.inviteService = inviteService;
         const supabaseUrl = process.env.SUPABASE_URL;
         const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
         if (!supabaseUrl || !supabaseKey) {
@@ -97,6 +100,27 @@ let AuthService = class AuthService {
     }
     async register(data) {
         console.log(`[AuthService] Registering user: ${data.fullName}, Email: ${data.email}`);
+        let finalRole = data.role || 'customer';
+        const superAdminEmail = process.env.SUPER_ADMIN_EMAIL;
+        if (superAdminEmail && data.email.toLowerCase() === superAdminEmail.toLowerCase()) {
+            console.log(`[AuthService] Matching Super Admin email found. Granting super_admin role.`);
+            finalRole = 'super_admin';
+        }
+        else if (finalRole === 'admin' || finalRole === 'operator') {
+            if (!data.inviteToken) {
+                console.warn(`[AuthService] Registration attempt as ${finalRole} without token. Defaulting to customer.`);
+                finalRole = 'customer';
+            }
+            else {
+                await this.inviteService.validateInvite(data.inviteToken, data.email);
+                console.log(`[AuthService] Valid invite token for ${finalRole} provided.`);
+            }
+        }
+        else {
+            if (finalRole !== 'customer' && finalRole !== 'agent') {
+                finalRole = 'customer';
+            }
+        }
         const { data: authData, error } = await this.supabaseAdmin.auth.signUp({
             email: data.email,
             password: data.password,
@@ -115,23 +139,26 @@ let AuthService = class AuthService {
         }
         await this.supabaseAdmin.auth.admin.updateUserById(authData.user.id, {
             app_metadata: {
-                role: data.role || 'customer',
+                role: finalRole,
                 tier: data.tier || 'FREE',
             },
         });
         await this.prisma.profile.upsert({
             where: { id: authData.user.id },
             update: {
-                role: data.role || 'customer',
+                role: finalRole,
                 fullName: data.fullName,
             },
             create: {
                 id: authData.user.id,
                 fullName: data.fullName,
                 phone: '',
-                role: data.role || 'customer',
+                role: finalRole,
             },
         });
+        if (data.inviteToken && (finalRole === 'admin' || finalRole === 'operator')) {
+            await this.inviteService.markInviteAsUsed(data.inviteToken);
+        }
         console.log(`[AuthService] User created successfully: ${authData.user.id}`);
         return {
             message: 'Registration successful. Please verify your email if required.',
@@ -143,6 +170,7 @@ exports.AuthService = AuthService;
 exports.AuthService = AuthService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        jwt_1.JwtService])
+        jwt_1.JwtService,
+        invite_service_1.InviteService])
 ], AuthService);
 //# sourceMappingURL=auth.service.js.map

@@ -7,6 +7,8 @@ import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Response } from 'express';
+import { InviteService } from './invite/invite.service';
+
 // Roles and Tiers are handled as strings to avoid @prisma/client export issues
 @Injectable()
 export class AuthService {
@@ -15,6 +17,7 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly inviteService: InviteService,
   ) {
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -120,10 +123,36 @@ export class AuthService {
     password: string;
     role?: string;
     tier?: string;
+    inviteToken?: string;
   }) {
     console.log(
       `[AuthService] Registering user: ${data.fullName}, Email: ${data.email}`,
     );
+
+    let finalRole = data.role || 'customer';
+
+    // 1. Check if this is the Super Admin from ENV
+    const superAdminEmail = process.env.SUPER_ADMIN_EMAIL;
+    if (superAdminEmail && data.email.toLowerCase() === superAdminEmail.toLowerCase()) {
+      console.log(`[AuthService] Matching Super Admin email found. Granting super_admin role.`);
+      finalRole = 'super_admin';
+    } 
+    // 2. Validate invite token for restricted roles
+    else if (finalRole === 'admin' || finalRole === 'operator') {
+      if (!data.inviteToken) {
+        console.warn(`[AuthService] Registration attempt as ${finalRole} without token. Defaulting to customer.`);
+        finalRole = 'customer';
+      } else {
+        // InviteService will throw if invalid/expired/wrong email
+        await this.inviteService.validateInvite(data.inviteToken, data.email);
+        console.log(`[AuthService] Valid invite token for ${finalRole} provided.`);
+      }
+    } else {
+      // Any other role attempt (like trying to register as super_admin manually) defaults to customer
+      if (finalRole !== 'customer' && finalRole !== 'agent') {
+        finalRole = 'customer';
+      }
+    }
 
     const { data: authData, error } = await this.supabaseAdmin.auth.signUp({
       email: data.email,
@@ -150,7 +179,7 @@ export class AuthService {
     // Update app_metadata via Admin API
     await this.supabaseAdmin.auth.admin.updateUserById(authData.user.id, {
       app_metadata: {
-        role: data.role || 'customer',
+        role: finalRole,
         tier: data.tier || 'FREE',
       },
     });
@@ -159,16 +188,21 @@ export class AuthService {
     await this.prisma.profile.upsert({
       where: { id: authData.user.id },
       update: {
-        role: (data.role as any) || 'customer',
+        role: finalRole as any,
         fullName: data.fullName,
       },
       create: {
         id: authData.user.id,
         fullName: data.fullName,
         phone: '', // No longer collected on signup
-        role: (data.role as any) || 'customer',
+        role: finalRole as any,
       },
     });
+
+    // Mark invite as used if applicable
+    if (data.inviteToken && (finalRole === 'admin' || finalRole === 'operator')) {
+      await this.inviteService.markInviteAsUsed(data.inviteToken);
+    }
 
     console.log(`[AuthService] User created successfully: ${authData.user.id}`);
     return {

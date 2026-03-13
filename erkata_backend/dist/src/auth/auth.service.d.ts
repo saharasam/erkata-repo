@@ -1,11 +1,13 @@
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { Response } from 'express';
+import { InviteService } from './invite/invite.service';
 export declare class AuthService {
     private readonly prisma;
     private readonly jwtService;
+    private readonly inviteService;
     private supabaseAdmin;
-    constructor(prisma: PrismaService, jwtService: JwtService);
+    constructor(prisma: PrismaService, jwtService: JwtService, inviteService: InviteService);
     private sanitizePhone;
     login(credentials: {
         identifier: string;
@@ -33,6 +35,7 @@ export declare class AuthService {
         password: string;
         role?: string;
         tier?: string;
+        inviteToken?: string;
     }): Promise<{
         message: string;
         userId: string;

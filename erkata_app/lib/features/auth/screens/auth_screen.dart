@@ -5,6 +5,9 @@ import 'package:go_router/go_router.dart';
 import '../../../core/models/user_role.dart';
 import '../../../core/theme/colors.dart';
 import '../../../shared/widgets/primary_button.dart';
+import '../state/auth_provider.dart';
+import '../data/models/login_request.dart';
+import '../data/models/register_request.dart';
 
 class AuthScreen extends HookConsumerWidget {
   const AuthScreen({super.key});
@@ -20,8 +23,101 @@ class AuthScreen extends HookConsumerWidget {
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    void handleSubmit() {
-      context.push('/auth/otp', extra: selectedRole.value);
+    final authState = ref.watch(authProvider);
+
+    // Show error snackbar when errorMessage changes
+    ref.listen<AuthState>(authProvider, (previous, next) {
+      if (next.errorMessage != null &&
+          next.errorMessage != previous?.errorMessage) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.errorMessage!),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+        ref.read(authProvider.notifier).clearError();
+      }
+    });
+
+    String? validate() {
+      final identifier = phoneController.text.trim();
+      final password = passwordController.text;
+
+      if (identifier.isEmpty) return 'Email or phone is required';
+      if (password.length < 6) return 'Password must be at least 6 characters';
+
+      if (!isLogin.value) {
+        final name = nameController.text.trim();
+        if (name.isEmpty) return 'Name is required';
+        if (password != confirmPasswordController.text) {
+          return 'Passwords do not match';
+        }
+      }
+      return null;
+    }
+
+    void handleSubmit() async {
+      final error = validate();
+      if (error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error),
+            backgroundColor: Colors.orangeAccent,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+        return;
+      }
+
+      if (isLogin.value) {
+        // Login — call backend directly
+        await ref
+            .read(authProvider.notifier)
+            .login(
+              LoginRequest(
+                identifier: phoneController.text.trim(),
+                password: passwordController.text,
+              ),
+            );
+        // Navigation is handled by the router redirect when isAuthenticated becomes true
+      } else {
+        // Register — call backend, then navigate to confirmation screen
+        final roleStr = selectedRole.value == UserRole.agent
+            ? 'agent'
+            : 'customer';
+        await ref
+            .read(authProvider.notifier)
+            .register(
+              RegisterRequest(
+                email: phoneController.text.trim(),
+                fullName: nameController.text.trim(),
+                password: passwordController.text,
+                role: roleStr,
+              ),
+            );
+
+        // If no error was set, registration succeeded — go to confirmation
+        final state = ref.read(authProvider);
+        if (state.errorMessage == null && context.mounted) {
+          context.push(
+            '/auth/otp',
+            extra: {
+              'role': selectedRole.value,
+              'email': phoneController.text.trim(),
+              'password': passwordController.text,
+            },
+          );
+        }
+      }
     }
 
     return Scaffold(
@@ -121,7 +217,7 @@ class AuthScreen extends HookConsumerWidget {
                           fontWeight: FontWeight.w600,
                           color: isDark
                               ? AppColors.goldDark
-                              : AppColors.primaryNavy,
+                              : AppColors.brandPrimary,
                         ),
                       ),
                     ),
@@ -131,10 +227,12 @@ class AuthScreen extends HookConsumerWidget {
 
               const SizedBox(height: 32),
 
-              // CTA
+              // CTA — shows loading state
               PrimaryButton(
-                text: isLogin.value ? 'Login' : 'Create Account',
-                onPressed: handleSubmit,
+                text: authState.isLoading
+                    ? 'Please wait…'
+                    : (isLogin.value ? 'Login' : 'Create Account'),
+                onPressed: authState.isLoading ? null : handleSubmit,
               ),
               const SizedBox(height: 24),
 
@@ -162,7 +260,7 @@ class AuthScreen extends HookConsumerWidget {
                             fontWeight: FontWeight.w700,
                             color: isDark
                                 ? AppColors.goldDark
-                                : AppColors.primaryNavy,
+                                : AppColors.brandPrimary,
                           ),
                         ),
                       ],
@@ -195,7 +293,7 @@ class _LogoMark extends StatelessWidget {
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            color: AppColors.primaryGold,
+            color: AppColors.brandGold,
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(
@@ -351,7 +449,7 @@ class _RoleTab extends StatelessWidget {
           curve: Curves.easeInOut,
           padding: const EdgeInsets.symmetric(vertical: 11),
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.primaryGold : Colors.transparent,
+            color: isSelected ? AppColors.brandGold : Colors.transparent,
             borderRadius: BorderRadius.circular(10),
           ),
           child: Row(
@@ -433,7 +531,7 @@ class _InputField extends HookWidget {
         borderRadius: BorderRadius.circular(14),
         boxShadow: shadow,
         border: isFocused.value
-            ? Border.all(color: AppColors.primaryGold, width: 1.5)
+            ? Border.all(color: AppColors.brandGold, width: 1.5)
             : Border.all(color: Colors.transparent),
       ),
       child: TextField(
@@ -459,7 +557,7 @@ class _InputField extends HookWidget {
             icon,
             size: 20,
             color: isFocused.value
-                ? AppColors.primaryGold
+                ? AppColors.brandGold
                 : (isDark ? AppColors.onDarkSecondary : AppColors.mediumGrey),
           ),
           suffixIcon: isPassword

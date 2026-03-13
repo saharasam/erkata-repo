@@ -1,27 +1,64 @@
 import React, { useState } from 'react';
-import { Calendar, StickyNote, MessageCircle, X, Globe, User, LogOut } from 'lucide-react';
+import { Calendar, StickyNote, MessageCircle, X, Globe, User, LogOut, ShieldCheck, Archive, ShieldAlert, Settings2, Megaphone, BarChart4, History, TrendingUp, Users, ChevronRight, ChevronLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
+import { UserRole } from '../utils/constants';
+import { Action } from '../hooks/usePermissions';
 import { useNavigate } from 'react-router-dom';
 import { useModal } from '../contexts/ModalContext';
 
 interface UtilitySidebarProps {
   onSettingsClick?: () => void;
   onNotificationsClick?: () => void;
+  currentView?: string;
+  onViewChange?: (view: string) => void;
 }
 
 const UtilitySidebar: React.FC<UtilitySidebarProps> = ({ 
   onSettingsClick, 
-  onNotificationsClick 
+  onNotificationsClick,
+  currentView,
+  onViewChange
 }) => {
   const { showConfirm } = useModal();
   const [activeTool, setActiveTool] = useState<string | null>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const toggleTool = (tool: string) => {
-    console.log('Toggling tool:', tool);
-    if (tool === 'logout') {
+  const tools = [
+    { id: 'calendar', icon: Calendar, label: 'Calendar', color: 'text-blue-500' },
+    { id: 'notes', icon: StickyNote, label: 'Notes', color: 'text-yellow-500' },
+    { id: 'support', icon: MessageCircle, label: 'Support', color: 'text-purple-500' },
+    { id: 'language', icon: Globe, label: 'Language', color: 'text-teal-500' },
+    { id: 'profile', icon: User, label: 'Profile', color: 'text-slate-500' },
+    { id: 'logout', icon: LogOut, label: 'Logout', color: 'text-red-500' },
+  ];
+
+  const superAdminTools = [
+    { id: 'resolutions', icon: ShieldCheck, label: 'Resolutions', badge: 3 },
+    { id: 'emergency', icon: Archive, label: 'Emergency Archive' },
+    { id: 'admins', icon: ShieldAlert, label: 'Admin Management' },
+    { id: 'config', icon: Settings2, label: 'Config Flags' },
+    { id: 'notices', icon: Megaphone, label: 'Broadcasts' },
+    { id: 'analytics', icon: BarChart4, label: 'Analytics' },
+    { id: 'audit', icon: History, label: 'Audit Logs' },
+    { id: 'agents', icon: TrendingUp, label: 'Agent Oversight' },
+    { id: 'operators', icon: Users, label: 'Operator Oversight' },
+  ];
+
+  const toggleTool = (toolId: string) => {
+    console.log('Toggling tool:', toolId);
+    
+    // Check if it's a Super Admin view tool
+    const isSATool = superAdminTools.some(t => t.id === toolId);
+    if (isSATool && onViewChange) {
+      onViewChange(toolId);
+      setActiveTool(null);
+      return;
+    }
+
+    if (toolId === 'logout') {
       showConfirm({
         title: 'Sign Out',
         message: 'Are you sure you want to sign out? You will need to login again to access your dashboard.',
@@ -35,42 +72,142 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
       });
       return;
     }
-    setActiveTool(activeTool === tool ? null : tool);
+    setActiveTool(activeTool === toolId ? null : toolId);
   };
 
-  const tools = [
-    { id: 'calendar', icon: Calendar, label: 'Calendar', color: 'text-blue-500' },
-    { id: 'notes', icon: StickyNote, label: 'Notes', color: 'text-yellow-500' },
-    { id: 'support', icon: MessageCircle, label: 'Support', color: 'text-purple-500' },
-    { id: 'language', icon: Globe, label: 'Language', color: 'text-teal-500' },
-    { id: 'profile', icon: User, label: 'Profile', color: 'text-slate-500' },
-    { id: 'logout', icon: LogOut, label: 'Logout', color: 'text-red-500' },
-  ];
+
 
   return (
     <div className="flex h-full relative z-40">
       {/* Persistence Strip */}
-      <div className="w-16 bg-white/60 backdrop-blur-xl border-r border-white/50 h-full flex flex-col items-center py-6 space-y-4 shadow-sm relative z-50">
-        {tools.map((tool) => (
-          <button
-            key={tool.id}
-            onClick={() => toggleTool(tool.id)}
-            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-200 group relative ${
-              activeTool === tool.id 
-                ? 'bg-erkata-primary text-white shadow-lg shadow-erkata-primary/30' 
-                : 'text-slate-400 hover:bg-white hover:text-slate-700 hover:shadow-md'
-            } ${tool.id === 'logout' ? 'mt-auto !absolute bottom-6 hover:bg-red-50 hover:text-red-500' : ''}`}
-            title={tool.label}
-          >
-            <tool.icon className={`w-5 h-5 ${activeTool === tool.id ? 'text-white' : ''} transition-colors`} />
-            
-            {/* Tooltip */}
-            <span className="absolute left-full ml-3 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap shadow-xl z-50">
-               {tool.label}
-            </span>
-          </button>
-        ))}
-      </div>
+      <motion.div 
+        animate={{ width: isExpanded ? 240 : 64 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+        className="bg-white/60 backdrop-blur-xl border-r border-white/50 h-full flex flex-col items-center py-6 shadow-sm relative z-50 overflow-y-auto no-scrollbar overflow-x-hidden"
+      >
+        {/* Toggle Button */}
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="w-10 h-10 mb-6 rounded-xl flex items-center justify-center text-slate-400 hover:bg-white hover:text-slate-700 hover:shadow-md transition-all shrink-0"
+          title={isExpanded ? "Collapse Sidebar" : "Expand Sidebar"}
+        >
+          {isExpanded ? <ChevronLeft className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+        </button>
+
+        {/* Standard Tools Top Section */}
+        <div className="w-full flex flex-col items-center space-y-2 shrink-0 px-3">
+          {tools.filter(t => t.id !== 'logout' && t.id !== 'profile').map((tool) => (
+            <button
+              key={tool.id}
+              onClick={() => toggleTool(tool.id)}
+              className={`w-full h-10 rounded-xl flex items-center transition-all duration-200 group relative ${
+                activeTool === tool.id 
+                  ? 'bg-erkata-primary text-white shadow-lg shadow-erkata-primary/30' 
+                  : 'text-slate-400 hover:bg-white hover:text-slate-700 hover:shadow-md'
+              } ${isExpanded ? 'px-3 justify-start gap-3' : 'justify-center'}`}
+              title={isExpanded ? "" : tool.label}
+            >
+              <tool.icon className={`w-5 h-5 shrink-0 ${activeTool === tool.id ? 'text-white' : ''} transition-colors`} />
+              
+              {isExpanded && (
+                <span className="text-sm font-medium truncate opacity-100 transition-opacity duration-300">
+                  {tool.label}
+                </span>
+              )}
+
+              {!isExpanded && (
+                <span className="absolute left-full ml-3 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap shadow-xl z-50">
+                  {tool.label}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+
+        {/* Super Admin Section Divider */}
+        {user?.role === UserRole.SUPER_ADMIN && (
+          <div className="w-8 h-px bg-slate-200 shrink-0 my-4" />
+        )}
+
+        {/* Super Admin Tools */}
+        {user?.role === UserRole.SUPER_ADMIN && (
+          <div className="w-full flex flex-col items-center space-y-2 shrink-0 px-3">
+            {superAdminTools.map((tool) => (
+              <button
+                key={tool.id}
+                onClick={() => toggleTool(tool.id)}
+                className={`w-full h-10 rounded-xl flex items-center transition-all duration-200 group relative ${
+                  currentView === tool.id 
+                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' 
+                    : 'text-slate-400 hover:bg-white hover:text-indigo-600 hover:shadow-md'
+                } ${isExpanded ? 'px-3 justify-start gap-3' : 'justify-center'}`}
+                title={isExpanded ? "" : tool.label}
+              >
+                <tool.icon className="w-5 h-5 shrink-0" />
+                
+                {isExpanded && (
+                  <span className="text-sm font-medium truncate">
+                    {tool.label}
+                  </span>
+                )}
+
+                {tool.badge && !isExpanded && (
+                  <span className="absolute -top-1 -right-1 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red-500 px-1 text-[8px] font-bold text-white border-2 border-white">
+                    {tool.badge}
+                  </span>
+                )}
+
+                {tool.badge && isExpanded && (
+                  <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-red-50 text-red-600">
+                    {tool.badge}
+                  </span>
+                )}
+
+                {!isExpanded && (
+                  <span className="absolute left-full ml-3 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap shadow-xl z-50">
+                    {tool.label}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Bottom Section (Profile & Logout) */}
+        <div className="w-full flex flex-col items-center mt-auto space-y-2 shrink-0 pb-2 px-3">
+           <button
+             onClick={() => toggleTool('profile')}
+             className={`w-full h-10 rounded-xl flex items-center transition-all duration-200 group relative ${
+               activeTool === 'profile' 
+                 ? 'bg-erkata-primary text-white shadow-lg shadow-erkata-primary/30' 
+                 : 'text-slate-400 hover:bg-white hover:text-slate-700 hover:shadow-md'
+             } ${isExpanded ? 'px-3 justify-start gap-3' : 'justify-center'}`}
+             title={isExpanded ? "" : "Profile"}
+           >
+             <User className="w-5 h-5 shrink-0" />
+             {isExpanded && <span className="text-sm font-medium">Profile</span>}
+             {!isExpanded && (
+               <span className="absolute left-full ml-3 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap shadow-xl z-50">
+                 Profile
+               </span>
+             )}
+           </button>
+
+           <button
+             onClick={() => toggleTool('logout')}
+             className={`w-full h-10 rounded-xl flex items-center transition-all duration-200 group relative text-slate-400 hover:bg-red-50 hover:text-red-500 hover:shadow-md ${isExpanded ? 'px-3 justify-start gap-3' : 'justify-center'}`}
+             title={isExpanded ? "" : "Logout"}
+           >
+             <LogOut className="w-5 h-5 shrink-0" />
+             {isExpanded && <span className="text-sm font-medium">Logout</span>}
+             {!isExpanded && (
+               <span className="absolute left-full ml-3 bg-red-600 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap shadow-xl z-50">
+                 Logout
+               </span>
+             )}
+           </button>
+        </div>
+      </motion.div>
 
       {/* Tool Panel (Slide-out) */}
       <AnimatePresence>
@@ -158,9 +295,9 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
                   <div className="space-y-6">
                      <div className="text-center">
                         <div className="w-20 h-20 bg-slate-200 rounded-full mx-auto mb-3 flex items-center justify-center text-2xl font-bold text-slate-500">
-                          {user?.name?.charAt(0)}
+                          {user?.fullName?.charAt(0)}
                         </div>
-                        <h4 className="font-bold text-slate-800">{user?.name}</h4>
+                        <h4 className="font-bold text-slate-800">{user?.fullName}</h4>
                         <p className="text-sm text-slate-500">{user?.email}</p>
                         <span className="inline-block mt-2 px-3 py-1 bg-erkata-primary/10 text-erkata-primary text-xs font-bold rounded-full capitalize">
                           {user?.role}

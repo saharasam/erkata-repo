@@ -75,7 +75,7 @@ class FeedbackFormScreen extends HookWidget {
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.primaryNavy,
+                    color: AppColors.brandPrimary,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -91,7 +91,7 @@ class FeedbackFormScreen extends HookWidget {
                   child: ElevatedButton(
                     onPressed: () => Navigator.of(context).pop(),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryNavy,
+                      backgroundColor: AppColors.brandPrimary,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
                       ),
@@ -119,12 +119,12 @@ class FeedbackFormScreen extends HookWidget {
           'Submit Feedback',
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: AppColors.primaryNavy,
+            color: AppColors.brandPrimary,
           ),
         ),
         backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.primaryNavy),
+        iconTheme: const IconThemeData(color: AppColors.brandPrimary),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -160,7 +160,7 @@ class FeedbackFormScreen extends HookWidget {
                       Icons.star,
                       size: 48,
                       color: rating.value >= starValue
-                          ? AppColors.primaryGold
+                          ? AppColors.brandGold
                           : AppColors.softGrey,
                     ),
                   ),
@@ -193,12 +193,12 @@ class FeedbackFormScreen extends HookWidget {
                     ),
                     decoration: BoxDecoration(
                       color: isSelected
-                          ? AppColors.primaryNavy
+                          ? AppColors.brandPrimary
                           : AppColors.pureWhite,
                       borderRadius: BorderRadius.circular(24),
                       border: Border.all(
                         color: isSelected
-                            ? AppColors.primaryNavy
+                            ? AppColors.brandPrimary
                             : AppColors.softGrey,
                       ),
                     ),
@@ -252,7 +252,7 @@ class FeedbackFormScreen extends HookWidget {
                     ? null
                     : () => isSubmitted.value = true,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryNavy,
+                  backgroundColor: AppColors.brandPrimary,
                   disabledBackgroundColor: AppColors.softGrey,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(16),

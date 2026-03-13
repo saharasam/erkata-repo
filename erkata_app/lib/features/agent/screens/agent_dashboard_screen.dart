@@ -82,7 +82,7 @@ class AgentDashboardScreen extends StatelessWidget {
                             label: 'Active Leads',
                             value:
                                 '${incomingRequests.length + activeTasks.length}',
-                            valueColor: AppColors.primaryNavy,
+                            valueColor: AppColors.brandPrimary,
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -305,7 +305,7 @@ class _RequestTile extends StatelessWidget {
                       color: req.type == RequestType.property
                           ? (Theme.of(context).brightness == Brightness.dark
                                 ? Colors.blue[300]
-                                : AppColors.primaryNavy)
+                                : AppColors.brandPrimary)
                           : (Theme.of(context).brightness == Brightness.dark
                                 ? Colors.orange[300]
                                 : Colors.orange[800]),

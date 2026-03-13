@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
-import SuperAdminSidebar from '../components/super-admin/SuperAdminSidebar';
 import FinalResolutions from '../components/super-admin/FinalResolutions';
 import EmergencyArchive from '../components/super-admin/EmergencyArchive';
 import AdminManagement from '../components/super-admin/AdminManagement';
@@ -24,12 +23,7 @@ const SuperAdminDashboard: React.FC = () => {
     // Authority UI Colors: Indigo/Navy
     const brandGradient = "from-indigo-900 to-slate-900";
 
-    const sidebarContent = (
-        <SuperAdminSidebar 
-            currentView={currentView} 
-            onViewChange={setCurrentView} 
-        />
-    );
+    const sidebarContent = null; // Options moved to UtilitySidebar
 
     const rightPanelContent = (
         <div className="space-y-6">
@@ -101,9 +95,11 @@ const SuperAdminDashboard: React.FC = () => {
 
     return (
         <DashboardLayout
-            role="admin" // Using admin for layout styles, but specific Super Admin content
+            role="super_admin" 
             sidebarContent={sidebarContent}
             rightPanelContent={rightPanelContent}
+            currentView={currentView}
+            onViewChange={setCurrentView}
         >
             <div className="max-w-[1920px] mx-auto">
                 <div className="mb-8 flex items-end justify-between">

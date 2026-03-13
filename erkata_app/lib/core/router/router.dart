@@ -35,24 +35,28 @@ final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/',
     redirect: (context, state) {
-      final isAuth = authState.isAuthenticated;
-      final isAuthRoute = state.uri.toString().startsWith('/auth');
-      final isSplashRoute = state.uri.toString() == '/';
+      final path = state.uri.toString();
+      final isSplash = path == '/';
+      final isAuthRoute = path.startsWith('/auth');
 
-      if (!isAuth && !isAuthRoute && !isSplashRoute) {
+      // While still hydrating, stay on splash
+      if (!authState.isHydrated) {
+        return isSplash ? null : '/';
+      }
+
+      final isAuth = authState.isAuthenticated;
+
+      // Hydrated + not authenticated → always go to /auth (including from splash)
+      if (!isAuth && !isAuthRoute) {
         return '/auth';
       }
 
-      if (isAuth && isAuthRoute) {
-        switch (authState.role) {
-          case UserRole.customer:
-            return '/home';
-          case UserRole.agent:
-            return '/agent';
-
-          case null:
-            return null;
-        }
+      // Hydrated + authenticated on auth route or splash → go to correct dashboard
+      if (isAuth && (isAuthRoute || isSplash)) {
+        return switch (authState.user?.role) {
+          'agent' => '/agent',
+          _ => '/home',
+        };
       }
 
       return null;
@@ -66,7 +70,20 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: 'otp',
             builder: (context, state) {
-              final role = state.extra as UserRole? ?? UserRole.customer;
+              // Accept both old format (UserRole extra) and new format (Map extra)
+              final extra = state.extra;
+              if (extra is Map<String, dynamic>) {
+                final role = extra['role'] as UserRole? ?? UserRole.customer;
+                final email = extra['email'] as String?;
+                final password = extra['password'] as String?;
+                return OtpVerificationScreen(
+                  role: role,
+                  email: email,
+                  password: password,
+                );
+              }
+              // Fallback for old-style navigation
+              final role = extra as UserRole? ?? UserRole.customer;
               return OtpVerificationScreen(role: role);
             },
           ),

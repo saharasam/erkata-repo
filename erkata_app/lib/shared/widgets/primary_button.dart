@@ -42,11 +42,11 @@ class PrimaryButton extends StatelessWidget {
             : null,
         color: !effectiveEnabled
             ? AppColors.mediumGrey.withValues(alpha: 0.3)
-            : (backgroundColor ?? AppColors.primaryGold),
+            : (backgroundColor ?? AppColors.brandGold),
         boxShadow: effectiveEnabled
             ? [
                 BoxShadow(
-                  color: (backgroundColor ?? AppColors.primaryGold).withValues(
+                  color: (backgroundColor ?? AppColors.brandGold).withValues(
                     alpha: 0.3,
                   ),
                   blurRadius: 12,
@@ -68,7 +68,7 @@ class PrimaryButton extends StatelessWidget {
                     height: 24,
                     width: 24,
                     child: CircularProgressIndicator(
-                      color: AppColors.primaryNavy,
+                      color: AppColors.brandPrimary,
                       strokeWidth: 3,
                     ),
                   )
@@ -81,8 +81,8 @@ class PrimaryButton extends StatelessWidget {
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
                           color: effectiveEnabled
-                              ? (textColor ?? AppColors.primaryNavy)
-                              : AppColors.primaryNavy.withValues(alpha: 0.7),
+                              ? (textColor ?? AppColors.brandPrimary)
+                              : AppColors.brandPrimary.withValues(alpha: 0.7),
                           letterSpacing: 0.5,
                         ),
                       ),
@@ -92,8 +92,8 @@ class PrimaryButton extends StatelessWidget {
                           icon,
                           size: 20,
                           color: effectiveEnabled
-                              ? (textColor ?? AppColors.primaryNavy)
-                              : AppColors.primaryNavy.withValues(alpha: 0.7),
+                              ? (textColor ?? AppColors.brandPrimary)
+                              : AppColors.brandPrimary.withValues(alpha: 0.7),
                         ),
                       ],
                     ],

@@ -7,6 +7,7 @@ import {
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { useAuth } from '../contexts/AuthContext';
+import { UserRole } from '../utils/constants';
 import RequestIntakeFlow from '../components/RequestIntakeFlow';
 
 const RequestIntake: React.FC = () => {
@@ -15,15 +16,15 @@ const RequestIntake: React.FC = () => {
   
   // Block staff members from accessing request intake
   useEffect(() => {
-    if (isAuthenticated && user && user.role !== 'customer') {
+    if (isAuthenticated && user && user.role !== UserRole.CUSTOMER) {
       // Redirect staff to their respective dashboards
-      if (user.role === 'agent') {
+      if (user.role === UserRole.AGENT) {
         navigate('/agent-dashboard', { replace: true });
-      } else if (user.role === 'operator') {
+      } else if (user.role === UserRole.OPERATOR) {
         navigate('/operator-dashboard', { replace: true });
-      } else if (user.role === 'admin') {
+      } else if (user.role === UserRole.ADMIN) {
         navigate('/admin-dashboard', { replace: true });
-      } else if (user.role === 'super-admin') {
+      } else if (user.role === UserRole.SUPER_ADMIN) {
         navigate('/superadmin', { replace: true });
       }
     }

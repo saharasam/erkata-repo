@@ -43,7 +43,9 @@ class PaymentScreen extends HookWidget {
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.primaryNavy.withValues(alpha: 0.3),
+                            color: AppColors.brandPrimary.withValues(
+                              alpha: 0.3,
+                            ),
                             spreadRadius: 2,
                             blurRadius: 20,
                             offset: const Offset(0, 10),
@@ -129,7 +131,7 @@ class PaymentScreen extends HookWidget {
                       label: 'Telebirr',
                       subLabel: 'Mobile Wallet',
                       icon: Icons.smartphone,
-                      color: AppColors.primaryNavy,
+                      color: AppColors.brandPrimary,
                       isSelected: method.value == 'telebirr',
                       onTap: () => method.value = 'telebirr',
                     ),

@@ -5,7 +5,7 @@ import { useModal } from '../contexts/ModalContext';
 import { motion } from 'framer-motion';
 
 interface SettingsViewProps {
-  role: 'agent' | 'operator' | 'admin' | 'customer';
+  role: 'agent' | 'operator' | 'admin' | 'customer' | 'super_admin';
 }
 
 const SettingsView: React.FC<SettingsViewProps> = ({ role }) => {
@@ -68,10 +68,10 @@ const SettingsView: React.FC<SettingsViewProps> = ({ role }) => {
               <div className="space-y-8">
                 <div className="flex items-center gap-6 pb-8 border-b border-slate-100">
                   <div className="w-24 h-24 rounded-full bg-slate-100 flex items-center justify-center text-3xl font-bold text-slate-400 border-4 border-white shadow-sm">
-                    {user?.name?.charAt(0)}
+                    {user?.fullName?.charAt(0)}
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-slate-800">{user?.name}</h3>
+                    <h3 className="text-xl font-bold text-slate-800">{user?.fullName}</h3>
                     <p className="text-sm text-slate-500 mb-3">{user?.email}</p>
                     <div className="flex gap-2">
                        <button className="px-3 py-1.5 text-xs font-bold bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors">
@@ -91,7 +91,7 @@ const SettingsView: React.FC<SettingsViewProps> = ({ role }) => {
                        <User className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                        <input 
                           type="text" 
-                          defaultValue={user?.name || ''} 
+                          defaultValue={user?.fullName || ''} 
                           className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-erkata-primary/20 focus:border-erkata-primary transition-all"
                        />
                     </div>

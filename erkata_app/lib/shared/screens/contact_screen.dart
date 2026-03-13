@@ -87,7 +87,7 @@ class _ContactScreenState extends State<ContactScreen> {
             style: TextStyle(
               fontSize: 24,
               fontWeight: FontWeight.bold,
-              color: AppColors.primaryNavy,
+              color: AppColors.brandPrimary,
             ),
           ),
           const SizedBox(height: 12),
@@ -109,7 +109,7 @@ class _ContactScreenState extends State<ContactScreen> {
             child: const Text(
               'Send another message',
               style: TextStyle(
-                color: AppColors.primaryNavy,
+                color: AppColors.brandPrimary,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -341,10 +341,10 @@ class _ContactInfoCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: AppColors.primaryNavy.withValues(alpha: 0.1),
+              color: AppColors.brandPrimary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, color: AppColors.primaryNavy, size: 20),
+            child: Icon(icon, color: AppColors.brandPrimary, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(

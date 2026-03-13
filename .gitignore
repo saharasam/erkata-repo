@@ -1,0 +1,12 @@
+# Environment & Secrets
+**/.env
+**/.env.*
+**/prisma/.env
+
+# Large Binary Files & Media
+*.pdf
+
+# AI & Agent Working Directories
+.agent/
+.stoa/
+.gemini/

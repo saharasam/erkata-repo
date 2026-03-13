@@ -92,6 +92,7 @@ model Profile {
   resolutionProposals ResolutionProposal[]
   finalResolutions     FinalResolution[]
   auditLogs           AuditLog[]
+  createdInvites      Invite[] @relation("CreatedInvites")
   
   @@map("profiles")
 }
@@ -264,4 +265,19 @@ model SystemConfig {
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@map("system_configs")
+}
+
+model Invite {
+  id          String   @id @default(uuid())
+  email       String
+  role        UserRole
+  token       String   @unique
+  expiresAt   DateTime @map("expires_at")
+  usedAt      DateTime? @map("used_at")
+  createdById String   @map("created_by_id") @db.Uuid
+  createdBy   Profile  @relation("CreatedInvites", fields: [createdById], references: [id])
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([token])
+  @@map("invites")
 }

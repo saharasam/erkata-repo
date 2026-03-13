@@ -131,7 +131,7 @@ class ErkataRequestCard extends StatelessWidget {
                       child: Text(
                         request.budget,
                         style: const TextStyle(
-                          color: AppColors.primaryNavy,
+                          color: AppColors.brandPrimary,
                           fontSize: 11,
                           fontWeight: FontWeight.w600,
                         ),
@@ -215,7 +215,7 @@ class ErkataRequestCard extends StatelessWidget {
                 child: Text(
                   request.budget,
                   style: const TextStyle(
-                    color: AppColors.primaryNavy,
+                    color: AppColors.brandPrimary,
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),

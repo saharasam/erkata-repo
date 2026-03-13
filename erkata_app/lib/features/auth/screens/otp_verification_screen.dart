@@ -6,38 +6,80 @@ import 'package:go_router/go_router.dart';
 import '../../../core/models/user_role.dart';
 import '../../../core/theme/colors.dart';
 import '../state/auth_provider.dart';
+import '../data/models/login_request.dart';
 import '../../../shared/widgets/primary_button.dart';
 
+/// Post-registration "Check Your Email" confirmation screen.
+///
+/// After Supabase email confirmation, the user taps "I've Verified"
+/// which attempts a login with the credentials passed via route extras.
 class OtpVerificationScreen extends HookConsumerWidget {
   final UserRole role;
+  final String? email;
+  final String? password;
 
-  const OtpVerificationScreen({required this.role, super.key});
+  const OtpVerificationScreen({
+    required this.role,
+    this.email,
+    this.password,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final controllers = List.generate(4, (_) => useTextEditingController());
-    final focusNodes = List.generate(4, (_) => useFocusNode());
-
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final scaffoldBg = isDark ? AppColors.deepNavy : AppColors.bgLight;
     final primaryText = isDark ? AppColors.onDarkPrimary : AppColors.charcoal;
     final secondaryText = isDark ? AppColors.onDarkSecondary : AppColors.slate;
+
+    final authState = ref.watch(authProvider);
 
     // Entrance animation
     final fadeController = useAnimationController(
       duration: const Duration(milliseconds: 600),
     )..forward();
 
-    void handleVerify() {
-      final otp = controllers.map((c) => c.text).join();
-      if (otp.length == 4) {
-        ref.read(authProvider.notifier).login(role);
-        if (role == UserRole.customer) {
-          context.go('/home');
-        } else {
-          context.go('/agent');
-        }
+    // Listen for errors
+    ref.listen<AuthState>(authProvider, (previous, next) {
+      if (next.errorMessage != null &&
+          next.errorMessage != previous?.errorMessage) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.errorMessage!),
+            backgroundColor: Colors.redAccent,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        );
+        ref.read(authProvider.notifier).clearError();
       }
+    });
+
+    Future<void> handleVerify() async {
+      if (email != null && password != null) {
+        await ref
+            .read(authProvider.notifier)
+            .login(LoginRequest(identifier: email!, password: password!));
+        // Navigation is handled by router redirect when isAuthenticated becomes true
+      }
+    }
+
+    void handleResend() {
+      // Placeholder — requires a backend /auth/resend-confirmation endpoint
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Confirmation email resent'),
+          backgroundColor: AppColors.brandGold,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      );
     }
 
     return Scaffold(
@@ -55,9 +97,7 @@ class OtpVerificationScreen extends HookConsumerWidget {
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
                   colors: [
-                    AppColors.primaryGold.withValues(
-                      alpha: isDark ? 0.07 : 0.04,
-                    ),
+                    AppColors.brandGold.withValues(alpha: isDark ? 0.07 : 0.04),
                     Colors.transparent,
                   ],
                 ),
@@ -92,24 +132,24 @@ class OtpVerificationScreen extends HookConsumerWidget {
                         children: [
                           const SizedBox(height: 24),
 
-                          // Shield icon with gold glow
+                          // Email icon with gold glow
                           Container(
                             width: 80,
                             height: 80,
                             decoration: BoxDecoration(
-                              color: AppColors.primaryGold.withValues(
+                              color: AppColors.brandGold.withValues(
                                 alpha: isDark ? 0.10 : 0.08,
                               ),
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: AppColors.primaryGold.withValues(
+                                color: AppColors.brandGold.withValues(
                                   alpha: isDark ? 0.3 : 0.2,
                                 ),
                                 width: 1.5,
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: AppColors.primaryGold.withValues(
+                                  color: AppColors.brandGold.withValues(
                                     alpha: isDark ? 0.15 : 0.10,
                                   ),
                                   blurRadius: 24,
@@ -118,8 +158,8 @@ class OtpVerificationScreen extends HookConsumerWidget {
                               ],
                             ),
                             child: const Icon(
-                              Icons.shield_outlined,
-                              color: AppColors.primaryGold,
+                              Icons.mark_email_read_outlined,
+                              color: AppColors.brandGold,
                               size: 36,
                             ),
                           ),
@@ -127,7 +167,7 @@ class OtpVerificationScreen extends HookConsumerWidget {
 
                           // Title
                           Text(
-                            'Verify Your Identity',
+                            'Check Your Email',
                             style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.w800,
@@ -137,7 +177,9 @@ class OtpVerificationScreen extends HookConsumerWidget {
                           ),
                           const SizedBox(height: 10),
                           Text(
-                            'Enter the 4-digit code\nsent to your phone number',
+                            email != null
+                                ? 'We\'ve sent a confirmation link to\n$email'
+                                : 'We\'ve sent a confirmation link\nto your email address',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 14,
@@ -145,61 +187,45 @@ class OtpVerificationScreen extends HookConsumerWidget {
                               height: 1.5,
                             ),
                           ),
-                          const SizedBox(height: 44),
-
-                          // OTP Boxes
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: List.generate(4, (index) {
-                              return Padding(
-                                padding: EdgeInsets.only(
-                                  right: index < 3 ? 16 : 0,
-                                ),
-                                child: _OtpBox(
-                                  controller: controllers[index],
-                                  focusNode: focusNodes[index],
-                                  isDark: isDark,
-                                  onChanged: (value) {
-                                    if (value.isNotEmpty && index < 3) {
-                                      focusNodes[index + 1].requestFocus();
-                                    } else if (value.isEmpty && index > 0) {
-                                      focusNodes[index - 1].requestFocus();
-                                    }
-                                    if (index == 3 && value.isNotEmpty) {
-                                      handleVerify();
-                                    }
-                                  },
-                                ),
-                              );
-                            }),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Open the link in the email to verify\nyour account, then come back and\ntap the button below.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: secondaryText.withValues(alpha: 0.8),
+                              height: 1.5,
+                            ),
                           ),
                           const SizedBox(height: 44),
 
                           // Verify button
                           PrimaryButton(
-                            text: 'Verify & Continue',
-                            onPressed: handleVerify,
+                            text: authState.isLoading
+                                ? 'Verifying…'
+                                : 'I\'ve Verified — Continue',
+                            onPressed: authState.isLoading
+                                ? null
+                                : handleVerify,
                             icon: Icons.arrow_forward_rounded,
                           ),
                           const SizedBox(height: 24),
 
                           // Resend
                           GestureDetector(
-                            onTap: () {},
+                            onTap: handleResend,
                             child: RichText(
                               text: TextSpan(
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: secondaryText,
                                 ),
-                                children: [
-                                  const TextSpan(
-                                    text: "Didn't receive a code? ",
-                                  ),
-                                  const TextSpan(
+                                children: const [
+                                  TextSpan(text: "Didn't receive an email? "),
+                                  TextSpan(
                                     text: 'Resend',
                                     style: TextStyle(
-                                      color: AppColors.primaryGold,
+                                      color: AppColors.brandGold,
                                       fontWeight: FontWeight.w700,
                                     ),
                                   ),
@@ -216,82 +242,6 @@ class OtpVerificationScreen extends HookConsumerWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// ────────────────────────────────────────────────────────
-// OTP Box
-// ────────────────────────────────────────────────────────
-
-class _OtpBox extends HookWidget {
-  final TextEditingController controller;
-  final FocusNode focusNode;
-  final ValueChanged<String> onChanged;
-  final bool isDark;
-
-  const _OtpBox({
-    required this.controller,
-    required this.focusNode,
-    required this.onChanged,
-    required this.isDark,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isFocused = useState(false);
-
-    useEffect(() {
-      void listener() => isFocused.value = focusNode.hasFocus;
-      focusNode.addListener(listener);
-      return () => focusNode.removeListener(listener);
-    }, [focusNode]);
-
-    final bg = isDark ? AppColors.inputDark : AppColors.smokeWhite;
-    final border = isDark ? AppColors.borderDark : AppColors.borderColor;
-    final textColor = isDark ? AppColors.onDarkPrimary : AppColors.charcoal;
-
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      width: 64,
-      height: 68,
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isFocused.value ? AppColors.primaryGold : border,
-          width: isFocused.value ? 2 : 1,
-        ),
-        boxShadow: isFocused.value
-            ? [
-                BoxShadow(
-                  color: AppColors.primaryGold.withValues(
-                    alpha: isDark ? 0.12 : 0.08,
-                  ),
-                  blurRadius: 16,
-                  spreadRadius: 1,
-                ),
-              ]
-            : null,
-      ),
-      child: TextField(
-        controller: controller,
-        focusNode: focusNode,
-        textAlign: TextAlign.center,
-        keyboardType: TextInputType.number,
-        maxLength: 1,
-        style: TextStyle(
-          fontSize: 22,
-          fontWeight: FontWeight.w700,
-          color: isFocused.value ? AppColors.primaryGold : textColor,
-        ),
-        decoration: const InputDecoration(
-          counterText: '',
-          border: InputBorder.none,
-          contentPadding: EdgeInsets.zero,
-        ),
-        onChanged: onChanged,
       ),
     );
   }

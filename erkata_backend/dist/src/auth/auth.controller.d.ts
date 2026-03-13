@@ -6,6 +6,7 @@ export interface RegisterDto {
     password: string;
     role?: string;
     tier?: string;
+    inviteToken?: string;
 }
 export declare class AuthController {
     private readonly authService;

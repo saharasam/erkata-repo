@@ -17,14 +17,14 @@ export declare class RequestsService {
     createRequest(customerId: string, dto: CreateRequestDto): Promise<{
         id: string;
         customerId: string;
-        type: import(".prisma/client").$Enums.RequestType;
+        type: import("@prisma/client").$Enums.RequestType;
         category: string;
         description: string | null;
         budgetMin: import("@prisma/client/runtime/library").Decimal | null;
         budgetMax: import("@prisma/client/runtime/library").Decimal | null;
         zoneId: string;
         woreda: string | null;
-        status: import(".prisma/client").$Enums.RequestStatus;
+        status: import("@prisma/client").$Enums.RequestStatus;
         createdAt: Date;
     }>;
     getOperatorQueue(filters?: {
@@ -44,19 +44,19 @@ export declare class RequestsService {
     } & {
         id: string;
         customerId: string;
-        type: import(".prisma/client").$Enums.RequestType;
+        type: import("@prisma/client").$Enums.RequestType;
         category: string;
         description: string | null;
         budgetMin: import("@prisma/client/runtime/library").Decimal | null;
         budgetMax: import("@prisma/client/runtime/library").Decimal | null;
         zoneId: string;
         woreda: string | null;
-        status: import(".prisma/client").$Enums.RequestStatus;
+        status: import("@prisma/client").$Enums.RequestStatus;
         createdAt: Date;
     })[]>;
     assignAgent(requestId: string, agentId: string, operatorId: string): Promise<{
         id: string;
-        status: import(".prisma/client").$Enums.MatchStatus;
+        status: import("@prisma/client").$Enums.MatchStatus;
         requestId: string;
         agentId: string;
         operatorId: string;
@@ -67,7 +67,7 @@ export declare class RequestsService {
         id: string;
         fullName: string;
         isActive: boolean;
-        tier: import(".prisma/client").$Enums.Tier;
+        tier: import("@prisma/client").$Enums.Tier;
         zones: string[];
     }[]>;
     getCustomerRequests(customerId: string): Promise<({
@@ -79,7 +79,7 @@ export declare class RequestsService {
         };
         matches: {
             id: string;
-            status: import(".prisma/client").$Enums.MatchStatus;
+            status: import("@prisma/client").$Enums.MatchStatus;
             agent: {
                 id: string;
                 fullName: string;
@@ -88,14 +88,14 @@ export declare class RequestsService {
     } & {
         id: string;
         customerId: string;
-        type: import(".prisma/client").$Enums.RequestType;
+        type: import("@prisma/client").$Enums.RequestType;
         category: string;
         description: string | null;
         budgetMin: import("@prisma/client/runtime/library").Decimal | null;
         budgetMax: import("@prisma/client/runtime/library").Decimal | null;
         zoneId: string;
         woreda: string | null;
-        status: import(".prisma/client").$Enums.RequestStatus;
+        status: import("@prisma/client").$Enums.RequestStatus;
         createdAt: Date;
     })[]>;
 }

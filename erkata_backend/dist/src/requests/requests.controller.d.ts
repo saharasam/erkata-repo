@@ -6,14 +6,14 @@ export declare class RequestsController {
     createRequest(req: RequestWithUser, dto: CreateRequestDto): Promise<{
         id: string;
         customerId: string;
-        type: import(".prisma/client").$Enums.RequestType;
+        type: import("@prisma/client").$Enums.RequestType;
         category: string;
         description: string | null;
         budgetMin: import("@prisma/client/runtime/library").Decimal | null;
         budgetMax: import("@prisma/client/runtime/library").Decimal | null;
         zoneId: string;
         woreda: string | null;
-        status: import(".prisma/client").$Enums.RequestStatus;
+        status: import("@prisma/client").$Enums.RequestStatus;
         createdAt: Date;
     }>;
     getQueue(zoneId: string): Promise<({
@@ -31,14 +31,14 @@ export declare class RequestsController {
     } & {
         id: string;
         customerId: string;
-        type: import(".prisma/client").$Enums.RequestType;
+        type: import("@prisma/client").$Enums.RequestType;
         category: string;
         description: string | null;
         budgetMin: import("@prisma/client/runtime/library").Decimal | null;
         budgetMax: import("@prisma/client/runtime/library").Decimal | null;
         zoneId: string;
         woreda: string | null;
-        status: import(".prisma/client").$Enums.RequestStatus;
+        status: import("@prisma/client").$Enums.RequestStatus;
         createdAt: Date;
     })[]>;
     getMyRequests(req: RequestWithUser): Promise<({
@@ -50,7 +50,7 @@ export declare class RequestsController {
         };
         matches: {
             id: string;
-            status: import(".prisma/client").$Enums.MatchStatus;
+            status: import("@prisma/client").$Enums.MatchStatus;
             agent: {
                 id: string;
                 fullName: string;
@@ -59,26 +59,26 @@ export declare class RequestsController {
     } & {
         id: string;
         customerId: string;
-        type: import(".prisma/client").$Enums.RequestType;
+        type: import("@prisma/client").$Enums.RequestType;
         category: string;
         description: string | null;
         budgetMin: import("@prisma/client/runtime/library").Decimal | null;
         budgetMax: import("@prisma/client/runtime/library").Decimal | null;
         zoneId: string;
         woreda: string | null;
-        status: import(".prisma/client").$Enums.RequestStatus;
+        status: import("@prisma/client").$Enums.RequestStatus;
         createdAt: Date;
     })[]>;
     findEligibleAgents(): Promise<{
         id: string;
         fullName: string;
         isActive: boolean;
-        tier: import(".prisma/client").$Enums.Tier;
+        tier: import("@prisma/client").$Enums.Tier;
         zones: string[];
     }[]>;
     assignAgent(id: string, agentId: string, req: RequestWithUser): Promise<{
         id: string;
-        status: import(".prisma/client").$Enums.MatchStatus;
+        status: import("@prisma/client").$Enums.MatchStatus;
         requestId: string;
         agentId: string;
         operatorId: string;

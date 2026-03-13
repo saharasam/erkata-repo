@@ -7,6 +7,8 @@ import { UserRole } from '../utils/constants';
 interface User {
   id: string;
   role: UserRole;
+  fullName: string;
+  email: string;
   zoneId?: string;
 }
 
@@ -27,13 +29,12 @@ const normalizeRole = (role: any): UserRole => {
     console.warn('[Auth] Received invalid role:', role);
     return UserRole.CUSTOMER;
   }
-  const r = role.toLowerCase().replace('_', '-');
-  return r as UserRole;
+  return role.toLowerCase() as UserRole;
 };
 
 // Helper to normalize roles from Frontend (UserRole Enum) to Backend (lowercase underscore)
 const denormalizeRole = (role: string): string => {
-  return role.toLowerCase().replace('-', '_');
+  return role.toLowerCase();
 };
 
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -58,6 +59,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           const userData: User = {
             id: decoded.sub || decoded.id,
             role: normalizeRole(decoded.app_metadata?.role || 'customer'),
+            fullName: decoded.user_metadata?.fullName || 'User',
+            email: decoded.email || '',
             zoneId: decoded.app_metadata?.zoneId
           };
           
@@ -93,6 +96,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const authenticatedUser: User = {
         id: userData.id,
         role: normalizeRole(userData.role),
+        fullName: userData.fullName || 'User',
+        email: userData.email,
         zoneId: userData.zoneId
       };
 

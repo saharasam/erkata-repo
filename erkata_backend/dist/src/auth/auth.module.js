@@ -14,12 +14,13 @@ const auth_service_1 = require("./auth.service");
 const jwt_strategy_1 = require("./strategies/jwt.strategy");
 const prisma_module_1 = require("../prisma/prisma.module");
 const auth_controller_1 = require("./auth.controller");
+const invite_module_1 = require("./invite/invite.module");
 let AuthModule = class AuthModule {
 };
 exports.AuthModule = AuthModule;
 exports.AuthModule = AuthModule = __decorate([
     (0, common_1.Module)({
-        imports: [prisma_module_1.PrismaModule, passport_1.PassportModule, jwt_1.JwtModule.register({})],
+        imports: [prisma_module_1.PrismaModule, passport_1.PassportModule, jwt_1.JwtModule.register({}), invite_module_1.InviteModule],
         providers: [auth_service_1.AuthService, jwt_strategy_1.JwtStrategy],
         controllers: [auth_controller_1.AuthController],
         exports: [auth_service_1.AuthService],

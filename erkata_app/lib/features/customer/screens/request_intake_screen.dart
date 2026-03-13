@@ -7,6 +7,7 @@ import '../../../core/models/request_type.dart';
 import '../../../core/theme/colors.dart';
 import '../../../shared/widgets/primary_button.dart';
 import '../../../shared/widgets/erkata_screen_header.dart';
+import '../../../shared/widgets/erkata_dropdown.dart';
 
 // Form Data Model
 class RequestFormData {
@@ -374,7 +375,7 @@ class _SelectionCard extends HookWidget {
                   ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
                   : Theme.of(context).colorScheme.surface,
               border: Border.all(
-                color: isSelected ? AppColors.primaryNavy : Colors.transparent,
+                color: isSelected ? AppColors.brandPrimary : Colors.transparent,
                 width: 2,
               ),
               borderRadius: BorderRadius.circular(16),
@@ -742,13 +743,15 @@ class _Step3Location extends StatelessWidget {
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 20),
-          _buildDropdown(
-            context,
+          ErkataDropdown<String>(
+            label: 'Sub-City',
+            hint: 'Select Sub-City',
             value: formData.value.kifleKetema.isEmpty
                 ? null
                 : formData.value.kifleKetema,
-            hint: 'Select Sub-City',
             items: kKifleKetemas.map((k) => k.value).toList(),
+            itemLabel: (val) =>
+                kKifleKetemas.firstWhere((k) => k.value == val).label,
             onChanged: (val) {
               if (val != null) {
                 formData.value = formData.value.copyWith(
@@ -758,17 +761,18 @@ class _Step3Location extends StatelessWidget {
               }
             },
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
           if (formData.value.kifleKetema.isNotEmpty)
-            _buildDropdown(
-              context,
+            ErkataDropdown<String>(
+              label: 'Wereda',
+              hint: 'Select Wereda',
               value: formData.value.wereda.isEmpty
                   ? null
                   : formData.value.wereda,
-              hint: 'Select Wereda',
               items: kKifleKetemas
                   .firstWhere((k) => k.value == formData.value.kifleKetema)
                   .weredas,
+              itemLabel: (val) => val,
               onChanged: (val) {
                 if (val != null) {
                   formData.value = formData.value.copyWith(wereda: val);
@@ -776,53 +780,6 @@ class _Step3Location extends StatelessWidget {
               },
             ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildDropdown(
-    BuildContext context, {
-    required String? value,
-    required String hint,
-    required List<String> items,
-    required ValueChanged<String?> onChanged,
-  }) {
-    return DropdownButtonFormField<String>(
-      initialValue: value,
-      hint: Text(
-        hint,
-        style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant),
-      ),
-      icon: Icon(
-        Icons.keyboard_arrow_down,
-        color: Theme.of(context).colorScheme.primary,
-      ),
-      items: items
-          .map((item) => DropdownMenuItem(value: item, child: Text(item)))
-          .toList(),
-      onChanged: onChanged,
-      decoration: InputDecoration(
-        filled: true,
-        fillColor: Theme.of(context).colorScheme.surface,
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 16,
-        ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: Theme.of(context).colorScheme.outline),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(
-            color: Theme.of(context).colorScheme.primary,
-            width: 2,
-          ),
-        ),
       ),
     );
   }
@@ -919,7 +876,7 @@ class _Step4Budget extends StatelessWidget {
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
                 borderSide: const BorderSide(
-                  color: AppColors.primaryGold,
+                  color: AppColors.brandGold,
                   width: 2,
                 ),
               ),
@@ -964,7 +921,7 @@ class _Step5Review extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryNavy,
+                    color: AppColors.brandPrimary,
                     borderRadius: const BorderRadius.vertical(
                       top: Radius.circular(24),
                     ),
@@ -981,7 +938,7 @@ class _Step5Review extends StatelessWidget {
                           formData.value.type == RequestType.furniture
                               ? Icons.chair
                               : Icons.home,
-                          color: AppColors.primaryGold,
+                          color: AppColors.brandGold,
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -1036,7 +993,7 @@ class _Step5Review extends StatelessWidget {
                       _row(
                         'Budget',
                         '${formData.value.budgetMax} ETB',
-                        valueColor: AppColors.primaryGold,
+                        valueColor: AppColors.brandGold,
                       ),
                     ],
                   ),
@@ -1119,7 +1076,7 @@ class _StepIndicator extends StatelessWidget {
                   gradient: LinearGradient(
                     colors: [
                       Theme.of(context).colorScheme.primary,
-                      AppColors.primaryGold,
+                      AppColors.brandGold,
                     ],
                   ),
                   borderRadius: BorderRadius.circular(2),
@@ -1184,7 +1141,7 @@ class _StepNode extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: isCompleted
-            ? AppColors.primaryGold
+            ? AppColors.brandGold
             : (isActive ? colorScheme.primary : colorScheme.surface),
         border: Border.all(
           color: isActive || isCompleted
@@ -1203,7 +1160,7 @@ class _StepNode extends StatelessWidget {
             : (isCompleted
                   ? [
                       BoxShadow(
-                        color: AppColors.primaryGold.withValues(alpha: 0.2),
+                        color: AppColors.brandGold.withValues(alpha: 0.2),
                         blurRadius: 6,
                         offset: const Offset(0, 2),
                       ),
@@ -1218,7 +1175,7 @@ class _StepNode extends StatelessWidget {
                   Icons.check_rounded,
                   key: const ValueKey('check'),
                   size: isActive ? 20 : 18,
-                  color: AppColors.primaryNavy,
+                  color: AppColors.brandPrimary,
                 )
               : Text(
                   '$stepNumber',

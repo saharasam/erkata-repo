@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Phone, Lock, ShieldCheck, MessageSquare, Mail, User } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { UserRole } from '../utils/constants';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Login: React.FC = () => {
@@ -40,11 +41,11 @@ const Login: React.FC = () => {
   useEffect(() => {
     if (user) {
       const role = user.role;
-      if (role === 'agent') navigate('/agent-dashboard');
-      else if (role === 'operator') navigate('/operator-dashboard');
-      else if (role === 'admin') navigate('/admin-dashboard');
-      else if (role === 'super-admin') navigate('/superadmin');
-      else if (role === 'customer') navigate('/customer');
+      if (role === UserRole.AGENT) navigate('/agent-dashboard');
+      else if (role === UserRole.OPERATOR) navigate('/operator-dashboard');
+      else if (role === UserRole.ADMIN) navigate('/admin-dashboard');
+      else if (role === UserRole.SUPER_ADMIN) navigate('/superadmin');
+      else if (role === UserRole.CUSTOMER) navigate('/customer');
     }
   }, [user, navigate]);
 

@@ -58,7 +58,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
             fontSize: 14,
             fontWeight: FontWeight.w600,
             color: AppColors
-                .primaryNavy, // Updated from charcoal to navy for brand consistency
+                .brandPrimary, // Updated from charcoal to navy for brand consistency
             letterSpacing: 0.2,
           ),
         ),
@@ -116,7 +116,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
               borderSide: const BorderSide(
-                color: AppColors.primaryGold,
+                color: AppColors.brandGold,
                 width: 2,
               ),
             ),

@@ -41,7 +41,9 @@ class AgentSubscriptionScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(24),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.primaryNavy.withValues(alpha: 0.3),
+                            color: AppColors.brandPrimary.withValues(
+                              alpha: 0.3,
+                            ),
                             blurRadius: 20,
                             offset: const Offset(0, 10),
                           ),
@@ -155,7 +157,7 @@ class AgentSubscriptionScreen extends StatelessWidget {
                             icon: Icons.bolt,
                             onPressed: () {},
                             backgroundColor: AppColors.pureWhite,
-                            textColor: AppColors.primaryNavy,
+                            textColor: AppColors.brandPrimary,
                           ),
                         ],
                       ),
