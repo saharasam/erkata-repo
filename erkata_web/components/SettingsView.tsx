@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { User, Bell, Shield, Mail, Lock, Phone, Globe, Moon } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { useModal } from '../contexts/ModalContext';
 import { motion } from 'framer-motion';
 

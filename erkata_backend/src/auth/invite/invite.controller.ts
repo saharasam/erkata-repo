@@ -1,10 +1,10 @@
-import { 
-  Controller, 
-  Post, 
-  Body, 
-  UseGuards, 
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
   Req,
-  ForbiddenException
+  ForbiddenException,
 } from '@nestjs/common';
 import { InviteService } from './invite.service';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
@@ -28,7 +28,9 @@ export class InviteController {
     const authReq = req as AuthenticatedRequest;
     if (body.role === UserRole.super_admin || body.role === UserRole.admin) {
       if (authReq.user.role !== UserRole.super_admin) {
-        throw new ForbiddenException('Only a Super Admin can invite and create other Administrators');
+        throw new ForbiddenException(
+          'Only a Super Admin can invite and create other Administrators',
+        );
       }
     }
 
@@ -40,8 +42,8 @@ export class InviteController {
 
     return {
       message: 'Invite generated successfully',
-      inviteUrl: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/register?token=${(invite as any).token}&email=${encodeURIComponent((invite as any).email)}&role=${(invite as any).role}`,
-      token: (invite as any).token,
+      inviteUrl: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/register?token=${invite.token}&email=${encodeURIComponent(invite.email)}&role=${invite.role}`,
+      token: invite.token,
     };
   }
 }

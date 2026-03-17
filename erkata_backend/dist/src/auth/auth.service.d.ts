@@ -6,7 +6,6 @@ export declare class AuthService {
     private readonly prisma;
     private readonly jwtService;
     private readonly inviteService;
-    private supabaseAdmin;
     constructor(prisma: PrismaService, jwtService: JwtService, inviteService: InviteService);
     private sanitizePhone;
     login(credentials: {
@@ -15,11 +14,11 @@ export declare class AuthService {
     }, res: Response): Promise<{
         user: {
             id: string;
-            email: string | undefined;
-            phone: string | undefined;
-            fullName: string | undefined;
-            role: any;
-            tier: any;
+            email: string;
+            phone: string;
+            fullName: string;
+            role: import(".prisma/client").$Enums.UserRole;
+            tier: import(".prisma/client").$Enums.Tier;
         };
         accessToken: string;
     }>;
@@ -39,5 +38,6 @@ export declare class AuthService {
     }): Promise<{
         message: string;
         userId: string;
+        debugRole: string;
     }>;
 }

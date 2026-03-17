@@ -1,27 +1,8 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, ReactNode } from 'react';
 import { jwtDecode } from 'jwt-decode';
 import api, { setAccessToken, setAuthReady } from '../utils/api';
 import { UserRole } from '../utils/constants';
-
-interface User {
-  id: string;
-  role: UserRole;
-  fullName: string;
-  email: string;
-  zoneId?: string;
-}
-
-interface AuthContextType {
-  user: User | null;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  logout: () => Promise<void>;
-  signup: (data: { fullName: string; email: string; password: string; role: string }) => Promise<void>;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+import { AuthContext, User } from './AuthContext';
 
 // Helper to normalize roles from Backend (lowercase underscore) to Frontend (UserRole Enum)
 const normalizeRole = (role: any): UserRole => {
@@ -58,10 +39,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           
           const userData: User = {
             id: decoded.sub || decoded.id,
-            role: normalizeRole(decoded.app_metadata?.role || 'customer'),
-            fullName: decoded.user_metadata?.fullName || 'User',
+            role: normalizeRole(decoded.role || 'customer'),
+            fullName: decoded.fullName || 'User',
             email: decoded.email || '',
-            zoneId: decoded.app_metadata?.zoneId
+            zoneId: decoded.zoneId
           };
           
           console.log('[Auth] Setting user state:', userData);
@@ -151,49 +132,4 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       ) : children}
     </AuthContext.Provider>
   );
-};
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within AuthProvider');
-  }
-  return context;
-};
-
-// Protected Route Component
-interface ProtectedRouteProps {
-  children: ReactNode;
-  allowedRole: UserRole;
-}
-
-export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRole }) => {
-  const { user, isAuthenticated, isLoading } = useAuth();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!isLoading) {
-      if (!isAuthenticated) {
-        console.log('[Auth] ProtectedRoute: Not authenticated, redirecting to login');
-        navigate('/login', { replace: true });
-      } else if (user?.role !== allowedRole) {
-        console.log(`[Auth] ProtectedRoute: Role mismatch. User: ${user?.role}, Required: ${allowedRole}. Redirecting...`);
-        // Redirect to correct dashboard based on role
-        let correctPath = '/login';
-        if (user?.role === UserRole.AGENT) correctPath = '/agent-dashboard';
-        if (user?.role === UserRole.OPERATOR) correctPath = '/operator-dashboard';
-        if (user?.role === UserRole.ADMIN) correctPath = '/admin-dashboard';
-        if (user?.role === UserRole.SUPER_ADMIN) correctPath = '/superadmin';
-        if (user?.role === UserRole.CUSTOMER) correctPath = '/customer';
-        
-        navigate(correctPath, { replace: true });
-      }
-    }
-  }, [isLoading, isAuthenticated, user, allowedRole, navigate]);
-
-  if (isLoading || !isAuthenticated || user?.role !== allowedRole) {
-    return null;
-  }
-
-  return <>{children}</>;
 };

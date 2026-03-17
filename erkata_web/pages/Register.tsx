@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, User, Mail, Phone, Lock, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CustomSelect from '../components/CustomSelect';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 
 type Role = 'customer' | 'agent' | 'operator';
 
@@ -11,6 +11,7 @@ interface RegisterProps {
   initialRole?: Role;
 }
 const Register: React.FC<RegisterProps> = ({ initialRole = 'customer' }) => {
+  const { signup } = useAuth();
   const [role, setRole] = useState<Role>(initialRole);
   const [formData, setFormData] = useState({
     firstName: '',

@@ -9,69 +9,73 @@ export declare class UsersController {
             zone: {
                 id: string;
                 name: string;
-                isActive: boolean;
                 city: string | null;
+                isActive: boolean;
             } | null;
         } & {
             id: string;
             zoneId: string | null;
-            woreda: string;
             createdAt: Date;
+            woreda: string;
             agentId: string;
             kifleKetema: string;
         })[];
         referralLink: {
             id: string;
+            tier: import(".prisma/client").$Enums.Tier;
             createdAt: Date;
-            tier: import("@prisma/client").$Enums.Tier;
             referrerId: string;
             code: string;
         } | null;
     } & {
         id: string;
-        zoneId: string | null;
-        createdAt: Date;
+        isActive: boolean;
+        email: string;
+        passwordHash: string | null;
         fullName: string;
         phone: string;
-        role: import("@prisma/client").$Enums.UserRole;
-        tier: import("@prisma/client").$Enums.Tier;
-        isActive: boolean;
+        role: import(".prisma/client").$Enums.UserRole;
+        tier: import(".prisma/client").$Enums.Tier;
+        zoneId: string | null;
         walletBalance: import("@prisma/client/runtime/library").Decimal;
         referredById: string | null;
+        createdAt: Date;
     })[]>;
     getMe(req: AuthenticatedRequest): Promise<{
-        referrals: {
-            id: string;
-            createdAt: Date;
-            fullName: string;
-            role: import("@prisma/client").$Enums.UserRole;
-        }[];
         agentZones: {
             id: string;
             zoneId: string | null;
-            woreda: string;
             createdAt: Date;
+            woreda: string;
             agentId: string;
             kifleKetema: string;
         }[];
+        referrals: {
+            id: string;
+            fullName: string;
+            role: import(".prisma/client").$Enums.UserRole;
+            createdAt: Date;
+        }[];
         referralLink: {
             id: string;
+            tier: import(".prisma/client").$Enums.Tier;
             createdAt: Date;
-            tier: import("@prisma/client").$Enums.Tier;
             referrerId: string;
             code: string;
         } | null;
     } & {
         id: string;
-        zoneId: string | null;
-        createdAt: Date;
+        isActive: boolean;
+        email: string;
+        passwordHash: string | null;
         fullName: string;
         phone: string;
-        role: import("@prisma/client").$Enums.UserRole;
-        tier: import("@prisma/client").$Enums.Tier;
-        isActive: boolean;
+        role: import(".prisma/client").$Enums.UserRole;
+        tier: import(".prisma/client").$Enums.Tier;
+        zoneId: string | null;
         walletBalance: import("@prisma/client/runtime/library").Decimal;
         referredById: string | null;
+        createdAt: Date;
     }>;
     getFinance(req: AuthenticatedRequest): Promise<{
         balance: string;
@@ -94,8 +98,8 @@ export declare class UsersController {
     }): Promise<{
         id: string;
         zoneId: string | null;
-        woreda: string;
         createdAt: Date;
+        woreda: string;
         agentId: string;
         kifleKetema: string;
     }>;
@@ -103,33 +107,37 @@ export declare class UsersController {
         tier: string;
     }): Promise<{
         id: string;
+        tier: import(".prisma/client").$Enums.Tier;
         createdAt: Date;
-        tier: import("@prisma/client").$Enums.Tier;
         referrerId: string;
         code: string;
     }>;
     suspendUser(req: AuthenticatedRequest, userId: string): Promise<{
         id: string;
-        zoneId: string | null;
-        createdAt: Date;
+        isActive: boolean;
+        email: string;
+        passwordHash: string | null;
         fullName: string;
         phone: string;
-        role: import("@prisma/client").$Enums.UserRole;
-        tier: import("@prisma/client").$Enums.Tier;
-        isActive: boolean;
+        role: import(".prisma/client").$Enums.UserRole;
+        tier: import(".prisma/client").$Enums.Tier;
+        zoneId: string | null;
         walletBalance: import("@prisma/client/runtime/library").Decimal;
         referredById: string | null;
+        createdAt: Date;
     }>;
     activateUser(req: AuthenticatedRequest, userId: string): Promise<{
         id: string;
-        zoneId: string | null;
-        createdAt: Date;
+        isActive: boolean;
+        email: string;
+        passwordHash: string | null;
         fullName: string;
         phone: string;
-        role: import("@prisma/client").$Enums.UserRole;
-        tier: import("@prisma/client").$Enums.Tier;
-        isActive: boolean;
+        role: import(".prisma/client").$Enums.UserRole;
+        tier: import(".prisma/client").$Enums.Tier;
+        zoneId: string | null;
         walletBalance: import("@prisma/client/runtime/library").Decimal;
         referredById: string | null;
+        createdAt: Date;
     }>;
 }

@@ -1,6 +1,7 @@
 import React, { Suspense } from 'react';
 import { HashRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom';
-import { AuthProvider, ProtectedRoute } from './contexts/AuthContext';
+import { AuthProvider } from './contexts/AuthProvider';
+import { ProtectedRoute } from './components/ProtectedRoute';
 import { UserRole } from './utils/constants';
 import { ModalProvider } from './contexts/ModalContext';
 import { motion, AnimatePresence } from 'framer-motion';

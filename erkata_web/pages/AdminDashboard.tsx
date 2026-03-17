@@ -16,9 +16,9 @@ const AdminDashboard: React.FC = () => {
     return (
         <DashboardLayout
             role="admin"
-            sidebarContent={
-                <AdminSidebar currentView={currentView} onViewChange={setCurrentView} />
-            }
+            sidebarContent={null}
+            currentView={currentView}
+            onViewChange={setCurrentView}
             rightPanelContent={
                 <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}

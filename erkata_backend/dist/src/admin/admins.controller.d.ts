@@ -6,15 +6,15 @@ export declare class AdminsController {
     constructor(prisma: PrismaService);
     getPersonnel(role?: UserRole): Promise<{
         id: string;
-        createdAt: Date;
-        fullName: string;
-        phone: string;
-        role: import("@prisma/client").$Enums.UserRole;
         isActive: boolean;
         _count: {
             operatorMatches: number;
             resolutionProposals: number;
         };
+        fullName: string;
+        phone: string;
+        role: import(".prisma/client").$Enums.UserRole;
+        createdAt: Date;
     }[]>;
     createInvite(req: AuthenticatedRequest, body: {
         email: string;
@@ -25,9 +25,9 @@ export declare class AdminsController {
         inviteUrl: string;
         invite: {
             id: string;
-            createdAt: Date;
-            role: import("@prisma/client").$Enums.UserRole;
             email: string;
+            role: import(".prisma/client").$Enums.UserRole;
+            createdAt: Date;
             token: string;
             expiresAt: Date;
             usedAt: Date | null;
@@ -38,14 +38,16 @@ export declare class AdminsController {
         isActive: boolean;
     }): Promise<{
         id: string;
-        zoneId: string | null;
-        createdAt: Date;
+        isActive: boolean;
+        email: string;
+        passwordHash: string | null;
         fullName: string;
         phone: string;
-        role: import("@prisma/client").$Enums.UserRole;
-        tier: import("@prisma/client").$Enums.Tier;
-        isActive: boolean;
+        role: import(".prisma/client").$Enums.UserRole;
+        tier: import(".prisma/client").$Enums.Tier;
+        zoneId: string | null;
         walletBalance: import("@prisma/client/runtime/library").Decimal;
         referredById: string | null;
+        createdAt: Date;
     }>;
 }

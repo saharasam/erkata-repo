@@ -67,6 +67,7 @@ async function main() {
       },
       create: {
         id: user.id,
+        email: user.email,
         fullName: user.fullName,
         role: user.role,
         phone: '0911000000',

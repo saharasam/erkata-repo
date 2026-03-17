@@ -15,7 +15,10 @@ export class AdminConfigController {
     return [
       {
         key: 'high_risk_threshold_etb',
-        value: this.configService.get<number>('high_risk_threshold_etb', 100000),
+        value: this.configService.get<number>(
+          'high_risk_threshold_etb',
+          100000,
+        ),
         description: 'Threshold for automatic escalation to Super Admin.',
       },
       {

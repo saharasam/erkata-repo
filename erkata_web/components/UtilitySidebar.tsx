@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Calendar, StickyNote, MessageCircle, X, Globe, User, LogOut, ShieldCheck, Archive, ShieldAlert, Settings2, Megaphone, BarChart4, History, TrendingUp, Users, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Calendar, StickyNote, MessageCircle, X, Globe, User, LogOut, ShieldCheck, Archive, ShieldAlert, Settings2, Megaphone, BarChart4, History, TrendingUp, Users, ChevronRight, ChevronLeft, MapPin, LayoutGrid, FileText, Package } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { UserRole } from '../utils/constants';
 import { Action } from '../hooks/usePermissions';
 import { useNavigate } from 'react-router-dom';
@@ -47,12 +47,49 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
     { id: 'operators', icon: Users, label: 'Operator Oversight' },
   ];
 
+  const adminTools = [
+    { id: 'overview', icon: BarChart4, label: 'Overview' },
+    { id: 'zones', icon: MapPin, label: 'Zone Coverage' },
+    { id: 'bundles', icon: ShieldAlert, label: 'Escalated Bundles' },
+    { id: 'actions', icon: Settings2, label: 'Pending Actions' },
+    { id: 'history', icon: History, label: 'My Proposals' },
+    { id: 'agents', icon: Users, label: 'Agents' },
+    { id: 'operators', icon: Users, label: 'Operators' },
+  ];
+
+  const operatorTools = [
+    { id: 'overview', icon: LayoutGrid, label: 'Overview' },
+    { id: 'history', icon: History, label: 'Assignment History' },
+  ];
+
+  const agentTools = [
+    { id: 'focus', icon: FileText, label: 'Focus Board' },
+    { id: 'earnings', icon: TrendingUp, label: 'Earnings' },
+    { id: 'network', icon: Users, label: 'My Network' },
+    { id: 'territory', icon: MapPin, label: 'Territory' },
+    { id: 'profile', icon: User, label: 'Profile' },
+  ];
+
+  const customerTools = [
+    { id: 'requests', icon: Package, label: 'My Requests' },
+  ];
+
+  const roleTools: Record<string, any[]> = {
+    [UserRole.SUPER_ADMIN]: superAdminTools,
+    [UserRole.ADMIN]: adminTools,
+    [UserRole.OPERATOR]: operatorTools,
+    [UserRole.AGENT]: agentTools,
+    [UserRole.CUSTOMER]: customerTools,
+  };
+
+  const currentRoleTools = user?.role ? roleTools[user.role] || [] : [];
+
   const toggleTool = (toolId: string) => {
     console.log('Toggling tool:', toolId);
     
-    // Check if it's a Super Admin view tool
-    const isSATool = superAdminTools.some(t => t.id === toolId);
-    if (isSATool && onViewChange) {
+    // Check if it's a role-specific navigation item
+    const isRoleNavItem = currentRoleTools.some(t => t.id === toolId);
+    if (isRoleNavItem && onViewChange) {
       onViewChange(toolId);
       setActiveTool(null);
       return;
@@ -74,8 +111,6 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
     }
     setActiveTool(activeTool === toolId ? null : toolId);
   };
-
-
 
   return (
     <div className="flex h-full relative z-40">
@@ -124,22 +159,22 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
           ))}
         </div>
 
-        {/* Super Admin Section Divider */}
-        {user?.role === UserRole.SUPER_ADMIN && (
+        {/* Role-Specific Navigation Section Divider */}
+        {currentRoleTools.length > 0 && (
           <div className="w-8 h-px bg-slate-200 shrink-0 my-4" />
         )}
 
-        {/* Super Admin Tools */}
-        {user?.role === UserRole.SUPER_ADMIN && (
+        {/* Role-Specific Navigation Tools */}
+        {currentRoleTools.length > 0 && (
           <div className="w-full flex flex-col items-center space-y-2 shrink-0 px-3">
-            {superAdminTools.map((tool) => (
+            {currentRoleTools.map((tool) => (
               <button
                 key={tool.id}
                 onClick={() => toggleTool(tool.id)}
                 className={`w-full h-10 rounded-xl flex items-center transition-all duration-200 group relative ${
                   currentView === tool.id 
-                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' 
-                    : 'text-slate-400 hover:bg-white hover:text-indigo-600 hover:shadow-md'
+                    ? user?.role === UserRole.SUPER_ADMIN || user?.role === UserRole.ADMIN ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'bg-erkata-primary text-white shadow-lg shadow-erkata-primary/30'
+                    : `text-slate-400 hover:bg-white ${user?.role === UserRole.SUPER_ADMIN || user?.role === UserRole.ADMIN ? 'hover:text-indigo-600' : 'hover:text-erkata-primary'} hover:shadow-md`
                 } ${isExpanded ? 'px-3 justify-start gap-3' : 'justify-center'}`}
                 title={isExpanded ? "" : tool.label}
               >

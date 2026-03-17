@@ -6,8 +6,7 @@ import '../../../core/models/user_role.dart';
 import '../../../core/theme/colors.dart';
 import '../../../shared/widgets/primary_button.dart';
 import '../state/auth_provider.dart';
-import '../data/models/login_request.dart';
-import '../data/models/register_request.dart';
+
 
 class AuthScreen extends HookConsumerWidget {
   const AuthScreen({super.key});
@@ -44,80 +43,13 @@ class AuthScreen extends HookConsumerWidget {
       }
     });
 
-    String? validate() {
-      final identifier = phoneController.text.trim();
-      final password = passwordController.text;
 
-      if (identifier.isEmpty) return 'Email or phone is required';
-      if (password.length < 6) return 'Password must be at least 6 characters';
-
-      if (!isLogin.value) {
-        final name = nameController.text.trim();
-        if (name.isEmpty) return 'Name is required';
-        if (password != confirmPasswordController.text) {
-          return 'Passwords do not match';
-        }
-      }
-      return null;
-    }
-
-    void handleSubmit() async {
-      final error = validate();
-      if (error != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(error),
-            backgroundColor: Colors.orangeAccent,
-            behavior: SnackBarBehavior.floating,
-            margin: const EdgeInsets.all(16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        );
-        return;
-      }
-
-      if (isLogin.value) {
-        // Login — call backend directly
-        await ref
-            .read(authProvider.notifier)
-            .login(
-              LoginRequest(
-                identifier: phoneController.text.trim(),
-                password: passwordController.text,
-              ),
-            );
-        // Navigation is handled by the router redirect when isAuthenticated becomes true
-      } else {
-        // Register — call backend, then navigate to confirmation screen
-        final roleStr = selectedRole.value == UserRole.agent
-            ? 'agent'
-            : 'customer';
-        await ref
-            .read(authProvider.notifier)
-            .register(
-              RegisterRequest(
-                email: phoneController.text.trim(),
-                fullName: nameController.text.trim(),
-                password: passwordController.text,
-                role: roleStr,
-              ),
-            );
-
-        // If no error was set, registration succeeded — go to confirmation
-        final state = ref.read(authProvider);
-        if (state.errorMessage == null && context.mounted) {
-          context.push(
-            '/auth/otp',
-            extra: {
-              'role': selectedRole.value,
-              'email': phoneController.text.trim(),
-              'password': passwordController.text,
-            },
-          );
-        }
-      }
+    void handleSubmit() {
+      // DEMO MODE: bypass authentication — navigate directly to dashboard
+      final isAgent = isLogin.value
+          ? false // login always goes to customer home for demo
+          : selectedRole.value == UserRole.agent;
+      context.go(isAgent ? '/agent' : '/home');
     }
 
     return Scaffold(

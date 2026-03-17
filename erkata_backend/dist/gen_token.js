@@ -36,7 +36,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const client_1 = require("@prisma/client");
 const jwt = __importStar(require("jsonwebtoken"));
 const prisma = new client_1.PrismaClient();
-const JWT_SECRET = process.env.SUPABASE_JWT_SECRET ||
+const JWT_SECRET = process.env.JWT_SECRET ||
     'E2N8cq8Hvk2CYFvq0jlxAdutt1h85yz4rlx9JbUQX7/6Y5LqlrDO9j7vYvkKO5HKnG5p2hcxOUR6Xy7eNyHfTw==';
 async function main() {
     const agent = await prisma.profile.findFirst({
@@ -54,5 +54,7 @@ async function main() {
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '1h' });
     console.log(token);
 }
-main().finally(() => prisma.$disconnect());
+main()
+    .catch((err) => console.error(err))
+    .finally(() => prisma.$disconnect());
 //# sourceMappingURL=gen_token.js.map

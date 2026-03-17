@@ -15,39 +15,29 @@ const passport_1 = require("@nestjs/passport");
 const common_1 = require("@nestjs/common");
 let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(passport_jwt_1.Strategy) {
     constructor() {
-        const supabaseUrl = process.env.SUPABASE_URL;
-        if (!supabaseUrl) {
-            throw new Error('SUPABASE_URL is missing in environment variables');
+        const secret = process.env.JWT_SECRET;
+        if (!secret) {
+            throw new Error('JWT_SECRET is missing in environment variables');
         }
-        const jwksUri = `${supabaseUrl}/auth/v1/.well-known/jwks.json`;
-        console.log(`[JwtStrategy] Initializing JWKS strategy with URI: ${jwksUri}`);
+        console.log('[JwtStrategy] Initializing JWT strategy with custom secret');
         super({
             jwtFromRequest: passport_jwt_1.ExtractJwt.fromAuthHeaderAsBearerToken(),
             ignoreExpiration: false,
-            algorithms: ['ES256', 'HS256', 'RS256'],
-            secretOrKeyProvider: require('jwks-rsa').passportJwtSecret({
-                cache: true,
-                rateLimit: true,
-                jwksRequestsPerMinute: 5,
-                jwksUri: jwksUri,
-            }),
+            secretOrKey: secret,
         });
     }
     validate(payload) {
-        const role = payload.app_metadata?.role;
-        const tier = payload.app_metadata?.tier;
         const userId = payload.sub;
         if (!userId) {
             console.error('[JwtStrategy] Validation failed: sub (userId) missing in payload');
             throw new common_1.UnauthorizedException('Invalid token: sub missing');
         }
-        console.log(`[JwtStrategy] Validated token for user: ${payload.email}, Role: ${role || 'customer'}`);
+        console.log(`[JwtStrategy] Validated token for user: ${payload.email}, Role: ${payload.role || 'customer'}`);
         return {
             id: userId,
             email: payload.email,
-            role: role || 'customer',
-            tier: tier || 'FREE',
-            zoneId: payload.app_metadata?.zone_id,
+            role: payload.role || 'customer',
+            tier: payload.tier || 'FREE',
         };
     }
 };

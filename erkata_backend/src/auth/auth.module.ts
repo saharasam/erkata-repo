@@ -8,7 +8,15 @@ import { AuthController } from './auth.controller';
 import { InviteModule } from './invite/invite.module';
 
 @Module({
-  imports: [PrismaModule, PassportModule, JwtModule.register({}), InviteModule],
+  imports: [
+    PrismaModule,
+    PassportModule,
+    JwtModule.register({
+      secret: process.env.JWT_SECRET,
+      signOptions: { expiresIn: '1d' },
+    }),
+    InviteModule,
+  ],
   providers: [AuthService, JwtStrategy],
   controllers: [AuthController],
   exports: [AuthService],

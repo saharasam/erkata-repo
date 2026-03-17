@@ -15,7 +15,7 @@ export default class AnalyticsController {
         uptime: string;
     }>;
     getDistribution(): Promise<{
-        role: import("@prisma/client").$Enums.UserRole;
+        role: import(".prisma/client").$Enums.UserRole;
         count: number;
     }[]>;
 }

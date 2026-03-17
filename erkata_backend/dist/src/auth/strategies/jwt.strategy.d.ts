@@ -7,17 +7,13 @@ export declare class JwtStrategy extends JwtStrategy_base {
     validate(payload: {
         sub: string;
         email: string;
-        app_metadata?: {
-            role?: string;
-            tier?: string;
-            zone_id?: string;
-        };
+        role?: string;
+        tier?: string;
     }): {
         id: string;
         email: string;
         role: string;
         tier: string;
-        zoneId: string | undefined;
     };
 }
 export {};

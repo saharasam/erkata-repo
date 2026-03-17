@@ -12,7 +12,7 @@ import {
   ChevronRight,
   Filter
 } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { useModal } from '../contexts/ModalContext';
 import api from '../utils/api';
 import { Can } from '../components/ui/Can';
@@ -30,6 +30,7 @@ const OperatorDashboard: React.FC = () => {
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [isAssignmentModalOpen, setIsAssignmentModalOpen] = useState(false);
     const [selectedRequest, setSelectedRequest] = useState<{id: string} | null>(null);
+    const [currentView, setCurrentView] = useState('overview');
 
     useEffect(() => {
         const fetchData = async () => {
@@ -94,7 +95,12 @@ const OperatorDashboard: React.FC = () => {
 
     if (isLoading) {
         return (
-            <DashboardLayout role="operator" sidebarContent={<OperatorSidebar currentView="overview" onViewChange={() => {}} />}>
+            <DashboardLayout 
+                role="operator" 
+                sidebarContent={null}
+                currentView={currentView}
+                onViewChange={setCurrentView}
+            >
                 <div className="animate-pulse space-y-8">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         {[1, 2, 3, 4].map(i => (
@@ -108,7 +114,12 @@ const OperatorDashboard: React.FC = () => {
     }
 
     return (
-        <DashboardLayout role="operator" sidebarContent={<OperatorSidebar currentView="overview" onViewChange={() => {}} />}>
+        <DashboardLayout 
+            role="operator" 
+            sidebarContent={null}
+            currentView={currentView}
+            onViewChange={setCurrentView}
+        >
             <div className="space-y-8">
                 {/* Stats Header */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

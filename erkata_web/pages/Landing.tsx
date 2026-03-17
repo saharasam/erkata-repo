@@ -9,23 +9,26 @@ import {
   CheckCircle2,
   Lock
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, Variants } from 'framer-motion';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 
 const Landing: React.FC = () => {
-  const fadeInUp = {
+  const fadeInUp: Variants = {
     initial: { opacity: 0, y: 30 },
-    whileInView: { opacity: 1, y: 0 },
-    viewport: { once: true, margin: "-100px" },
-    transition: { duration: 0.6, ease: "easeOut" }
+    whileInView: { 
+      opacity: 1, 
+      y: 0,
+      transition: { duration: 0.6, ease: "easeOut" }
+    }
   };
 
-  const staggerContainer = {
+  const staggerContainer: Variants = {
     initial: { opacity: 0 },
-    whileInView: { opacity: 1 },
-    viewport: { once: true, margin: "-100px" },
-    transition: { staggerChildren: 0.2 }
+    whileInView: { 
+      opacity: 1,
+      transition: { staggerChildren: 0.2 }
+    }
   };
 
   const cardHover = {
@@ -127,6 +130,9 @@ const Landing: React.FC = () => {
           {/* Step 1 */}
           <motion.div 
             variants={fadeInUp}
+            initial="initial"
+            whileInView="whileInView"
+            viewport={{ once: true, margin: "-100px" }}
             {...cardHover}
             className="bg-white p-10 rounded-[2rem] shadow-sm border border-gray-100 relative overflow-hidden group hover:shadow-xl transition-shadow duration-300"
           >
@@ -144,6 +150,9 @@ const Landing: React.FC = () => {
           {/* Step 2 */}
           <motion.div 
             variants={fadeInUp}
+            initial="initial"
+            whileInView="whileInView"
+            viewport={{ once: true, margin: "-100px" }}
             {...cardHover}
             className="bg-white p-10 rounded-[2rem] shadow-sm border border-gray-100 relative overflow-hidden group hover:shadow-xl transition-shadow duration-300"
           >
@@ -165,6 +174,9 @@ const Landing: React.FC = () => {
           {/* Step 3 */}
           <motion.div 
             variants={fadeInUp}
+            initial="initial"
+            whileInView="whileInView"
+            viewport={{ once: true, margin: "-100px" }}
             {...cardHover}
             className="bg-white p-10 rounded-[2rem] shadow-sm border border-gray-100 relative overflow-hidden group hover:shadow-xl transition-shadow duration-300"
           >
@@ -184,7 +196,10 @@ const Landing: React.FC = () => {
       {/* 3. Who Is This For? */}
       <section className="py-12 px-6 md:px-12 lg:px-20 max-w-[1440px] mx-auto">
         <motion.h2 
-          {...fadeInUp}
+          variants={fadeInUp}
+          initial="initial"
+          whileInView="whileInView"
+          viewport={{ once: true, margin: "-100px" }}
           className="text-3xl md:text-4xl font-medium mb-12"
         >
           Who Is This For?
@@ -199,6 +214,9 @@ const Landing: React.FC = () => {
           {/* Requestors */}
           <motion.div 
             variants={fadeInUp}
+            initial="initial"
+            whileInView="whileInView"
+            viewport={{ once: true, margin: "-100px" }}
             whileHover={{ scale: 1.03 }}
             className="bg-erkata-primary text-white p-10 rounded-[2.5rem] flex flex-col justify-between min-h-[320px]"
           >
@@ -216,6 +234,9 @@ const Landing: React.FC = () => {
           {/* Agents */}
           <motion.div 
             variants={fadeInUp}
+            initial="initial"
+            whileInView="whileInView"
+            viewport={{ once: true, margin: "-100px" }}
             whileHover={{ scale: 1.03 }}
             className="bg-white border border-gray-200 p-10 rounded-[2.5rem] flex flex-col justify-between min-h-[320px]"
           >
@@ -234,6 +255,9 @@ const Landing: React.FC = () => {
           {/* Operators */}
           <motion.div 
             variants={fadeInUp}
+            initial="initial"
+            whileInView="whileInView"
+            viewport={{ once: true, margin: "-100px" }}
             whileHover={{ scale: 1.03 }}
             className="bg-white border border-gray-200 p-10 rounded-[2.5rem] flex flex-col justify-between min-h-[320px]"
           >
@@ -313,7 +337,10 @@ const Landing: React.FC = () => {
         </motion.div>
         
         <motion.div 
-          {...fadeInUp}
+          variants={fadeInUp}
+          initial="initial"
+          whileInView="whileInView"
+          viewport={{ once: true, margin: "-100px" }}
           className="mt-12 text-center"
         >
           <Link to="/become-agent" className="text-lg font-bold text-erkata-secondary hover:text-black underline underline-offset-4 transition-colors">
@@ -375,7 +402,10 @@ const Landing: React.FC = () => {
       {/* 6. Final Trust Section */}
       <section className="py-24 px-6 md:px-12 lg:px-20 text-center">
         <motion.h2 
-          {...fadeInUp}
+          variants={fadeInUp}
+          initial="initial"
+          whileInView="whileInView"
+          viewport={{ once: true, margin: "-100px" }}
           className="text-4xl md:text-6xl font-medium mb-8 leading-tight"
         >
           Trust is not promised. <br/>
@@ -389,15 +419,33 @@ const Landing: React.FC = () => {
           viewport={{ once: true }}
           className="flex flex-col md:flex-row justify-center gap-4 md:gap-12 mb-16 text-left md:text-center max-w-4xl mx-auto"
         >
-           <motion.div variants={fadeInUp} className="flex items-center md:flex-col gap-4">
+           <motion.div 
+             variants={fadeInUp}
+             initial="initial"
+             whileInView="whileInView"
+             viewport={{ once: true, margin: "-100px" }}
+             className="flex items-center md:flex-col gap-4"
+           >
              <div className="w-2 h-2 bg-erkata-accent rounded-full md:hidden"></div>
              <p className="text-lg text-gray-600">Every transaction has a neutral operator in the middle</p>
            </motion.div>
-           <motion.div variants={fadeInUp} className="flex items-center md:flex-col gap-4">
+           <motion.div 
+             variants={fadeInUp}
+             initial="initial"
+             whileInView="whileInView"
+             viewport={{ once: true, margin: "-100px" }}
+             className="flex items-center md:flex-col gap-4"
+           >
              <div className="w-2 h-2 bg-erkata-accent rounded-full md:hidden"></div>
              <p className="text-lg text-gray-600">No hidden direct contact before validation</p>
            </motion.div>
-           <motion.div variants={fadeInUp} className="flex items-center md:flex-col gap-4">
+           <motion.div 
+             variants={fadeInUp}
+             initial="initial"
+             whileInView="whileInView"
+             viewport={{ once: true, margin: "-100px" }}
+             className="flex items-center md:flex-col gap-4"
+           >
              <div className="w-2 h-2 bg-erkata-accent rounded-full md:hidden"></div>
              <p className="text-lg text-gray-600">Immutable feedback escalation chain ending at Super Admin</p>
            </motion.div>

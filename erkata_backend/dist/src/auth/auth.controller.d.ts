@@ -17,11 +17,11 @@ export declare class AuthController {
     }, res: Response): Promise<{
         user: {
             id: string;
-            email: string | undefined;
-            phone: string | undefined;
-            fullName: string | undefined;
-            role: any;
-            tier: any;
+            email: string;
+            phone: string;
+            fullName: string;
+            role: import(".prisma/client").$Enums.UserRole;
+            tier: import(".prisma/client").$Enums.Tier;
         };
         accessToken: string;
     }>;
@@ -34,5 +34,6 @@ export declare class AuthController {
     register(body: RegisterDto): Promise<{
         message: string;
         userId: string;
+        debugRole: string;
     }>;
 }

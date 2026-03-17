@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import CustomSelect from './CustomSelect';
 import api from '../utils/api';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { useModal } from '../contexts/ModalContext';
 
 type RequestIntent = 'buy' | 'sell' | null;

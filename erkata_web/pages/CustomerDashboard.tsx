@@ -51,8 +51,15 @@ const CustomerDashboard: React.FC = () => {
     setFeedbackRequest(null);
   };
 
+  const [currentView, setCurrentView] = useState('requests');
+
   return (
-    <DashboardLayout role="customer" sidebarContent={<div className="p-4 text-xs font-bold text-slate-400">Customer Menu</div>}>
+    <DashboardLayout 
+      role="customer" 
+      sidebarContent={null}
+      currentView={currentView}
+      onViewChange={setCurrentView}
+    >
       <div className="max-w-6xl mx-auto py-8 px-4">
         {showSuccess && (
           <motion.div 

@@ -177,36 +177,6 @@ const AgentDashboard: React.FC = () => {
     }
   };
 
-  // Sidebar Navigation
-  const sidebarContent = (
-    <div className="space-y-1">
-      {[
-        { icon: FileText, label: 'Focus Board', id: 'focus' },
-        { icon: TrendingUp, label: 'Earnings', id: 'earnings' },
-        { icon: Users, label: 'My Network', id: 'network' },
-        { icon: MapPin, label: 'Territory', id: 'territory' },
-        { icon: User, label: 'Profile', id: 'profile' },
-      ].map((item, index) => (
-        <motion.button
-          key={item.id}
-          initial={{ opacity: 0, x: -10 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: index * 0.05 }}
-          onClick={() => setView(item.id as DashboardView)}
-          className={`w-full flex items-center space-x-3 px-4 py-2.5 rounded-xl transition-all duration-200 group ${
-            view === item.id
-              ? 'bg-erkata-primary/10 text-erkata-primary font-bold'
-              : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900 font-medium'
-          }`}
-        >
-          <item.icon className={`w-4 h-4 ${view === item.id ? 'text-erkata-primary' : 'text-slate-400 group-hover:text-slate-600'}`} />
-          <span>{item.label}</span>
-          {view === item.id && <motion.div layoutId="activeDot" className="ml-auto w-1.5 h-1.5 rounded-full bg-erkata-primary" />}
-        </motion.button>
-      ))}
-    </div>
-  );
-
   const rightPanelContent = (
     <div className="space-y-8">
       <motion.div 
@@ -290,7 +260,9 @@ const AgentDashboard: React.FC = () => {
   return (
     <DashboardLayout
       role="agent"
-      sidebarContent={sidebarContent}
+      sidebarContent={null}
+      currentView={view}
+      onViewChange={(newView) => setView(newView as DashboardView)}
       rightPanelContent={rightPanelContent}
     >
       <AnimatePresence mode="wait">

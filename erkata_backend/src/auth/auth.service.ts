@@ -1,38 +1,29 @@
 import {
   Injectable,
-  InternalServerErrorException,
   UnauthorizedException,
+  ConflictException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Response } from 'express';
 import { InviteService } from './invite/invite.service';
+import * as bcrypt from 'bcrypt';
+import { UserRole, Tier } from '@prisma/client';
 
-// Roles and Tiers are handled as strings to avoid @prisma/client export issues
+interface JwtPayload {
+  sub: string;
+  email: string;
+  role: UserRole;
+  tier: Tier;
+}
+
 @Injectable()
 export class AuthService {
-  private supabaseAdmin: SupabaseClient;
-
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly inviteService: InviteService,
-  ) {
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!supabaseUrl || !supabaseKey) {
-      throw new Error('Supabase URL and Service Role Key are required');
-    }
-
-    this.supabaseAdmin = createClient(supabaseUrl, supabaseKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    }) as unknown as SupabaseClient;
-  }
+  ) {}
 
   private sanitizePhone(phone: string): string {
     if (!phone) return '';
@@ -47,7 +38,7 @@ export class AuthService {
       sanitized = '251' + sanitized;
     }
 
-    // Supabase expects E.164 format (with +)
+    // Expect E.164 format (with +)
     return sanitized.startsWith('+') ? sanitized : `+${sanitized}`;
   }
 
@@ -59,56 +50,72 @@ export class AuthService {
       `[AuthService] Attempting login for email: ${credentials.identifier}`,
     );
 
-    const { data, error } = await this.supabaseAdmin.auth.signInWithPassword({
-      email: credentials.identifier,
-      password: credentials.pass,
-    });
-
-    if (error || !data.user) {
-      console.error(
-        `[AuthService] Supabase login failed for ${credentials.identifier}:`,
-        error?.message,
-      );
-      throw new UnauthorizedException(error?.message || 'Invalid credentials');
-    }
-
     const profile = await this.prisma.profile.findUnique({
-      where: { id: data.user.id },
+      where: { email: credentials.identifier },
     });
 
-    // Refresh Token in httpOnly cookie
-    if (data.session?.refresh_token) {
-      res.cookie('refreshToken', data.session.refresh_token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      });
+    if (!profile || !profile.passwordHash) {
+      console.error(`[AuthService] User not found: ${credentials.identifier}`);
+      throw new UnauthorizedException('Invalid credentials');
     }
+
+    const passwordsMatch = await bcrypt.compare(
+      credentials.pass,
+      profile.passwordHash,
+    );
+
+    if (!passwordsMatch) {
+      console.error(
+        `[AuthService] Invalid password for: ${credentials.identifier}`,
+      );
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const payload = {
+      sub: profile.id,
+      email: profile.email,
+      role: profile.role,
+      tier: profile.tier,
+    };
+    const accessToken = this.jwtService.sign(payload);
+    const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
 
     return {
       user: {
-        id: data.user.id,
-        email: data.user.email,
-        phone: profile?.phone,
-        fullName: profile?.fullName,
-        role: data.user.app_metadata?.role || profile?.role,
-        tier: data.user.app_metadata?.tier || profile?.tier,
+        id: profile.id,
+        email: profile.email,
+        phone: profile.phone,
+        fullName: profile.fullName,
+        role: profile.role,
+        tier: profile.tier,
       },
-      accessToken: data.session?.access_token,
+      accessToken,
     };
   }
 
   async refresh(refreshToken: string) {
-    const { data, error } = await this.supabaseAdmin.auth.refreshSession({
-      refresh_token: refreshToken,
-    });
+    try {
+      const payload = this.jwtService.verify<JwtPayload>(refreshToken);
+      const newPayload: JwtPayload = {
+        sub: payload.sub,
+        email: payload.email,
+        role: payload.role,
+        tier: payload.tier,
+      };
+      const newAccessToken = this.jwtService.sign(newPayload);
 
-    if (error || !data.session) {
+      await Promise.resolve(); // satisfy async/await requirement
+      return { accessToken: newAccessToken };
+    } catch {
       throw new UnauthorizedException('Invalid refresh token');
     }
-
-    return { accessToken: data.session.access_token };
   }
 
   async logout(res: Response) {
@@ -129,85 +136,83 @@ export class AuthService {
       `[AuthService] Registering user: ${data.fullName}, Email: ${data.email}`,
     );
 
-    let finalRole = data.role || 'customer';
+    const existingUser = await this.prisma.profile.findUnique({
+      where: { email: data.email },
+    });
+
+    if (existingUser) {
+      throw new ConflictException('User with this email already exists');
+    }
+
+    let finalRole = (data.role || 'customer').toLowerCase();
+    console.log(
+      `[AuthService] Initial finalRole from data.role: ${data.role}, normalized to: ${finalRole}`,
+    );
 
     // 1. Check if this is the Super Admin from ENV
     const superAdminEmail = process.env.SUPER_ADMIN_EMAIL;
-    if (superAdminEmail && data.email.toLowerCase() === superAdminEmail.toLowerCase()) {
-      console.log(`[AuthService] Matching Super Admin email found. Granting super_admin role.`);
+    if (
+      superAdminEmail &&
+      data.email.toLowerCase() === superAdminEmail.toLowerCase()
+    ) {
+      console.log(
+        `[AuthService] Matching Super Admin email found. Granting super_admin role.`,
+      );
       finalRole = 'super_admin';
-    } 
-    // 2. Validate invite token for restricted roles
-    else if (finalRole === 'admin' || finalRole === 'operator') {
+    }
+    // 2. Validate invite token for admin role
+    else if (finalRole === 'admin') {
       if (!data.inviteToken) {
-        console.warn(`[AuthService] Registration attempt as ${finalRole} without token. Defaulting to customer.`);
+        console.warn(
+          `[AuthService] Registration attempt as admin without token. Defaulting to customer.`,
+        );
         finalRole = 'customer';
       } else {
-        // InviteService will throw if invalid/expired/wrong email
         await this.inviteService.validateInvite(data.inviteToken, data.email);
-        console.log(`[AuthService] Valid invite token for ${finalRole} provided.`);
+        console.log(`[AuthService] Valid invite token for admin provided.`);
       }
     } else {
-      // Any other role attempt (like trying to register as super_admin manually) defaults to customer
-      if (finalRole !== 'customer' && finalRole !== 'agent') {
+      console.log(`[AuthService] Handling non-admin role: ${finalRole}`);
+      if (
+        finalRole !== 'customer' &&
+        finalRole !== 'agent' &&
+        finalRole !== 'operator'
+      ) {
+        console.warn(
+          `[AuthService] Role ${finalRole} is not customer/agent/operator. Defaulting to customer.`,
+        );
         finalRole = 'customer';
       }
     }
+    console.log(`[AuthService] Final role determined: ${finalRole}`);
 
-    const { data: authData, error } = await this.supabaseAdmin.auth.signUp({
-      email: data.email,
-      password: data.password,
-      options: {
-        data: {
-          full_name: data.fullName,
-        },
-      },
-    });
+    const saltRoutes = 10;
+    const passwordHash = await bcrypt.hash(data.password, saltRoutes);
 
-    if (error) {
-      console.error(
-        `[AuthService] Registration failed for ${data.email}:`,
-        error,
-      );
-      throw new InternalServerErrorException(error.message);
-    }
-
-    if (!authData.user) {
-      throw new InternalServerErrorException('User creation failed');
-    }
-
-    // Update app_metadata via Admin API
-    await this.supabaseAdmin.auth.admin.updateUserById(authData.user.id, {
-      app_metadata: {
-        role: finalRole,
-        tier: data.tier || 'FREE',
-      },
-    });
-
-    // Manual profile creation
-    await this.prisma.profile.upsert({
-      where: { id: authData.user.id },
-      update: {
-        role: finalRole as any,
+    const newProfile = await this.prisma.profile.create({
+      data: {
+        email: data.email,
+        passwordHash,
         fullName: data.fullName,
-      },
-      create: {
-        id: authData.user.id,
-        fullName: data.fullName,
-        phone: '', // No longer collected on signup
-        role: finalRole as any,
+        phone: '',
+        role: finalRole as UserRole,
+        tier: (data.tier || 'FREE') as Tier,
       },
     });
 
     // Mark invite as used if applicable
-    if (data.inviteToken && (finalRole === 'admin' || finalRole === 'operator')) {
+    if (
+      data.inviteToken &&
+      (finalRole === 'admin' || finalRole === 'operator')
+    ) {
       await this.inviteService.markInviteAsUsed(data.inviteToken);
     }
 
-    console.log(`[AuthService] User created successfully: ${authData.user.id}`);
+    console.log(`[AuthService] User created successfully: ${newProfile.id}`);
     return {
-      message: 'Registration successful. Please verify your email if required.',
-      userId: authData.user.id,
+      message: 'Registration successful.',
+      userId: newProfile.id,
+      debugRole: finalRole,
     };
   }
 }

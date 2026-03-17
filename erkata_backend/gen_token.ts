@@ -3,7 +3,7 @@ import * as jwt from 'jsonwebtoken';
 
 const prisma = new PrismaClient();
 const JWT_SECRET =
-  process.env.SUPABASE_JWT_SECRET ||
+  process.env.JWT_SECRET ||
   'E2N8cq8Hvk2CYFvq0jlxAdutt1h85yz4rlx9JbUQX7/6Y5LqlrDO9j7vYvkKO5HKnG5p2hcxOUR6Xy7eNyHfTw==';
 
 async function main() {
@@ -26,4 +26,6 @@ async function main() {
   console.log(token);
 }
 
-main().finally(() => prisma.$disconnect());
+main()
+  .catch((err) => console.error(err))
+  .finally(() => prisma.$disconnect());

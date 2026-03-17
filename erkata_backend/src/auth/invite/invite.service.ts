@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { UserRole } from '@prisma/client';
 import { randomBytes } from 'crypto';
@@ -41,7 +45,9 @@ export class InviteService {
     }
 
     if (invite.email.toLowerCase() !== email.toLowerCase()) {
-      throw new BadRequestException('This invite was intended for a different email address');
+      throw new BadRequestException(
+        'This invite was intended for a different email address',
+      );
     }
 
     return invite;

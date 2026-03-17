@@ -1,14 +1,15 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import OperatorDashboard from './OperatorDashboard';
-import { useAuth } from '../contexts/AuthContext';
+import { AuthProvider } from '../contexts/AuthProvider';
+import { useAuth } from '../hooks/useAuth';
 import { useModal } from '../contexts/ModalContext';
 import api from '../utils/api';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 
 // Mocking dependencies
-vi.mock('../contexts/AuthContext', () => ({
+vi.mock('../hooks/useAuth', () => ({
   useAuth: vi.fn(),
 }));
 

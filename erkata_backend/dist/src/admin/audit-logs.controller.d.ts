@@ -7,7 +7,7 @@ export declare class AuditLogsController {
         entityId: string | null;
         actor: {
             fullName: string;
-            role: import("@prisma/client").$Enums.UserRole;
+            role: import(".prisma/client").$Enums.UserRole;
         } | null;
         id: string;
         createdAt: Date;

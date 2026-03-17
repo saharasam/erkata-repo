@@ -1,6 +1,5 @@
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../features/auth/state/auth_provider.dart';
 import '../../core/models/user_role.dart';
 import '../../features/auth/screens/auth_screen.dart';
 import '../../features/customer/screens/home_screen.dart';
@@ -30,35 +29,14 @@ import '../../shared/screens/terms_screen.dart';
 import '../../shared/screens/feedback_form_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authProvider);
-
   return GoRouter(
     initialLocation: '/',
     redirect: (context, state) {
+      // DEMO MODE: auth guards disabled — all routes freely accessible
+      // TODO: re-enable auth guards when demo is over
       final path = state.uri.toString();
       final isSplash = path == '/';
-      final isAuthRoute = path.startsWith('/auth');
-
-      // While still hydrating, stay on splash
-      if (!authState.isHydrated) {
-        return isSplash ? null : '/';
-      }
-
-      final isAuth = authState.isAuthenticated;
-
-      // Hydrated + not authenticated → always go to /auth (including from splash)
-      if (!isAuth && !isAuthRoute) {
-        return '/auth';
-      }
-
-      // Hydrated + authenticated on auth route or splash → go to correct dashboard
-      if (isAuth && (isAuthRoute || isSplash)) {
-        return switch (authState.user?.role) {
-          'agent' => '/agent',
-          _ => '/home',
-        };
-      }
-
+      if (isSplash) return '/auth'; // start at auth screen for demo UX
       return null;
     },
     routes: [

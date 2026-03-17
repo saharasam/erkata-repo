@@ -71,7 +71,7 @@ export declare class MediationController {
         id: string;
         createdAt: Date;
         transactionId: string;
-        state: import("@prisma/client").$Enums.FeedbackBundleState;
+        state: import(".prisma/client").$Enums.FeedbackBundleState;
         stateHistory: import("@prisma/client/runtime/library").JsonValue | null;
     })[]>;
 }

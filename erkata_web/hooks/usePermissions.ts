@@ -1,4 +1,4 @@
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from './useAuth';
 import { UserRole } from "../utils/constants";
 
 export enum Action {

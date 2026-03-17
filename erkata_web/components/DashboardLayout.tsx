@@ -1,5 +1,5 @@
 import React, { ReactNode, useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { LogOut, Menu, X, ChevronRight, ChevronLeft, Bell, Search, Settings } from 'lucide-react';
 import UtilitySidebar from './UtilitySidebar';
 import SettingsView from './SettingsView';

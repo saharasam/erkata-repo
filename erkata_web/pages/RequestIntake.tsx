@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 import { UserRole } from '../utils/constants';
 import RequestIntakeFlow from '../components/RequestIntakeFlow';
 
