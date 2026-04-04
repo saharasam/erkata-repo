@@ -96,10 +96,12 @@ exports.PermissionMatrix = {
     ],
     operator: [
         Action.VIEW_QUEUE,
+        Action.VIEW_AGENTS_LIST,
         Action.ASSIGN_AGENT,
         Action.MEDIATE_MESSAGE,
         Action.BUNDLE_FEEDBACK,
         Action.VIEW_MANAGED_TRANSACTIONS,
+        Action.VIEW_ASSIGNED_REQUEST_DETAILS,
     ],
     admin: [
         Action.PROPOSE_RESOLUTION,
@@ -118,6 +120,7 @@ exports.PermissionMatrix = {
         Action.APPROVE_PAYOUT,
         Action.VIEW_FINANCIAL_REPORTS,
         Action.PROCESS_REFUND,
+        Action.VIEW_ASSIGNED_REQUEST_DETAILS,
     ],
     super_admin: [
         Action.EMERGENCY_ARCHIVE,
@@ -152,6 +155,7 @@ exports.PermissionMatrix = {
         Action.VIEW_PROPOSALS,
         Action.OVERRIDE_FINANCIAL_STATE,
         Action.EXPORT_FINANCIAL_AUDIT,
+        Action.VIEW_ASSIGNED_REQUEST_DETAILS,
     ],
 };
 //# sourceMappingURL=permissions.js.map

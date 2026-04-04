@@ -13,8 +13,14 @@
   --color-primary: #09637e;
   --color-secondary: #088395;
   --color-accent: #7ab2b2;
-  --color-surface: #ebf4f6;
-  --color-surface-dark: #1f2937;
+  --color-surface: #f8fafc;
+  --color-surface-dark: #0f172a;
+  --status-pending-bg: #f1f5f9;
+  --status-pending-text: #64748b;
+  --status-delivered-bg: #eff6ff;
+  --status-delivered-text: #2563eb;
+  --status-fulfilled-bg: #f0fdf4;
+  --status-fulfilled-text: #16a34a;
 }
 
 body {
@@ -66,8 +72,27 @@ body {
 }
 
 .card-hover:hover {
-  transform: translateY(-2px);
+  transform: translateY(-4px);
   box-shadow:
-    0 10px 25px -5px rgba(0, 0, 0, 0.1),
-    0 8px 10px -6px rgba(0, 0, 0, 0.1);
+    0 20px 25px -5px rgba(0, 0, 0, 0.05),
+    0 10px 10px -6px rgba(0, 0, 0, 0.05);
+}
+
+.status-badge {
+  @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold transition-all;
+}
+
+.status-badge.pending {
+  background-color: #fffbeb;
+  color: #d97706;
+}
+
+.status-badge.delivered {
+  background-color: #eff6ff;
+  color: #2563eb;
+}
+
+.status-badge.fulfilled {
+  background-color: #f0fdf4;
+  color: #16a34a;
 }

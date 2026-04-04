@@ -23,15 +23,24 @@ export class RolesGuard implements CanActivate {
 
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest<{
-      user?: { role: string };
+      user?: { id: string; role: string; email: string; tier: string };
     }>();
     const user = request.user;
+    console.log('[RolesGuard] Request User:', user?.id, 'Role:', user?.role);
 
     if (!user || !user.role) {
+      console.warn('[RolesGuard] Auth failure: user or role missing');
       throw new ForbiddenException('User not authenticated or role undefined');
     }
 
-    const userRole = user.role;
+    const userRole = user.role.toLowerCase();
+
+    // TRACE: Log the normalized role and check against Hierarchy
+    console.log(
+      `[RolesGuard] Normalized Role: "${userRole}", Hierarchy Level: ${
+        Hierarchy[userRole] || 'NONE'
+      }`,
+    );
 
     // ── Pattern 1: @Roles(Role.agent, ...) ──────────────────────────
     const requiredRoles = this.reflector.getAllAndOverride<string[]>(
@@ -76,14 +85,22 @@ export class RolesGuard implements CanActivate {
     }
 
     const userPermissions = PermissionMatrix[userRole] || [];
+
+    // TRACE: Log available permissions for this role
+    console.log(
+      `[RolesGuard] Verifying permissions for "${userRole}". Required: [${actionsToVerify.join(
+        ', ',
+      )}]. Available: ${userPermissions.length} actions.`,
+    );
+
     const hasPermission = actionsToVerify.some((action) =>
       userPermissions.includes(action),
     );
 
     if (!hasPermission) {
-      throw new ForbiddenException(
-        `Role "${userRole}" lacks mandatory permission. Available: [${userPermissions.join(', ')}]. Required (any of): [${actionsToVerify.join(', ')}]`,
-      );
+      const msg = `Role "${userRole}" lacks mandatory permission. Available: [${userPermissions.join(', ')}]. Required (any of): [${actionsToVerify.join(', ')}]`;
+      console.error(`[RolesGuard] FORBIDDEN: ${msg}`);
+      throw new ForbiddenException(msg);
     }
 
     return true;

@@ -29,10 +29,13 @@ let RolesGuard = class RolesGuard {
     canActivate(context) {
         const request = context.switchToHttp().getRequest();
         const user = request.user;
+        console.log('[RolesGuard] Request User:', user?.id, 'Role:', user?.role);
         if (!user || !user.role) {
+            console.warn('[RolesGuard] Auth failure: user or role missing');
             throw new common_1.ForbiddenException('User not authenticated or role undefined');
         }
-        const userRole = user.role;
+        const userRole = user.role.toLowerCase();
+        console.log(`[RolesGuard] Normalized Role: "${userRole}", Hierarchy Level: ${Hierarchy[userRole] || 'NONE'}`);
         const requiredRoles = this.reflector.getAllAndOverride(roles_decorator_1.ROLES_KEY, [context.getHandler(), context.getClass()]);
         if (requiredRoles && requiredRoles.length > 0) {
             if (requiredRoles.includes(userRole)) {
@@ -52,9 +55,12 @@ let RolesGuard = class RolesGuard {
             return true;
         }
         const userPermissions = permissions_1.PermissionMatrix[userRole] || [];
+        console.log(`[RolesGuard] Verifying permissions for "${userRole}". Required: [${actionsToVerify.join(', ')}]. Available: ${userPermissions.length} actions.`);
         const hasPermission = actionsToVerify.some((action) => userPermissions.includes(action));
         if (!hasPermission) {
-            throw new common_1.ForbiddenException(`Role "${userRole}" lacks mandatory permission. Available: [${userPermissions.join(', ')}]. Required (any of): [${actionsToVerify.join(', ')}]`);
+            const msg = `Role "${userRole}" lacks mandatory permission. Available: [${userPermissions.join(', ')}]. Required (any of): [${actionsToVerify.join(', ')}]`;
+            console.error(`[RolesGuard] FORBIDDEN: ${msg}`);
+            throw new common_1.ForbiddenException(msg);
         }
         return true;
     }

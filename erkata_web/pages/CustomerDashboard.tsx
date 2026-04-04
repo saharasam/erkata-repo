@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Package, Clock, CheckCircle, Star, MessageSquare, Plus, X } from 'lucide-react';
+import { Package, Clock, CheckCircle, Star, MessageSquare, Plus, X, MapPin, Calendar, ChevronRight, Info } from 'lucide-react';
 import FeedbackForm, { FeedbackData } from '../components/FeedbackForm';
 import RequestIntakeFlow from '../components/RequestIntakeFlow';
 import { agentRequests } from '../utils/mockData';
@@ -103,61 +103,102 @@ const CustomerDashboard: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {requests.map((request) => (
-            <motion.div
-              key={request.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 hover:shadow-md transition-shadow"
-            >
-              <div className="flex justify-between items-start mb-4">
-                <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                  request.status === 'delivered' ? 'bg-blue-50 text-blue-600' : 
-                  request.status === 'fulfilled' ? 'bg-green-50 text-green-600' : 'bg-slate-50 text-slate-500'
-                }`}>
-                  {request.status}
-                </span>
-                <span className="text-slate-400 text-xs font-bold">{request.submittedDate}</span>
+          {requests.length > 0 ? (
+            requests.map((request, index) => (
+              <motion.div
+                key={request.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+                className="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full group"
+              >
+                {/* Status Header */}
+                <div className="p-5 pb-3 flex justify-between items-center">
+                  <span className={`status-badge ${
+                    request.status === 'fulfilled' ? 'fulfilled' : 
+                    request.status === 'delivered' ? 'delivered' : 'pending'
+                  }`}>
+                    {request.status}
+                  </span>
+                  <span className="text-[11px] text-slate-400 font-medium">
+                    {request.submittedDate}
+                  </span>
+                </div>
+
+                {/* Main Content */}
+                <div className="px-5 pb-5 flex-grow space-y-3">
+                  <h3 className="text-lg font-semibold text-slate-900 leading-snug group-hover:text-erkata-primary transition-colors">
+                    {request.requirementSummary}
+                  </h3>
+
+                  <div className="flex items-center gap-2 text-slate-500">
+                    <MapPin className="w-4 h-4 opacity-70" />
+                    <div className="flex items-baseline gap-1.5">
+                      <span className="text-xs font-medium text-slate-500">{request.zone}</span>
+                      <span className="text-[11px] text-slate-400">{request.woreda}</span>
+                    </div>
+                  </div>
+
+                  <div className="pt-1">
+                    <span className="text-[10px] text-slate-300 font-medium uppercase tracking-tight">
+                      REF: {request.id.slice(0, 8)}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Progress Bar */}
+                <div className="px-5 pb-4">
+                  <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full bg-erkata-primary transition-all duration-700 ${
+                        request.status === 'fulfilled' ? 'w-full' : 
+                        request.status === 'delivered' ? 'w-3/4' : 
+                        request.status === 'assigned' ? 'w-1/2' : 'w-1/4'
+                      }`}
+                    />
+                  </div>
+                </div>
+
+                {/* Actions Footer */}
+                <div className="p-4 border-t border-slate-100 mt-auto">
+                  {request.status === 'delivered' ? (
+                    <Can perform={Action.SUBMIT_CUSTOMER_FEEDBACK}>
+                      <button
+                        onClick={() => setFeedbackRequest({ 
+                          id: request.id, 
+                          agentName: request.agentName || 'Assigned Agent',
+                          transactionId: request.transactionId
+                        })}
+                        className="w-full bg-erkata-primary text-white text-sm font-semibold py-3 rounded-xl hover:opacity-90 transition flex items-center justify-center gap-2"
+                      >
+                        <Star className="w-4 h-4" />
+                        Complete & Review
+                      </button>
+                    </Can>
+                  ) : request.status === 'fulfilled' ? (
+                    <div className="w-full text-green-600 text-sm font-medium py-3 rounded-xl flex items-center justify-center gap-2 bg-green-50">
+                      <CheckCircle className="w-4 h-4" />
+                      Service Finalized
+                    </div>
+                  ) : (
+                    <div className="w-full py-3 flex items-center justify-center text-slate-400">
+                      <span className="text-xs font-medium italic">Awaiting next stage</span>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            ))
+          ) : (
+            <div className="col-span-full py-20 flex flex-col items-center justify-center text-center">
+              <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mb-6 text-slate-300">
+                <Package className="w-12 h-12" />
               </div>
-
-              <h3 className="text-lg font-bold text-slate-800 mb-2">{request.requirementSummary}</h3>
-              <p className="text-slate-500 text-sm mb-4 line-clamp-2">Zone: {request.zone} ({request.woreda})</p>
-
-              <div className="flex gap-4 mb-6">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400">
-                  <Package className="w-3.5 h-3.5" />
-                  ID: {request.id}
-                </div>
-                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400">
-                  <Clock className="w-3.5 h-3.5" />
-                  {request.submittedTime}
-                </div>
-              </div>
-
-              {request.status === 'delivered' && (
-                <Can perform={Action.SUBMIT_CUSTOMER_FEEDBACK}>
-                  <button
-                    onClick={() => setFeedbackRequest({ 
-                      id: request.id, 
-                      agentName: request.agentName || 'Assigned Agent',
-                      transactionId: request.transactionId
-                    })}
-                    className="w-full bg-erkata-primary text-white font-bold py-3 rounded-xl hover:bg-erkata-secondary transition-all flex items-center justify-center gap-2"
-                  >
-                    <Star className="w-4 h-4" />
-                    Review Delivery
-                  </button>
-                </Can>
-              )}
-
-              {request.status === 'fulfilled' && (
-                <div className="w-full bg-green-50 text-green-600 font-bold py-3 rounded-xl flex items-center justify-center gap-2 border border-green-100">
-                  <CheckCircle className="w-4 h-4" />
-                  Request Fulfilled
-                </div>
-              )}
-            </motion.div>
-          ))}
+              <h2 className="text-2xl font-bold text-slate-800 mb-2">No Requests Found</h2>
+              <p className="text-slate-500 max-w-sm mb-8">
+                You haven't submitted any requests yet. Start by clicking the button above to find your perfect property or furniture.
+              </p>
+            </div>
+          )}
         </div>
       </div>
 

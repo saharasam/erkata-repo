@@ -10,10 +10,10 @@ export declare class AdminsController {
     constructor(prisma: PrismaService, inviteService: InviteService, usersService: UsersService);
     getPersonnel(role?: string): Promise<{
         id: string;
-        fullName: string;
-        phone: string;
         role: import(".prisma/client").$Enums.UserRole;
         isActive: boolean;
+        fullName: string;
+        phone: string;
         createdAt: Date;
         _count: {
             operatorMatches: number;
@@ -30,10 +30,10 @@ export declare class AdminsController {
         inviteUrl: string;
         invite: {
             id: string;
+            role: import(".prisma/client").$Enums.UserRole;
             email: string;
             fullName: string;
             phone: string;
-            role: import(".prisma/client").$Enums.UserRole;
             createdAt: Date;
             token: string;
             expiresAt: Date;
@@ -43,10 +43,10 @@ export declare class AdminsController {
     }>;
     getInvites(req: AuthenticatedRequest): Promise<{
         id: string;
+        role: import(".prisma/client").$Enums.UserRole;
         email: string;
         fullName: string;
         phone: string;
-        role: import(".prisma/client").$Enums.UserRole;
         createdAt: Date;
         token: string;
         expiresAt: Date;
@@ -60,13 +60,13 @@ export declare class AdminsController {
         isActive: boolean;
     }): Promise<{
         id: string;
+        role: import(".prisma/client").$Enums.UserRole;
+        isActive: boolean;
         email: string;
         passwordHash: string | null;
         fullName: string;
         phone: string;
-        role: import(".prisma/client").$Enums.UserRole;
         tier: import(".prisma/client").$Enums.Tier;
-        isActive: boolean;
         zoneId: string | null;
         referredById: string | null;
         createdAt: Date;

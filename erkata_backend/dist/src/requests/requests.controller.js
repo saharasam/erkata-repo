@@ -15,10 +15,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.RequestsController = void 0;
 const common_1 = require("@nestjs/common");
 const requests_service_1 = require("./requests.service");
-const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
-const roles_guard_1 = require("../auth/guards/roles.guard");
-const roles_decorator_1 = require("../auth/guards/roles.decorator");
-const client_1 = require("@prisma/client");
+const permissions_1 = require("../auth/permissions");
+const guards_1 = require("../auth/guards");
 let RequestsController = class RequestsController {
     requestsService;
     constructor(requestsService) {
@@ -31,16 +29,16 @@ let RequestsController = class RequestsController {
     getQueue(zoneId) {
         return this.requestsService.getOperatorQueue({ zoneId });
     }
-    getRequest(id, req) {
-        const user = req.user;
-        return this.requestsService.getRequest(id, user.id, user.role);
-    }
     getMyRequests(req) {
         const user = req.user;
         return this.requestsService.getCustomerRequests(user.id);
     }
     findEligibleAgents() {
         return this.requestsService.findEligibleAgents();
+    }
+    getRequest(id, req) {
+        const user = req.user;
+        return this.requestsService.getRequest(id, user.id, user.role);
     }
     assignAgent(id, agentId, req) {
         return this.requestsService.assignAgent(id, agentId, req.user.id);
@@ -53,7 +51,7 @@ let RequestsController = class RequestsController {
 exports.RequestsController = RequestsController;
 __decorate([
     (0, common_1.Post)(),
-    (0, roles_decorator_1.Roles)(client_1.UserRole.customer),
+    (0, guards_1.RequirePermission)(permissions_1.Action.CREATE_REQUEST),
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -62,24 +60,15 @@ __decorate([
 ], RequestsController.prototype, "createRequest", null);
 __decorate([
     (0, common_1.Get)('queue'),
-    (0, roles_decorator_1.Roles)(client_1.UserRole.operator),
+    (0, guards_1.RequirePermission)(permissions_1.Action.VIEW_QUEUE),
     __param(0, (0, common_1.Query)('zoneId')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], RequestsController.prototype, "getQueue", null);
 __decorate([
-    (0, common_1.Get)(':id'),
-    (0, roles_decorator_1.Roles)(client_1.UserRole.operator, client_1.UserRole.admin),
-    __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Req)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object]),
-    __metadata("design:returntype", void 0)
-], RequestsController.prototype, "getRequest", null);
-__decorate([
     (0, common_1.Get)('my-requests'),
-    (0, roles_decorator_1.Roles)(client_1.UserRole.customer),
+    (0, guards_1.RequirePermission)(permissions_1.Action.VIEW_OWN_REQUESTS),
     __param(0, (0, common_1.Req)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
@@ -87,14 +76,23 @@ __decorate([
 ], RequestsController.prototype, "getMyRequests", null);
 __decorate([
     (0, common_1.Get)('eligible-agents'),
-    (0, roles_decorator_1.Roles)(client_1.UserRole.operator),
+    (0, guards_1.RequirePermission)(permissions_1.Action.VIEW_AGENTS_LIST),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], RequestsController.prototype, "findEligibleAgents", null);
 __decorate([
+    (0, common_1.Get)(':id'),
+    (0, guards_1.RequirePermission)(permissions_1.Action.VIEW_ASSIGNED_REQUEST_DETAILS),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], RequestsController.prototype, "getRequest", null);
+__decorate([
     (0, common_1.Post)(':id/assign'),
-    (0, roles_decorator_1.Roles)(client_1.UserRole.operator),
+    (0, guards_1.RequirePermission)(permissions_1.Action.ASSIGN_AGENT),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)('agentId')),
     __param(2, (0, common_1.Req)()),
@@ -112,7 +110,7 @@ __decorate([
 ], RequestsController.prototype, "getStatus", null);
 exports.RequestsController = RequestsController = __decorate([
     (0, common_1.Controller)('requests'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, common_1.UseGuards)(guards_1.JwtAuthGuard, guards_1.RolesGuard),
     __metadata("design:paramtypes", [requests_service_1.RequestsService])
 ], RequestsController);
 //# sourceMappingURL=requests.controller.js.map
