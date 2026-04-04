@@ -7,12 +7,16 @@ import {
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
 import { MatchStatus, RequestStatus, Prisma } from '@prisma/client';
+import { AglpService } from '../aglp/aglp.service';
+import { ConfigService } from '../common/config.service';
 
 @Injectable()
 export class TransactionsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly aglpService: AglpService,
+    private readonly configService: ConfigService,
   ) {}
 
   // ── Agent accepts the assignment ─────────────────────────────────────────
@@ -106,6 +110,91 @@ export class TransactionsService {
     return { message: 'Assignment rejected. Request returned to queue.' };
   }
 
+  // ── Agent transfers the assignment to a referral ────────────────────────
+  async transferAssignment(
+    matchId: string,
+    fromAgentId: string,
+    toAgentId: string,
+  ) {
+    const match = await this.prisma.match.findUnique({
+      where: { id: matchId },
+    });
+
+    if (!match) throw new NotFoundException('Match not found');
+    if (match.agentId !== fromAgentId) {
+      throw new ForbiddenException('This assignment does not belong to you');
+    }
+    if (match.status !== 'assigned' && match.status !== 'accepted') {
+      throw new BadRequestException(
+        `Cannot transfer a match that is already "${match.status}"`,
+      );
+    }
+
+    // Verify toAgentId is referred by fromAgentId
+    const targetAgent = await this.prisma.profile.findUnique({
+      where: { id: toAgentId },
+    });
+
+    if (
+      !targetAgent ||
+      targetAgent.referredById !== fromAgentId ||
+      targetAgent.role !== 'agent'
+    ) {
+      throw new BadRequestException(
+        'Target agent must be one of your referrals',
+      );
+    }
+
+    // NEW CHECK: Prevent duplicate matches for the same request
+    const existingMatch = await this.prisma.match.findUnique({
+      where: {
+        requestId_agentId: {
+          requestId: match.requestId,
+          agentId: toAgentId,
+        },
+      },
+    });
+
+    if (existingMatch) {
+      throw new BadRequestException(
+        'Target agent is already matched with this request',
+      );
+    }
+
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const matchResult = await tx.match.update({
+        where: { id: matchId },
+        data: {
+          agentId: toAgentId,
+          status: 'assigned', // Reset to assigned for the new agent to accept
+        },
+      });
+
+      // Audit Log
+      await tx.auditLog.create({
+        data: {
+          actorId: fromAgentId,
+          action: 'MATCH_TRANSFERRED',
+          targetTable: 'matches',
+          targetId: matchId,
+          metadata: {
+            fromAgentId,
+            toAgentId,
+          },
+        },
+      });
+
+      return matchResult;
+    });
+
+    this.eventEmitter.emit('match.transferred', {
+      matchId,
+      fromAgentId,
+      toAgentId,
+    });
+    return updated;
+  }
+
   // ── Agent marks job as complete ──────────────────────────────────────────
   async markComplete(matchId: string, agentId: string) {
     const match = await this.prisma.match.findUnique({
@@ -128,7 +217,6 @@ export class TransactionsService {
         data: {
           status: 'completed',
         },
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         include: {
           agent: {
             include: {
@@ -136,7 +224,7 @@ export class TransactionsService {
             },
           },
           request: true,
-        } as any,
+        },
       });
 
       await tx.request.update({
@@ -148,49 +236,69 @@ export class TransactionsService {
       interface MatchWithRelations {
         agent?: {
           fullName: string;
-          referredBy?: any;
           referredById?: string;
         };
         request?: {
+          type: string;
+          category: string;
           budgetMax?: number;
           budgetMin?: number;
         };
       }
 
       const res = matchResult as unknown as MatchWithRelations;
-      const budget = res.request?.budgetMax || res.request?.budgetMin || 0;
+      const budget = Number(
+        res.request?.budgetMax || res.request?.budgetMin || 0,
+      );
 
-      if (budget > 0 && res.agent?.referredBy) {
-        const commissionAmount = budget * 0.05;
+      if (budget > 0) {
+        const type = res.request?.type || 'real_estate';
+        const category = res.request?.category || 'General';
+        const isRealEstate = type === 'real_estate';
 
-        await tx.profile.update({
-          where: { id: res.agent.referredById },
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-          data: {
-            walletBalance: {
-              increment: commissionAmount,
-            },
-          } as any,
-        });
+        // 1. Primary Agent Commission (Dynamic Rate)
+        const configKey = isRealEstate
+          ? 'COMMISSION_REAL_ESTATE_PRIMARY'
+          : 'COMMISSION_FURNITURE_PRIMARY';
 
-        await tx.auditLog.create({
-          data: {
-            actorId: agentId,
-            action: 'REFERRAL_COMMISSION_CREDITED',
-            targetTable: 'profiles',
-            targetId: res.agent.referredById,
-            metadata: {
-              matchId,
-              amount: commissionAmount,
-              reason: `Referral commission from agent ${res.agent.fullName}`,
-            },
-          },
-        });
+        const primaryCommissionConfig = this.configService.get<{
+          value: number;
+        }>(configKey, { value: 0.1 });
+        const primaryCommissionRate = primaryCommissionConfig.value || 0.1;
+        const primaryCommissionEtb = budget * primaryCommissionRate;
+
+        // ESCROW: Lock commission for sales
+        await this.aglpService.lockCommission(
+          tx,
+          agentId,
+          primaryCommissionEtb,
+          matchId,
+          `Primary commission for ${type} fulfillment: ${category}`,
+        );
+
+        // 2. Referral Override - Real Estate Only
+        if (isRealEstate && res.agent?.referredById) {
+          const overrideConfig = this.configService.get<{
+            value: number;
+          }>('COMMISSION_REAL_ESTATE_OVERRIDE', { value: 0.05 });
+          const referralCommissionRate = overrideConfig.value || 0.05;
+          const referralCommissionEtb = budget * referralCommissionRate;
+
+          // ESCROW: Lock referral override too (since it is sale-based)
+          await this.aglpService.lockCommission(
+            tx,
+            res.agent.referredById,
+            referralCommissionEtb,
+            matchId,
+            `Referral override commission from agent ${
+              res.agent.fullName || 'Unknown'
+            }`,
+          );
+        }
       }
 
       return matchResult;
     });
-
     this.eventEmitter.emit('match.completed', result);
     return result;
   }

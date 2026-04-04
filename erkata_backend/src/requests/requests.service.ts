@@ -7,6 +7,9 @@ import {
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
 import { RequestStatus, UserRole } from '@prisma/client';
+import { RedisPresenceService } from '../common/redis/redis-presence.service';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 
 export interface CreateRequestDto {
   category: string;
@@ -22,6 +25,8 @@ export class RequestsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly presence: RedisPresenceService,
+    @InjectQueue('assignment-timeout') private readonly timeoutQueue: Queue,
   ) {}
 
   private redact(
@@ -38,16 +43,8 @@ export class RequestsService {
 
   // ── 1. Customer submits a request ────────────────────────────────────────
   async createRequest(customerId: string, dto: CreateRequestDto) {
-    // Find the zone ID based on kifleKetema and woreda if needed,
-    // but schema says Request has a zoneId which is a UUID string.
-    // For now, let's find or assume a default zone if we can't find it,
-    // or better, require zoneId in DTO.
-    // However, the existing code uses locationZone as JSON.
-    // Let's check schema.prisma: Request has zoneId String @map("zone_id")
-
-    // We must find the Zone ID first.
     const zone = await this.prisma.zone.findFirst({
-      where: { name: dto.locationZone.kifleKetema }, // Simplified mapping
+      where: { name: dto.locationZone.kifleKetema },
     });
 
     if (!zone) throw new BadRequestException('Invalid zone');
@@ -66,20 +63,88 @@ export class RequestsService {
     });
 
     this.eventEmitter.emit('request.created', request);
+    
+    // Trigger instant assignment attempt
+    await this.assignToNextReadyOperator(request.id);
+    
     return request;
+  }
+
+  // ── New: Automated Push Logic ─────────────────────────────────────────────
+  async assignToNextReadyOperator(requestId: string) {
+    const request = await this.prisma.request.findUnique({
+      where: { id: requestId },
+      include: { zone: true },
+    });
+
+    if (!request || request.status !== RequestStatus.pending || (request as any).assignedOperatorId) {
+      return;
+    }
+
+    const operator = await this.prisma.profile.findFirst({
+      where: {
+        role: UserRole.operator,
+        isOnline: true,
+        assignedRequests: {
+          none: {
+            status: RequestStatus.pending,
+          },
+        },
+      } as any,
+      orderBy: { lastAssignmentAt: 'asc' } as any,
+    });
+
+    if (!operator) return;
+
+    await this.prisma.$transaction(async (tx) => {
+      const updatedRequest = await tx.request.update({
+        where: { id: requestId, assignedOperatorId: null } as any,
+        data: {
+          assignedOperatorId: operator.id,
+          assignmentPushedAt: new Date(),
+        } as any,
+      });
+
+      await tx.profile.update({
+        where: { id: operator.id },
+        data: { lastAssignmentAt: new Date() } as any,
+      });
+
+      await this.timeoutQueue.add(
+        'check-timeout',
+        { requestId: updatedRequest.id, operatorId: operator.id },
+        { delay: 5 * 60 * 1000, jobId: `timeout-${updatedRequest.id}` },
+      );
+    });
+
+    this.eventEmitter.emit('request.pushed', { requestId, operatorId: operator.id });
+  }
+
+  async handleOperatorReady(operatorId: string) {
+    const oldestRequest = await this.prisma.request.findFirst({
+      where: {
+        status: RequestStatus.pending,
+        assignedOperatorId: null,
+      } as any,
+      orderBy: { createdAt: 'asc' },
+    });
+
+    if (oldestRequest) {
+      await this.assignToNextReadyOperator(oldestRequest.id);
+    }
   }
 
   // ── 2. Operator views incoming queue (customer PII redacted) ─────────────
   async getOperatorQueue(filters?: { zoneId?: string }) {
-    const whereClause: { status: { in: RequestStatus[] }; zoneId?: string } = {
-      status: { in: [RequestStatus.pending] },
+    const whereClause: any = {
+      status: RequestStatus.pending,
     };
 
     if (filters?.zoneId) {
       whereClause.zoneId = filters.zoneId;
     }
 
-    const requests = await this.prisma.request.findMany({
+    return await this.prisma.request.findMany({
       where: whereClause,
       include: {
         customer: {
@@ -89,8 +154,6 @@ export class RequestsService {
       },
       orderBy: { createdAt: 'desc' },
     });
-
-    return requests;
   }
 
   // ── 3. Operator assigns an eligible Agent ────────────────────────────────
@@ -108,28 +171,28 @@ export class RequestsService {
       );
     }
 
-    // Validate agent exists, is agent role, and covers the request zone
     const agent = await this.prisma.profile.findUnique({
       where: { id: agentId },
-      include: { agentZones: true, referralLink: true },
+      include: { agentZones: true },
     });
 
     if (!agent || agent.role !== UserRole.agent) {
       throw new BadRequestException('Invalid agent');
     }
 
-    // Zone check
-    // const coversZone = agent.agentZones.some(
-    //   (z) => z.zoneId === request.zoneId,
-    // );
+    if (!agent.isActive) {
+      throw new ForbiddenException('Cannot assign a suspended agent.');
+    }
 
-    // if (!coversZone) {
-    //   throw new BadRequestException(
-    //     `Agent does not have zone coverage for ${request.zone.name}`,
-    //   );
-    // }
+    const operator = await this.prisma.profile.findUnique({
+      where: { id: operatorId },
+      select: { isActive: true },
+    });
 
-    // Atomic: update request (status: matched) + create match
+    if (!operator || !operator.isActive) {
+      throw new ForbiddenException('Your account is suspended.');
+    }
+
     const match = await this.prisma.$transaction(async (tx) => {
       await tx.request.update({
         where: { id: requestId },
@@ -143,7 +206,7 @@ export class RequestsService {
           requestId,
           agentId,
           operatorId,
-          status: 'assigned', // MatchStatus.assigned
+          status: 'assigned',
         },
       });
     });
@@ -152,8 +215,8 @@ export class RequestsService {
     return match;
   }
 
-  // ── 4. Role-scoped status view ───────────────────────────────────────────
-  async getRequestStatus(requestId: string, userId: string, role: UserRole) {
+  // ── 4. Generic request fetch with role-scoped visibility ──────────────────
+  async getRequest(requestId: string, userId: string, role: UserRole) {
     const request = await this.prisma.request.findUnique({
       where: { id: requestId },
       include: {
@@ -174,13 +237,10 @@ export class RequestsService {
 
     if (!request) throw new NotFoundException('Request not found');
 
-    const activeMatch = request.matches[0]; // Simplified: assume one active match
-
     if (role === UserRole.customer) {
       if (request.customerId !== userId) throw new ForbiddenException();
-
-      // Better typing for redacted info to satisfy strict linter
-      let agentInfo: unknown = activeMatch?.agent;
+      const activeMatch = request.matches[0];
+      let agentInfo: any = activeMatch?.agent;
 
       if (activeMatch && activeMatch.status === 'assigned') {
         agentInfo = this.redact(
@@ -189,118 +249,75 @@ export class RequestsService {
         );
       }
 
-      const response = {
-        id: request.id,
-        category: request.category,
-        description: request.description,
-        zone: request.zone,
-        status: request.status,
-        createdAt: request.createdAt,
-        match: activeMatch
-          ? {
-              id: activeMatch.id,
-              status: activeMatch.status,
-              agent: agentInfo as {
-                id: string;
-                fullName: string;
-                phone: string;
-              } | null,
-            }
-          : null,
-      };
-      return response as unknown;
-    }
-
-    if (role === UserRole.agent) {
-      if (activeMatch?.agentId !== userId) throw new ForbiddenException();
-
-      let customerInfo: unknown = request.customer;
-      if (activeMatch.status === 'assigned') {
-        customerInfo = this.redact(
-          request.customer,
-          'Customer details will be revealed once you accept the assignment.',
-        );
-      }
       return {
         ...request,
-        customer: customerInfo as {
-          id: string;
-          fullName: string;
-          phone: string;
-          createdAt: Date;
-        },
-      } as unknown;
+        customer: request.customer,
+        match: activeMatch ? { ...activeMatch, agent: agentInfo } : null,
+      };
     }
 
-    // Operators, Admins, Super Admin see the full record
+    if (role === UserRole.operator) {
+      const isAssigned = (request as any).assignedOperatorId === userId;
+      const isPending = request.status === RequestStatus.pending;
+
+      if (!isAssigned && !isPending) {
+        throw new ForbiddenException('No access to this request');
+      }
+
+      return {
+        ...request,
+        customer: this.redact(request.customer, 'Customer PII is hidden until assignment.'),
+      };
+    }
+
+    // Admins see everything
     return request;
   }
 
-  // ── 5. All active agents — sorted by tier (desc) then zone (asc) ─────────
+  // ── 5. Eligible agents listing ───────────────────────────────────────────
   async findEligibleAgents() {
-    console.log(
-      `[RequestsService] findEligibleAgents called — fetching all active agents`,
-    );
-
     const agents = await this.prisma.profile.findMany({
       where: {
         role: UserRole.agent,
         isActive: true,
       },
-      select: {
-        id: true,
-        fullName: true,
-        isActive: true,
-        referralLink: { select: { tier: true } },
+      include: {
         agentZones: {
           include: { zone: { select: { id: true, name: true } } },
         },
       },
     });
 
-    console.log(`[RequestsService] Found ${agents.length} active agents.`);
-
     const tierPriority: Record<string, number> = {
-      ABUNDANT_LIFE: 5,
-      UNITY: 4,
-      LOVE: 3,
-      PEACE: 2,
-      FREE: 1,
+      ABUNDANT_LIFE: 5, UNITY: 4, LOVE: 3, PEACE: 2, FREE: 1,
     };
 
-    const enriched = agents.map((agent) => ({
-      id: agent.id,
-      fullName: agent.fullName,
-      isActive: agent.isActive,
-      tier: agent.referralLink?.tier ?? 'FREE',
-      zones:
-        agent.agentZones.length > 0
-          ? agent.agentZones.map((az) => az.zone?.name ?? 'Unknown Zone')
-          : ['Unknown Zone'],
-    }));
-
-    return enriched.sort((a, b) => {
-      const tA = tierPriority[a.tier] ?? 1;
-      const tB = tierPriority[b.tier] ?? 1;
-      if (tB !== tA) return tB - tA; // Higher tier first
-      // Secondary sort: first zone name alphabetically
-      return a.zones[0].localeCompare(b.zones[0]);
-    });
+    return agents
+      .map((agent) => ({
+        id: agent.id,
+        fullName: agent.fullName,
+        isActive: agent.isActive,
+        tier: agent.tier ?? 'FREE',
+        zones: agent.agentZones.map((az) => az.zone?.name ?? 'Unknown Zone'),
+      }))
+      .sort((a, b) => {
+        const tA = tierPriority[a.tier] ?? 1;
+        const tB = tierPriority[b.tier] ?? 1;
+        if (tB !== tA) return tB - tA;
+        return (a.zones[0] || '').localeCompare(b.zones[0] || '');
+      });
   }
 
-  // ── 6. Customer's own request history ────────────────────────────────────
+  // ── 6. Customer history ──────────────────────────────────────────────────
   async getCustomerRequests(customerId: string) {
     return this.prisma.request.findMany({
       where: { customerId },
       include: {
         zone: true,
         matches: {
-          select: {
-            id: true,
-            status: true,
-            agent: {
-              select: { id: true, fullName: true },
-            },
+          include: {
+            agent: { select: { id: true, fullName: true } },
+            transaction: { select: { id: true } },
           },
         },
       },

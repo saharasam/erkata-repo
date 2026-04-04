@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
+import { AglpModule } from '../aglp/aglp.module';
 
 @Module({
+  imports: [AglpModule],
   providers: [UsersService],
   controllers: [UsersController],
   exports: [UsersService],

@@ -106,12 +106,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const signup = async (data: { fullName: string; email: string; password: string; role: string }) => {
+  const signup = async (data: { fullName: string; email: string; phone: string; password: string; role: string; inviteToken?: string; referralCode?: string }) => {
     try {
       console.log('[Auth] Signing up:', data.email);
       const payload = {
-        ...data,
+        fullName: data.fullName,
+        email: data.email,
+        phone: data.phone,
+        password: data.password,
         role: denormalizeRole(data.role),
+        ...(data.inviteToken ? { inviteToken: data.inviteToken } : {}),
+        ...(data.referralCode ? { referralCode: data.referralCode } : {}),
       };
       await api.post('/auth/register', payload);
     } catch (error) {

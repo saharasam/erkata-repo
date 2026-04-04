@@ -106,10 +106,10 @@ const Navbar: React.FC = () => {
                 transition={{ delay: 0.3 }}
               >
                 <Link 
-                  to="/become-operator" 
+                  to="/submit-request" 
                   className="px-6 py-2.5 bg-white text-black text-sm font-bold rounded-full hover:bg-gray-200 transition-all active:scale-95"
                 >
-                  Become an Operator
+                  Submit Request
                 </Link>
               </motion.div>
             )}
@@ -186,7 +186,7 @@ const Navbar: React.FC = () => {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.5 }}
                 >
-                  <Link to="/become-operator" onClick={() => setIsOpen(false)} className="px-8 py-3 bg-white text-black text-xl font-bold rounded-full">Become an Operator</Link>
+                  <Link to="/submit-request" onClick={() => setIsOpen(false)} className="px-8 py-3 bg-white text-black text-xl font-bold rounded-full">Submit Request</Link>
                 </motion.div>
               </>
             )}

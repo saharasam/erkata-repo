@@ -36,12 +36,11 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
   ];
 
   const superAdminTools = [
-    { id: 'resolutions', icon: ShieldCheck, label: 'Resolutions', badge: 3 },
+    { id: 'analytics', icon: BarChart4, label: 'Analytics' },
     { id: 'emergency', icon: Archive, label: 'Emergency Archive' },
     { id: 'admins', icon: ShieldAlert, label: 'Admin Management' },
     { id: 'config', icon: Settings2, label: 'Config Flags' },
     { id: 'notices', icon: Megaphone, label: 'Broadcasts' },
-    { id: 'analytics', icon: BarChart4, label: 'Analytics' },
     { id: 'audit', icon: History, label: 'Audit Logs' },
     { id: 'agents', icon: TrendingUp, label: 'Agent Oversight' },
     { id: 'operators', icon: Users, label: 'Operator Oversight' },
@@ -66,7 +65,7 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
     { id: 'focus', icon: FileText, label: 'Focus Board' },
     { id: 'earnings', icon: TrendingUp, label: 'Earnings' },
     { id: 'network', icon: Users, label: 'My Network' },
-    { id: 'territory', icon: MapPin, label: 'Territory' },
+    { id: 'packages', icon: Package, label: 'Packages' },
     { id: 'profile', icon: User, label: 'Profile' },
   ];
 
@@ -129,42 +128,7 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
           {isExpanded ? <ChevronLeft className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
         </button>
 
-        {/* Standard Tools Top Section */}
-        <div className="w-full flex flex-col items-center space-y-2 shrink-0 px-3">
-          {tools.filter(t => t.id !== 'logout' && t.id !== 'profile').map((tool) => (
-            <button
-              key={tool.id}
-              onClick={() => toggleTool(tool.id)}
-              className={`w-full h-10 rounded-xl flex items-center transition-all duration-200 group relative ${
-                activeTool === tool.id 
-                  ? 'bg-erkata-primary text-white shadow-lg shadow-erkata-primary/30' 
-                  : 'text-slate-400 hover:bg-white hover:text-slate-700 hover:shadow-md'
-              } ${isExpanded ? 'px-3 justify-start gap-3' : 'justify-center'}`}
-              title={isExpanded ? "" : tool.label}
-            >
-              <tool.icon className={`w-5 h-5 shrink-0 ${activeTool === tool.id ? 'text-white' : ''} transition-colors`} />
-              
-              {isExpanded && (
-                <span className="text-sm font-medium truncate opacity-100 transition-opacity duration-300">
-                  {tool.label}
-                </span>
-              )}
-
-              {!isExpanded && (
-                <span className="absolute left-full ml-3 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap shadow-xl z-50">
-                  {tool.label}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
-
-        {/* Role-Specific Navigation Section Divider */}
-        {currentRoleTools.length > 0 && (
-          <div className="w-8 h-px bg-slate-200 shrink-0 my-4" />
-        )}
-
-        {/* Role-Specific Navigation Tools */}
+        {/* Role-Specific Navigation Tools (Primary) */}
         {currentRoleTools.length > 0 && (
           <div className="w-full flex flex-col items-center space-y-2 shrink-0 px-3">
             {currentRoleTools.map((tool) => (
@@ -181,7 +145,7 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
                 <tool.icon className="w-5 h-5 shrink-0" />
                 
                 {isExpanded && (
-                  <span className="text-sm font-medium truncate">
+                  <span className="text-sm font-bold tracking-tight truncate">
                     {tool.label}
                   </span>
                 )}
@@ -199,7 +163,7 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
                 )}
 
                 {!isExpanded && (
-                  <span className="absolute left-full ml-3 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap shadow-xl z-50">
+                  <span className="absolute left-full ml-3 bg-slate-900 text-white text-[10px] font-bold px-2 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-all translate-x-1 group-hover:translate-x-0 whitespace-nowrap shadow-xl z-50">
                     {tool.label}
                   </span>
                 )}
@@ -208,21 +172,56 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
           </div>
         )}
 
+        {/* Section Divider */}
+        {currentRoleTools.length > 0 && tools.length > 0 && (
+          <div className="w-8 h-px bg-slate-100 shrink-0 my-6" />
+        )}
+
+        {/* Standard Tools Section */}
+        <div className="w-full flex flex-col items-center space-y-2 shrink-0 px-3">
+          {tools.filter(t => t.id !== 'logout' && t.id !== 'profile').map((tool) => (
+            <button
+              key={tool.id}
+              onClick={() => toggleTool(tool.id)}
+              className={`w-full h-10 rounded-xl flex items-center transition-all duration-200 group relative ${
+                activeTool === tool.id 
+                  ? 'bg-slate-800 text-white shadow-lg shadow-slate-200' 
+                  : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'
+              } ${isExpanded ? 'px-3 justify-start gap-3' : 'justify-center'}`}
+              title={isExpanded ? "" : tool.label}
+            >
+              <tool.icon className={`w-5 h-5 shrink-0 ${activeTool === tool.id ? 'text-white' : ''} transition-colors`} />
+              
+              {isExpanded && (
+                <span className="text-sm font-medium truncate">
+                  {tool.label}
+                </span>
+              )}
+
+              {!isExpanded && (
+                <span className="absolute left-full ml-3 bg-slate-800 text-white text-[10px] font-bold px-2 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-all translate-x-1 group-hover:translate-x-0 whitespace-nowrap shadow-xl z-50">
+                  {tool.label}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
+
         {/* Bottom Section (Profile & Logout) */}
-        <div className="w-full flex flex-col items-center mt-auto space-y-2 shrink-0 pb-2 px-3">
+        <div className="w-full flex flex-col items-center mt-auto space-y-2 shrink-0 pb-2 px-3 pt-6 border-t border-slate-50">
            <button
              onClick={() => toggleTool('profile')}
              className={`w-full h-10 rounded-xl flex items-center transition-all duration-200 group relative ${
                activeTool === 'profile' 
-                 ? 'bg-erkata-primary text-white shadow-lg shadow-erkata-primary/30' 
-                 : 'text-slate-400 hover:bg-white hover:text-slate-700 hover:shadow-md'
+                 ? 'bg-slate-800 text-white shadow-lg' 
+                 : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'
              } ${isExpanded ? 'px-3 justify-start gap-3' : 'justify-center'}`}
              title={isExpanded ? "" : "Profile"}
            >
              <User className="w-5 h-5 shrink-0" />
              {isExpanded && <span className="text-sm font-medium">Profile</span>}
              {!isExpanded && (
-               <span className="absolute left-full ml-3 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap shadow-xl z-50">
+               <span className="absolute left-full ml-3 bg-slate-800 text-white text-[10px] font-bold px-2 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-all translate-x-1 group-hover:translate-x-0 whitespace-nowrap shadow-xl z-50">
                  Profile
                </span>
              )}
@@ -230,13 +229,13 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
 
            <button
              onClick={() => toggleTool('logout')}
-             className={`w-full h-10 rounded-xl flex items-center transition-all duration-200 group relative text-slate-400 hover:bg-red-50 hover:text-red-500 hover:shadow-md ${isExpanded ? 'px-3 justify-start gap-3' : 'justify-center'}`}
+             className={`w-full h-10 rounded-xl flex items-center transition-all duration-200 group relative text-slate-400 hover:bg-red-50 hover:text-red-500 ${isExpanded ? 'px-3 justify-start gap-3' : 'justify-center'}`}
              title={isExpanded ? "" : "Logout"}
            >
              <LogOut className="w-5 h-5 shrink-0" />
              {isExpanded && <span className="text-sm font-medium">Logout</span>}
              {!isExpanded && (
-               <span className="absolute left-full ml-3 bg-red-600 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap shadow-xl z-50">
+               <span className="absolute left-full ml-3 bg-red-600 text-white text-[10px] font-bold px-2 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-all translate-x-1 group-hover:translate-x-0 whitespace-nowrap shadow-xl z-50">
                  Logout
                </span>
              )}

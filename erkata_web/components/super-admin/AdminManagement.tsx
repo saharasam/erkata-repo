@@ -2,20 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { 
   ShieldAlert, 
   UserPlus, 
-  Trash2, 
   ShieldCheck, 
-  Clock, 
   Activity,
-  MoreVertical,
   Search,
   UserCheck,
   UserMinus,
-  Mail,
   Phone,
-  Filter
 } from 'lucide-react';
 import { useModal } from '../../contexts/ModalContext';
+import InvitePersonnelModal from '../ui/InvitePersonnelModal';
 import api from '../../utils/api';
+import AdminInviteList from '../admin/AdminInviteList';
 
 interface AdminUser {
   id: string;
@@ -37,6 +34,8 @@ const AdminManagement: React.FC = () => {
     const [admins, setAdmins] = useState<AdminUser[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState<string | null>(null);
+    const [inviteModalOpen, setInviteModalOpen] = useState(false);
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
 
     const fetchAdmins = async () => {
       try {
@@ -91,37 +90,9 @@ const AdminManagement: React.FC = () => {
         }
     };
 
-    const handleInvite = async () => {
-        // In a real app, this would open a beautiful modal form
-        const fullName = window.prompt("Enter Full Name of the candidate:");
-        if (!fullName) return;
-        const email = window.prompt("Enter Email Address:");
-        if (!email) return;
-        const role = window.prompt("Enter Role (admin/operator):", "admin");
-        if (!role || (role !== 'admin' && role !== 'operator')) {
-            showAlert({ title: 'Invalid Role', message: 'Only "admin" or "operator" roles can be delegated.', type: 'error' });
-            return;
-        }
-
-        try {
-          const response = await api.post('/admin/users/invite', { 
-            email, 
-            fullName,
-            role 
-          });
-          
-          showAlert({
-            title: 'Invite Dispatched',
-            message: `Personnel cryptographic token generated. Invite Link: ${response.data.inviteUrl}`,
-            type: 'success'
-          });
-        } catch (err: any) {
-          showAlert({
-            title: 'Generation Failed',
-            message: 'System failed to register the intent. Personnel already exists or email is invalid.',
-            type: 'error'
-          });
-        }
+    const handleInviteSuccess = () => {
+        fetchAdmins();
+        setRefreshTrigger(prev => prev + 1);
     };
 
     const filteredAdmins = admins.filter(a => 
@@ -130,6 +101,7 @@ const AdminManagement: React.FC = () => {
     );
 
     return (
+        <>
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-4">
                 <div className="flex-1 w-full">
@@ -161,13 +133,18 @@ const AdminManagement: React.FC = () => {
                     </div>
                 </div>
                 <button 
-                    onClick={handleInvite}
+                    onClick={() => setInviteModalOpen(true)}
                     className="bg-slate-900 text-white px-8 py-3 rounded-2xl text-sm font-black shadow-xl shadow-slate-900/20 hover:bg-black flex items-center gap-2 transition-all active:scale-95 whitespace-nowrap"
                 >
                     <UserPlus className="w-4 h-4" />
                     DELEGATE AUTHORITY
                 </button>
             </div>
+
+            <AdminInviteList 
+                refreshTrigger={refreshTrigger}
+                onInviteCancelled={() => setRefreshTrigger(prev => prev + 1)}
+            />
 
             <div className="bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/20 overflow-hidden">
                 <table className="w-full text-left">
@@ -278,6 +255,14 @@ const AdminManagement: React.FC = () => {
                 </div>
             </div>
         </div>
+
+        <InvitePersonnelModal
+            isOpen={inviteModalOpen}
+            onClose={() => { setInviteModalOpen(false); handleInviteSuccess(); }}
+            availableRoles={['admin', 'operator']}
+            defaultRole="operator"
+        />
+        </>
     );
 };
 

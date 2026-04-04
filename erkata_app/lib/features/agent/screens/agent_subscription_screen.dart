@@ -319,7 +319,7 @@ class AgentSubscriptionScreen extends StatelessWidget {
                             joinDate: 'Aug 01, 2023',
                             packageName: '2,500 ETB',
                             status: 'Paid',
-                            commissionAmount: '2000 ETB',
+                            commissionAmount: '2000 AGLP',
                           ),
                           Divider(
                             height: 1,
@@ -330,7 +330,7 @@ class AgentSubscriptionScreen extends StatelessWidget {
                             joinDate: 'Aug 01, 2023',
                             packageName: '2,500 ETB',
                             status: 'Paid',
-                            commissionAmount: '2000 ETB',
+                            commissionAmount: '3500 AGLP',
                           ),
                           Divider(
                             height: 1,
@@ -341,7 +341,7 @@ class AgentSubscriptionScreen extends StatelessWidget {
                             joinDate: 'Aug 01, 2023',
                             packageName: '2,500 ETB',
                             status: 'Paid',
-                            commissionAmount: '2000 ETB',
+                            commissionAmount: '5000 AGLP',
                           ),
                         ],
                       ),

@@ -37,7 +37,7 @@ const OperatorOversight: React.FC = () => {
     const fetchOperators = async () => {
       try {
         setIsLoading(true);
-        const response = await api.get('/admin/users?role=OPERATOR');
+        const response = await api.get('/admin/users?role=operator');
         setOperators(response.data);
       } catch (err) {
         console.error('Failed to fetch operators:', err);

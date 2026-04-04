@@ -7,13 +7,14 @@ export declare class MediationService {
     private config;
     private mediationQueue;
     constructor(prisma: PrismaService, config: ConfigService, mediationQueue: Queue);
-    submitFeedback(transactionId: string, authorId: string, content: string, rating: number): Promise<{
+    submitFeedback(transactionId: string, authorId: string, content: string, rating: number, categories?: string[]): Promise<{
         id: string;
         createdAt: Date;
-        authorId: string;
         transactionId: string;
+        authorId: string;
         content: string;
         rating: number;
+        categories: string[];
     }>;
     private checkAndBundle;
     proposeResolution(bundleId: string, adminId: string, proposedText: string): Promise<{

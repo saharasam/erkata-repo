@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 export declare class ConfigService implements OnModuleInit {
     private prisma;
+    static readonly DEFAULT_RISK_THRESHOLD = 100000;
     private readonly logger;
     private configs;
     constructor(prisma: PrismaService);

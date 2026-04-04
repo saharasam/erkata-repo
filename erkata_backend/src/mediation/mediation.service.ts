@@ -23,6 +23,7 @@ export class MediationService {
     authorId: string,
     content: string,
     rating: number,
+    categories: string[] = [],
   ) {
     // 1. Validate transaction existence
     const transaction = await this.prisma.transaction.findUnique({
@@ -60,7 +61,8 @@ export class MediationService {
         authorId,
         content,
         rating,
-      },
+        categories,
+      } as any,
     });
 
     // 5. Schedule timeout if this is the first feedback
@@ -193,7 +195,7 @@ export class MediationService {
       : 0;
     const riskThreshold = this.config.get<number>(
       'high_risk_threshold_etb',
-      100000,
+      ConfigService.DEFAULT_RISK_THRESHOLD,
     );
     const isHighRisk = budget > riskThreshold;
 

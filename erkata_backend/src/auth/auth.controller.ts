@@ -6,13 +6,20 @@ import {
   Req,
   UnauthorizedException,
   InternalServerErrorException,
+  UseGuards,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import type { Response, Request } from 'express';
+import type { Response } from 'express';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import type { AuthenticatedRequest } from './guards/authenticated-request.interface';
+import { RedisPresenceService } from '../common/redis/redis-presence.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { UserRole, RequestStatus } from '@prisma/client';
 
 export interface RegisterDto {
   email: string;
   fullName: string;
+  phone: string;
   password: string;
   role?: string;
   tier?: string;
@@ -21,7 +28,11 @@ export interface RegisterDto {
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly presence: RedisPresenceService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   @Post('login')
   async login(
@@ -35,7 +46,7 @@ export class AuthController {
   }
 
   @Post('refresh')
-  async refresh(@Req() req: Request) {
+  async refresh(@Req() req: any) {
     const cookies = (
       req as unknown as {
         cookies?: Record<string, string>;
@@ -61,5 +72,39 @@ export class AuthController {
       const message = e instanceof Error ? e.message : 'Registration failed';
       throw new InternalServerErrorException(message);
     }
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('heartbeat')
+  async heartbeat(@Req() req: AuthenticatedRequest) {
+    const user = req.user;
+    
+    // Update Redis Presence
+    await this.presence.heartbeat(user.id);
+
+    // If Operator, check for pushed requests
+    let assignmentFound = false;
+    let requestId: string | null = null;
+
+    if (user.role === UserRole.operator) {
+      const pushedRequest = await this.prisma.request.findFirst({
+        where: {
+          assignedOperatorId: user.id,
+          status: RequestStatus.pending,
+        } as any,
+        select: { id: true },
+      });
+
+      if (pushedRequest) {
+        assignmentFound = true;
+        requestId = pushedRequest.id;
+      }
+    }
+
+    return {
+      status: 'ok',
+      assignmentFound,
+      requestId,
+    };
   }
 }

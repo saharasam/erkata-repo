@@ -59,19 +59,30 @@ export class RolesGuard implements CanActivate {
       return true;
     }
 
-    // ── Pattern 2: @RequirePermission(Action.X) ─────────────────────────
+    // ── Pattern 2: @RequirePermission(Action.X, Action.Y) ─────────────────────────
     const requiredAction = this.reflector.get<Action>(
       'action',
       context.getHandler(),
     );
-    if (!requiredAction) {
+    const requiredActions = this.reflector.get<Action[]>(
+      'actions',
+      context.getHandler(),
+    );
+    const actionsToVerify =
+      requiredActions || (requiredAction ? [requiredAction] : []);
+
+    if (actionsToVerify.length === 0) {
       return true;
     }
 
     const userPermissions = PermissionMatrix[userRole] || [];
-    if (!userPermissions.includes(requiredAction)) {
+    const hasPermission = actionsToVerify.some((action) =>
+      userPermissions.includes(action),
+    );
+
+    if (!hasPermission) {
       throw new ForbiddenException(
-        `Role "${userRole}" does not have permission for action "${requiredAction}"`,
+        `Role "${userRole}" lacks mandatory permission. Available: [${userPermissions.join(', ')}]. Required (any of): [${actionsToVerify.join(', ')}]`,
       );
     }
 

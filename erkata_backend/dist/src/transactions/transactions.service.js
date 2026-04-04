@@ -14,12 +14,18 @@ const common_1 = require("@nestjs/common");
 const event_emitter_1 = require("@nestjs/event-emitter");
 const prisma_service_1 = require("../prisma/prisma.service");
 const client_1 = require("@prisma/client");
+const aglp_service_1 = require("../aglp/aglp.service");
+const config_service_1 = require("../common/config.service");
 let TransactionsService = class TransactionsService {
     prisma;
     eventEmitter;
-    constructor(prisma, eventEmitter) {
+    aglpService;
+    configService;
+    constructor(prisma, eventEmitter, aglpService, configService) {
         this.prisma = prisma;
         this.eventEmitter = eventEmitter;
+        this.aglpService = aglpService;
+        this.configService = configService;
     }
     async acceptAssignment(matchId, agentId) {
         const match = await this.prisma.match.findUnique({
@@ -89,6 +95,66 @@ let TransactionsService = class TransactionsService {
         this.eventEmitter.emit('match.rejected', { matchId, agentId });
         return { message: 'Assignment rejected. Request returned to queue.' };
     }
+    async transferAssignment(matchId, fromAgentId, toAgentId) {
+        const match = await this.prisma.match.findUnique({
+            where: { id: matchId },
+        });
+        if (!match)
+            throw new common_1.NotFoundException('Match not found');
+        if (match.agentId !== fromAgentId) {
+            throw new common_1.ForbiddenException('This assignment does not belong to you');
+        }
+        if (match.status !== 'assigned' && match.status !== 'accepted') {
+            throw new common_1.BadRequestException(`Cannot transfer a match that is already "${match.status}"`);
+        }
+        const targetAgent = await this.prisma.profile.findUnique({
+            where: { id: toAgentId },
+        });
+        if (!targetAgent ||
+            targetAgent.referredById !== fromAgentId ||
+            targetAgent.role !== 'agent') {
+            throw new common_1.BadRequestException('Target agent must be one of your referrals');
+        }
+        const existingMatch = await this.prisma.match.findUnique({
+            where: {
+                requestId_agentId: {
+                    requestId: match.requestId,
+                    agentId: toAgentId,
+                },
+            },
+        });
+        if (existingMatch) {
+            throw new common_1.BadRequestException('Target agent is already matched with this request');
+        }
+        const updated = await this.prisma.$transaction(async (tx) => {
+            const matchResult = await tx.match.update({
+                where: { id: matchId },
+                data: {
+                    agentId: toAgentId,
+                    status: 'assigned',
+                },
+            });
+            await tx.auditLog.create({
+                data: {
+                    actorId: fromAgentId,
+                    action: 'MATCH_TRANSFERRED',
+                    targetTable: 'matches',
+                    targetId: matchId,
+                    metadata: {
+                        fromAgentId,
+                        toAgentId,
+                    },
+                },
+            });
+            return matchResult;
+        });
+        this.eventEmitter.emit('match.transferred', {
+            matchId,
+            fromAgentId,
+            toAgentId,
+        });
+        return updated;
+    }
     async markComplete(matchId, agentId) {
         const match = await this.prisma.match.findUnique({
             where: { id: matchId },
@@ -121,30 +187,24 @@ let TransactionsService = class TransactionsService {
                 data: { status: client_1.RequestStatus.completed },
             });
             const res = matchResult;
-            const budget = res.request?.budgetMax || res.request?.budgetMin || 0;
-            if (budget > 0 && res.agent?.referredBy) {
-                const commissionAmount = budget * 0.05;
-                await tx.profile.update({
-                    where: { id: res.agent.referredById },
-                    data: {
-                        walletBalance: {
-                            increment: commissionAmount,
-                        },
-                    },
-                });
-                await tx.auditLog.create({
-                    data: {
-                        actorId: agentId,
-                        action: 'REFERRAL_COMMISSION_CREDITED',
-                        targetTable: 'profiles',
-                        targetId: res.agent.referredById,
-                        metadata: {
-                            matchId,
-                            amount: commissionAmount,
-                            reason: `Referral commission from agent ${res.agent.fullName}`,
-                        },
-                    },
-                });
+            const budget = Number(res.request?.budgetMax || res.request?.budgetMin || 0);
+            if (budget > 0) {
+                const type = res.request?.type || 'real_estate';
+                const category = res.request?.category || 'General';
+                const isRealEstate = type === 'real_estate';
+                const configKey = isRealEstate
+                    ? 'COMMISSION_REAL_ESTATE_PRIMARY'
+                    : 'COMMISSION_FURNITURE_PRIMARY';
+                const primaryCommissionConfig = this.configService.get(configKey, { value: 0.1 });
+                const primaryCommissionRate = primaryCommissionConfig.value || 0.1;
+                const primaryCommissionEtb = budget * primaryCommissionRate;
+                await this.aglpService.lockCommission(tx, agentId, primaryCommissionEtb, matchId, `Primary commission for ${type} fulfillment: ${category}`);
+                if (isRealEstate && res.agent?.referredById) {
+                    const overrideConfig = this.configService.get('COMMISSION_REAL_ESTATE_OVERRIDE', { value: 0.05 });
+                    const referralCommissionRate = overrideConfig.value || 0.05;
+                    const referralCommissionEtb = budget * referralCommissionRate;
+                    await this.aglpService.lockCommission(tx, res.agent.referredById, referralCommissionEtb, matchId, `Referral override commission from agent ${res.agent.fullName || 'Unknown'}`);
+                }
             }
             return matchResult;
         });
@@ -225,6 +285,8 @@ exports.TransactionsService = TransactionsService;
 exports.TransactionsService = TransactionsService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        event_emitter_1.EventEmitter2])
+        event_emitter_1.EventEmitter2,
+        aglp_service_1.AglpService,
+        config_service_1.ConfigService])
 ], TransactionsService);
 //# sourceMappingURL=transactions.service.js.map

@@ -2,21 +2,29 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { UserRole, Prisma, Tier } from '@prisma/client';
+import { ConfigService } from '../common/config.service';
+import { AglpService } from '../aglp/aglp.service';
 
 export const TierPriority: Record<string, number> = {
-  'Abundant Life': 5,
-  Unity: 4,
-  Love: 3,
-  Peace: 2,
-  Free: 1,
+  ABUNDANT_LIFE: 5,
+  UNITY: 4,
+  LOVE: 3,
+  PEACE: 2,
+  FREE: 1,
 };
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly aglpService: AglpService,
+    private readonly configService: ConfigService,
+  ) {}
 
   async getCurrentProfile(userId: string) {
     const profile = await this.prisma.profile.findUnique({
@@ -43,23 +51,29 @@ export class UsersService {
     const profile = await this.prisma.profile.findUnique({
       where: { id: userId },
       select: {
-        walletBalance: true,
+        aglpBalance: true,
+        aglpPending: true,
+        aglpWithdrawn: true,
         tier: true,
         referrals: { select: { id: true } },
         referralLink: { select: { tier: true } },
+        agentZones: { select: { id: true } },
       },
     });
 
     if (!profile) throw new NotFoundException('Profile not found');
 
-    const tier = profile.referralLink?.tier || profile.tier || 'FREE';
+    const tier = profile.tier || 'FREE';
     const totalSlots = this.getReferralLimit(tier);
     const usedSlots = profile.referrals.length;
 
-    const tiers = Object.keys(TierPriority);
-    const currentTierIndex = tiers.indexOf(
-      tier.charAt(0) + tier.slice(1).toLowerCase().replace('_', ' '),
+    const usedZones = profile.agentZones?.length || 0;
+    const totalZones = this.getZoneLimit(tier);
+
+    const tiers = Object.keys(TierPriority).sort(
+      (a, b) => TierPriority[a] - TierPriority[b],
     );
+    const currentTierIndex = tiers.indexOf(tier);
     const nextTier =
       currentTierIndex !== -1 && currentTierIndex < tiers.length - 1
         ? tiers[currentTierIndex + 1]
@@ -76,6 +90,8 @@ export class UsersService {
             'REFERRAL_COMMISSION_CREDITED',
             'PAYOUT_REQUESTED',
             'PAYOUT_COMPLETED',
+            'PACKAGE_REWARD_EARNED',
+            'PACKAGE_UPGRADE_SPENT',
           ],
         },
       },
@@ -87,23 +103,37 @@ export class UsersService {
     const formattedHistory = history.map((log) => {
       const metadata = log.metadata as {
         amount?: string | number;
+        amountAglp?: string | number;
         reason?: string;
       } | null;
+
+      const type = log.action.includes('REFERRAL')
+        ? 'Referral'
+        : log.action.includes('PACKAGE')
+          ? 'Package'
+          : 'Commission';
+
+      const rawAmount = metadata?.amount ?? metadata?.amountAglp ?? '0';
 
       return {
         id: log.id,
         action: log.action,
-        amount: metadata?.amount?.toString() || '0',
-        type: log.action.includes('REFERRAL') ? 'Referral' : 'Commission',
+        amount: rawAmount.toString(),
+        type,
         date: log.createdAt,
         description: metadata?.reason || log.action,
       };
     });
 
     return {
-      balance: profile.walletBalance.toString(),
+      balance: profile.aglpBalance.toString(), // Kept for backwards compatibility temporarily
+      aglpAvailable: profile.aglpBalance.toString(),
+      aglpPending: profile.aglpPending.toString(),
+      aglpWithdrawn: profile.aglpWithdrawn.toString(),
       usedSlots,
       totalSlots,
+      usedZones,
+      totalZones,
       currentTier: tier.replace('_', ' '),
       nextTier,
       history: formattedHistory,
@@ -205,7 +235,7 @@ export class UsersService {
       );
     }
 
-    const tier = agent.referralLink?.tier || 'FREE';
+    const tier = agent.tier || 'FREE';
     const zoneLimit = this.getZoneLimit(tier);
 
     if (agent.agentZones.length >= zoneLimit) {
@@ -245,17 +275,112 @@ export class UsersService {
       );
     }
 
-    const tierEnum = tier.toUpperCase().replace(' ', '_') as Tier;
-    if (!TierPriority[tier]) throw new Error('Invalid tier name');
+    return this.applyTierUpgrade(agentId, tier, 'ADMIN');
+  }
 
-    return this.prisma.referralLink.upsert({
-      where: { referrerId: agentId },
-      update: { tier: tierEnum },
-      create: {
-        referrerId: agentId,
-        code: `REF-${agentId.slice(0, 5)}`,
-        tier: tierEnum,
-      },
+  async purchasePackage(
+    agentId: string,
+    tier: string,
+    paymentMethod: 'ETB' | 'AGLP' = 'ETB',
+  ) {
+    const agent = await this.prisma.profile.findUnique({
+      where: { id: agentId },
+    });
+    if (!agent) throw new NotFoundException('Agent profile not found');
+    if (agent.role !== UserRole.agent) {
+      throw new ForbiddenException('Only agents can purchase packages');
+    }
+
+    if ((!agent.tier || agent.tier === 'FREE') && paymentMethod === 'AGLP') {
+      throw new BadRequestException(
+        'Initial package purchases must be made in ETB.',
+      );
+    }
+
+    return this.applyTierUpgrade(agentId, tier, paymentMethod);
+  }
+
+  private async applyTierUpgrade(
+    agentId: string,
+    tier: string,
+    paymentMethod: 'ETB' | 'AGLP' | 'ADMIN' = 'ETB',
+  ) {
+    const tierEnum = tier.toUpperCase().replace(' ', '_') as Tier;
+    if (TierPriority[tierEnum] === undefined) {
+      throw new Error('Invalid tier name');
+    }
+
+    // Fetch the package price
+    const pkg = await this.prisma.package.findUnique({
+      where: { name: tierEnum },
+    });
+
+    if (!pkg) {
+      throw new NotFoundException(
+        `Package for tier "${tier}" not found in system.`,
+      );
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      if (pkg.price && Number(pkg.price) > 0 && paymentMethod !== 'ADMIN') {
+        if (paymentMethod === 'ETB') {
+          // Explicit cash purchase: Agent deposits ETB and gets the equivalent AGLP as a reward.
+          await this.aglpService.depositEtb(
+            tx,
+            agentId,
+            Number(pkg.price),
+            pkg.id,
+            'PACKAGE_PURCHASE',
+          );
+
+          // AWARD REFERRAL COMMISSION IF APPLICABLE (10%)
+          const agent = await tx.profile.findUnique({
+            where: { id: agentId },
+            select: { referredById: true, fullName: true },
+          });
+
+          if (agent?.referredById) {
+            const referralCommissionRate = 0.1; // 10%
+            const referralCommissionEtb =
+              Number(pkg.price) * referralCommissionRate;
+
+            await this.aglpService.earnCommission(
+              tx,
+              agent.referredById,
+              referralCommissionEtb,
+              agentId, // referenceId is the buyer's ID
+              `Referral commission for package purchase (${tierEnum}) by ${agent.fullName}`,
+            );
+          }
+        } else if (paymentMethod === 'AGLP') {
+          // Agent is using their existing AGLP to upgrade.
+          const rate = this.aglpService.getConversionRate();
+          const costAglp = Number(pkg.price) * rate;
+
+          await this.aglpService.spendAglpForPackage(
+            tx,
+            agentId,
+            costAglp,
+            pkg.id,
+          );
+        }
+      }
+
+      // Synchronize Profile tier
+      await tx.profile.update({
+        where: { id: agentId },
+        data: { tier: tierEnum },
+      });
+
+      return tx.referralLink.upsert({
+        where: { referrerId: agentId },
+        update: { tier: tierEnum },
+        create: {
+          referrerId: agentId,
+          code: `REF-${agentId.slice(0, 5)}`,
+          tier: tierEnum,
+        },
+      });
     });
   }
 
@@ -270,7 +395,7 @@ export class UsersService {
 
     if (!referrer) throw new NotFoundException('Referrer not found');
 
-    const tier = referrer.referralLink?.tier || 'FREE';
+    const tier = referrer.tier || 'FREE';
     const limit = this.getReferralLimit(tier);
 
     if (referrer.referrals.length >= limit) {
@@ -315,6 +440,16 @@ export class UsersService {
     });
   }
 
+  async requestWithdrawal(userId: string, amountAglp: number) {
+    if (amountAglp <= 0) {
+      throw new BadRequestException('Amount must be positive');
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      return this.aglpService.withdrawAglp(tx, userId, amountAglp);
+    });
+  }
+
   async activateUser(callerRole: UserRole, userId: string) {
     const user = await this.prisma.profile.findUnique({
       where: { id: userId },
@@ -331,5 +466,67 @@ export class UsersService {
       where: { id: userId },
       data: { isActive: true },
     });
+  }
+
+  /**
+   * Generates a unique referral code for the calling agent.
+   * The code can be triggered on-demand from the Agent Dashboard.
+   */
+  async generateReferralCode(
+    userId: string,
+  ): Promise<{ code: string; link: string }> {
+    const profile = await this.prisma.profile.findUnique({
+      where: { id: userId },
+    });
+
+    if (!profile) throw new NotFoundException('Profile not found');
+    if (profile.role !== UserRole.agent) {
+      throw new ForbiddenException('Only agents can generate referral codes');
+    }
+    if (profile.referralCode) {
+      // Re-return the existing code if already generated
+      const link = `${process.env.APP_URL || 'https://erkata.app'}/register?ref=${profile.referralCode}`;
+      return { code: profile.referralCode, link };
+    }
+
+    // Generate a unique 8-char alphanumeric code
+    let code: string;
+    let isUnique = false;
+    let attempts = 0;
+    do {
+      code = Math.random().toString(36).substring(2, 10).toUpperCase();
+      const existing = await this.prisma.profile.findUnique({
+        where: { referralCode: code },
+      });
+      isUnique = !existing;
+      attempts++;
+    } while (!isUnique && attempts < 10);
+
+    if (!isUnique) {
+      throw new ConflictException(
+        'Could not generate a unique code. Please try again.',
+      );
+    }
+
+    await this.prisma.profile.update({
+      where: { id: userId },
+      data: { referralCode: code },
+    });
+
+    const link = `${process.env.APP_URL || 'https://erkata.app'}/register?ref=${code}`;
+    return { code, link };
+  }
+
+  /**
+   * Looks up a referrer by their referral code.
+   * Used during registration to attribute new users.
+   */
+  async findByReferralCode(code: string) {
+    const referrer = await this.prisma.profile.findUnique({
+      where: { referralCode: code },
+      include: { referralLink: true, referrals: { select: { id: true } } },
+    });
+    if (!referrer) throw new BadRequestException('Invalid referral code');
+    return referrer;
   }
 }

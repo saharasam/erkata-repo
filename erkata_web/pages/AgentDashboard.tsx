@@ -22,7 +22,8 @@ import {
   ChevronLeft,
   ChevronRight,
   ShieldCheck,
-  ArrowDownRight
+  ArrowDownRight,
+  Loader2
 } from 'lucide-react';
 import { 
   agentEarnings as mockEarnings, 
@@ -36,8 +37,44 @@ import { Action } from '../hooks/usePermissions';
 import FeedbackForm, { FeedbackData } from '../components/FeedbackForm';
 import WalletSummary from '../components/agent/WalletSummary';
 import ProfileView from '../components/agent/ProfileView';
+import { PackageSelection } from '../components/agent/PackageSelection';
+import { PackagesView } from '../components/agent/PackagesView';
+import { NetworkView } from '../components/agent/NetworkView';
+import { FocusBoard } from '../components/agent/FocusBoard';
+import { Skeleton } from '../components/ui/Skeleton';
+import TransferMatchModal from '../components/agent/TransferMatchModal';
 
-type DashboardView = 'focus' | 'earnings' | 'network' | 'territory' | 'profile';
+type DashboardView = 'focus' | 'earnings' | 'network' | 'packages' | 'profile';
+
+const DashboardSkeleton: React.FC = () => (
+  <div className="max-w-6xl mx-auto space-y-8 animate-pulse pt-4">
+    <div className="flex justify-between items-end mb-8">
+      <div className="space-y-2">
+        <Skeleton width="200px" height="2rem" />
+        <Skeleton width="350px" height="1rem" />
+      </div>
+      <Skeleton width="120px" height="2.5rem" />
+    </div>
+    
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+      {[1, 2, 3, 4].map(i => (
+        <Skeleton key={i} height="7rem" className="rounded-2xl" />
+      ))}
+    </div>
+
+    <div className="flex gap-6 border-b border-slate-200/60 pb-3 mb-6">
+      <Skeleton width="80px" height="1.5rem" />
+      <Skeleton width="100px" height="1.5rem" />
+      <Skeleton width="80px" height="1.5rem" />
+    </div>
+
+    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+      {[1, 2, 3, 4].map(i => (
+        <Skeleton key={i} height="12rem" className="rounded-2xl" />
+      ))}
+    </div>
+  </div>
+);
 
 const AgentDashboard: React.FC = () => {
   const { showConfirm, showAlert } = useModal();
@@ -46,26 +83,30 @@ const AgentDashboard: React.FC = () => {
   const [profile, setProfile] = useState<any>(null);
   const [finance, setFinance] = useState<any>(null);
   const [isLoadingData, setIsLoadingData] = useState(true);
+  const [hasSkippedPackageSelection, setHasSkippedPackageSelection] = useState(false);
+
+  const fetchData = async () => {
+    try {
+      setIsLoadingData(true);
+      const [profileRes, financeRes, jobsRes] = await Promise.all([
+        api.get('/users/me'),
+        api.get('/users/me/finance'),
+        api.get('/transactions/my-jobs')
+      ]);
+      setProfile(profileRes.data);
+      setFinance(financeRes.data);
+      setRequests(mapBackendJobsToUi(jobsRes.data));
+    } catch (error) {
+      console.error('Failed to fetch agent data:', error);
+    } finally {
+      setIsLoadingData(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [profileRes, financeRes, jobsRes] = await Promise.all([
-          api.get('/users/me'),
-          api.get('/users/me/finance'),
-          api.get('/transactions/my-jobs')
-        ]);
-        setProfile(profileRes.data);
-        setFinance(financeRes.data);
-        setRequests(mapBackendJobsToUi(jobsRes.data));
-      } catch (error) {
-        console.error('Failed to fetch agent data:', error);
-      } finally {
-        setIsLoadingData(false);
-      }
-    };
     fetchData();
   }, []);
+
 
   const mapBackendJobsToUi = (matches: any[]): any[] => {
     return matches.map(m => ({
@@ -91,9 +132,33 @@ const AgentDashboard: React.FC = () => {
     });
   };
 
-  const [activeTab, setActiveTab] = useState<'assigned' | 'in-progress' | 'history'>('assigned');
   const [requests, setRequests] = useState<any[]>([]);
   const [feedbackRequest, setFeedbackRequest] = useState<{id: string, transactionId: string, customerName: string} | null>(null);
+  const [transferringJobId, setTransferringJobId] = useState<string | null>(null);
+
+  const handleTransferClick = (jobId: string) => {
+    setTransferringJobId(jobId);
+  };
+
+  const handleDecline = async (jobId: string) => {
+    const confirmed = await showConfirm({
+      title: 'Decline Assignment',
+      message: 'Are you sure you want to decline this request? It will be returned to the operator queue.',
+      confirmText: 'Decline',
+      type: 'error'
+    });
+
+    if (confirmed) {
+      try {
+        await api.patch(`/transactions/${jobId}/decline`);
+        setRequests(prev => prev.filter(req => req.id !== jobId));
+        showAlert({ title: 'Success', message: 'Assignment declined.', type: 'success' });
+      } catch (error) {
+        console.error('Failed to decline job:', error);
+        showAlert({ title: 'Error', message: 'Failed to decline assignment.', type: 'error' });
+      }
+    }
+  };
 
   const handleAccept = async (jobId: string) => {
     try {
@@ -113,20 +178,34 @@ const AgentDashboard: React.FC = () => {
   };
 
   const handlePayoutRequest = async () => {
+    const available = finance?.aglpAvailable || 0;
+    if (available <= 0) {
+      showAlert({ title: 'Insufficient Balance', message: 'You do not have any withdrawable AGLP.', type: 'error' });
+      return;
+    }
+
     const confirmed = await showConfirm({
       title: 'Request Payout',
-      message: `Withdraw ${finance?.balance || '0.00'} ETB to your linked Telebirr account?`,
+      message: `Withdraw your available ${available.toLocaleString()} AGLP to your linked Telebirr account?`,
       confirmText: 'Confirm Withdrawal',
       type: 'success'
     });
 
     if (confirmed) {
-      // In a real app, we'd call an API here
-      showAlert({
-        title: 'Payout Requested',
-        message: 'Your request is being processed by the regional admin.',
-        type: 'success'
-      });
+      try {
+        await api.post('/users/me/withdraw', { amount: available });
+        showAlert({
+          title: 'Payout Requested',
+          message: 'Your request is being processed by the regional admin.',
+          type: 'success'
+        });
+        // Refresh finance data
+        const financeRes = await api.get('/users/me/finance');
+        setFinance(financeRes.data);
+      } catch (error) {
+        console.error('Failed to request payout:', error);
+        showAlert({ title: 'Error', message: 'Failed to submit withdrawal request.', type: 'error' });
+      }
     }
   };
 
@@ -164,7 +243,8 @@ const AgentDashboard: React.FC = () => {
       
       await api.post(`/mediation/transaction/${feedbackRequest.transactionId}/feedback`, {
         content: data.comment,
-        rating: data.rating
+        rating: data.rating,
+        categories: data.categories
       });
 
       setRequests(prev => prev.map(req => 
@@ -190,7 +270,7 @@ const AgentDashboard: React.FC = () => {
          <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Today's Performance</p>
          <div className="flex items-baseline gap-1">
             <span className="text-3xl font-bold tracking-tight">{mockEarnings.today}</span>
-            <span className="text-sm font-medium text-slate-400">ETB</span>
+            <span className="text-sm font-medium text-slate-400">AGLP</span>
          </div>
          <div className="mt-4 flex gap-2">
             <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-green-500/20 text-green-300 border border-green-500/20">
@@ -250,12 +330,33 @@ const AgentDashboard: React.FC = () => {
     </div>
   );
 
-  const filteredRequests = requests.filter(req => {
-    if (activeTab === 'assigned') return req.status === 'assigned';
-    if (activeTab === 'in-progress') return req.status === 'in-progress';
-    if (activeTab === 'history') return req.status === 'completed';
-    return true; 
-  });
+
+  if (isLoadingData && !profile) {
+    return (
+      <DashboardLayout
+        role="agent"
+        sidebarContent={null}
+        currentView={view}
+        onViewChange={(newView) => setView(newView as DashboardView)}
+      >
+        <DashboardSkeleton />
+      </DashboardLayout>
+    );
+  }
+
+  if (!hasSkippedPackageSelection && (finance?.currentTier === 'FREE' || finance?.currentTier === 'Free')) {
+    return (
+      <div className="min-h-screen bg-slate-50 pt-20 pb-10 px-4 md:px-0">
+        <div className="absolute top-6 left-6 md:left-10 flex items-center gap-2">
+            <div className="w-8 h-8 bg-erkata-primary rounded-lg flex items-center justify-center shadow-lg shadow-erkata-primary/20">
+               <span className="text-white font-black text-sm">e.</span>
+            </div>
+            <span className="text-lg font-black tracking-tight text-slate-800">erkata</span>
+        </div>
+        <PackageSelection onComplete={fetchData} onSkip={() => setHasSkippedPackageSelection(true)} />
+      </div>
+    );
+  }
 
   return (
     <DashboardLayout
@@ -274,168 +375,14 @@ const AgentDashboard: React.FC = () => {
           transition={{ duration: 0.3 }}
         >
           {view === 'focus' && (
-            <>
-              <div className="mb-8 flex justify-between items-end">
-                <div>
-                  <h1 className="text-3xl font-extrabold text-slate-800 tracking-tight">Focus Board</h1>
-                  <p className="text-slate-500 font-medium font-sans">Manage your assignments and track your daily goals.</p>
-                </div>
-                <Can perform={Action.REQUEST_PAYOUT}>
-                  <button 
-                    onClick={handlePayoutRequest}
-                    className="bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-lg shadow-indigo-600/20 hover:bg-indigo-700 transition-all active:scale-95"
-                  >
-                    Request Payout
-                  </button>
-                </Can>
-              </div>
-
-              <motion.div 
-                variants={{
-                  initial: { opacity: 0 },
-                  animate: { opacity: 1, transition: { staggerChildren: 0.1 } }
-                }}
-                initial="initial"
-                animate="animate"
-                className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8"
-              >
-                {[
-                  { label: "Pending", value: requests.filter(r => r.status === 'assigned').length, color: "blue" },
-                  { label: "In Progress", value: requests.filter(r => r.status === 'in-progress').length, color: "orange" },
-                  { label: "Completed", value: requests.filter(r => r.status === 'completed').length, color: "green" },
-                  { label: "Rate", value: "94%", color: "emerald", sub: "Top 5%" }
-                ].map((stat, i) => (
-                  <motion.div
-                    key={i}
-                    variants={{
-                      initial: { opacity: 0, y: 20 },
-                      animate: { opacity: 1, y: 0 }
-                    }}
-                    className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between h-28 relative overflow-hidden"
-                  >
-                    <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider z-10">{stat.label}</p>
-                    <div className="flex items-end gap-2 z-10">
-                      <span className={`text-2xl font-black ${stat.color === 'emerald' ? 'text-green-600' : 'text-slate-800'}`}>
-                        {stat.value}
-                      </span>
-                      {stat.sub && <span className="text-[10px] font-bold text-green-600/60 mb-1">{stat.sub}</span>}
-                      {!stat.sub && <div className={`w-1.5 h-1.5 rounded-full mb-1.5 bg-${stat.color}-500`} />}
-                    </div>
-                  </motion.div>
-                ))}
-              </motion.div>
-
-              {/* Tabs */}
-              <div className="flex items-center gap-6 border-b border-slate-200/60 mb-6">
-                {['assigned', 'in-progress', 'history'].map((tab) => (
-                   <button
-                     key={tab}
-                     onClick={() => setActiveTab(tab as any)}
-                     className={`pb-3 text-sm font-bold capitalize relative transition-colors ${
-                       activeTab === tab ? 'text-slate-800' : 'text-slate-400 hover:text-slate-600'
-                     }`}
-                   >
-                     {tab.replace('-', ' ')}
-                     {activeTab === tab && (
-                        <motion.div 
-                          layoutId="activeTabUnderline"
-                          className="absolute bottom-0 left-0 right-0 h-0.5 bg-slate-800 rounded-full"
-                         />
-                      )}
-                   </button>
-                ))}
-              </div>
-
-              {/* Request Grid */}
-              <motion.div 
-                variants={{
-                  initial: { opacity: 0 },
-                  animate: { opacity: 1, transition: { staggerChildren: 0.1 } }
-                }}
-                initial="initial"
-                animate="animate"
-                className="grid grid-cols-1 xl:grid-cols-2 gap-4"
-              >
-                <AnimatePresence mode='popLayout'>
-                  {filteredRequests.map((request) => (
-                    <motion.div
-                      key={request.id}
-                      layout
-                      initial={{ opacity: 0, scale: 0.95 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.95 }}
-                      whileHover={{ y: -4, shadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1)" }}
-                      className="bg-white rounded-2xl border border-slate-100 p-5 shadow-sm hover:shadow-md transition-all group relative overflow-hidden"
-                    >
-                       <div className={`absolute top-0 left-0 bottom-0 w-1 ${
-                          request.status === 'assigned' ? 'bg-blue-500' : 
-                          request.status === 'in-progress' ? 'bg-orange-500' : 
-                          request.status === 'completed' ? 'bg-green-500' : 'bg-slate-300'
-                       }`} />
-
-                       <div className="pl-3">
-                          <div className="flex justify-between items-start mb-4">
-                             <div>
-                                <div className="flex items-center gap-2 mb-1">
-                                   <span className="text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-0.5 rounded border border-slate-100">
-                                      {request.id}
-                                   </span>
-                                   <span className="text-[10px] font-bold text-slate-400 flex items-center">
-                                      <Clock className="w-3 h-3 mr-1" />
-                                      {request.submittedTime}
-                                   </span>
-                                </div>
-                                <h3 className="text-lg font-bold text-slate-800 leading-tight group-hover:text-erkata-primary transition-colors">
-                                   {request.requirementSummary}
-                                </h3>
-                             </div>
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-4 mb-5">
-                             <div>
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Customer</span>
-                                <span className="text-sm font-semibold text-slate-700">{request.customerName}</span>
-                             </div>
-                             <div>
-                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Location</span>
-                                <span className="text-sm font-semibold text-slate-700">{request.woreda}</span>
-                             </div>
-                          </div>
-
-                          <div className="flex gap-3">
-                            {request.status === 'assigned' && (
-                              <Can perform={Action.ACCEPT_REQUEST}>
-                                <button 
-                                  onClick={() => handleAccept(request.id)}
-                                  className="flex-1 bg-slate-900 text-white text-xs font-bold py-2.5 rounded-xl hover:bg-slate-800 transition-colors"
-                                >
-                                  Accept Request
-                                </button>
-                              </Can>
-                            )}
-                            {request.status === 'in-progress' && (
-                               <Can perform={Action.SUBMIT_PROOF}>
-                                 <button 
-                                    onClick={() => handleCompleteClick(request.id, request.transactionId, request.customerName)}
-                                    className="flex-1 bg-erkata-primary text-white text-xs font-bold py-2.5 rounded-xl hover:bg-erkata-secondary transition-colors"
-                                 >
-                                    Complete & Confirm
-                                 </button>
-                               </Can>
-                            )}
-                            {request.status === 'completed' && (
-                               <div className="w-full py-2 bg-green-50 text-green-600 text-xs font-bold rounded-xl flex items-center justify-center gap-2 border border-green-100">
-                                  <CheckCircle className="w-3.5 h-3.5" />
-                                  Completed
-                               </div>
-                            )}
-                          </div>
-                       </div>
-                    </motion.div>
-                  ))}
-                </AnimatePresence>
-              </motion.div>
-            </>
+             <FocusBoard 
+                requests={requests} 
+                onAccept={handleAccept} 
+                onComplete={handleCompleteClick}
+                onTransfer={handleTransferClick}
+                onDecline={handleDecline}
+                hasReferrals={!!profile?.referrals?.length}
+             />
           )}
 
           {view === 'earnings' && (
@@ -446,14 +393,20 @@ const AgentDashboard: React.FC = () => {
             <ProfileView profile={profile} />
           )}
 
-          {(view === 'network' || view === 'territory') && (
-            <div className="flex flex-col items-center justify-center h-[50vh] text-slate-400 bg-white rounded-3xl border border-slate-100 border-dashed">
-               <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-                  {view === 'network' ? <Users className="w-8 h-8 opacity-20" /> : <MapPin className="w-8 h-8 opacity-20" />}
-               </div>
-               <h2 className="text-xl font-bold text-slate-600 capitalize">{view} View</h2>
-               <p className="text-sm">Extended {view} metrics and management features are coming soon.</p>
-            </div>
+          {view === 'packages' && profile && finance && (
+             <PackagesView 
+                finance={finance} 
+                profile={profile} 
+                onUpgradeComplete={fetchData} 
+             />
+          )}
+
+          {view === 'network' && (
+             <NetworkView 
+                profile={profile} 
+                finance={finance} 
+                onNavigateToPackages={() => setView('packages')} 
+             />
           )}
         </motion.div>
       </AnimatePresence>
@@ -479,6 +432,14 @@ const AgentDashboard: React.FC = () => {
           </div>
         )}
       </AnimatePresence>
+
+      <TransferMatchModal
+        isOpen={!!transferringJobId}
+        onClose={() => setTransferringJobId(null)}
+        matchId={transferringJobId || ''}
+        referrals={profile?.referrals || []}
+        onSuccess={fetchData}
+      />
     </DashboardLayout>
   );
 };

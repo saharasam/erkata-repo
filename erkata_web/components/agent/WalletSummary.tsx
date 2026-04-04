@@ -14,6 +14,9 @@ import { motion } from 'framer-motion';
 interface WalletSummaryProps {
   finance: {
     balance: string;
+    aglpAvailable?: string;
+    aglpPending?: string;
+    aglpWithdrawn?: string;
     history: any[];
   } | null;
   onPayoutRequest: () => void;
@@ -37,9 +40,20 @@ const WalletSummary: React.FC<WalletSummaryProps> = ({ finance, onPayoutRequest 
           
           <div className="relative z-10">
             <p className="text-slate-400 text-sm font-bold uppercase tracking-widest mb-2">Available Balance</p>
-            <div className="flex items-baseline gap-2 mb-8">
-              <span className="text-5xl font-black tracking-tighter">{parseFloat(finance.balance).toLocaleString()}</span>
-              <span className="text-xl font-bold text-slate-500">ETB</span>
+            <div className="flex items-baseline gap-2 mb-6">
+              <span className="text-5xl font-black tracking-tighter">{parseFloat(finance.aglpAvailable || finance.balance || '0').toLocaleString()}</span>
+              <span className="text-xl font-bold text-slate-500">AGLP</span>
+            </div>
+            
+            <div className="flex gap-8 mb-8 pb-6 border-b border-white/10">
+               <div>
+                  <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-1">Pending</p>
+                  <p className="text-lg font-bold text-emerald-400">{parseFloat(finance.aglpPending || '0').toLocaleString()} AGLP</p>
+               </div>
+               <div>
+                  <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-1">Withdrawn</p>
+                  <p className="text-lg font-bold text-slate-300">{parseFloat(finance.aglpWithdrawn || '0').toLocaleString()} AGLP</p>
+               </div>
             </div>
             
             <div className="flex flex-wrap gap-4">
@@ -71,7 +85,7 @@ const WalletSummary: React.FC<WalletSummaryProps> = ({ finance, onPayoutRequest 
               <span className="text-sm font-bold text-slate-500 uppercase tracking-wider">Weekly Growth</span>
             </div>
             <p className="text-3xl font-black text-slate-900 mb-1">+12.5%</p>
-            <p className="text-xs text-slate-400 font-medium">Earned 2,450 ETB more than last week</p>
+            <p className="text-xs text-slate-400 font-medium">Earned 2,450 AGLP more than last week</p>
           </div>
           
           <div className="h-16 flex items-end gap-1">
@@ -134,7 +148,7 @@ const WalletSummary: React.FC<WalletSummaryProps> = ({ finance, onPayoutRequest 
                     </td>
                     <td className="px-6 py-4 text-right">
                        <span className={`text-sm font-black ${isIncoming ? 'text-emerald-600' : 'text-slate-900'}`}>
-                         {isIncoming ? '+' : '-'}{log.metadata?.amount?.toLocaleString() || '0'} ETB
+                         {isIncoming ? '+' : '-'}{log.metadata?.amount?.toLocaleString() || log.amount?.toLocaleString() || '0'} AGLP
                        </span>
                     </td>
                     <td className="px-6 py-4 text-right">

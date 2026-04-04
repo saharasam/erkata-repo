@@ -26,7 +26,7 @@ let AdminConfigController = class AdminConfigController {
         return [
             {
                 key: 'high_risk_threshold_etb',
-                value: this.configService.get('high_risk_threshold_etb', 100000),
+                value: this.configService.get('high_risk_threshold_etb', config_service_1.ConfigService.DEFAULT_RISK_THRESHOLD),
                 description: 'Threshold for automatic escalation to Super Admin.',
             },
             {
@@ -40,13 +40,55 @@ let AdminConfigController = class AdminConfigController {
                 description: 'Enable/disable referral payout logic.',
             },
             {
-                key: 'emergency_lockdown',
-                value: this.configService.get('emergency_lockdown', false),
                 description: 'Suspend all platform transactions.',
+            },
+            {
+                key: 'AGLP_TO_ETB_RATE',
+                value: this.configService.get('AGLP_TO_ETB_RATE', { rate: 1.0 }),
+                description: 'Primary exchange rate from ETB to AGLP.',
+            },
+            {
+                key: 'AGLP_COMMISSION_PACKAGE_REFERRAL',
+                value: this.configService.get('AGLP_COMMISSION_PACKAGE_REFERRAL', {
+                    value: 0.1,
+                }),
+                description: 'Super Admin: Referral commission for package upgrades.',
+            },
+            {
+                key: 'COMMISSION_REAL_ESTATE_PRIMARY',
+                value: this.configService.get('COMMISSION_REAL_ESTATE_PRIMARY', {
+                    value: 0.1,
+                }),
+                description: 'Super Admin: Primary agent commission for real estate.',
+            },
+            {
+                key: 'COMMISSION_REAL_ESTATE_OVERRIDE',
+                value: this.configService.get('COMMISSION_REAL_ESTATE_OVERRIDE', {
+                    value: 0.05,
+                }),
+                description: 'Super Admin: Referral override for real estate.',
+            },
+            {
+                key: 'COMMISSION_FURNITURE_PRIMARY',
+                value: this.configService.get('COMMISSION_FURNITURE_PRIMARY', {
+                    value: 0.1,
+                }),
+                description: 'Super Admin: Primary agent commission for furniture.',
             },
         ];
     }
-    async updateConfig(body) {
+    async updateConfig(req, body) {
+        const superAdminKeys = [
+            'AGLP_TO_ETB_RATE',
+            'AGLP_COMMISSION_PACKAGE_REFERRAL',
+            'COMMISSION_REAL_ESTATE_PRIMARY',
+            'COMMISSION_REAL_ESTATE_OVERRIDE',
+            'COMMISSION_FURNITURE_PRIMARY',
+            'high_risk_threshold_etb',
+        ];
+        if (superAdminKeys.includes(body.key) && req.user.role !== 'super_admin') {
+            throw new common_1.ForbiddenException('Only Super Admin can modify platform economic policy');
+        }
         await this.configService.set(body.key, body.value, body.description);
         return { success: true, key: body.key, value: body.value };
     }
@@ -61,9 +103,10 @@ __decorate([
 ], AdminConfigController.prototype, "getAllConfigs", null);
 __decorate([
     (0, common_1.Patch)(),
-    __param(0, (0, common_1.Body)()),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], AdminConfigController.prototype, "updateConfig", null);
 exports.AdminConfigController = AdminConfigController = __decorate([

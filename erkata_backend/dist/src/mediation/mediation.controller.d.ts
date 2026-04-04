@@ -7,13 +7,15 @@ export declare class MediationController {
     submitFeedback(transactionId: string, req: AuthenticatedRequest, body: {
         content: string;
         rating: number;
+        categories?: string[];
     }): Promise<{
         id: string;
         createdAt: Date;
-        authorId: string;
         transactionId: string;
+        authorId: string;
         content: string;
         rating: number;
+        categories: string[];
     }>;
     proposeResolution(bundleId: string, req: AuthenticatedRequest, body: {
         proposedText: string;

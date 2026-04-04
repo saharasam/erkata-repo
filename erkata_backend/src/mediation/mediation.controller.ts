@@ -21,11 +21,14 @@ export class MediationController {
   constructor(private readonly mediationService: MediationService) {}
 
   @Post('transaction/:id/feedback')
-  @RequirePermission(Action.SUBMIT_CUSTOMER_FEEDBACK)
+  @RequirePermission(
+    Action.SUBMIT_CUSTOMER_FEEDBACK,
+    Action.SUBMIT_AGENT_FEEDBACK,
+  )
   async submitFeedback(
     @Param('id') transactionId: string,
     @Req() req: AuthenticatedRequest,
-    @Body() body: { content: string; rating: number },
+    @Body() body: { content: string; rating: number; categories?: string[] },
   ) {
     const userId = req.user.id;
     return this.mediationService.submitFeedback(
@@ -33,6 +36,7 @@ export class MediationController {
       userId,
       body.content,
       body.rating,
+      body.categories,
     );
   }
 

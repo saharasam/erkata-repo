@@ -93,6 +93,7 @@ const ConfigFlags: React.FC = () => {
     const referralComms = getConfigValue('referral_commissions', true);
     const emergencyLockdown = getConfigValue('emergency_lockdown', false);
     const highRiskThreshold = getConfigValue('high_risk_threshold_etb', 100000);
+    const aglpRate = getConfigValue('AGLP_TO_ETB_RATE', { rate: 1.0 }).rate;
 
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
@@ -195,24 +196,29 @@ const ConfigFlags: React.FC = () => {
                             <Clock className="w-12 h-12 text-indigo-600" />
                         </div>
                         <div className="flex items-center gap-3 text-slate-900 font-black text-sm mb-4">
-                            <Clock className="w-5 h-5 text-indigo-600" />
-                            Mediation Window
+                            <Zap className="w-5 h-5 text-indigo-600" />
+                            AGLP Exchange Rate
                         </div>
                         <p className="text-slate-500 text-xs font-medium mb-6 leading-relaxed">
-                            Default duration for feedback collection before auto-bundling is triggered in the system core.
+                            Defines the number of AGLP credited per 1 ETB deposited. A value of 1.0 means 1:1 parity with ETB.
                         </p>
                         <div className="flex items-center gap-3">
                             <div className="relative flex-1">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400">HOURS</span>
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400">1 ETB =</span>
                                 <input 
                                     type="number" 
-                                    defaultValue={24}
+                                    step="0.1"
+                                    defaultValue={aglpRate}
+                                    onBlur={(e) => {
+                                        const newVal = parseFloat(e.target.value);
+                                        if (newVal !== aglpRate && !isNaN(newVal)) {
+                                            updateConfig('AGLP_TO_ETB_RATE', { rate: newVal });
+                                        }
+                                    }}
                                     className="w-full bg-white border border-slate-200 rounded-xl pl-14 pr-4 py-2 text-sm font-black text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all" 
                                 />
+                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400">AGLP</span>
                             </div>
-                            <button className="bg-slate-900 text-white p-2.5 rounded-xl hover:bg-slate-800 transition-colors">
-                                <Save className="w-4 h-4" />
-                            </button>
                         </div>
                     </div>
                 </div>

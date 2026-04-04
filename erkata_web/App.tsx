@@ -36,6 +36,7 @@ const AnimatedRoutes = () => {
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/register/claim" element={<Register />} />
           <Route path="/submit-request" element={<RequestIntake />} />
           
           {/* Protected Routes with Role-Based Access Control */}
@@ -82,8 +83,7 @@ const AnimatedRoutes = () => {
             } 
           />
           
-          <Route path="/become-agent" element={<Register initialRole="agent" />} />  
-          <Route path="/become-operator" element={<Register initialRole="operator" />} />
+          <Route path="/become-agent" element={<Register initialRole="agent" />} />
 
           <Route path="/about" element={<About />} />
           <Route path="/contact" element={<Contact />} />

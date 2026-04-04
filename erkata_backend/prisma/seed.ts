@@ -57,6 +57,58 @@ async function main() {
     });
   }
 
+  console.log('Seeding system configuration...');
+  await prisma.systemConfig.upsert({
+    where: { key: 'AGLP_TO_ETB_RATE' },
+    update: {},
+    create: {
+      key: 'AGLP_TO_ETB_RATE',
+      value: { rate: 1.0 },
+      description:
+        'Exchange rate from ETB to AGLP (Primary Platform Currency).',
+    },
+  });
+
+  await prisma.systemConfig.upsert({
+    where: { key: 'AGLP_COMMISSION_PACKAGE_REFERRAL' },
+    update: {},
+    create: {
+      key: 'AGLP_COMMISSION_PACKAGE_REFERRAL',
+      value: { value: 0.1 },
+      description: 'Referral commission for package upgrades.',
+    },
+  });
+
+  await prisma.systemConfig.upsert({
+    where: { key: 'COMMISSION_REAL_ESTATE_PRIMARY' },
+    update: {},
+    create: {
+      key: 'COMMISSION_REAL_ESTATE_PRIMARY',
+      value: { value: 0.1 },
+      description: 'Commission for primary agent on real estate fulfillment.',
+    },
+  });
+
+  await prisma.systemConfig.upsert({
+    where: { key: 'COMMISSION_REAL_ESTATE_OVERRIDE' },
+    update: {},
+    create: {
+      key: 'COMMISSION_REAL_ESTATE_OVERRIDE',
+      value: { value: 0.05 },
+      description: 'Referral override commission on real estate fulfillment.',
+    },
+  });
+
+  await prisma.systemConfig.upsert({
+    where: { key: 'COMMISSION_FURNITURE_PRIMARY' },
+    update: {},
+    create: {
+      key: 'COMMISSION_FURNITURE_PRIMARY',
+      value: { value: 0.1 },
+      description: 'Commission for primary agent on furniture fulfillment.',
+    },
+  });
+
   console.log('Seeding test users...');
 
   for (const user of testUsers) {
@@ -72,6 +124,59 @@ async function main() {
         role: user.role,
         phone: '0911000000',
         isActive: user.isActive ?? true,
+      },
+    });
+  }
+
+  console.log('Seeding packages...');
+  const packages = [
+    {
+      name: 'PEACE',
+      price: 2500,
+      referralSlots: 7,
+      zoneLimit: 2,
+      description: 'For agents building their first local footprint.',
+    },
+    {
+      name: 'LOVE',
+      price: 5000,
+      referralSlots: 16,
+      zoneLimit: 3,
+      description: 'Grow your network and reach more lucrative territories.',
+    },
+    {
+      name: 'UNITY',
+      price: 10000,
+      referralSlots: 23,
+      zoneLimit: 5,
+      description: 'For professionals managing active regional pipelines.',
+    },
+    {
+      name: 'ABUNDANT_LIFE',
+      price: 25000,
+      referralSlots: 31,
+      zoneLimit: 100,
+      description: 'Unrestricted reach and maximum team growth potential.',
+    },
+  ];
+
+  for (const pkg of packages) {
+    await prisma.package.upsert({
+      // @ts-expect-error - Tier is an enum in Prisma, string name is expected to work but type-checked strictly
+      where: { name: pkg.name },
+      update: {
+        price: pkg.price,
+        referralSlots: pkg.referralSlots,
+        zoneLimit: pkg.zoneLimit,
+        description: pkg.description,
+      },
+      create: {
+        // @ts-expect-error - Tier is an enum in Prisma
+        name: pkg.name,
+        price: pkg.price,
+        referralSlots: pkg.referralSlots,
+        zoneLimit: pkg.zoneLimit,
+        description: pkg.description,
       },
     });
   }

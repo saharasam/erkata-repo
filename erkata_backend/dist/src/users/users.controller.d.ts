@@ -8,79 +8,94 @@ export declare class UsersController {
         agentZones: ({
             zone: {
                 id: string;
+                isActive: boolean;
                 name: string;
                 city: string | null;
-                isActive: boolean;
             } | null;
         } & {
             id: string;
-            zoneId: string | null;
             createdAt: Date;
-            woreda: string;
+            zoneId: string | null;
             agentId: string;
+            woreda: string;
             kifleKetema: string;
         })[];
         referralLink: {
             id: string;
-            tier: import(".prisma/client").$Enums.Tier;
             createdAt: Date;
+            tier: import(".prisma/client").$Enums.Tier;
             referrerId: string;
             code: string;
         } | null;
     } & {
         id: string;
-        isActive: boolean;
+        createdAt: Date;
         email: string;
         passwordHash: string | null;
         fullName: string;
         phone: string;
         role: import(".prisma/client").$Enums.UserRole;
         tier: import(".prisma/client").$Enums.Tier;
+        isActive: boolean;
         zoneId: string | null;
-        walletBalance: import("@prisma/client/runtime/library").Decimal;
         referredById: string | null;
-        createdAt: Date;
+        aglpBalance: import("@prisma/client/runtime/library").Decimal;
+        aglpPending: import("@prisma/client/runtime/library").Decimal;
+        aglpWithdrawn: import("@prisma/client/runtime/library").Decimal;
+        referralCode: string | null;
+        isOnline: boolean;
+        lastAssignmentAt: Date | null;
     })[]>;
     getMe(req: AuthenticatedRequest): Promise<{
         agentZones: {
             id: string;
-            zoneId: string | null;
             createdAt: Date;
-            woreda: string;
+            zoneId: string | null;
             agentId: string;
+            woreda: string;
             kifleKetema: string;
         }[];
         referrals: {
             id: string;
+            createdAt: Date;
             fullName: string;
             role: import(".prisma/client").$Enums.UserRole;
-            createdAt: Date;
         }[];
         referralLink: {
             id: string;
-            tier: import(".prisma/client").$Enums.Tier;
             createdAt: Date;
+            tier: import(".prisma/client").$Enums.Tier;
             referrerId: string;
             code: string;
         } | null;
     } & {
         id: string;
-        isActive: boolean;
+        createdAt: Date;
         email: string;
         passwordHash: string | null;
         fullName: string;
         phone: string;
         role: import(".prisma/client").$Enums.UserRole;
         tier: import(".prisma/client").$Enums.Tier;
+        isActive: boolean;
         zoneId: string | null;
-        walletBalance: import("@prisma/client/runtime/library").Decimal;
         referredById: string | null;
-        createdAt: Date;
+        aglpBalance: import("@prisma/client/runtime/library").Decimal;
+        aglpPending: import("@prisma/client/runtime/library").Decimal;
+        aglpWithdrawn: import("@prisma/client/runtime/library").Decimal;
+        referralCode: string | null;
+        isOnline: boolean;
+        lastAssignmentAt: Date | null;
     }>;
     getFinance(req: AuthenticatedRequest): Promise<{
         balance: string;
+        aglpAvailable: string;
+        aglpPending: string;
+        aglpWithdrawn: string;
         usedSlots: number;
         totalSlots: number;
+        usedZones: number;
+        totalZones: number;
         currentTier: string;
         nextTier: string;
         history: {
@@ -92,52 +107,89 @@ export declare class UsersController {
             description: string;
         }[];
     }>;
+    requestWithdrawal(req: AuthenticatedRequest, amount: number): Promise<{
+        id: string;
+        profileId: string;
+        type: import(".prisma/client").$Enums.AglpTransactionType;
+        amount: import("@prisma/client/runtime/library").Decimal;
+        etbEquivalent: import("@prisma/client/runtime/library").Decimal | null;
+        conversionRate: import("@prisma/client/runtime/library").Decimal | null;
+        status: import(".prisma/client").$Enums.AglpTransactionStatus;
+        referenceId: string | null;
+        referenceType: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+    }>;
+    generateReferralCode(req: AuthenticatedRequest): Promise<{
+        code: string;
+        link: string;
+    }>;
     assignZone(req: AuthenticatedRequest, agentId: string, body: {
         zoneId: string;
         woreda: string;
     }): Promise<{
         id: string;
-        zoneId: string | null;
         createdAt: Date;
-        woreda: string;
+        zoneId: string | null;
         agentId: string;
+        woreda: string;
         kifleKetema: string;
     }>;
     updateTier(req: AuthenticatedRequest, agentId: string, body: {
         tier: string;
     }): Promise<{
         id: string;
-        tier: import(".prisma/client").$Enums.Tier;
         createdAt: Date;
+        tier: import(".prisma/client").$Enums.Tier;
+        referrerId: string;
+        code: string;
+    }>;
+    purchasePackage(req: AuthenticatedRequest, body: {
+        tier: string;
+        paymentMethod?: 'ETB' | 'AGLP';
+    }): Promise<{
+        id: string;
+        createdAt: Date;
+        tier: import(".prisma/client").$Enums.Tier;
         referrerId: string;
         code: string;
     }>;
     suspendUser(req: AuthenticatedRequest, userId: string): Promise<{
         id: string;
-        isActive: boolean;
+        createdAt: Date;
         email: string;
         passwordHash: string | null;
         fullName: string;
         phone: string;
         role: import(".prisma/client").$Enums.UserRole;
         tier: import(".prisma/client").$Enums.Tier;
+        isActive: boolean;
         zoneId: string | null;
-        walletBalance: import("@prisma/client/runtime/library").Decimal;
         referredById: string | null;
-        createdAt: Date;
+        aglpBalance: import("@prisma/client/runtime/library").Decimal;
+        aglpPending: import("@prisma/client/runtime/library").Decimal;
+        aglpWithdrawn: import("@prisma/client/runtime/library").Decimal;
+        referralCode: string | null;
+        isOnline: boolean;
+        lastAssignmentAt: Date | null;
     }>;
     activateUser(req: AuthenticatedRequest, userId: string): Promise<{
         id: string;
-        isActive: boolean;
+        createdAt: Date;
         email: string;
         passwordHash: string | null;
         fullName: string;
         phone: string;
         role: import(".prisma/client").$Enums.UserRole;
         tier: import(".prisma/client").$Enums.Tier;
+        isActive: boolean;
         zoneId: string | null;
-        walletBalance: import("@prisma/client/runtime/library").Decimal;
         referredById: string | null;
-        createdAt: Date;
+        aglpBalance: import("@prisma/client/runtime/library").Decimal;
+        aglpPending: import("@prisma/client/runtime/library").Decimal;
+        aglpWithdrawn: import("@prisma/client/runtime/library").Decimal;
+        referralCode: string | null;
+        isOnline: boolean;
+        lastAssignmentAt: Date | null;
     }>;
 }

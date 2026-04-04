@@ -35,7 +35,7 @@ class ErkataDropdown<T> extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         DropdownButtonFormField<T>(
-          value: value,
+          initialValue: value,
           hint: Text(
             hint,
             style: TextStyle(

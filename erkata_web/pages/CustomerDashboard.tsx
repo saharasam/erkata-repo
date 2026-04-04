@@ -14,7 +14,7 @@ import { useModal } from '../contexts/ModalContext';
 const CustomerDashboard: React.FC = () => {
   const [requests, setRequests] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [feedbackRequest, setFeedbackRequest] = useState<{id: string, agentName: string} | null>(null);
+  const [feedbackRequest, setFeedbackRequest] = useState<{id: string, agentName: string, transactionId: string} | null>(null);
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
   const location = useLocation();
   const { showAlert } = useModal();
@@ -26,11 +26,13 @@ const CustomerDashboard: React.FC = () => {
       const res = await api.get('/requests/my-requests');
       setRequests(res.data.map((r: any) => ({
         ...r,
+        transactionId: r.matches?.[0]?.transaction?.id,
+        agentName: r.matches?.[0]?.agent?.fullName,
         submittedDate: new Date(r.createdAt).toLocaleDateString(),
         submittedTime: new Date(r.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         requirementSummary: r.description || r.category,
         zone: r.zone?.name || 'Unknown',
-        woreda: r.details?.woreda || 'N/A'
+        woreda: r.woreda || 'N/A'
       })));
     } catch (error) {
       console.error('Error fetching requests:', error);
@@ -43,12 +45,27 @@ const CustomerDashboard: React.FC = () => {
     fetchRequests();
   }, []);
 
-  const handleFeedbackSubmit = (data: FeedbackData) => {
-    console.log('Customer Feedback submitted:', data);
-    setRequests(prev => prev.map(req => 
-      req.id === data.requestId ? { ...req, status: 'fulfilled' } : req
-    ));
-    setFeedbackRequest(null);
+  const handleFeedbackSubmit = async (data: FeedbackData) => {
+    try {
+      if (!feedbackRequest?.transactionId) {
+        showAlert({ title: 'Error', message: 'Transaction ID missing for this request', type: 'error' });
+        return;
+      }
+
+      await api.post(`/mediation/transaction/${feedbackRequest.transactionId}/feedback`, {
+        content: data.comment,
+        rating: data.rating,
+        categories: data.categories
+      });
+
+      setRequests(prev => prev.map(req => 
+        req.id === data.requestId ? { ...req, status: 'fulfilled' } : req
+      ));
+      setFeedbackRequest(null);
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+      showAlert({ title: 'Error', message: 'Failed to submit feedback. Please try again.', type: 'error' });
+    }
   };
 
   const [currentView, setCurrentView] = useState('requests');
@@ -120,7 +137,11 @@ const CustomerDashboard: React.FC = () => {
               {request.status === 'delivered' && (
                 <Can perform={Action.SUBMIT_CUSTOMER_FEEDBACK}>
                   <button
-                    onClick={() => setFeedbackRequest({ id: request.id, agentName: 'Assigned Agent' })}
+                    onClick={() => setFeedbackRequest({ 
+                      id: request.id, 
+                      agentName: request.agentName || 'Assigned Agent',
+                      transactionId: request.transactionId
+                    })}
                     className="w-full bg-erkata-primary text-white font-bold py-3 rounded-xl hover:bg-erkata-secondary transition-all flex items-center justify-center gap-2"
                   >
                     <Star className="w-4 h-4" />

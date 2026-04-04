@@ -259,8 +259,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         </header>
 
         {/* Main Content Scrollable Area */}
-        <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 lg:p-6 scroll-smooth custom-scrollbar">
-          <div className="max-w-[1920px] mx-auto min-h-full pb-20">
+        <main className={`flex-1 overflow-y-auto overflow-x-hidden ${role === 'super_admin' ? 'p-0' : 'p-4 lg:p-6'} scroll-smooth custom-scrollbar`}>
+          <div className={`${role === 'super_admin' ? 'max-w-none' : 'max-w-[1920px]'} mx-auto min-h-full pb-20 ${role === 'super_admin' ? 'px-8 py-10' : ''}`}>
             <motion.div
               layout
               initial={{ opacity: 0, x: 20 }}
@@ -277,17 +277,17 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       <aside className="relative flex shrink-0 h-full z-30"> 
         {rightPanelContent && (
           <div className={`
-             h-full bg-white/60 backdrop-blur-2xl border-l border-white/50 shadow-xl
+             h-full bg-white/40 backdrop-blur-3xl border-l border-white/40 shadow-2xl
              transition-all duration-500 ease-[cubic-bezier(0.25,0.8,0.25,1)] flex flex-col
              ${rightPanelOpen ? 'w-80 lg:w-96 opacity-100 translate-x-0' : 'w-0 opacity-0 translate-x-10 overflow-hidden'}
           `}>
-             <div className="p-4 border-b border-white/50 shrink-0 flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Widgets</span>
+             <div className="p-6 border-b border-white/40 shrink-0 flex items-center justify-between">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">Oversight Widgets</span>
                 <button onClick={() => setRightPanelOpen(false)} className="lg:hidden p-1">
                    <X className="w-4 h-4 text-slate-400" />
                 </button>
              </div>
-             <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+             <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
                 {rightPanelContent}
              </div>
           </div>

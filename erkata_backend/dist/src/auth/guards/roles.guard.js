@@ -46,12 +46,15 @@ let RolesGuard = class RolesGuard {
             return true;
         }
         const requiredAction = this.reflector.get('action', context.getHandler());
-        if (!requiredAction) {
+        const requiredActions = this.reflector.get('actions', context.getHandler());
+        const actionsToVerify = requiredActions || (requiredAction ? [requiredAction] : []);
+        if (actionsToVerify.length === 0) {
             return true;
         }
         const userPermissions = permissions_1.PermissionMatrix[userRole] || [];
-        if (!userPermissions.includes(requiredAction)) {
-            throw new common_1.ForbiddenException(`Role "${userRole}" does not have permission for action "${requiredAction}"`);
+        const hasPermission = actionsToVerify.some((action) => userPermissions.includes(action));
+        if (!hasPermission) {
+            throw new common_1.ForbiddenException(`Role "${userRole}" lacks mandatory permission. Available: [${userPermissions.join(', ')}]. Required (any of): [${actionsToVerify.join(', ')}]`);
         }
         return true;
     }

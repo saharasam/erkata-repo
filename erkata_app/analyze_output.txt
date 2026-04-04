@@ -3,8 +3,8 @@ Analyzing erkata_app...
    info - Parameter 'message' could be a super parameter - lib\core\errors\app_exception.dart:15:9 - use_super_parameters
    info - Parameter 'message' could be a super parameter - lib\core\errors\app_exception.dart:21:9 - use_super_parameters
    info - Parameter 'message' could be a super parameter - lib\core\errors\app_exception.dart:54:9 - use_super_parameters
+warning - Unused import: '../../../../core/network/api_client.dart' - lib\features\agent\data\repositories\agent_repository.dart:5:8 - unused_import
    info - Unnecessary use of multiple underscores - lib\features\agent\screens\agent_history_screen.dart:34:39 - unnecessary_underscores
    info - Unnecessary use of multiple underscores - lib\features\customer\screens\notifications_screen.dart:186:45 - unnecessary_underscores
    info - 'value' is deprecated and shouldn't be used. Use initialValue instead. This will set the initial value for the form field. This feature was deprecated after v3.33.0-1.0.pre - lib\shared\widgets\erkata_dropdown.dart:38:11 - deprecated_member_use
 
-6 issues found. (ran in 1.5s)

@@ -81,12 +81,20 @@ let AuthService = class AuthService {
             console.error(`[AuthService] User not found: ${credentials.identifier}`);
             throw new common_1.UnauthorizedException('Invalid credentials');
         }
+        if (!profile.isActive) {
+            throw new common_1.UnauthorizedException('Your account is currently suspended. Please contact an administrator.');
+        }
         const passwordsMatch = await bcrypt.compare(credentials.pass, profile.passwordHash);
         if (!passwordsMatch) {
             console.error(`[AuthService] Invalid password for: ${credentials.identifier}`);
             throw new common_1.UnauthorizedException('Invalid credentials');
         }
-        const payload = { sub: profile.id, email: profile.email, role: profile.role, tier: profile.tier };
+        const payload = {
+            sub: profile.id,
+            email: profile.email,
+            role: profile.role,
+            tier: profile.tier,
+        };
         const accessToken = this.jwtService.sign(payload);
         const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
         res.cookie('refreshToken', refreshToken, {
@@ -110,11 +118,17 @@ let AuthService = class AuthService {
     async refresh(refreshToken) {
         try {
             const payload = this.jwtService.verify(refreshToken);
-            const newPayload = { sub: payload.sub, email: payload.email, role: payload.role, tier: payload.tier };
+            const newPayload = {
+                sub: payload.sub,
+                email: payload.email,
+                role: payload.role,
+                tier: payload.tier,
+            };
             const newAccessToken = this.jwtService.sign(newPayload);
+            await Promise.resolve();
             return { accessToken: newAccessToken };
         }
-        catch (e) {
+        catch {
             throw new common_1.UnauthorizedException('Invalid refresh token');
         }
     }
@@ -134,41 +148,67 @@ let AuthService = class AuthService {
         let finalRole = (data.role || 'customer').toLowerCase();
         console.log(`[AuthService] Initial finalRole from data.role: ${data.role}, normalized to: ${finalRole}`);
         const superAdminEmail = process.env.SUPER_ADMIN_EMAIL;
-        if (superAdminEmail && data.email.toLowerCase() === superAdminEmail.toLowerCase()) {
+        if (superAdminEmail &&
+            data.email.toLowerCase() === superAdminEmail.toLowerCase()) {
             console.log(`[AuthService] Matching Super Admin email found. Granting super_admin role.`);
             finalRole = 'super_admin';
         }
-        else if (finalRole === 'admin') {
-            if (!data.inviteToken) {
-                console.warn(`[AuthService] Registration attempt as admin without token. Defaulting to customer.`);
-                finalRole = 'customer';
-            }
-            else {
-                await this.inviteService.validateInvite(data.inviteToken, data.email);
-                console.log(`[AuthService] Valid invite token for admin provided.`);
+        else if (data.inviteToken) {
+            const invite = await this.inviteService.validateInvite(data.inviteToken, data.email);
+            console.log(`[AuthService] Valid invite token provided. Changing role from ${finalRole} to ${invite.role}`);
+            finalRole = String(invite.role);
+            if (!data.fullName) {
+                data.fullName = invite.fullName;
             }
         }
         else {
-            console.log(`[AuthService] Handling non-admin role: ${finalRole}`);
-            if (finalRole !== 'customer' && finalRole !== 'agent' && finalRole !== 'operator') {
-                console.warn(`[AuthService] Role ${finalRole} is not customer/agent/operator. Defaulting to customer.`);
+            console.log(`[AuthService] Handling non-administrative role: ${finalRole}`);
+            if (finalRole !== 'customer' && finalRole !== 'agent') {
+                console.warn(`[AuthService] Role ${finalRole} is not customer or agent. Defaulting to customer.`);
                 finalRole = 'customer';
             }
         }
         console.log(`[AuthService] Final role determined: ${finalRole}`);
         const saltRoutes = 10;
         const passwordHash = await bcrypt.hash(data.password, saltRoutes);
+        let referredById = undefined;
+        if (data.referralCode) {
+            const referrer = await this.prisma.profile.findUnique({
+                where: { referralCode: data.referralCode },
+                include: { referralLink: true, referrals: { select: { id: true } } },
+            });
+            if (!referrer) {
+                throw new common_1.BadRequestException('Invalid referral code');
+            }
+            const tierLimits = {
+                ABUNDANT_LIFE: 31,
+                UNITY: 23,
+                LOVE: 16,
+                PEACE: 7,
+                FREE: 3,
+            };
+            const referrerWithRefs = referrer;
+            const tier = String(referrerWithRefs.referralLink?.tier ?? 'FREE');
+            const limit = tierLimits[tier] ?? 3;
+            const referralCount = referrerWithRefs.referrals.length;
+            if (referralCount >= limit) {
+                throw new common_1.BadRequestException(`The referrer has reached their referral slot limit`);
+            }
+            referredById = referrer.id;
+        }
         const newProfile = await this.prisma.profile.create({
             data: {
                 email: data.email,
                 passwordHash,
                 fullName: data.fullName,
-                phone: '',
+                phone: this.sanitizePhone(data.phone),
                 role: finalRole,
                 tier: (data.tier || 'FREE'),
+                ...(referredById ? { referredById } : {}),
             },
         });
-        if (data.inviteToken && (finalRole === 'admin' || finalRole === 'operator')) {
+        if (data.inviteToken &&
+            (finalRole === 'admin' || finalRole === 'operator')) {
             await this.inviteService.markInviteAsUsed(data.inviteToken);
         }
         console.log(`[AuthService] User created successfully: ${newProfile.id}`);

@@ -13,8 +13,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ConfigService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
-let ConfigService = ConfigService_1 = class ConfigService {
+let ConfigService = class ConfigService {
+    static { ConfigService_1 = this; }
     prisma;
+    static DEFAULT_RISK_THRESHOLD = 100000;
     logger = new common_1.Logger(ConfigService_1.name);
     configs = new Map();
     constructor(prisma) {
@@ -32,7 +34,19 @@ let ConfigService = ConfigService_1 = class ConfigService {
             }
             this.logger.log(`[ConfigService] Loaded ${this.configs.size} dynamic configurations.`);
             if (!this.configs.has('high_risk_threshold_etb')) {
-                await this.set('high_risk_threshold_etb', 100000, 'Threshold for Super Admin escalation');
+                await this.set('high_risk_threshold_etb', ConfigService_1.DEFAULT_RISK_THRESHOLD, 'Threshold for Super Admin escalation');
+            }
+            if (!this.configs.has('AGLP_COMMISSION_PACKAGE_REFERRAL')) {
+                await this.set('AGLP_COMMISSION_PACKAGE_REFERRAL', { value: 0.1 }, 'Referral commission for package upgrades.');
+            }
+            if (!this.configs.has('COMMISSION_REAL_ESTATE_PRIMARY')) {
+                await this.set('COMMISSION_REAL_ESTATE_PRIMARY', { value: 0.1 }, 'Commission for primary agent on real estate fulfillment.');
+            }
+            if (!this.configs.has('COMMISSION_REAL_ESTATE_OVERRIDE')) {
+                await this.set('COMMISSION_REAL_ESTATE_OVERRIDE', { value: 0.05 }, 'Referral override commission on real estate fulfillment.');
+            }
+            if (!this.configs.has('COMMISSION_FURNITURE_PRIMARY')) {
+                await this.set('COMMISSION_FURNITURE_PRIMARY', { value: 0.1 }, 'Commission for primary agent on furniture fulfillment.');
             }
         }
         catch (error) {

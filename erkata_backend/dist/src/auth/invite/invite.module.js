@@ -17,8 +17,8 @@ exports.InviteModule = InviteModule;
 exports.InviteModule = InviteModule = __decorate([
     (0, common_1.Module)({
         imports: [prisma_module_1.PrismaModule],
-        providers: [invite_service_1.InviteService],
         controllers: [invite_controller_1.InviteController],
+        providers: [invite_service_1.InviteService],
         exports: [invite_service_1.InviteService],
     })
 ], InviteModule);

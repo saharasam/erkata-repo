@@ -267,9 +267,9 @@ const Landing: React.FC = () => {
                 You want to play a respected, paid mediation role in your community while enforcing structure and fairness.
               </p>
             </div>
-            <Link to="/become-operator" className="mt-8 inline-flex items-center text-erkata-secondary font-bold hover:translate-x-2 transition-transform">
-              Apply as Operator <ArrowRight className="ml-2 w-4 h-4" />
-            </Link>
+            <div className="mt-8 text-erkata-primary font-bold px-4 py-2 bg-erkata-primary/10 rounded-full w-fit">
+              ✓ Invite-Only Position
+            </div>
           </motion.div>
         </motion.div>
       </section>

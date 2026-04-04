@@ -1,14 +1,11 @@
 import { InviteService } from './invite.service';
-import { UserRole } from '@prisma/client';
 export declare class InviteController {
     private readonly inviteService;
     constructor(inviteService: InviteService);
-    generateInvite(req: any, body: {
+    getInvite(token: string): Promise<{
         email: string;
-        role: UserRole;
-    }): Promise<{
-        message: string;
-        inviteUrl: string;
-        token: any;
+        fullName: string;
+        phone: string;
+        role: import(".prisma/client").$Enums.UserRole;
     }>;
 }

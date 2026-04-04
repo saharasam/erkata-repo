@@ -64,7 +64,7 @@ const SystemAnalytics: React.FC = () => {
     }
 
     const stats = [
-        { label: 'Platform Volume', value: summary?.platformVolume || '0 ETB', change: '+0.0%', up: true, icon: TrendingUp },
+        { label: 'Platform Volume', value: summary?.platformVolume || '0 AGLP', change: '+0.0%', up: true, icon: TrendingUp },
         { label: 'Resolution Rate', value: summary?.resolutionRate || '0%', change: '+0.0%', up: true, icon: ShieldCheck },
         { label: 'Total Requests', value: summary?.totalRequests.toLocaleString() || '0', change: '+0.0', up: true, icon: FileText },
         { label: 'System Uptime', value: summary?.uptime || '99.9%', change: 'Stable', up: true, icon: Activity },
@@ -112,9 +112,7 @@ const SystemAnalytics: React.FC = () => {
                         {[40, 65, 45, 85, 55, 95, 75, 88, 100].map((h, i) => (
                             <div key={i} className="flex-1 bg-indigo-50/50 rounded-2xl transition-all hover:bg-indigo-500 cursor-pointer group relative overflow-hidden" style={{ height: `${h}%` }}>
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                                <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-[10px] font-black px-3 py-1.5 rounded-xl shadow-xl opacity-0 scale-50 group-hover:opacity-100 group-hover:scale-100 transition-all pointer-events-none after:content-[''] after:absolute after:top-full after:left-1/2 after:-translate-x-1/2 after:border-4 after:border-transparent after:border-t-slate-900">
-                                    {(h * 123.4).toLocaleString()} ETB
-                                </div>
+                                    {(h * 123.4).toLocaleString()} AGLP
                             </div>
                         ))}
                     </div>

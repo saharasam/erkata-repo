@@ -13,37 +13,47 @@ exports.JwtStrategy = void 0;
 const passport_jwt_1 = require("passport-jwt");
 const passport_1 = require("@nestjs/passport");
 const common_1 = require("@nestjs/common");
+const prisma_service_1 = require("../../prisma/prisma.service");
 let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(passport_jwt_1.Strategy) {
-    constructor() {
+    prisma;
+    constructor(prisma) {
         const secret = process.env.JWT_SECRET;
         if (!secret) {
             throw new Error('JWT_SECRET is missing in environment variables');
         }
-        console.log('[JwtStrategy] Initializing JWT strategy with custom secret');
         super({
             jwtFromRequest: passport_jwt_1.ExtractJwt.fromAuthHeaderAsBearerToken(),
             ignoreExpiration: false,
             secretOrKey: secret,
         });
+        this.prisma = prisma;
     }
-    validate(payload) {
+    async validate(payload) {
         const userId = payload.sub;
         if (!userId) {
-            console.error('[JwtStrategy] Validation failed: sub (userId) missing in payload');
             throw new common_1.UnauthorizedException('Invalid token: sub missing');
         }
-        console.log(`[JwtStrategy] Validated token for user: ${payload.email}, Role: ${payload.role || 'customer'}`);
+        const profile = await this.prisma.profile.findUnique({
+            where: { id: userId },
+            select: { isActive: true, role: true, tier: true, email: true },
+        });
+        if (!profile) {
+            throw new common_1.UnauthorizedException('User profile no longer exists');
+        }
+        if (!profile.isActive) {
+            throw new common_1.UnauthorizedException('Your account has been suspended. Please contact administration.');
+        }
         return {
             id: userId,
-            email: payload.email,
-            role: payload.role || 'customer',
-            tier: payload.tier || 'FREE',
+            email: profile.email,
+            role: profile.role,
+            tier: profile.tier,
         };
     }
 };
 exports.JwtStrategy = JwtStrategy;
 exports.JwtStrategy = JwtStrategy = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
 ], JwtStrategy);
 //# sourceMappingURL=jwt.strategy.js.map

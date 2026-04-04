@@ -28,11 +28,18 @@ export class RequestsController {
     return this.requestsService.createRequest(user.id, dto);
   }
 
-  // Operator views the incoming queue
   @Get('queue')
   @Roles(UserRole.operator)
   getQueue(@Query('zoneId') zoneId: string) {
     return this.requestsService.getOperatorQueue({ zoneId });
+  }
+
+  // Operator fetching their pushed request details
+  @Get(':id')
+  @Roles(UserRole.operator, UserRole.admin)
+  getRequest(@Param('id') id: string, @Req() req: RequestWithUser) {
+    const user = req.user;
+    return this.requestsService.getRequest(id, user.id, user.role);
   }
 
   // Customer views their own request history
@@ -65,6 +72,6 @@ export class RequestsController {
   @Get(':id/status')
   getStatus(@Param('id') id: string, @Req() req: RequestWithUser) {
     const user = req.user;
-    return this.requestsService.getRequestStatus(id, user.id, user.role);
+    return this.requestsService.getRequest(id, user.id, user.role);
   }
 }

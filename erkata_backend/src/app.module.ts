@@ -14,6 +14,8 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor';
 import { CommonModule } from './common/common.module';
 import { AdminModule } from './admin/admin.module';
+import { AglpModule } from './aglp/aglp.module';
+import { RedisModule } from './common/redis/redis.module';
 
 @Module({
   imports: [
@@ -33,6 +35,8 @@ import { AdminModule } from './admin/admin.module';
     }),
     CommonModule,
     AdminModule,
+    AglpModule,
+    RedisModule,
   ],
   controllers: [AppController],
   providers: [

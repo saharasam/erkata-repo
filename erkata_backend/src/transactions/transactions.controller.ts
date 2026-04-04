@@ -47,6 +47,21 @@ export class TransactionsController {
     return this.transactionsService.declineAssignment(id, req.user.id);
   }
 
+  // Agent transfers the assignment to a referral
+  @Patch(':id/transfer')
+  @Roles(UserRole.agent)
+  transfer(
+    @Param('id') id: string,
+    @Body('toAgentId') toAgentId: string,
+    @Req() req: RequestWithUser,
+  ) {
+    return this.transactionsService.transferAssignment(
+      id,
+      req.user.id,
+      toAgentId,
+    );
+  }
+
   // Agent marks the job as complete and uploads proof
   @Patch(':id/complete')
   @Roles(UserRole.agent)

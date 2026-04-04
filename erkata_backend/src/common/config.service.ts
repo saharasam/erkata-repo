@@ -4,6 +4,7 @@ import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class ConfigService implements OnModuleInit {
+  static readonly DEFAULT_RISK_THRESHOLD = 100000;
   private readonly logger = new Logger(ConfigService.name);
   private configs: Map<string, Prisma.JsonValue> = new Map();
 
@@ -28,8 +29,41 @@ export class ConfigService implements OnModuleInit {
       if (!this.configs.has('high_risk_threshold_etb')) {
         await this.set(
           'high_risk_threshold_etb',
-          100000,
+          ConfigService.DEFAULT_RISK_THRESHOLD,
           'Threshold for Super Admin escalation',
+        );
+      }
+
+      // Seed AGLP Commission Defaults
+      if (!this.configs.has('AGLP_COMMISSION_PACKAGE_REFERRAL')) {
+        await this.set(
+          'AGLP_COMMISSION_PACKAGE_REFERRAL',
+          { value: 0.1 },
+          'Referral commission for package upgrades.',
+        );
+      }
+
+      if (!this.configs.has('COMMISSION_REAL_ESTATE_PRIMARY')) {
+        await this.set(
+          'COMMISSION_REAL_ESTATE_PRIMARY',
+          { value: 0.1 },
+          'Commission for primary agent on real estate fulfillment.',
+        );
+      }
+
+      if (!this.configs.has('COMMISSION_REAL_ESTATE_OVERRIDE')) {
+        await this.set(
+          'COMMISSION_REAL_ESTATE_OVERRIDE',
+          { value: 0.05 },
+          'Referral override commission on real estate fulfillment.',
+        );
+      }
+
+      if (!this.configs.has('COMMISSION_FURNITURE_PRIMARY')) {
+        await this.set(
+          'COMMISSION_FURNITURE_PRIMARY',
+          { value: 0.1 },
+          'Commission for primary agent on furniture fulfillment.',
         );
       }
     } catch (error) {

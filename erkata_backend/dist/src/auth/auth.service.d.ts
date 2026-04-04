@@ -31,10 +31,12 @@ export declare class AuthService {
     register(data: {
         email: string;
         fullName: string;
+        phone: string;
         password: string;
         role?: string;
         tier?: string;
         inviteToken?: string;
+        referralCode?: string;
     }): Promise<{
         message: string;
         userId: string;

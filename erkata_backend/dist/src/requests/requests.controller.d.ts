@@ -5,9 +5,6 @@ export declare class RequestsController {
     constructor(requestsService: RequestsService);
     createRequest(req: RequestWithUser, dto: CreateRequestDto): Promise<{
         id: string;
-        zoneId: string;
-        createdAt: Date;
-        customerId: string;
         type: import(".prisma/client").$Enums.RequestType;
         category: string;
         description: string | null;
@@ -15,24 +12,26 @@ export declare class RequestsController {
         budgetMax: import("@prisma/client/runtime/library").Decimal | null;
         woreda: string | null;
         status: import(".prisma/client").$Enums.RequestStatus;
+        createdAt: Date;
+        assignmentPushedAt: Date | null;
+        customerId: string;
+        zoneId: string;
+        assignedOperatorId: string | null;
     }>;
     getQueue(zoneId: string): Promise<({
+        customer: {
+            id: string;
+            createdAt: Date;
+            fullName: string;
+        };
         zone: {
             id: string;
             name: string;
             city: string | null;
             isActive: boolean;
-        };
-        customer: {
-            id: string;
-            fullName: string;
-            createdAt: Date;
         };
     } & {
         id: string;
-        zoneId: string;
-        createdAt: Date;
-        customerId: string;
         type: import(".prisma/client").$Enums.RequestType;
         category: string;
         description: string | null;
@@ -40,27 +39,161 @@ export declare class RequestsController {
         budgetMax: import("@prisma/client/runtime/library").Decimal | null;
         woreda: string | null;
         status: import(".prisma/client").$Enums.RequestStatus;
+        createdAt: Date;
+        assignmentPushedAt: Date | null;
+        customerId: string;
+        zoneId: string;
+        assignedOperatorId: string | null;
     })[]>;
-    getMyRequests(req: RequestWithUser): Promise<({
+    getRequest(id: string, req: RequestWithUser): Promise<({
+        matches: ({
+            agent: {
+                id: string;
+                fullName: string;
+                phone: string;
+            };
+            transaction: {
+                id: string;
+                status: import(".prisma/client").$Enums.TransactionStatus;
+                createdAt: Date;
+                matchId: string;
+                amount: import("@prisma/client/runtime/library").Decimal;
+                currency: string;
+                commissionRate: import("@prisma/client/runtime/library").Decimal;
+                commissionAmount: import("@prisma/client/runtime/library").Decimal | null;
+                paymentProofUrl: string | null;
+            } | null;
+        } & {
+            id: string;
+            status: import(".prisma/client").$Enums.MatchStatus;
+            requestId: string;
+            agentId: string;
+            operatorId: string;
+            assignedAt: Date;
+        })[];
+        customer: {
+            id: string;
+            createdAt: Date;
+            fullName: string;
+            phone: string;
+        };
         zone: {
             id: string;
             name: string;
             city: string | null;
             isActive: boolean;
         };
-        matches: {
+    } & {
+        id: string;
+        type: import(".prisma/client").$Enums.RequestType;
+        category: string;
+        description: string | null;
+        budgetMin: import("@prisma/client/runtime/library").Decimal | null;
+        budgetMax: import("@prisma/client/runtime/library").Decimal | null;
+        woreda: string | null;
+        status: import(".prisma/client").$Enums.RequestStatus;
+        createdAt: Date;
+        assignmentPushedAt: Date | null;
+        customerId: string;
+        zoneId: string;
+        assignedOperatorId: string | null;
+    }) | {
+        customer: {
             id: string;
+            createdAt: Date;
+            fullName: string;
+            phone: string;
+        };
+        match: {
+            agent: any;
+            transaction: {
+                id: string;
+                status: import(".prisma/client").$Enums.TransactionStatus;
+                createdAt: Date;
+                matchId: string;
+                amount: import("@prisma/client/runtime/library").Decimal;
+                currency: string;
+                commissionRate: import("@prisma/client/runtime/library").Decimal;
+                commissionAmount: import("@prisma/client/runtime/library").Decimal | null;
+                paymentProofUrl: string | null;
+            } | null;
+            id: string;
+            status: import(".prisma/client").$Enums.MatchStatus;
+            requestId: string;
+            agentId: string;
+            operatorId: string;
+            assignedAt: Date;
+        } | null;
+        matches: ({
+            agent: {
+                id: string;
+                fullName: string;
+                phone: string;
+            };
+            transaction: {
+                id: string;
+                status: import(".prisma/client").$Enums.TransactionStatus;
+                createdAt: Date;
+                matchId: string;
+                amount: import("@prisma/client/runtime/library").Decimal;
+                currency: string;
+                commissionRate: import("@prisma/client/runtime/library").Decimal;
+                commissionAmount: import("@prisma/client/runtime/library").Decimal | null;
+                paymentProofUrl: string | null;
+            } | null;
+        } & {
+            id: string;
+            status: import(".prisma/client").$Enums.MatchStatus;
+            requestId: string;
+            agentId: string;
+            operatorId: string;
+            assignedAt: Date;
+        })[];
+        zone: {
+            id: string;
+            name: string;
+            city: string | null;
+            isActive: boolean;
+        };
+        id: string;
+        type: import(".prisma/client").$Enums.RequestType;
+        category: string;
+        description: string | null;
+        budgetMin: import("@prisma/client/runtime/library").Decimal | null;
+        budgetMax: import("@prisma/client/runtime/library").Decimal | null;
+        woreda: string | null;
+        status: import(".prisma/client").$Enums.RequestStatus;
+        createdAt: Date;
+        assignmentPushedAt: Date | null;
+        customerId: string;
+        zoneId: string;
+        assignedOperatorId: string | null;
+    }>;
+    getMyRequests(req: RequestWithUser): Promise<({
+        matches: ({
             agent: {
                 id: string;
                 fullName: string;
             };
+            transaction: {
+                id: string;
+            } | null;
+        } & {
+            id: string;
             status: import(".prisma/client").$Enums.MatchStatus;
-        }[];
+            requestId: string;
+            agentId: string;
+            operatorId: string;
+            assignedAt: Date;
+        })[];
+        zone: {
+            id: string;
+            name: string;
+            city: string | null;
+            isActive: boolean;
+        };
     } & {
         id: string;
-        zoneId: string;
-        createdAt: Date;
-        customerId: string;
         type: import(".prisma/client").$Enums.RequestType;
         category: string;
         description: string | null;
@@ -68,6 +201,11 @@ export declare class RequestsController {
         budgetMax: import("@prisma/client/runtime/library").Decimal | null;
         woreda: string | null;
         status: import(".prisma/client").$Enums.RequestStatus;
+        createdAt: Date;
+        assignmentPushedAt: Date | null;
+        customerId: string;
+        zoneId: string;
+        assignedOperatorId: string | null;
     })[]>;
     findEligibleAgents(): Promise<{
         id: string;
@@ -84,5 +222,128 @@ export declare class RequestsController {
         operatorId: string;
         assignedAt: Date;
     }>;
-    getStatus(id: string, req: RequestWithUser): Promise<unknown>;
+    getStatus(id: string, req: RequestWithUser): Promise<({
+        matches: ({
+            agent: {
+                id: string;
+                fullName: string;
+                phone: string;
+            };
+            transaction: {
+                id: string;
+                status: import(".prisma/client").$Enums.TransactionStatus;
+                createdAt: Date;
+                matchId: string;
+                amount: import("@prisma/client/runtime/library").Decimal;
+                currency: string;
+                commissionRate: import("@prisma/client/runtime/library").Decimal;
+                commissionAmount: import("@prisma/client/runtime/library").Decimal | null;
+                paymentProofUrl: string | null;
+            } | null;
+        } & {
+            id: string;
+            status: import(".prisma/client").$Enums.MatchStatus;
+            requestId: string;
+            agentId: string;
+            operatorId: string;
+            assignedAt: Date;
+        })[];
+        customer: {
+            id: string;
+            createdAt: Date;
+            fullName: string;
+            phone: string;
+        };
+        zone: {
+            id: string;
+            name: string;
+            city: string | null;
+            isActive: boolean;
+        };
+    } & {
+        id: string;
+        type: import(".prisma/client").$Enums.RequestType;
+        category: string;
+        description: string | null;
+        budgetMin: import("@prisma/client/runtime/library").Decimal | null;
+        budgetMax: import("@prisma/client/runtime/library").Decimal | null;
+        woreda: string | null;
+        status: import(".prisma/client").$Enums.RequestStatus;
+        createdAt: Date;
+        assignmentPushedAt: Date | null;
+        customerId: string;
+        zoneId: string;
+        assignedOperatorId: string | null;
+    }) | {
+        customer: {
+            id: string;
+            createdAt: Date;
+            fullName: string;
+            phone: string;
+        };
+        match: {
+            agent: any;
+            transaction: {
+                id: string;
+                status: import(".prisma/client").$Enums.TransactionStatus;
+                createdAt: Date;
+                matchId: string;
+                amount: import("@prisma/client/runtime/library").Decimal;
+                currency: string;
+                commissionRate: import("@prisma/client/runtime/library").Decimal;
+                commissionAmount: import("@prisma/client/runtime/library").Decimal | null;
+                paymentProofUrl: string | null;
+            } | null;
+            id: string;
+            status: import(".prisma/client").$Enums.MatchStatus;
+            requestId: string;
+            agentId: string;
+            operatorId: string;
+            assignedAt: Date;
+        } | null;
+        matches: ({
+            agent: {
+                id: string;
+                fullName: string;
+                phone: string;
+            };
+            transaction: {
+                id: string;
+                status: import(".prisma/client").$Enums.TransactionStatus;
+                createdAt: Date;
+                matchId: string;
+                amount: import("@prisma/client/runtime/library").Decimal;
+                currency: string;
+                commissionRate: import("@prisma/client/runtime/library").Decimal;
+                commissionAmount: import("@prisma/client/runtime/library").Decimal | null;
+                paymentProofUrl: string | null;
+            } | null;
+        } & {
+            id: string;
+            status: import(".prisma/client").$Enums.MatchStatus;
+            requestId: string;
+            agentId: string;
+            operatorId: string;
+            assignedAt: Date;
+        })[];
+        zone: {
+            id: string;
+            name: string;
+            city: string | null;
+            isActive: boolean;
+        };
+        id: string;
+        type: import(".prisma/client").$Enums.RequestType;
+        category: string;
+        description: string | null;
+        budgetMin: import("@prisma/client/runtime/library").Decimal | null;
+        budgetMax: import("@prisma/client/runtime/library").Decimal | null;
+        woreda: string | null;
+        status: import(".prisma/client").$Enums.RequestStatus;
+        createdAt: Date;
+        assignmentPushedAt: Date | null;
+        customerId: string;
+        zoneId: string;
+        assignedOperatorId: string | null;
+    }>;
 }

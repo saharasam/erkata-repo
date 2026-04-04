@@ -8,6 +8,8 @@ import {
   UseGuards,
   Req,
   Query,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { RolesGuard, RequirePermission, JwtAuthGuard } from '../auth/guards';
@@ -44,6 +46,20 @@ export class UsersController {
     return this.usersService.getFinanceSummary(req.user.id);
   }
 
+  @Post('me/withdraw')
+  async requestWithdrawal(
+    @Req() req: AuthenticatedRequest,
+    @Body('amount') amount: number,
+  ) {
+    return this.usersService.requestWithdrawal(req.user.id, amount);
+  }
+
+  @Post('me/referral-code')
+  @HttpCode(HttpStatus.OK)
+  async generateReferralCode(@Req() req: AuthenticatedRequest) {
+    return this.usersService.generateReferralCode(req.user.id);
+  }
+
   @Post('agent/:id/zones')
   @RequirePermission(Action.ASSIGN_ZONES)
   async assignZone(
@@ -69,6 +85,18 @@ export class UsersController {
   ) {
     const callerRole = req.user.role;
     return this.usersService.updateTier(callerRole, agentId, body.tier);
+  }
+
+  @Post('me/package')
+  async purchasePackage(
+    @Req() req: AuthenticatedRequest,
+    @Body() body: { tier: string; paymentMethod?: 'ETB' | 'AGLP' },
+  ) {
+    return this.usersService.purchasePackage(
+      req.user.id,
+      body.tier,
+      body.paymentMethod,
+    );
   }
 
   @Patch(':id/suspend')

@@ -8,18 +8,28 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RequestsService = void 0;
 const common_1 = require("@nestjs/common");
 const event_emitter_1 = require("@nestjs/event-emitter");
 const prisma_service_1 = require("../prisma/prisma.service");
 const client_1 = require("@prisma/client");
+const redis_presence_service_1 = require("../common/redis/redis-presence.service");
+const bullmq_1 = require("@nestjs/bullmq");
+const bullmq_2 = require("bullmq");
 let RequestsService = class RequestsService {
     prisma;
     eventEmitter;
-    constructor(prisma, eventEmitter) {
+    presence;
+    timeoutQueue;
+    constructor(prisma, eventEmitter, presence, timeoutQueue) {
         this.prisma = prisma;
         this.eventEmitter = eventEmitter;
+        this.presence = presence;
+        this.timeoutQueue = timeoutQueue;
     }
     redact(user, message) {
         return {
@@ -48,16 +58,67 @@ let RequestsService = class RequestsService {
             },
         });
         this.eventEmitter.emit('request.created', request);
+        await this.assignToNextReadyOperator(request.id);
         return request;
+    }
+    async assignToNextReadyOperator(requestId) {
+        const request = await this.prisma.request.findUnique({
+            where: { id: requestId },
+            include: { zone: true },
+        });
+        if (!request || request.status !== client_1.RequestStatus.pending || request.assignedOperatorId) {
+            return;
+        }
+        const operator = await this.prisma.profile.findFirst({
+            where: {
+                role: client_1.UserRole.operator,
+                isOnline: true,
+                assignedRequests: {
+                    none: {
+                        status: client_1.RequestStatus.pending,
+                    },
+                },
+            },
+            orderBy: { lastAssignmentAt: 'asc' },
+        });
+        if (!operator)
+            return;
+        await this.prisma.$transaction(async (tx) => {
+            const updatedRequest = await tx.request.update({
+                where: { id: requestId, assignedOperatorId: null },
+                data: {
+                    assignedOperatorId: operator.id,
+                    assignmentPushedAt: new Date(),
+                },
+            });
+            await tx.profile.update({
+                where: { id: operator.id },
+                data: { lastAssignmentAt: new Date() },
+            });
+            await this.timeoutQueue.add('check-timeout', { requestId: updatedRequest.id, operatorId: operator.id }, { delay: 5 * 60 * 1000, jobId: `timeout-${updatedRequest.id}` });
+        });
+        this.eventEmitter.emit('request.pushed', { requestId, operatorId: operator.id });
+    }
+    async handleOperatorReady(operatorId) {
+        const oldestRequest = await this.prisma.request.findFirst({
+            where: {
+                status: client_1.RequestStatus.pending,
+                assignedOperatorId: null,
+            },
+            orderBy: { createdAt: 'asc' },
+        });
+        if (oldestRequest) {
+            await this.assignToNextReadyOperator(oldestRequest.id);
+        }
     }
     async getOperatorQueue(filters) {
         const whereClause = {
-            status: { in: [client_1.RequestStatus.pending] },
+            status: client_1.RequestStatus.pending,
         };
         if (filters?.zoneId) {
             whereClause.zoneId = filters.zoneId;
         }
-        const requests = await this.prisma.request.findMany({
+        return await this.prisma.request.findMany({
             where: whereClause,
             include: {
                 customer: {
@@ -67,7 +128,6 @@ let RequestsService = class RequestsService {
             },
             orderBy: { createdAt: 'desc' },
         });
-        return requests;
     }
     async assignAgent(requestId, agentId, operatorId) {
         const request = await this.prisma.request.findUnique({
@@ -81,10 +141,20 @@ let RequestsService = class RequestsService {
         }
         const agent = await this.prisma.profile.findUnique({
             where: { id: agentId },
-            include: { agentZones: true, referralLink: true },
+            include: { agentZones: true },
         });
         if (!agent || agent.role !== client_1.UserRole.agent) {
             throw new common_1.BadRequestException('Invalid agent');
+        }
+        if (!agent.isActive) {
+            throw new common_1.ForbiddenException('Cannot assign a suspended agent.');
+        }
+        const operator = await this.prisma.profile.findUnique({
+            where: { id: operatorId },
+            select: { isActive: true },
+        });
+        if (!operator || !operator.isActive) {
+            throw new common_1.ForbiddenException('Your account is suspended.');
         }
         const match = await this.prisma.$transaction(async (tx) => {
             await tx.request.update({
@@ -105,7 +175,7 @@ let RequestsService = class RequestsService {
         this.eventEmitter.emit('match.created', { match, agentId });
         return match;
     }
-    async getRequestStatus(requestId, userId, role) {
+    async getRequest(requestId, userId, role) {
         const request = await this.prisma.request.findUnique({
             where: { id: requestId },
             include: {
@@ -125,85 +195,62 @@ let RequestsService = class RequestsService {
         });
         if (!request)
             throw new common_1.NotFoundException('Request not found');
-        const activeMatch = request.matches[0];
         if (role === client_1.UserRole.customer) {
             if (request.customerId !== userId)
                 throw new common_1.ForbiddenException();
+            const activeMatch = request.matches[0];
             let agentInfo = activeMatch?.agent;
             if (activeMatch && activeMatch.status === 'assigned') {
                 agentInfo = this.redact({ id: '', fullName: '', phone: '' }, 'An agent has been assigned — details will be visible once they accept.');
             }
-            const response = {
-                id: request.id,
-                category: request.category,
-                description: request.description,
-                zone: request.zone,
-                status: request.status,
-                createdAt: request.createdAt,
-                match: activeMatch
-                    ? {
-                        id: activeMatch.id,
-                        status: activeMatch.status,
-                        agent: agentInfo,
-                    }
-                    : null,
+            return {
+                ...request,
+                customer: request.customer,
+                match: activeMatch ? { ...activeMatch, agent: agentInfo } : null,
             };
-            return response;
         }
-        if (role === client_1.UserRole.agent) {
-            if (activeMatch?.agentId !== userId)
-                throw new common_1.ForbiddenException();
-            let customerInfo = request.customer;
-            if (activeMatch.status === 'assigned') {
-                customerInfo = this.redact(request.customer, 'Customer details will be revealed once you accept the assignment.');
+        if (role === client_1.UserRole.operator) {
+            const isAssigned = request.assignedOperatorId === userId;
+            const isPending = request.status === client_1.RequestStatus.pending;
+            if (!isAssigned && !isPending) {
+                throw new common_1.ForbiddenException('No access to this request');
             }
             return {
                 ...request,
-                customer: customerInfo,
+                customer: this.redact(request.customer, 'Customer PII is hidden until assignment.'),
             };
         }
         return request;
     }
     async findEligibleAgents() {
-        console.log(`[RequestsService] findEligibleAgents called — fetching all active agents`);
         const agents = await this.prisma.profile.findMany({
             where: {
                 role: client_1.UserRole.agent,
                 isActive: true,
             },
-            select: {
-                id: true,
-                fullName: true,
-                isActive: true,
-                referralLink: { select: { tier: true } },
+            include: {
                 agentZones: {
                     include: { zone: { select: { id: true, name: true } } },
                 },
             },
         });
-        console.log(`[RequestsService] Found ${agents.length} active agents.`);
         const tierPriority = {
-            ABUNDANT_LIFE: 5,
-            UNITY: 4,
-            LOVE: 3,
-            PEACE: 2,
-            FREE: 1,
+            ABUNDANT_LIFE: 5, UNITY: 4, LOVE: 3, PEACE: 2, FREE: 1,
         };
-        const enriched = agents.map((agent) => ({
+        return agents
+            .map((agent) => ({
             id: agent.id,
             fullName: agent.fullName,
             isActive: agent.isActive,
-            tier: agent.referralLink?.tier ?? 'FREE',
-            zones: agent.agentZones.length > 0
-                ? agent.agentZones.map((az) => az.zone?.name ?? 'Unknown Zone')
-                : ['Unknown Zone'],
-        }));
-        return enriched.sort((a, b) => {
+            tier: agent.tier ?? 'FREE',
+            zones: agent.agentZones.map((az) => az.zone?.name ?? 'Unknown Zone'),
+        }))
+            .sort((a, b) => {
             const tA = tierPriority[a.tier] ?? 1;
             const tB = tierPriority[b.tier] ?? 1;
             if (tB !== tA)
                 return tB - tA;
-            return a.zones[0].localeCompare(b.zones[0]);
+            return (a.zones[0] || '').localeCompare(b.zones[0] || '');
         });
     }
     async getCustomerRequests(customerId) {
@@ -212,12 +259,9 @@ let RequestsService = class RequestsService {
             include: {
                 zone: true,
                 matches: {
-                    select: {
-                        id: true,
-                        status: true,
-                        agent: {
-                            select: { id: true, fullName: true },
-                        },
+                    include: {
+                        agent: { select: { id: true, fullName: true } },
+                        transaction: { select: { id: true } },
                     },
                 },
             },
@@ -228,7 +272,10 @@ let RequestsService = class RequestsService {
 exports.RequestsService = RequestsService;
 exports.RequestsService = RequestsService = __decorate([
     (0, common_1.Injectable)(),
+    __param(3, (0, bullmq_1.InjectQueue)('assignment-timeout')),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        event_emitter_1.EventEmitter2])
+        event_emitter_1.EventEmitter2,
+        redis_presence_service_1.RedisPresenceService,
+        bullmq_2.Queue])
 ], RequestsService);
 //# sourceMappingURL=requests.service.js.map

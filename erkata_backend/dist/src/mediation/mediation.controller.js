@@ -25,7 +25,7 @@ let MediationController = class MediationController {
     }
     async submitFeedback(transactionId, req, body) {
         const userId = req.user.id;
-        return this.mediationService.submitFeedback(transactionId, userId, body.content, body.rating);
+        return this.mediationService.submitFeedback(transactionId, userId, body.content, body.rating, body.categories);
     }
     async proposeResolution(bundleId, req, body) {
         const userId = req.user.id;
@@ -46,7 +46,7 @@ let MediationController = class MediationController {
 exports.MediationController = MediationController;
 __decorate([
     (0, common_1.Post)('transaction/:id/feedback'),
-    (0, guards_1.RequirePermission)(permissions_1.Action.SUBMIT_CUSTOMER_FEEDBACK),
+    (0, guards_1.RequirePermission)(permissions_1.Action.SUBMIT_CUSTOMER_FEEDBACK, permissions_1.Action.SUBMIT_AGENT_FEEDBACK),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Req)()),
     __param(2, (0, common_1.Body)()),

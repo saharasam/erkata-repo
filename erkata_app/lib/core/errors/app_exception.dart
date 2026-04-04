@@ -12,14 +12,12 @@ sealed class AppException implements Exception {
 
 /// No internet / airplane mode.
 class NetworkException extends AppException {
-  const NetworkException([String message = 'No internet connection'])
-    : super(message);
+  const NetworkException([super.message = 'No internet connection']);
 }
 
 /// Connection or read timeout.
 class TimeoutException extends AppException {
-  const TimeoutException([String message = 'Request timed out'])
-    : super(message);
+  const TimeoutException([super.message = 'Request timed out']);
 }
 
 /// HTTP 5xx server errors.
@@ -27,30 +25,29 @@ class ServerException extends AppException {
   final int statusCode;
   const ServerException({
     required this.statusCode,
-    String message = 'Server error',
-  }) : super(message);
+    super.message = 'Server error',
+  });
 }
 
 /// HTTP 401 / 403 — authentication or permission failure.
 class AuthException extends AppException {
   final bool isSessionExpired;
   const AuthException({
-    String message = 'Authentication failed',
+    super.message = 'Authentication failed',
     this.isSessionExpired = false,
-  }) : super(message);
+  });
 }
 
 /// HTTP 400 / 422 — validation or bad-request errors.
 class ValidationException extends AppException {
   final Map<String, String> fieldErrors;
   const ValidationException({
-    String message = 'Validation failed',
+    super.message = 'Validation failed',
     this.fieldErrors = const {},
-  }) : super(message);
+  });
 }
 
 /// Catch-all for anything unexpected.
 class UnknownException extends AppException {
-  const UnknownException([String message = 'Something went wrong'])
-    : super(message);
+  const UnknownException([super.message = 'Something went wrong']);
 }

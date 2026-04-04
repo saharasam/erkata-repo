@@ -1,3 +1,4 @@
+import { Request } from 'express';
 import { ConfigService } from '../common/config.service';
 import { Prisma } from '@prisma/client';
 export declare class AdminConfigController {
@@ -11,8 +12,28 @@ export declare class AdminConfigController {
         key: string;
         value: boolean;
         description: string;
+    } | {
+        description: string;
+        key?: undefined;
+        value?: undefined;
+    } | {
+        key: string;
+        value: {
+            rate: number;
+        };
+        description: string;
+    } | {
+        key: string;
+        value: {
+            value: number;
+        };
+        description: string;
     })[];
-    updateConfig(body: {
+    updateConfig(req: Request & {
+        user: {
+            role: string;
+        };
+    }, body: {
         key: string;
         value: Prisma.InputJsonValue;
         description?: string;

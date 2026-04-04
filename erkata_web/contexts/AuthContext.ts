@@ -13,7 +13,7 @@ export interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
-  signup: (data: { fullName: string; email: string; password: string; role: string }) => Promise<void>;
+  signup: (data: { fullName: string; email: string; phone: string; password: string; role: string; inviteToken?: string; referralCode?: string }) => Promise<void>;
   isAuthenticated: boolean;
   isLoading: boolean;
 }

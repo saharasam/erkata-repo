@@ -33,6 +33,9 @@ let TransactionsController = class TransactionsController {
     decline(id, req) {
         return this.transactionsService.declineAssignment(id, req.user.id);
     }
+    transfer(id, toAgentId, req) {
+        return this.transactionsService.transferAssignment(id, req.user.id, toAgentId);
+    }
     complete(id, req) {
         return this.transactionsService.markComplete(id, req.user.id);
     }
@@ -67,6 +70,16 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", void 0)
 ], TransactionsController.prototype, "decline", null);
+__decorate([
+    (0, common_1.Patch)(':id/transfer'),
+    (0, roles_decorator_1.Roles)(client_1.UserRole.agent),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)('toAgentId')),
+    __param(2, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, Object]),
+    __metadata("design:returntype", void 0)
+], TransactionsController.prototype, "transfer", null);
 __decorate([
     (0, common_1.Patch)(':id/complete'),
     (0, roles_decorator_1.Roles)(client_1.UserRole.agent),

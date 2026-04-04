@@ -11,12 +11,13 @@ const common_1 = require("@nestjs/common");
 const transactions_service_1 = require("./transactions.service");
 const transactions_controller_1 = require("./transactions.controller");
 const prisma_module_1 = require("../prisma/prisma.module");
+const aglp_module_1 = require("../aglp/aglp.module");
 let TransactionsModule = class TransactionsModule {
 };
 exports.TransactionsModule = TransactionsModule;
 exports.TransactionsModule = TransactionsModule = __decorate([
     (0, common_1.Module)({
-        imports: [prisma_module_1.PrismaModule],
+        imports: [prisma_module_1.PrismaModule, aglp_module_1.AglpModule],
         providers: [transactions_service_1.TransactionsService],
         controllers: [transactions_controller_1.TransactionsController],
         exports: [transactions_service_1.TransactionsService],

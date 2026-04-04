@@ -17,16 +17,23 @@ const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
 const guards_1 = require("../auth/guards");
 const permissions_1 = require("../auth/permissions");
+const users_service_1 = require("../users/users.service");
 const client_1 = require("@prisma/client");
+const invite_service_1 = require("../auth/invite/invite.service");
 let AdminsController = class AdminsController {
     prisma;
-    constructor(prisma) {
+    inviteService;
+    usersService;
+    constructor(prisma, inviteService, usersService) {
         this.prisma = prisma;
+        this.inviteService = inviteService;
+        this.usersService = usersService;
     }
     async getPersonnel(role) {
+        const normalizedRole = role?.toLowerCase();
         return this.prisma.profile.findMany({
-            where: role
-                ? { role }
+            where: normalizedRole
+                ? { role: normalizedRole }
                 : {
                     OR: [{ role: client_1.UserRole.admin }, { role: client_1.UserRole.operator }],
                 },
@@ -48,22 +55,41 @@ let AdminsController = class AdminsController {
         });
     }
     async createInvite(req, body) {
-        const invite = await this.prisma.invite.create({
-            data: {
-                email: body.email,
-                role: body.role,
-                token: Math.random().toString(36).substring(7),
-                expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-                createdById: req.user.id,
-            },
-        });
+        const callerRole = req.user.role;
+        if (callerRole === client_1.UserRole.admin) {
+            if (body.role === client_1.UserRole.admin || body.role === client_1.UserRole.super_admin) {
+                throw new common_1.ForbiddenException('Admins are not permitted to invite other administrative-level users.');
+            }
+        }
+        const invite = await this.inviteService.createInvite(body.email, body.fullName, body.phone, body.role, req.user.id);
         return {
             message: 'Personnel invite generated',
-            inviteUrl: `https://erkata.com/register/claim?token=${invite.token}`,
+            inviteUrl: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/#/register/claim?token=${invite.token}`,
             invite,
         };
     }
-    async updateStatus(id, body) {
+    async getInvites(req) {
+        const callerRole = req.user.role;
+        const callerId = req.user.id;
+        const createdById = callerRole === client_1.UserRole.admin ? callerId : undefined;
+        return this.inviteService.findPendingInvites(createdById);
+    }
+    async cancelInvite(req, inviteId) {
+        const callerRole = req.user.role;
+        const callerId = req.user.id;
+        const createdById = callerRole === client_1.UserRole.admin ? callerId : undefined;
+        await this.inviteService.deleteInvite(inviteId, createdById);
+        return { message: 'Invitation revoked successfully' };
+    }
+    async updateStatus(req, id, body) {
+        const target = await this.prisma.profile.findUnique({
+            where: { id },
+        });
+        if (!target)
+            throw new common_1.NotFoundException('User profile not found');
+        if (!this.usersService.canModifyUser(req.user.role, target.role)) {
+            throw new common_1.ForbiddenException(`Your role (${req.user.role}) is not authorized to modify a ${target.role}`);
+        }
         return this.prisma.profile.update({
             where: { id },
             data: { isActive: body.isActive },
@@ -81,7 +107,7 @@ __decorate([
 ], AdminsController.prototype, "getPersonnel", null);
 __decorate([
     (0, common_1.Post)('invite'),
-    (0, guards_1.RequirePermission)(permissions_1.Action.MANAGE_ADMINS),
+    (0, guards_1.RequirePermission)(permissions_1.Action.MANAGE_ADMINS, permissions_1.Action.MANAGE_OPERATORS),
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -89,17 +115,37 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AdminsController.prototype, "createInvite", null);
 __decorate([
+    (0, common_1.Get)('invites'),
+    (0, guards_1.RequirePermission)(permissions_1.Action.MANAGE_ADMINS, permissions_1.Action.MANAGE_OPERATORS),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AdminsController.prototype, "getInvites", null);
+__decorate([
+    (0, common_1.Delete)(':id/invite'),
+    (0, guards_1.RequirePermission)(permissions_1.Action.MANAGE_ADMINS, permissions_1.Action.MANAGE_OPERATORS),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], AdminsController.prototype, "cancelInvite", null);
+__decorate([
     (0, common_1.Patch)(':id/status'),
     (0, guards_1.RequirePermission)(permissions_1.Action.MANAGE_ADMINS),
-    __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Body)()),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('id')),
+    __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:paramtypes", [Object, String, Object]),
     __metadata("design:returntype", Promise)
 ], AdminsController.prototype, "updateStatus", null);
 exports.AdminsController = AdminsController = __decorate([
     (0, common_1.Controller)('admin/users'),
     (0, common_1.UseGuards)(guards_1.JwtAuthGuard, guards_1.RolesGuard),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        invite_service_1.InviteService,
+        users_service_1.UsersService])
 ], AdminsController);
 //# sourceMappingURL=admins.controller.js.map

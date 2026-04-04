@@ -31,6 +31,10 @@ let RequestsController = class RequestsController {
     getQueue(zoneId) {
         return this.requestsService.getOperatorQueue({ zoneId });
     }
+    getRequest(id, req) {
+        const user = req.user;
+        return this.requestsService.getRequest(id, user.id, user.role);
+    }
     getMyRequests(req) {
         const user = req.user;
         return this.requestsService.getCustomerRequests(user.id);
@@ -43,7 +47,7 @@ let RequestsController = class RequestsController {
     }
     getStatus(id, req) {
         const user = req.user;
-        return this.requestsService.getRequestStatus(id, user.id, user.role);
+        return this.requestsService.getRequest(id, user.id, user.role);
     }
 };
 exports.RequestsController = RequestsController;
@@ -64,6 +68,15 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], RequestsController.prototype, "getQueue", null);
+__decorate([
+    (0, common_1.Get)(':id'),
+    (0, roles_decorator_1.Roles)(client_1.UserRole.operator, client_1.UserRole.admin),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], RequestsController.prototype, "getRequest", null);
 __decorate([
     (0, common_1.Get)('my-requests'),
     (0, roles_decorator_1.Roles)(client_1.UserRole.customer),

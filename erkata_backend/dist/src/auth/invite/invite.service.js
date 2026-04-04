@@ -18,13 +18,15 @@ let InviteService = class InviteService {
     constructor(prisma) {
         this.prisma = prisma;
     }
-    async createInvite(email, role, createdById) {
+    async createInvite(email, fullName, phone, role, createdById) {
         const token = (0, crypto_1.randomBytes)(32).toString('hex');
         const expiresAt = new Date();
-        expiresAt.setHours(expiresAt.getHours() + 48);
-        return this.prisma.invite.create({
+        expiresAt.setHours(expiresAt.getHours() + 72);
+        return await this.prisma.invite.create({
             data: {
                 email,
+                fullName,
+                phone,
                 role,
                 token,
                 expiresAt,
@@ -50,10 +52,59 @@ let InviteService = class InviteService {
         }
         return invite;
     }
+    async getInviteByToken(token) {
+        const invite = await this.prisma.invite.findUnique({
+            where: { token },
+            select: {
+                email: true,
+                fullName: true,
+                phone: true,
+                role: true,
+                expiresAt: true,
+                usedAt: true,
+            },
+        });
+        if (!invite) {
+            throw new common_1.NotFoundException('Invalid invite token');
+        }
+        if (invite.usedAt) {
+            throw new common_1.BadRequestException('Invite token has already been used');
+        }
+        if (invite.expiresAt < new Date()) {
+            throw new common_1.BadRequestException('Invite token has expired');
+        }
+        return invite;
+    }
     async markInviteAsUsed(token) {
-        return this.prisma.invite.update({
+        return await this.prisma.invite.update({
             where: { token },
             data: { usedAt: new Date() },
+        });
+    }
+    async findPendingInvites(createdById) {
+        return await this.prisma.invite.findMany({
+            where: {
+                usedAt: null,
+                expiresAt: { gt: new Date() },
+                ...(createdById ? { createdById } : {}),
+            },
+            orderBy: { createdAt: 'desc' },
+        });
+    }
+    async deleteInvite(id, createdById) {
+        const invite = await this.prisma.invite.findUnique({
+            where: { id },
+        });
+        if (!invite)
+            throw new common_1.NotFoundException('Invite not found');
+        if (createdById && invite.createdById !== createdById) {
+            throw new common_1.BadRequestException('You can only cancel your own invites');
+        }
+        if (invite.usedAt) {
+            throw new common_1.BadRequestException('Cannot cancel an already used invite');
+        }
+        return await this.prisma.invite.delete({
+            where: { id },
         });
     }
 };

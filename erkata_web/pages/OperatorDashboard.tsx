@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import { 
   Users, 
@@ -6,108 +6,141 @@ import {
   Search, 
   MapPin, 
   CheckCircle2, 
-  AlertCircle,
-  LayoutGrid,
-  List as ListIcon,
   ChevronRight,
-  Filter
+  ShieldCheck,
+  ShieldAlert,
+  Zap,
+  Loader2
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useModal } from '../contexts/ModalContext';
 import api from '../utils/api';
 import { Can } from '../components/ui/Can';
 import { Action } from '../hooks/usePermissions';
-import OperatorSidebar from '../components/operator/OperatorSidebar';
 import AgentAssignmentModal from '../components/operator/AgentAssignmentModal';
+import { useHeartbeat } from '../hooks/useHeartbeat';
 
 const OperatorDashboard: React.FC = () => {
     const { user } = useAuth();
-    const { showAlert, showConfirm } = useModal();
+    const { showAlert } = useModal();
+    const [isOnline, setIsOnline] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
-    const [pendingRequests, setPendingRequests] = useState<any[]>([]);
+    const [pushedRequest, setPushedRequest] = useState<any>(null);
     const [activeTransactions, setActiveTransactions] = useState<any[]>([]);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [isAssignmentModalOpen, setIsAssignmentModalOpen] = useState(false);
-    const [selectedRequest, setSelectedRequest] = useState<{id: string} | null>(null);
-    const [currentView, setCurrentView] = useState('overview');
+    const [timeLeft, setTimeLeft] = useState<number>(300); // 5 minutes in seconds
 
+    const { pushedRequestId, error: heartbeatError } = useHeartbeat(isOnline);
+
+    // Fetch active transactions on mount
     useEffect(() => {
-        const fetchData = async () => {
-            setIsLoading(true);
+        const fetchTransactions = async () => {
             try {
-                const [requestsRes, transactionsRes] = await Promise.all([
-                    api.get(`/requests/queue${user?.zoneId ? `?zoneId=${user.zoneId}` : ''}`),
-                    api.get('/transactions')
-                ]);
-                setPendingRequests(requestsRes.data);
-                setActiveTransactions(transactionsRes.data);
+                const res = await api.get('/transactions');
+                setActiveTransactions(res.data);
             } catch (error) {
-                console.error('Error fetching dashboard data:', error);
-                showAlert({ title: 'Error', message: 'Failed to load dashboard data. Please try again later.', type: 'error' });
+                console.error('Error fetching transactions:', error);
             } finally {
                 setIsLoading(false);
             }
         };
-
-        fetchData();
+        fetchTransactions();
     }, []);
 
-    const handleAssignToAgent = (request: any) => {
-        setSelectedRequest({ id: request.id });
-        setIsAssignmentModalOpen(true);
-    };
+    // Fetch pushed request details when ID changes
+    useEffect(() => {
+        if (pushedRequestId) {
+            const fetchRequest = async () => {
+                try {
+                    const res = await api.get(`/requests/${pushedRequestId}`);
+                    setPushedRequest(res.data);
+                    setTimeLeft(300); // Reset timer
+                    playNotificationSound();
+                } catch (err) {
+                    console.error('Failed to fetch pushed request', err);
+                }
+            };
+            fetchRequest();
+        } else {
+            setPushedRequest(null);
+        }
+    }, [pushedRequestId]);
 
-    const onAssignmentComplete = (agentId: string) => {
-        showAlert({ 
-            title: 'Assignment Successful', 
-            message: 'The agent has been assigned to the request effectively.', 
-            type: 'success' 
-        });
-        // Refresh data
-        window.location.reload(); // Simple refresh for now to update all states
-    };
-
-    const handleTransactionUpdate = async (transactionId: string, status: string) => {
+    const playNotificationSound = () => {
         try {
-            await api.patch(`/transactions/${transactionId}/status`, { status });
-            showAlert({ title: 'Success', message: `Transaction marked as ${status}`, type: 'success' });
-            // Refresh data
-            const transactionsRes = await api.get('/transactions');
-            setActiveTransactions(transactionsRes.data);
-        } catch (error) {
-            showAlert({ title: 'Error', message: 'Failed to update transaction status', type: 'error' });
+            const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+            const ctx = new AudioContext();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(880, ctx.currentTime); // A5
+            osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.5); // A4
+
+            gain.gain.setValueAtTime(0, ctx.currentTime);
+            gain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + 0.1);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+
+            osc.start();
+            osc.stop(ctx.currentTime + 0.5);
+        } catch (e) {
+            console.warn('Audio feedback failed (likely blocked by browser)', e);
         }
     };
 
-    const filteredRequests = pendingRequests.filter(req => 
-        req.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        req.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (req.customer?.fullName || '').toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    // Timer logic
+    useEffect(() => {
+        if (!pushedRequest) return;
 
-    const stats = [
-        { label: 'Pending Requests', value: pendingRequests.length, icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50' },
-        { label: 'Active Jobs', value: activeTransactions.length, icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-        { label: 'Agent Zones', value: '12', icon: MapPin, color: 'text-blue-600', bg: 'bg-blue-50' },
-        { label: 'Avg Payout', value: '4.2k ETB', icon: Users, color: 'text-purple-600', bg: 'bg-purple-50' },
-    ];
+        const timer = setInterval(() => {
+            setTimeLeft((prev) => {
+                if (prev <= 1) {
+                    clearInterval(timer);
+                    setPushedRequest(null);
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [pushedRequest]);
+
+    const formatTime = (seconds: number) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    const handleAssignToAgent = () => {
+        setIsAssignmentModalOpen(true);
+    };
+
+    const onAssignmentComplete = () => {
+        showAlert({ 
+            title: 'Assignment Successful', 
+            message: 'The agent has been assigned significantly.', 
+            type: 'success' 
+        });
+        setPushedRequest(null);
+        // Transaction list will update on next fetch or manual refresh
+    };
+
+    const toggleOnline = () => {
+        setIsOnline(!isOnline);
+        if (!isOnline) {
+            showAlert({ title: 'You are now Online', message: 'Requests will be pushed to you automatically.', type: 'info' });
+        }
+    };
 
     if (isLoading) {
         return (
-            <DashboardLayout 
-                role="operator" 
-                sidebarContent={null}
-                currentView={currentView}
-                onViewChange={setCurrentView}
-            >
-                <div className="animate-pulse space-y-8">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {[1, 2, 3, 4].map(i => (
-                            <div key={i} className="h-32 bg-slate-100 rounded-2xl" />
-                        ))}
-                    </div>
-                    <div className="h-96 bg-slate-100 rounded-2xl" />
+            <DashboardLayout role="operator" sidebarContent={null} currentView="overview" onViewChange={() => {}}>
+                <div className="flex items-center justify-center h-64">
+                    <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
                 </div>
             </DashboardLayout>
         );
@@ -117,191 +150,208 @@ const OperatorDashboard: React.FC = () => {
         <DashboardLayout 
             role="operator" 
             sidebarContent={null}
-            currentView={currentView}
-            onViewChange={setCurrentView}
+            currentView="overview"
+            onViewChange={() => {}}
         >
             <div className="space-y-8">
-                {/* Stats Header */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {stats.map((stat, idx) => (
-                        <div key={idx} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
-                            <div className="flex items-center gap-4">
-                                <div className={`p-3 rounded-xl ${stat.bg} ${stat.color}`}>
-                                    <stat.icon className="w-6 h-6" />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium text-slate-500">{stat.label}</p>
-                                    <p className="text-2xl font-bold text-slate-900">{stat.value}</p>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
+                {/* Header with Online Toggle */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+                    <div>
+                        <h1 className="text-2xl font-bold text-slate-900">Operator Console</h1>
+                        <p className="text-sm text-slate-500 font-medium">Manage request assignments and track live transactions.</p>
+                    </div>
+                    
+                    <button 
+                        onClick={toggleOnline}
+                        className={`flex items-center gap-3 px-6 py-3 rounded-2xl font-bold transition-all active:scale-95 ${
+                            isOnline 
+                            ? 'bg-emerald-50 text-emerald-700 border-2 border-emerald-100' 
+                            : 'bg-slate-100 text-slate-600 border-2 border-slate-200'
+                        }`}
+                    >
+                        {isOnline ? <ShieldCheck className="w-5 h-5" /> : <ShieldAlert className="w-5 h-5" />}
+                        {isOnline ? 'ONLINE' : 'GO ONLINE'}
+                        <div className={`w-3 h-3 rounded-full ${isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
+                    </button>
                 </div>
 
-                {/* Main Content Grid */}
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Left Column: Assignment Console */}
-                    <div className="lg:col-span-2 space-y-6">
-                        <div className="flex items-center justify-between">
-                            <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                                <Users className="w-5 h-5 text-indigo-600" />
-                                Assignment Queue
-                            </h2>
-                            <div className="flex items-center gap-2">
-                                <div className="relative">
-                                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                                    <input 
-                                        type="text" 
-                                        placeholder="Search requests..."
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="pl-9 pr-4 py-2 bg-slate-100 border-none rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 w-48 md:w-64"
-                                    />
+                    {/* Left/Center Column: The Push Console */}
+                    <div className="lg:col-span-2">
+                        {!isOnline ? (
+                            <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-[2rem] p-16 text-center">
+                                <div className="w-20 h-20 bg-white rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-sm border border-slate-100">
+                                    <ShieldAlert className="w-10 h-10 text-slate-300" />
                                 </div>
-                                <button className="p-2 bg-white border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50">
-                                    <Filter className="w-4 h-4" />
+                                <h2 className="text-2xl font-bold text-slate-900 mb-2">You are currently Offline</h2>
+                                <p className="text-slate-500 max-w-md mx-auto mb-8">
+                                    Switch to Online mode to start receiving service requests. Our automated system will pair you with the next available task.
+                                </p>
+                                <button 
+                                    onClick={toggleOnline}
+                                    className="px-8 py-4 bg-slate-900 text-white font-bold rounded-2xl hover:bg-slate-800 transition-all shadow-lg shadow-slate-200"
+                                >
+                                    Start Accepting Requests
                                 </button>
                             </div>
-                        </div>
-
-                        {/* Request Cards */}
-                        <div className="grid gap-4">
-                            {filteredRequests.length > 0 ? (
-                                filteredRequests.map((request) => (
-                                    <div key={request.id} className="group bg-white border border-slate-100 rounded-2xl p-5 shadow-sm hover:shadow-md hover:border-indigo-100 transition-all flex flex-col sm:flex-row gap-5 relative overflow-hidden">
-                                        <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-slate-200 group-hover:bg-indigo-400 transition-colors" />
-                                        
-                                        <div className="flex-1">
-                                            <div className="flex justify-between items-start mb-2">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded uppercase tracking-wider">
-                                                        RQ-{request.id.split('-')[0]}
-                                                    </span>
-                                                </div>
-                                                <span className="text-xs font-semibold text-slate-400 flex items-center gap-1">
-                                                    <Clock className="w-3 h-3" />
-                                                    {new Date(request.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                </span>
-                                            </div>
-                                            
-                                            <h4 className="font-bold text-slate-900 text-lg mb-2 group-hover:text-indigo-600 transition-colors">
-                                                {request.description || request.category}
-                                            </h4>
-                                            
-                                            <div className="flex flex-wrap gap-4 text-sm text-slate-500 font-medium">
-                                                <div className="flex items-center gap-1.5">
-                                                    <Users className="w-4 h-4 text-slate-400" />
-                                                    {request.customer?.fullName || 'Anonymous'}
-                                                </div>
-                                                <div className="flex items-center gap-1.5">
-                                                    <MapPin className="w-4 h-4 text-slate-400" />
-                                                    {request.zone?.name || 'Unknown Zone'}
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex items-center justify-end sm:border-l sm:border-slate-100 sm:pl-6 min-w-[140px]">
-                                            <Can perform={Action.ASSIGN_AGENT}>
-                                                <button 
-                                                    onClick={() => handleAssignToAgent(request)}
-                                                    className="w-full sm:w-auto px-5 py-2.5 bg-slate-900 text-white text-sm font-bold rounded-xl hover:bg-slate-800 active:scale-95 transition-all flex items-center justify-center gap-2 group/btn"
-                                                >
-                                                    Assign Agent
-                                                    <ChevronRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-                                                </button>
-                                            </Can>
-                                        </div>
+                        ) : pushedRequest ? (
+                            <div className="space-y-6">
+                                <div className="flex items-center justify-between">
+                                    <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                                        <Zap className="w-5 h-5 text-amber-500 fill-amber-500" />
+                                        New Assignment Pushed!
+                                    </h2>
+                                    <div className="flex items-center gap-3 px-4 py-2 bg-rose-50 text-rose-600 rounded-xl font-bold border border-rose-100">
+                                        <Clock className="w-4 h-4" />
+                                        <span>{formatTime(timeLeft)}</span>
                                     </div>
-                                ))
-                            ) : (
-                                <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl p-12 text-center">
-                                    <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <Search className="w-8 h-8 text-slate-300" />
-                                    </div>
-                                    <h3 className="text-slate-900 font-bold text-lg mb-1">No requests found</h3>
-                                    <p className="text-slate-500 text-sm">Try adjusting your search or check back later.</p>
                                 </div>
-                            )}
-                        </div>
+
+                                <div className="bg-white border-2 border-indigo-100 rounded-[2rem] p-8 shadow-xl shadow-indigo-50 relative overflow-hidden group">
+                                    <div className="absolute top-0 right-0 p-4">
+                                        <span className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-[10px] font-bold uppercase tracking-widest">Priority</span>
+                                    </div>
+
+                                    <div className="space-y-6">
+                                        <div>
+                                            <span className="text-xs font-bold text-indigo-400 uppercase tracking-widest block mb-1">
+                                                {pushedRequest.category}
+                                            </span>
+                                            <h3 className="text-3xl font-black text-slate-900">
+                                                {pushedRequest.description || pushedRequest.category}
+                                            </h3>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Customer</p>
+                                                <div className="flex items-center gap-2 text-slate-700 font-bold">
+                                                    <Users className="w-4 h-4 text-indigo-500" />
+                                                    {pushedRequest.customer?.fullName}
+                                                </div>
+                                            </div>
+                                            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Location Zone</p>
+                                                <div className="flex items-center gap-2 text-slate-700 font-bold">
+                                                    <MapPin className="w-4 h-4 text-rose-500" />
+                                                    {pushedRequest.zone?.name}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="pt-4">
+                                            <button 
+                                                onClick={handleAssignToAgent}
+                                                className="w-full py-5 bg-indigo-600 text-white text-lg font-black rounded-2xl hover:bg-indigo-700 active:scale-[0.98] transition-all flex items-center justify-center gap-3 shadow-lg shadow-indigo-200"
+                                            >
+                                                Assign Eligible Agent
+                                                <ChevronRight className="w-6 h-6" />
+                                            </button>
+                                            <p className="text-center text-xs text-slate-400 mt-4 font-medium italic">
+                                                Failing to assign an agent within 5 minutes will mark you as offline.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="bg-white border border-slate-100 rounded-[2rem] p-24 text-center shadow-sm">
+                                <div className="relative w-24 h-24 mx-auto mb-8">
+                                    <div className="absolute inset-0 bg-indigo-100 rounded-full animate-ping opacity-25" />
+                                    <div className="absolute inset-4 bg-indigo-50 rounded-full animate-pulse" />
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                        <Zap className="w-10 h-10 text-indigo-500 fill-indigo-500" />
+                                    </div>
+                                </div>
+                                <h2 className="text-2xl font-bold text-slate-900 mb-2">Waiting for next request...</h2>
+                                <p className="text-slate-500 max-w-sm mx-auto">
+                                    The system is scanning for incoming requests in your assigned zones. You will receive an alert as soon as one is found.
+                                </p>
+                                {heartbeatError && <p className="text-rose-500 text-xs mt-4 font-bold uppercase tracking-widest">{heartbeatError}</p>}
+                            </div>
+                        )}
                     </div>
 
-                    {/* Right Column: Processing Status */}
+                    {/* Right Column: Transactions & History */}
                     <div className="space-y-6">
-                        <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                        <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2 px-2">
                             <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                            Live Process
+                            Active Tracker
                         </h2>
 
-                        <div className="bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden">
-                            <div className="p-4 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
-                                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Active Transactions</span>
-                                <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded">Live</span>
+                        <div className="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden">
+                            <div className="p-5 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
+                                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Live Updates</span>
+                                <div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-50 rounded-full">
+                                    <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                                    <span className="text-[10px] font-black text-emerald-600 uppercase">Live</span>
+                                </div>
                             </div>
                             
                             <div className="divide-y divide-slate-50">
                                 {activeTransactions.length > 0 ? (
-                                    activeTransactions.map((tx) => (
-                                        <div key={tx.id} className="p-4 hover:bg-slate-50/80 transition-colors">
+                                    activeTransactions.slice(0, 5).map((tx) => (
+                                        <div key={tx.id} className="p-5 hover:bg-slate-50/80 transition-colors pointer-cursor">
                                             <div className="flex justify-between items-start mb-2">
                                                 <div>
                                                     <p className="text-sm font-bold text-slate-800">
-                                                        {tx.match?.request?.category}
+                                                        {tx.match?.request?.category || 'General Service'}
                                                     </p>
-                                                    <p className="text-[10px] font-medium text-slate-400">
+                                                    <p className="text-[10px] font-bold text-slate-400 tracking-tight">
                                                         ID: {tx.id.split('-')[0].toUpperCase()}
                                                     </p>
                                                 </div>
-                                                <div className="text-right">
-                                                    <span className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">
-                                                        {tx.status}
-                                                    </span>
-                                                </div>
+                                                <span className={`text-[10px] font-black px-2 py-0.5 rounded-full uppercase ${
+                                                    tx.status === 'completed' ? 'bg-emerald-50 text-emerald-600' : 'bg-indigo-50 text-indigo-600'
+                                                }`}>
+                                                    {tx.status}
+                                                </span>
                                             </div>
                                             <div className="flex justify-between items-center pt-2">
                                                 <div className="flex -space-x-2">
-                                                    <div className="w-6 h-6 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center text-[8px] font-bold">C</div>
-                                                    <div className="w-6 h-6 rounded-full bg-slate-100 border-2 border-white flex items-center justify-center text-[8px] font-bold">A</div>
+                                                    <div className="w-7 h-7 rounded-full bg-slate-100 border-2 border-white flex items-center justify-center text-[10px] font-black text-slate-500">C</div>
+                                                    <div className="w-7 h-7 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center text-[10px] font-black text-slate-600">A</div>
                                                 </div>
-                                                <button className="text-xs font-bold text-slate-400 hover:text-indigo-600 transition-colors">
-                                                    View Details
+                                                <button className="text-[11px] font-bold text-indigo-600 hover:text-indigo-700 transition-colors">
+                                                    Details →
                                                 </button>
                                             </div>
                                         </div>
                                     ))
                                 ) : (
-                                    <div className="p-8 text-center">
-                                        <p className="text-sm text-slate-400 font-medium">No active transactions</p>
+                                    <div className="p-12 text-center">
+                                        <p className="text-sm text-slate-300 font-bold italic">No moving parts currently</p>
                                     </div>
                                 )}
                             </div>
                             
-                            <div className="p-4 bg-slate-50 text-center">
-                                <button className="text-xs font-bold text-slate-800 hover:underline">
-                                    View Transaction History
+                            <div className="p-5 bg-slate-50 text-center border-t border-slate-100">
+                                <button className="text-xs font-bold text-slate-500 hover:text-slate-700 transition-colors">
+                                    Full Transaction History
                                 </button>
                             </div>
                         </div>
 
-                        {/* Quick Actions or Reminders */}
-                        <div className="p-6 bg-gradient-to-br from-indigo-600 to-violet-700 rounded-2xl text-white shadow-lg shadow-indigo-200">
-                            <h3 className="font-bold mb-2">Operator Tip</h3>
-                            <p className="text-xs text-indigo-100 leading-relaxed mb-4">
-                                Always verify communication before marking a transaction as physically completed. 
-                                Unbundling feedback requires Admin approval.
+                        {/* Guidelines Card */}
+                        <div className="p-6 bg-gradient-to-br from-slate-900 to-indigo-950 rounded-3xl text-white shadow-xl shadow-slate-200">
+                            <Zap className="w-6 h-6 text-indigo-400 mb-4" />
+                            <h3 className="font-bold text-lg mb-2">Push Protocol</h3>
+                            <p className="text-xs text-slate-400 leading-relaxed mb-6">
+                                Requests are assigned based on your wait time and zone coverage. Once pushed, you have 5 minutes to assign an agent before the task is reclaimed.
                             </p>
-                            <button className="w-full py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-xs font-bold transition-colors">
-                                View Full Guidelines
+                            <button className="w-full py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-xs font-bold transition-all">
+                                Protocol Docs
                             </button>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {selectedRequest && (
+            {pushedRequest && (
                 <AgentAssignmentModal
                     isOpen={isAssignmentModalOpen}
                     onClose={() => setIsAssignmentModalOpen(false)}
-                    requestId={selectedRequest.id}
+                    requestId={pushedRequest.id}
                     onAssigned={onAssignmentComplete}
                 />
             )}

@@ -1,17 +1,15 @@
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor() {
+  constructor(private readonly prisma: PrismaService) {
     const secret = process.env.JWT_SECRET;
-
     if (!secret) {
       throw new Error('JWT_SECRET is missing in environment variables');
     }
-
-    console.log('[JwtStrategy] Initializing JWT strategy with custom secret');
 
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -20,7 +18,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  validate(payload: {
+  async validate(payload: {
     sub: string;
     email: string;
     role?: string;
@@ -29,21 +27,32 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     const userId = payload.sub;
 
     if (!userId) {
-      console.error(
-        '[JwtStrategy] Validation failed: sub (userId) missing in payload',
-      );
       throw new UnauthorizedException('Invalid token: sub missing');
     }
 
-    console.log(
-      `[JwtStrategy] Validated token for user: ${payload.email}, Role: ${payload.role || 'customer'}`,
-    );
+    // ENFORCEMENT: Check if the user is active in the database.
+    // NOTE: This adds a DB lookup per request to ensure instant suspension.
+    // If performance dips under high load, consider implementing Redis caching for this check.
+    const profile = await this.prisma.profile.findUnique({
+      where: { id: userId },
+      select: { isActive: true, role: true, tier: true, email: true },
+    });
+
+    if (!profile) {
+      throw new UnauthorizedException('User profile no longer exists');
+    }
+
+    if (!profile.isActive) {
+      throw new UnauthorizedException(
+        'Your account has been suspended. Please contact administration.',
+      );
+    }
 
     return {
       id: userId,
-      email: payload.email,
-      role: payload.role || 'customer',
-      tier: payload.tier || 'FREE',
+      email: profile.email,
+      role: profile.role,
+      tier: profile.tier,
     };
   }
 }

@@ -1,9 +1,0 @@
---- Scanning All Agents and Matches ---
-Agent: sam sum (281813e7-e3f4-44bc-b135-5ab9ca0e4fde) - Phone: Unknown - Matches: 4
-  - Match db1c3f2f-ad36-444b-a730-4de796054900 [assigned] -> Req bd7b8261-e95f-4226-a9a4-78fae6fa5d33 [matched]: Test Verification Request
-  - Match 98e5ff8f-5ce8-4a56-9a14-02dabda0f4c0 [assigned] -> Req 4d66f1a0-b91a-45f7-8bd8-5f2a3336fb32 [matched]: Test Verification Request
-  - Match cfb676d8-6b2f-4755-8dba-4fecec4b0049 [accepted] -> Req 5afb2543-ba06-4b47-9adc-c2a1e2b4535e [in_progress]: Test Verification Request
-  - Match 50d74bed-e9ac-4f2a-88f6-a1e6328f59b3 [assigned] -> Req 60bdeae0-524c-419c-a642-c7081d7cd552 [matched]: dildil baba
-Agent: alal bibi (8e9f402f-c9e2-4a64-83de-fe624858325f) - Phone: Unknown - Matches: 2
-  - Match c9858497-6a30-473b-9994-991bb52b3d8e [assigned] -> Req 3a8639fe-26cc-4f2a-b03c-f5c250e28b71 [matched]: girthy
-  - Match d4705f49-cbcc-4d84-b2cc-4476df701880 [assigned] -> Req 3d3573a3-5b1f-419c-8a3f-ed96fd1f7af0 [matched]: didi mega dudu

@@ -2,6 +2,7 @@ import {
   Injectable,
   UnauthorizedException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
@@ -57,6 +58,12 @@ export class AuthService {
     if (!profile || !profile.passwordHash) {
       console.error(`[AuthService] User not found: ${credentials.identifier}`);
       throw new UnauthorizedException('Invalid credentials');
+    }
+
+    if (!profile.isActive) {
+      throw new UnauthorizedException(
+        'Your account is currently suspended. Please contact an administrator.',
+      );
     }
 
     const passwordsMatch = await bcrypt.compare(
@@ -127,10 +134,12 @@ export class AuthService {
   async register(data: {
     email: string;
     fullName: string;
+    phone: string;
     password: string;
     role?: string;
     tier?: string;
     inviteToken?: string;
+    referralCode?: string;
   }) {
     console.log(
       `[AuthService] Registering user: ${data.fullName}, Email: ${data.email}`,
@@ -160,26 +169,28 @@ export class AuthService {
       );
       finalRole = 'super_admin';
     }
-    // 2. Validate invite token for admin role
-    else if (finalRole === 'admin') {
-      if (!data.inviteToken) {
-        console.warn(
-          `[AuthService] Registration attempt as admin without token. Defaulting to customer.`,
-        );
-        finalRole = 'customer';
-      } else {
-        await this.inviteService.validateInvite(data.inviteToken, data.email);
-        console.log(`[AuthService] Valid invite token for admin provided.`);
+    // 2. Validate invite token if present
+    else if (data.inviteToken) {
+      const invite = await this.inviteService.validateInvite(
+        data.inviteToken,
+        data.email,
+      );
+
+      console.log(
+        `[AuthService] Valid invite token provided. Changing role from ${finalRole} to ${invite.role}`,
+      );
+
+      finalRole = String(invite.role);
+      if (!data.fullName) {
+        data.fullName = invite.fullName;
       }
     } else {
-      console.log(`[AuthService] Handling non-admin role: ${finalRole}`);
-      if (
-        finalRole !== 'customer' &&
-        finalRole !== 'agent' &&
-        finalRole !== 'operator'
-      ) {
+      console.log(
+        `[AuthService] Handling non-administrative role: ${finalRole}`,
+      );
+      if (finalRole !== 'customer' && finalRole !== 'agent') {
         console.warn(
-          `[AuthService] Role ${finalRole} is not customer/agent/operator. Defaulting to customer.`,
+          `[AuthService] Role ${finalRole} is not customer or agent. Defaulting to customer.`,
         );
         finalRole = 'customer';
       }
@@ -189,14 +200,48 @@ export class AuthService {
     const saltRoutes = 10;
     const passwordHash = await bcrypt.hash(data.password, saltRoutes);
 
+    // Resolve referrer if a referral code was provided
+    let referredById: string | undefined = undefined;
+    if (data.referralCode) {
+      const referrer = await this.prisma.profile.findUnique({
+        where: { referralCode: data.referralCode },
+        include: { referralLink: true, referrals: { select: { id: true } } },
+      });
+      if (!referrer) {
+        throw new BadRequestException('Invalid referral code');
+      }
+      // Check that the referrer has available slots
+      const tierLimits: Record<string, number> = {
+        ABUNDANT_LIFE: 31,
+        UNITY: 23,
+        LOVE: 16,
+        PEACE: 7,
+        FREE: 3,
+      };
+      const referrerWithRefs = referrer as typeof referrer & {
+        referralLink: { tier: string } | null;
+        referrals: { id: string }[];
+      };
+      const tier = String(referrerWithRefs.referralLink?.tier ?? 'FREE');
+      const limit = tierLimits[tier] ?? 3;
+      const referralCount = referrerWithRefs.referrals.length;
+      if (referralCount >= limit) {
+        throw new BadRequestException(
+          `The referrer has reached their referral slot limit`,
+        );
+      }
+      referredById = referrer.id;
+    }
+
     const newProfile = await this.prisma.profile.create({
       data: {
         email: data.email,
         passwordHash,
         fullName: data.fullName,
-        phone: '',
+        phone: this.sanitizePhone(data.phone),
         role: finalRole as UserRole,
         tier: (data.tier || 'FREE') as Tier,
+        ...(referredById ? { referredById } : {}),
       },
     });
 

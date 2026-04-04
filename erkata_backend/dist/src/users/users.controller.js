@@ -35,6 +35,12 @@ let UsersController = class UsersController {
     async getFinance(req) {
         return this.usersService.getFinanceSummary(req.user.id);
     }
+    async requestWithdrawal(req, amount) {
+        return this.usersService.requestWithdrawal(req.user.id, amount);
+    }
+    async generateReferralCode(req) {
+        return this.usersService.generateReferralCode(req.user.id);
+    }
     async assignZone(req, agentId, body) {
         const callerRole = req.user.role;
         return this.usersService.assignZone(callerRole, agentId, body.zoneId, body.woreda);
@@ -42,6 +48,9 @@ let UsersController = class UsersController {
     async updateTier(req, agentId, body) {
         const callerRole = req.user.role;
         return this.usersService.updateTier(callerRole, agentId, body.tier);
+    }
+    async purchasePackage(req, body) {
+        return this.usersService.purchasePackage(req.user.id, body.tier, body.paymentMethod);
     }
     async suspendUser(req, userId) {
         const callerRole = req.user.role;
@@ -78,6 +87,22 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "getFinance", null);
 __decorate([
+    (0, common_1.Post)('me/withdraw'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Body)('amount')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Number]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "requestWithdrawal", null);
+__decorate([
+    (0, common_1.Post)('me/referral-code'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "generateReferralCode", null);
+__decorate([
     (0, common_1.Post)('agent/:id/zones'),
     (0, guards_1.RequirePermission)(permissions_1.Action.ASSIGN_ZONES),
     __param(0, (0, common_1.Req)()),
@@ -97,6 +122,14 @@ __decorate([
     __metadata("design:paramtypes", [Object, String, Object]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "updateTier", null);
+__decorate([
+    (0, common_1.Post)('me/package'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "purchasePackage", null);
 __decorate([
     (0, common_1.Patch)(':id/suspend'),
     (0, guards_1.RequirePermission)(permissions_1.Action.MANAGE_AGENTS),

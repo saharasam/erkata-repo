@@ -11,13 +11,20 @@ const common_1 = require("@nestjs/common");
 const requests_service_1 = require("./requests.service");
 const requests_controller_1 = require("./requests.controller");
 const prisma_module_1 = require("../prisma/prisma.module");
+const bullmq_1 = require("@nestjs/bullmq");
+const assignment_processor_1 = require("./assignment.processor");
+const redis_module_1 = require("../common/redis/redis.module");
 let RequestsModule = class RequestsModule {
 };
 exports.RequestsModule = RequestsModule;
 exports.RequestsModule = RequestsModule = __decorate([
     (0, common_1.Module)({
-        imports: [prisma_module_1.PrismaModule],
-        providers: [requests_service_1.RequestsService],
+        imports: [
+            prisma_module_1.PrismaModule,
+            bullmq_1.BullModule.registerQueue({ name: 'assignment-timeout' }),
+            redis_module_1.RedisModule,
+        ],
+        providers: [requests_service_1.RequestsService, assignment_processor_1.AssignmentProcessor],
         controllers: [requests_controller_1.RequestsController],
         exports: [requests_service_1.RequestsService],
     })

@@ -16,20 +16,25 @@ const audit_logs_controller_1 = require("./audit-logs.controller");
 const admins_controller_1 = require("./admins.controller");
 const analytics_controller_1 = __importDefault(require("./analytics.controller"));
 const system_broadcasts_controller_1 = __importDefault(require("./system-broadcasts.controller"));
+const payouts_controller_1 = require("./payouts.controller");
 const common_module_1 = require("../common/common.module");
 const prisma_module_1 = require("../prisma/prisma.module");
+const aglp_module_1 = require("../aglp/aglp.module");
+const invite_module_1 = require("../auth/invite/invite.module");
+const users_module_1 = require("../users/users.module");
 let AdminModule = class AdminModule {
 };
 exports.AdminModule = AdminModule;
 exports.AdminModule = AdminModule = __decorate([
     (0, common_1.Module)({
-        imports: [common_module_1.CommonModule, prisma_module_1.PrismaModule],
+        imports: [common_module_1.CommonModule, prisma_module_1.PrismaModule, aglp_module_1.AglpModule, invite_module_1.InviteModule, users_module_1.UsersModule],
         controllers: [
             config_controller_1.AdminConfigController,
             audit_logs_controller_1.AuditLogsController,
             admins_controller_1.AdminsController,
             analytics_controller_1.default,
             system_broadcasts_controller_1.default,
+            payouts_controller_1.PayoutsController,
         ],
     })
 ], AdminModule);

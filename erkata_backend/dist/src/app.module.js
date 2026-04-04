@@ -22,6 +22,8 @@ const core_1 = require("@nestjs/core");
 const audit_interceptor_1 = require("./common/interceptors/audit.interceptor");
 const common_module_1 = require("./common/common.module");
 const admin_module_1 = require("./admin/admin.module");
+const aglp_module_1 = require("./aglp/aglp.module");
+const redis_module_1 = require("./common/redis/redis.module");
 let AppModule = class AppModule {
     configure(consumer) {
         consumer
@@ -52,6 +54,8 @@ exports.AppModule = AppModule = __decorate([
             }),
             common_module_1.CommonModule,
             admin_module_1.AdminModule,
+            aglp_module_1.AglpModule,
+            redis_module_1.RedisModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [

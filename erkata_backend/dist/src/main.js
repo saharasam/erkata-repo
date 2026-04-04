@@ -44,11 +44,21 @@ const cookie_parser_1 = __importDefault(require("cookie-parser"));
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
     app.use((0, cookie_parser_1.default)());
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const allowedOrigins = [
+        frontendUrl,
+        'http://localhost:5173',
+        'http://localhost:5174',
+        'http://localhost:5175',
+    ];
     app.enableCors({
-        origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+        origin: allowedOrigins,
         credentials: true,
     });
     await app.listen(process.env.PORT ?? 3000);
 }
-bootstrap();
+bootstrap().catch((err) => {
+    console.error('Error during startup:', err);
+    process.exit(1);
+});
 //# sourceMappingURL=main.js.map

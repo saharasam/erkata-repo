@@ -28,7 +28,7 @@ let MediationService = class MediationService {
         this.config = config;
         this.mediationQueue = mediationQueue;
     }
-    async submitFeedback(transactionId, authorId, content, rating) {
+    async submitFeedback(transactionId, authorId, content, rating, categories = []) {
         const transaction = await this.prisma.transaction.findUnique({
             where: { id: transactionId },
             include: { feedbacks: true },
@@ -52,6 +52,7 @@ let MediationService = class MediationService {
                 authorId,
                 content,
                 rating,
+                categories,
             },
         });
         if (transaction.feedbacks.length === 0) {
@@ -152,7 +153,7 @@ let MediationService = class MediationService {
         const budget = transaction.match.request.budgetMax
             ? Number(transaction.match.request.budgetMax)
             : 0;
-        const riskThreshold = this.config.get('high_risk_threshold_etb', 100000);
+        const riskThreshold = this.config.get('high_risk_threshold_etb', config_service_1.ConfigService.DEFAULT_RISK_THRESHOLD);
         const isHighRisk = budget > riskThreshold;
         if ((isEscalated || isHighRisk) && actor.role !== client_1.UserRole.super_admin) {
             throw new common_1.BadRequestException('This case is escalated/high-risk and requires Super Admin finalization');
