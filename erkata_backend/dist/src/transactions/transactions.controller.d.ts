@@ -39,9 +39,9 @@ export declare class TransactionsController {
     }[]>;
     accept(id: string, req: RequestWithUser): Promise<{
         id: string;
-        agentId: string;
         status: import(".prisma/client").$Enums.MatchStatus;
         requestId: string;
+        agentId: string;
         operatorId: string;
         assignedAt: Date;
     }>;
@@ -50,9 +50,9 @@ export declare class TransactionsController {
     }>;
     transfer(id: string, toAgentId: string, req: RequestWithUser): Promise<{
         id: string;
-        agentId: string;
         status: import(".prisma/client").$Enums.MatchStatus;
         requestId: string;
+        agentId: string;
         operatorId: string;
         assignedAt: Date;
     }>;
@@ -60,16 +60,16 @@ export declare class TransactionsController {
         agent: {
             referredBy: {
                 id: string;
-                role: import(".prisma/client").$Enums.UserRole;
-                isActive: boolean;
+                createdAt: Date;
                 email: string;
                 passwordHash: string | null;
                 fullName: string;
                 phone: string;
+                role: import(".prisma/client").$Enums.UserRole;
                 tier: import(".prisma/client").$Enums.Tier;
+                isActive: boolean;
                 zoneId: string | null;
                 referredById: string | null;
-                createdAt: Date;
                 aglpBalance: import("@prisma/client/runtime/library").Decimal;
                 aglpPending: import("@prisma/client/runtime/library").Decimal;
                 aglpWithdrawn: import("@prisma/client/runtime/library").Decimal;
@@ -79,16 +79,16 @@ export declare class TransactionsController {
             } | null;
         } & {
             id: string;
-            role: import(".prisma/client").$Enums.UserRole;
-            isActive: boolean;
+            createdAt: Date;
             email: string;
             passwordHash: string | null;
             fullName: string;
             phone: string;
+            role: import(".prisma/client").$Enums.UserRole;
             tier: import(".prisma/client").$Enums.Tier;
+            isActive: boolean;
             zoneId: string | null;
             referredById: string | null;
-            createdAt: Date;
             aglpBalance: import("@prisma/client/runtime/library").Decimal;
             aglpPending: import("@prisma/client/runtime/library").Decimal;
             aglpWithdrawn: import("@prisma/client/runtime/library").Decimal;
@@ -98,24 +98,24 @@ export declare class TransactionsController {
         };
         request: {
             id: string;
-            zoneId: string;
-            createdAt: Date;
-            woreda: string | null;
             type: import(".prisma/client").$Enums.RequestType;
             status: import(".prisma/client").$Enums.RequestStatus;
-            category: string;
+            createdAt: Date;
+            zoneId: string;
             description: string | null;
+            customerId: string;
+            category: string;
             budgetMin: import("@prisma/client/runtime/library").Decimal | null;
             budgetMax: import("@prisma/client/runtime/library").Decimal | null;
-            assignmentPushedAt: Date | null;
-            customerId: string;
+            woreda: string | null;
             assignedOperatorId: string | null;
+            assignmentPushedAt: Date | null;
         };
     } & {
         id: string;
-        agentId: string;
         status: import(".prisma/client").$Enums.MatchStatus;
         requestId: string;
+        agentId: string;
         operatorId: string;
         assignedAt: Date;
     }>;
@@ -127,24 +127,24 @@ export declare class TransactionsController {
             };
         } & {
             id: string;
-            zoneId: string;
-            createdAt: Date;
-            woreda: string | null;
             type: import(".prisma/client").$Enums.RequestType;
             status: import(".prisma/client").$Enums.RequestStatus;
-            category: string;
+            createdAt: Date;
+            zoneId: string;
             description: string | null;
+            customerId: string;
+            category: string;
             budgetMin: import("@prisma/client/runtime/library").Decimal | null;
             budgetMax: import("@prisma/client/runtime/library").Decimal | null;
-            assignmentPushedAt: Date | null;
-            customerId: string;
+            woreda: string | null;
             assignedOperatorId: string | null;
+            assignmentPushedAt: Date | null;
         };
     } & {
         id: string;
-        agentId: string;
         status: import(".prisma/client").$Enums.MatchStatus;
         requestId: string;
+        agentId: string;
         operatorId: string;
         assignedAt: Date;
     })[]>;

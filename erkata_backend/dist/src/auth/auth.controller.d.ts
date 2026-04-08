@@ -37,10 +37,17 @@ export declare class AuthController {
     logout(res: Response): Promise<{
         message: string;
     }>;
-    register(body: RegisterDto): Promise<{
+    register(body: RegisterDto, res: Response): Promise<{
         message: string;
-        userId: string;
-        debugRole: string;
+        user: {
+            id: string;
+            email: string;
+            phone: string;
+            fullName: string;
+            role: import(".prisma/client").$Enums.UserRole;
+            tier: import(".prisma/client").$Enums.Tier;
+        };
+        accessToken: string;
     }>;
     heartbeat(req: AuthenticatedRequest): Promise<{
         status: string;

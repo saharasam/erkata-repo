@@ -88,13 +88,20 @@ const Register: React.FC<RegisterProps> = ({ initialRole = 'customer' }) => {
         referralCode: role === 'agent' ? (formData.referralCode || undefined) : undefined,
       });
       
-      navigate('/login', { 
-        state: { 
-          registrationSuccess: true,
-          role: role,
-          message: 'Account created successfully. Please sign in.'
-        } 
-      });
+      // Auto-login is now performed by the signup method in AuthProvider.
+      // We check for a pending request draft to redirect back to intake if needed.
+      const pendingRequest = localStorage.getItem('erkata_pending_request');
+      
+      if (pendingRequest && role === 'customer') {
+        navigate('/submit-request');
+      } else {
+        // Default Role-based navigation
+        if (role === 'agent') navigate('/agent-dashboard');
+        else if (role === 'operator') navigate('/operator-dashboard');
+        else if (role === 'admin') navigate('/admin-dashboard');
+        else if (role === 'super_admin') navigate('/superadmin');
+        else navigate('/customer');
+      }
     } catch (err: any) {
       setError(err.response?.data?.message || 'Registration failed. Please try again.');
     } finally {

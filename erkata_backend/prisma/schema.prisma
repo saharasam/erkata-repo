@@ -67,6 +67,7 @@ model Profile {
   referralLink        ReferralLink?
   customerRequests    Request[]            @relation("CustomerRequests")
   resolutionProposals ResolutionProposal[]
+  notifications       Notification[]
 
   @@map("profiles")
 }
@@ -288,6 +289,7 @@ enum RequestStatus {
   delivered
   cancelled
   ESCALATED
+  DISPUTED
 }
 
 enum MatchStatus {
@@ -333,4 +335,18 @@ enum FeedbackBundleState {
   RESOLVED
   REJECTED
   TIMED_OUT
+}
+
+model Notification {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  title     String
+  message   String
+  type      String
+  read      Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now()) @map("created_at")
+  user      Profile  @relation(fields: [userId], references: [id])
+
+  @@map("notifications")
 }

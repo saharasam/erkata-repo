@@ -257,6 +257,15 @@ Example structure:
 | Unity         | Advanced       | 5     | Higher   |
 | Abundant Life | Maximum        | All   | Highest  |
 
+Actual structure
+
+| Package       | Compensation     | Referral Slots | Geographic Access |
+| ------------- | ---------------- | -------------- | ----------------- |
+| Free          | None             | 3              | 1 zone            |
+| Peace         | Direct + 1st gen | 7              | 2 zones           |
+| Love          | Direct + 1st gen | 16             | 3 zones           |
+| Unity         | Direct + 1st gen | 23             | 5 zones           |
+| Abundant Life | Direct + 1st gen | 31             | Unlimited         |
 ---
 
 # 6. Referral System (MVP Constraint)
@@ -269,6 +278,8 @@ Agents earn commission when:
 1. Referred agent buys package
 2. Referred agent fulfills a request
 
+
+Note: MLM is **restricted to first-generation referrals only**.
 ---
 
 # 7. Earnings & Wallet System
@@ -419,3 +430,467 @@ It is NOT:
 - Agents control **execution quality**
 - Customers validate **outcomes**
 - System enforces **accountability through metrics, not direct control**
+
+# Platform System Specification
+
+## 1. Overview
+
+This platform is supposed to be a **lead distribution and agent coordination system** designed to connect customers with agents through operators for buy/sell requests.
+
+Core characteristics:
+
+- Requests are fulfilled **outside the platform**
+- The platform acts as:
+    - A **routing layer** (operator → agent)
+    - A **tracking layer** (status, reviews, disputes)
+    - A **performance and incentive system** (packages, commissions, referrals)
+
+---
+
+## 2. Actors and Roles
+
+### 2.1 Customer
+
+- Submits buy/sell requests
+- Tracks request status
+- Receives assigned agent details
+- Confirms fulfillment
+- Submits reviews or disputes
+
+---
+
+### 2.2 Operator
+
+- First point of contact after request submission
+- Signs up by an exclusive invite from the admin
+- Responsible for:
+    - Reviewing incoming requests
+    - Assigning requests to agents
+    - Managing initial dispute handling
+
+Operators act as the **manual distribution engine**.
+
+---
+
+### 2.3 Agent
+
+- Core service provider
+- Responsibilities:
+    - Accept or transfer requests
+    - Fulfill requests
+    - Mark requests as completed
+    - Submit fulfillment reports
+
+Agents operate under a **package-based system** that affects:
+
+- Priority
+- Reach
+- Earnings potential
+
+---
+
+### 2.4 Admin
+
+- Mid-level management role
+- Invited via private access only
+- Can invite operators by generating an invite link.
+
+Responsibilities:
+
+- Manage agents and operators
+- Approve withdrawal requests
+- Monitor performance metrics
+- Handle escalated disputes
+- Issue warnings for underperformance
+
+---
+
+### 2.5 Super Admin
+
+- Platform owner with full control
+
+Responsibilities:
+
+- Configure system-wide rules
+- Manage all users (including admins)
+- Define financial parameters
+- Monitor system-wide performance
+- Execute emergency shutdown
+- Can invite both operators and admins by generating exclusive invite links
+
+---
+
+## 3. Request Lifecycle
+
+### Step 1: Submission
+
+- Customer submits a buy/sell request
+- Request enters system with status: **Pending**
+
+---
+
+### Step 2: Operator Handling
+
+- Operator reviews incoming request
+- Selects an agent from a **priority-sorted list**
+    - Sorting based on:
+        - Package level
+        - Performance (optional future factor)
+- Operator assigns the request
+
+---
+
+### Step 3: Assignment
+
+- Request appears on the assigned agent’s dashboard
+- Request Status for customer is still: **Pending**
+
+---
+
+### Step 4: Agent Decision
+
+Agent has two options:
+
+### Accept
+
+- Gains access to **customer contact details**
+- Takes ownership of the request
+
+### Transfer
+
+- Sends request to another agent
+- Only allowed to transfer to **referred agents**
+
+---
+
+### Step 5: Fulfillment (Off-Platform)
+
+- Agent contacts customer directly
+- Completes the transaction outside the platform
+
+---
+
+### Step 6: Completion
+
+- Agent marks request as **Fulfilled or completed** in the system
+- Required inputs:
+    - Description of outcome
+    - Internal notes (optional)
+    - Review of customer (optional/expandable)
+
+---
+
+### Step 7: Customer Confirmation
+
+Customer receives a confirmation prompt:
+
+### If YES:
+
+- Request is finalized
+- Customer submits review
+
+### If NO:
+
+- Request becomes a **Dispute**
+- Escalated to operator
+
+---
+
+## 4. Request Status System
+
+### 4.1 Pending
+
+- Request submitted
+- Awaiting operator assignment
+
+---
+
+### 4.2 Assigned
+
+- Agent has accepted the request
+- Customer receives:
+    - Agent name
+    - Contact details
+    - Basic profile info
+
+---
+
+### 4.3 Fulfilled
+
+- Agent marked request complete
+- Customer confirms outcome
+
+---
+
+### 4.4 Disputed (Implicit State)
+
+- Triggered when customer rejects fulfillment
+- Routed to operator/admin for resolution
+
+---
+
+## 5. Agent System
+
+### 5.1 Registration
+
+- Free signup
+- Limited functionality without package purchase
+
+---
+
+### 5.2 Package System
+
+Each package defines:
+
+- **Zone Coverage**
+    - Geographic/service area access
+- **Referral Capacity**
+    - Number of agents they can invite
+- **Assignment Priority**
+    - Higher packages receive more/better requests
+
+---
+
+### 5.3 Request Handling Capabilities
+
+Agents can:
+
+- View assigned requests
+- Accept requests
+- Transfer requests (restricted to referral network)
+
+---
+
+### 5.4 Performance Metrics
+
+Tracked automatically:
+
+- Total requests received
+- Fulfilled requests
+- Unfulfilled requests
+- Fulfillment rate
+- Average completion time
+- Customer ratings/reviews
+
+---
+
+### 5.5 Enforcement Rules
+
+- Minimum expectation: **5 fulfilled requests**
+- Warning issued at **3 unfulfilled**
+- Suspension triggered at **5 unfulfilled**
+
+This creates a **compliance pressure system**.
+
+---
+
+## 6. Referral System (MLM Structure)
+
+### 6.1 Referral Mechanics
+
+- Agents can invite other agents
+- Limit based on package tier
+
+---
+
+### 6.2 Commission Triggers
+
+Referring agent earns commission when:
+
+1. Referred agent **purchases a package**
+2. Referred agent **completes a request**
+
+---
+
+### 6.3 Commission Control
+
+- All commission percentages defined by **super admin**
+
+---
+
+## 7. Earnings Model
+
+### 7.1 Revenue Sources for Agents
+
+- Referral commissions
+- Downline activity commissions
+
+**Important Constraint:**
+
+- Agents are **not paid by the platform** for fulfilling requests
+
+Value comes from:
+
+- Access to customer leads
+
+---
+
+### 7.2 Wallet System
+
+- Internal currency: **AGLP**
+- All earnings stored in AGLP
+
+---
+
+### 7.3 Currency Conversion
+
+- AGLP → ETB conversion rate:
+    - Defined by super admin
+    - Adjustable at any time
+
+---
+
+### 7.4 Withdrawals
+
+- Agents submit withdrawal requests
+- Admin reviews and approves/rejects
+
+---
+
+## 8. Admin System
+
+### 8.1 Access Control
+
+- No public registration
+- Invite-only via super admin
+
+---
+
+### 8.2 Responsibilities
+
+### User Management
+
+- Monitor agents and operators
+- Issue warnings
+- Recommend suspensions
+
+---
+
+### Financial Oversight
+
+- Approve withdrawal requests
+
+---
+
+### Dispute Management
+
+- Resolve escalated disputes
+- Forward high-risk cases to super admin
+
+---
+
+### 8.3 Performance Monitoring
+
+### Operator Metrics
+
+- Requests received
+- Requests assigned
+- Missed assignments
+- Disputes handled/resolved
+
+---
+
+### Agent Metrics
+
+- Requests received
+- Fulfillment rate
+- Completion time
+
+---
+
+## 9. Operator System
+
+Operators function as:
+
+- **Manual routing nodes**
+
+Responsibilities:
+
+- Review incoming requests
+- Assign to appropriate agents
+- Handle first-level dispute resolution
+
+---
+
+## 10. Super Admin System
+
+### 10.1 Global Configuration
+
+Controls:
+
+- Package pricing
+- Package structure (features, limits)
+- Commission percentages
+- AGLP valuation
+
+---
+
+### 10.2 User Control
+
+- Suspend / unsuspend:
+    - Agents
+    - Operators
+    - Admins
+
+---
+
+### 10.3 Monitoring
+
+Can track:
+
+- Agent performance
+- Operator performance
+- Admin performance
+- Package performance (sales, usage trends)
+
+---
+
+### 10.4 Financial Control
+
+- Define all commission logic
+- Adjust internal currency value
+
+---
+
+### 10.5 Emergency Control
+
+- Platform-wide **lockdown switch**
+    - Enables or disables entire system instantly
+
+---
+
+## 11. System Characteristics
+
+### 11.1 Strengths
+
+- Controlled lead distribution
+- Incentivized agent growth (referrals)
+- Clear performance tracking
+- Scalable via package tiers
+
+---
+
+### 11.2 Constraints
+
+- Fulfillment is **self-reported**
+- No direct verification of real-world completion
+- Heavy reliance on:
+    - Agent honesty
+    - Customer feedback
+    - Dispute resolution
+
+---
+
+### 11.3 Core Model Summary
+
+- Input: Customer requests
+- Processing: Operator assignment + agent decision
+- Output: Off-platform fulfillment
+- Validation: Reviews + disputes
+- Incentives: Packages + commissions + referrals
+
+System is a hybrid of:
+
+- Lead marketplace
+- Performance tracking system
+- MLM-driven growth engine

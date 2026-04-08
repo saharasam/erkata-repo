@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
-import AdminSidebar from '../components/admin/AdminSidebar';
 import SystemHealth from '../components/admin/SystemHealth';
 import EscalatedBundles from '../components/admin/EscalatedBundles';
 import AdminAgentList from '../components/admin/AdminAgentList';
@@ -9,6 +8,11 @@ import PendingActions from '../components/admin/PendingActions';
 import ZoneCoverage from '../components/admin/ZoneCoverage';
 import ProposalHistory from '../components/admin/ProposalHistory';
 import { motion, AnimatePresence } from 'framer-motion';
+
+// Placeholder imports for the new components (Create these files next)
+import OperationsHub from '../components/admin/OperationsHub';
+import FinancialDesk from '../components/admin/FinancialDesk';
+import NetworkIntelligence from '../components/admin/NetworkIntelligence';
 
 const AdminDashboard: React.FC = () => {
     const [currentView, setCurrentView] = useState('overview');
@@ -29,35 +33,21 @@ const AdminDashboard: React.FC = () => {
                 </motion.div>
             }
         >
-            <div className="p-6">
+            <div className="p-6 max-w-7xl mx-auto">
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={currentView}
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -20 }}
-                        transition={{ duration: 0.4, ease: "easeOut" }}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.3 }}
                     >
-                        {currentView === 'overview' && (
-                            <div className="text-center py-20">
-                                <motion.h2 
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.1 }}
-                                    className="text-2xl font-bold text-slate-800 mb-2"
-                                >
-                                    Welcome to Admin Workspace
-                                </motion.h2>
-                                <motion.p 
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.2 }}
-                                    className="text-slate-500"
-                                >
-                                    Select an item from the sidebar to get started.
-                                </motion.p>
-                            </div>
-                        )}
+                        {/* New Views */}
+                        {currentView === 'overview' && <OperationsHub />}
+                        {currentView === 'finance' && <FinancialDesk />}
+                        {currentView === 'network' && <NetworkIntelligence />}
+
+                        {/* Existing Views */}
                         {currentView === 'zones' && <ZoneCoverage />}
                         {currentView === 'bundles' && <EscalatedBundles />}
                         {currentView === 'actions' && <PendingActions />}

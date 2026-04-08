@@ -131,16 +131,19 @@ export class AuthService {
     return { message: 'Logged out' };
   }
 
-  async register(data: {
-    email: string;
-    fullName: string;
-    phone: string;
-    password: string;
-    role?: string;
-    tier?: string;
-    inviteToken?: string;
-    referralCode?: string;
-  }) {
+  async register(
+    data: {
+      email: string;
+      fullName: string;
+      phone: string;
+      password: string;
+      role?: string;
+      tier?: string;
+      inviteToken?: string;
+      referralCode?: string;
+    },
+    res?: Response,
+  ) {
     console.log(
       `[AuthService] Registering user: ${data.fullName}, Email: ${data.email}`,
     );
@@ -254,10 +257,37 @@ export class AuthService {
     }
 
     console.log(`[AuthService] User created successfully: ${newProfile.id}`);
+
+    // AUTOMATIC LOGIN LOGIC
+    const payload = {
+      sub: newProfile.id,
+      email: newProfile.email,
+      role: newProfile.role,
+      tier: newProfile.tier,
+    };
+    const accessToken = this.jwtService.sign(payload);
+    const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+
+    if (res) {
+      res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      });
+    }
+
     return {
       message: 'Registration successful.',
-      userId: newProfile.id,
-      debugRole: finalRole,
+      user: {
+        id: newProfile.id,
+        email: newProfile.email,
+        phone: newProfile.phone,
+        fullName: newProfile.fullName,
+        role: newProfile.role,
+        tier: newProfile.tier,
+      },
+      accessToken,
     };
   }
 }

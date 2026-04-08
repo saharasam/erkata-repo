@@ -37,9 +37,16 @@ export declare class AuthService {
         tier?: string;
         inviteToken?: string;
         referralCode?: string;
-    }): Promise<{
+    }, res?: Response): Promise<{
         message: string;
-        userId: string;
-        debugRole: string;
+        user: {
+            id: string;
+            email: string;
+            phone: string;
+            fullName: string;
+            role: import(".prisma/client").$Enums.UserRole;
+            tier: import(".prisma/client").$Enums.Tier;
+        };
+        accessToken: string;
     }>;
 }

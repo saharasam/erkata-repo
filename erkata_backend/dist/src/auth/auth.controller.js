@@ -42,9 +42,9 @@ let AuthController = class AuthController {
     async logout(res) {
         return await this.authService.logout(res);
     }
-    async register(body) {
+    async register(body, res) {
         try {
-            return await this.authService.register(body);
+            return await this.authService.register(body, res);
         }
         catch (e) {
             const message = e instanceof Error ? e.message : 'Registration failed';
@@ -102,8 +102,9 @@ __decorate([
 __decorate([
     (0, common_1.Post)('register'),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Res)({ passthrough: true })),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "register", null);
 __decorate([

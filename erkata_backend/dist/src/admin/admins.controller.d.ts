@@ -10,11 +10,11 @@ export declare class AdminsController {
     constructor(prisma: PrismaService, inviteService: InviteService, usersService: UsersService);
     getPersonnel(role?: string): Promise<{
         id: string;
-        role: import(".prisma/client").$Enums.UserRole;
-        isActive: boolean;
+        createdAt: Date;
         fullName: string;
         phone: string;
-        createdAt: Date;
+        role: import(".prisma/client").$Enums.UserRole;
+        isActive: boolean;
         _count: {
             operatorMatches: number;
             resolutionProposals: number;
@@ -30,11 +30,11 @@ export declare class AdminsController {
         inviteUrl: string;
         invite: {
             id: string;
-            role: import(".prisma/client").$Enums.UserRole;
+            createdAt: Date;
             email: string;
             fullName: string;
             phone: string;
-            createdAt: Date;
+            role: import(".prisma/client").$Enums.UserRole;
             token: string;
             expiresAt: Date;
             usedAt: Date | null;
@@ -43,11 +43,11 @@ export declare class AdminsController {
     }>;
     getInvites(req: AuthenticatedRequest): Promise<{
         id: string;
-        role: import(".prisma/client").$Enums.UserRole;
+        createdAt: Date;
         email: string;
         fullName: string;
         phone: string;
-        createdAt: Date;
+        role: import(".prisma/client").$Enums.UserRole;
         token: string;
         expiresAt: Date;
         usedAt: Date | null;
@@ -60,16 +60,16 @@ export declare class AdminsController {
         isActive: boolean;
     }): Promise<{
         id: string;
-        role: import(".prisma/client").$Enums.UserRole;
-        isActive: boolean;
+        createdAt: Date;
         email: string;
         passwordHash: string | null;
         fullName: string;
         phone: string;
+        role: import(".prisma/client").$Enums.UserRole;
         tier: import(".prisma/client").$Enums.Tier;
+        isActive: boolean;
         zoneId: string | null;
         referredById: string | null;
-        createdAt: Date;
         aglpBalance: import("@prisma/client/runtime/library").Decimal;
         aglpPending: import("@prisma/client/runtime/library").Decimal;
         aglpWithdrawn: import("@prisma/client/runtime/library").Decimal;

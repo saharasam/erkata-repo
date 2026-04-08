@@ -14,29 +14,29 @@ export declare class PayoutsController {
         };
     } & {
         id: string;
-        createdAt: Date;
-        amount: import("@prisma/client/runtime/library").Decimal;
+        profileId: string;
         type: import(".prisma/client").$Enums.AglpTransactionType;
+        amount: import("@prisma/client/runtime/library").Decimal;
         etbEquivalent: import("@prisma/client/runtime/library").Decimal | null;
         conversionRate: import("@prisma/client/runtime/library").Decimal | null;
         status: import(".prisma/client").$Enums.AglpTransactionStatus;
         referenceId: string | null;
         referenceType: string | null;
+        createdAt: Date;
         updatedAt: Date;
-        profileId: string;
     })[]>;
     approvePayout(id: string): Promise<{
         id: string;
-        createdAt: Date;
-        amount: import("@prisma/client/runtime/library").Decimal;
+        profileId: string;
         type: import(".prisma/client").$Enums.AglpTransactionType;
+        amount: import("@prisma/client/runtime/library").Decimal;
         etbEquivalent: import("@prisma/client/runtime/library").Decimal | null;
         conversionRate: import("@prisma/client/runtime/library").Decimal | null;
         status: import(".prisma/client").$Enums.AglpTransactionStatus;
         referenceId: string | null;
         referenceType: string | null;
+        createdAt: Date;
         updatedAt: Date;
-        profileId: string;
     }>;
     rejectPayout(id: string, reason: string): Promise<void>;
     getPendingEscrow(): Promise<({
@@ -48,35 +48,35 @@ export declare class PayoutsController {
         };
     } & {
         id: string;
-        createdAt: Date;
-        amount: import("@prisma/client/runtime/library").Decimal;
+        profileId: string;
         type: import(".prisma/client").$Enums.AglpTransactionType;
+        amount: import("@prisma/client/runtime/library").Decimal;
         etbEquivalent: import("@prisma/client/runtime/library").Decimal | null;
         conversionRate: import("@prisma/client/runtime/library").Decimal | null;
         status: import(".prisma/client").$Enums.AglpTransactionStatus;
         referenceId: string | null;
         referenceType: string | null;
+        createdAt: Date;
         updatedAt: Date;
-        profileId: string;
     })[]>;
     releaseEscrow(id: string): Promise<void>;
     getGlobalLedger(type?: AglpTransactionType, status?: AglpTransactionStatus, profileId?: string): Promise<({
         profile: {
             id: string;
-            role: import(".prisma/client").$Enums.UserRole;
             fullName: string;
+            role: import(".prisma/client").$Enums.UserRole;
         };
     } & {
         id: string;
-        createdAt: Date;
-        amount: import("@prisma/client/runtime/library").Decimal;
+        profileId: string;
         type: import(".prisma/client").$Enums.AglpTransactionType;
+        amount: import("@prisma/client/runtime/library").Decimal;
         etbEquivalent: import("@prisma/client/runtime/library").Decimal | null;
         conversionRate: import("@prisma/client/runtime/library").Decimal | null;
         status: import(".prisma/client").$Enums.AglpTransactionStatus;
         referenceId: string | null;
         referenceType: string | null;
+        createdAt: Date;
         updatedAt: Date;
-        profileId: string;
     })[]>;
 }

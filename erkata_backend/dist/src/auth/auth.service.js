@@ -137,7 +137,7 @@ let AuthService = class AuthService {
         await Promise.resolve();
         return { message: 'Logged out' };
     }
-    async register(data) {
+    async register(data, res) {
         console.log(`[AuthService] Registering user: ${data.fullName}, Email: ${data.email}`);
         const existingUser = await this.prisma.profile.findUnique({
             where: { email: data.email },
@@ -212,10 +212,33 @@ let AuthService = class AuthService {
             await this.inviteService.markInviteAsUsed(data.inviteToken);
         }
         console.log(`[AuthService] User created successfully: ${newProfile.id}`);
+        const payload = {
+            sub: newProfile.id,
+            email: newProfile.email,
+            role: newProfile.role,
+            tier: newProfile.tier,
+        };
+        const accessToken = this.jwtService.sign(payload);
+        const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+        if (res) {
+            res.cookie('refreshToken', refreshToken, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'lax',
+                maxAge: 7 * 24 * 60 * 60 * 1000,
+            });
+        }
         return {
             message: 'Registration successful.',
-            userId: newProfile.id,
-            debugRole: finalRole,
+            user: {
+                id: newProfile.id,
+                email: newProfile.email,
+                phone: newProfile.phone,
+                fullName: newProfile.fullName,
+                role: newProfile.role,
+                tier: newProfile.tier,
+            },
+            accessToken,
         };
     }
 };

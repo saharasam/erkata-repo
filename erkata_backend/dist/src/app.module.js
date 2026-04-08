@@ -24,6 +24,7 @@ const common_module_1 = require("./common/common.module");
 const admin_module_1 = require("./admin/admin.module");
 const aglp_module_1 = require("./aglp/aglp.module");
 const redis_module_1 = require("./common/redis/redis.module");
+const notifications_module_1 = require("./notifications/notifications.module");
 let AppModule = class AppModule {
     configure(consumer) {
         consumer
@@ -46,6 +47,7 @@ exports.AppModule = AppModule = __decorate([
             requests_module_1.RequestsModule,
             transactions_module_1.TransactionsModule,
             mediation_module_1.MediationModule,
+            notifications_module_1.NotificationsModule,
             bullmq_1.BullModule.forRoot({
                 connection: {
                     host: process.env.REDIS_HOST || 'localhost',

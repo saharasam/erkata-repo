@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Calendar, StickyNote, MessageCircle, X, Globe, User, LogOut, ShieldCheck, Archive, ShieldAlert, Settings2, Megaphone, BarChart4, History, TrendingUp, Users, ChevronRight, ChevronLeft, MapPin, LayoutGrid, FileText, Package } from 'lucide-react';
+import { Calendar, StickyNote, MessageCircle, X, Globe, User, LogOut, ShieldCheck, Archive, ShieldAlert, Settings2, Megaphone, BarChart4, History, TrendingUp, Users, ChevronRight, ChevronLeft, MapPin, LayoutGrid, FileText, Package, Wallet, Network } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
 import { UserRole } from '../utils/constants';
@@ -27,8 +27,8 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
   const navigate = useNavigate();
 
   const tools = [
-    { id: 'calendar', icon: Calendar, label: 'Calendar', color: 'text-blue-500' },
-    { id: 'notes', icon: StickyNote, label: 'Notes', color: 'text-yellow-500' },
+    // { id: 'calendar', icon: Calendar, label: 'Calendar', color: 'text-blue-500' },
+    // { id: 'notes', icon: StickyNote, label: 'Notes', color: 'text-yellow-500' },
     { id: 'support', icon: MessageCircle, label: 'Support', color: 'text-purple-500' },
     { id: 'language', icon: Globe, label: 'Language', color: 'text-teal-500' },
     { id: 'profile', icon: User, label: 'Profile', color: 'text-slate-500' },
@@ -47,11 +47,13 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
   ];
 
   const adminTools = [
-    { id: 'overview', icon: BarChart4, label: 'Overview' },
+    { id: 'overview', icon: BarChart4, label: 'Operations Hub' },
     { id: 'zones', icon: MapPin, label: 'Zone Coverage' },
     { id: 'bundles', icon: ShieldAlert, label: 'Escalated Bundles' },
     { id: 'actions', icon: Settings2, label: 'Pending Actions' },
     { id: 'history', icon: History, label: 'My Proposals' },
+    { id: 'finance', icon: Wallet, label: 'Financial Desk' },
+    { id: 'network', icon: Network, label: 'Network Intelligence' },
     { id: 'agents', icon: Users, label: 'Agents' },
     { id: 'operators', icon: Users, label: 'Operators' },
   ];

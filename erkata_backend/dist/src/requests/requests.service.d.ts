@@ -241,4 +241,8 @@ export declare class RequestsService {
         assignedOperatorId: string | null;
         assignmentPushedAt: Date | null;
     })[]>;
+    confirmFulfillment(requestId: string, customerId: string, confirmed: boolean): Promise<{
+        success: boolean;
+        status: string;
+    }>;
 }

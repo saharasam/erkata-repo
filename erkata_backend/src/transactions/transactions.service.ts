@@ -229,7 +229,7 @@ export class TransactionsService {
 
       await tx.request.update({
         where: { id: match.requestId },
-        data: { status: RequestStatus.completed },
+        data: { status: RequestStatus.delivered },
       });
 
       // ── Commission Splitting Logic (Phase 2) ──────────────────────────

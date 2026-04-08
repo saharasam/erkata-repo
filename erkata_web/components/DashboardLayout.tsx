@@ -1,15 +1,15 @@
 import React, { ReactNode, useState } from 'react';
-import { useAuth } from '../hooks/useAuth';
-import { LogOut, Menu, X, ChevronRight, ChevronLeft, Bell, Search, Settings } from 'lucide-react';
+import { X, ChevronRight, ChevronLeft, Bell, Search, Settings } from 'lucide-react';
 import UtilitySidebar from './UtilitySidebar';
 import SettingsView from './SettingsView';
 import NotificationsPanel from './NotificationsPanel';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNotifications } from '../contexts/NotificationContext';
 
 interface DashboardLayoutProps {
   children: ReactNode;
-  sidebarContent: ReactNode;
+  sidebarContent?: ReactNode; // deprecated — kept for backward compat, not rendered
   rightPanelContent?: ReactNode;
   role: 'agent' | 'operator' | 'admin' | 'customer' | 'super_admin';
   onSettingsClick?: () => void;
@@ -19,19 +19,17 @@ interface DashboardLayoutProps {
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ 
   children, 
-  sidebarContent, 
   rightPanelContent,
   role,
   onSettingsClick,
   currentView,
   onViewChange
 }) => {
-  const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [rightPanelOpen, setRightPanelOpen] = useState(true);
   const [showSettings, setShowSettings] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const { unreadCount } = useNotifications();
 
   // Handle external settings click (optional prop) or internal
   const handleSettingsClick = () => {
@@ -39,10 +37,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       if (onSettingsClick) onSettingsClick();
   };
 
-  const sidebarVariants = {
-    open: { x: 0, opacity: 1, display: 'block' },
-    closed: { x: '-100%', opacity: 0, transitionEnd: { display: 'none' } },
-  };
 
   return (
     <div className="h-screen bg-[#F0F4F8] flex font-sans overflow-hidden">
@@ -78,21 +72,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         )}
       </AnimatePresence>
 
-      {/* Mobile Sidebar Overlay */}
-      <AnimatePresence>
-        {sidebarOpen && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setSidebarOpen(false)}
-            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 lg:hidden"
-          />
-        )}
-      </AnimatePresence>
-
       {/* Global Utility Sidebar (Left - Always Visible) */}
-      <div className="hidden lg:block h-full z-50 shrink-0">
+      <div className="h-full z-50 shrink-0">
           <UtilitySidebar 
             onSettingsClick={() => setShowSettings(true)}
             onNotificationsClick={() => setShowNotifications(true)}
@@ -100,90 +81,6 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             onViewChange={onViewChange}
           />
       </div>
-
-      {/* Primary Navigation Sidebar */}
-      <motion.aside 
-        className={`
-          fixed lg:static inset-y-0 left-0 z-40
-          w-72 bg-white/80 backdrop-blur-2xl border-r border-white/40 shadow-xl lg:shadow-none
-          flex flex-col
-          ${sidebarOpen ? 'flex' : 'hidden lg:flex'}
-        `}
-        initial={false}
-        animate={(sidebarOpen || sidebarContent) ? "open" : "lg:open"}
-        variants={{
-            ...sidebarVariants,
-            "lg:open": { 
-              x: sidebarContent ? 0 : '-100%', 
-              opacity: sidebarContent ? 1 : 0, 
-              display: sidebarContent ? 'flex' : 'none' 
-            }
-        }}
-        transition={{ type: 'spring', damping: 20, stiffness: 150 }}
-      >
-        {/* Desktop reset for visibility */}
-        <div className="hidden lg:block absolute inset-0 -z-10 bg-gradient-to-b from-white/60 to-white/30" />
-
-        {/* Header */}
-        <div className="p-6 pb-2 shrink-0">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${role === 'admin' ? 'from-indigo-600 to-blue-900' : 'from-erkata-primary to-erkata-secondary'} flex items-center justify-center text-white font-bold shadow-lg ${role === 'admin' ? 'shadow-indigo-500/20' : 'shadow-erkata-primary/20'}`}>
-                E
-              </div>
-              <div>
-                <motion.h2 className="text-xl font-extrabold text-slate-800 tracking-tight leading-none">
-                  Erkata
-                </motion.h2>
-                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-0.5">
-                  {role === 'agent' ? 'Agent Workspace' : role === 'operator' ? 'Operator Console' : role === 'super_admin' ? 'Final Authority' : 'System Admin'}
-                </p>
-              </div>
-            </div>
-            <button 
-              onClick={() => setSidebarOpen(false)}
-              className="lg:hidden p-2 text-slate-400 hover:text-slate-600"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-
-          {/* User Profile Snippet */}
-          <div className="bg-white/50 border border-white/60 rounded-xl p-3 flex items-center gap-3 shadow-sm">
-             <div className="w-10 h-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-bold text-sm border-2 border-white shadow-sm">
-                {user?.fullName?.charAt(0) || 'U'}
-             </div>
-             <div className="min-w-0 flex-1">
-                <p className="text-sm font-bold text-slate-800 truncate">{user?.fullName}</p>
-                <div className="flex items-center gap-1.5">
-                   <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                   <p className="text-xs text-slate-500 font-medium truncate">Online</p>
-                </div>
-             </div>
-          </div>
-        </div>
-
-        {/* Navigation Links */}
-        <nav className="flex-1 overflow-y-auto px-4 py-2 custom-scrollbar">
-          {sidebarContent}
-        </nav>
-
-        {/* Sidebar Footer */}
-        <div className="p-4 shrink-0">
-          <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-xl p-4 text-white shadow-lg relative overflow-hidden group">
-            <div className="absolute top-0 right-0 p-3 opacity-10 group-hover:opacity-20 transition-opacity">
-               <div className="w-20 h-20 bg-white rounded-full blur-2xl" />
-            </div>
-            <h4 className="font-bold text-sm mb-1">Need Help?</h4>
-            <p className="text-[10px] text-slate-300 mb-3 opacity-80">
-              Contact support for urgent issues requiring immediate attention.
-            </p>
-            <button className="w-full bg-white/10 hover:bg-white/20 border border-white/5 rounded-lg py-2 text-xs font-semibold transition-colors">
-              Contact Support
-            </button>
-          </div>
-        </div>
-      </motion.aside>
 
       {/* Main Content Areas */}
       <div className="flex-1 flex flex-col min-w-0 h-full relative overflow-hidden">
@@ -193,17 +90,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             <div className={`absolute bottom-[-20%] right-[-10%] w-[40%] h-[40%] ${(role === 'admin' || role === 'super_admin') ? 'bg-blue-100/40' : 'bg-teal-100/40'} rounded-full blur-[120px]`} />
         </div>
 
-        {/* Top Header (Mobile Only / Global Tools) */}
+        {/* Top Header */}
         <header className="h-16 shrink-0 border-b border-white/40 bg-white/40 backdrop-blur-sm flex items-center justify-between px-4 lg:px-8 relative z-20">
-           <div className="flex items-center lg:hidden">
-              <button
-                onClick={() => setSidebarOpen(true)}
-                className="p-2 -ml-2 text-slate-600 hover:bg-white/50 rounded-lg transition-colors"
-              >
-                <Menu className="w-6 h-6" />
-              </button>
-           </div>
-           
            {/* Navigation Controls */}
            <div className="hidden lg:flex items-center gap-1 mr-2">
               <button 
@@ -240,8 +128,11 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                     className={`p-2 rounded-full transition-colors relative ${showNotifications ? 'bg-white text-erkata-primary shadow-sm' : 'text-slate-400 hover:text-slate-600 hover:bg-white/60'}`}
                   >
                      <Bell className="w-5 h-5" />
-                     {/* Unread Indicator */}
-                     <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
+                     {unreadCount > 0 && (
+                        <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-500 rounded-full border-2 border-white text-[8px] flex items-center justify-center text-white font-bold">
+                           {unreadCount}
+                        </span>
+                     )}
                   </button>
                   <NotificationsPanel 
                     isOpen={showNotifications} 

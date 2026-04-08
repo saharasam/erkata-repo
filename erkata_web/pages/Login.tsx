@@ -17,7 +17,7 @@ const Login: React.FC = () => {
   const isFromRequest = location.state?.fromRequest;
 
   useEffect(() => {
-    const draft = localStorage.getItem('erkata_draft_request');
+    const draft = localStorage.getItem('erkata_pending_request');
     if (draft) setHasDraft(true);
   }, []);
 
@@ -27,19 +27,20 @@ const Login: React.FC = () => {
 
     const result = await login(identifier, password);
     
-    if (result.success) {
-      if (hasDraft) {
-        localStorage.removeItem('erkata_draft_request');
-        localStorage.removeItem('erkata_request_intent');
-      }
-      // Navigation is handled by the user effect
-    } else {
+    if (!result.success) {
       setError(result.error || 'Invalid credentials. Check your email and password.');
     }
   };
 
   useEffect(() => {
     if (user) {
+      // Check for draft and redirect to submission if it exists
+      const draft = localStorage.getItem('erkata_pending_request');
+      if (draft && user.role === UserRole.CUSTOMER) {
+        navigate('/submit-request');
+        return;
+      }
+
       const role = user.role;
       if (role === UserRole.AGENT) navigate('/agent-dashboard');
       else if (role === UserRole.OPERATOR) navigate('/operator-dashboard');

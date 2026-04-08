@@ -16,6 +16,7 @@ import { CommonModule } from './common/common.module';
 import { AdminModule } from './admin/admin.module';
 import { AglpModule } from './aglp/aglp.module';
 import { RedisModule } from './common/redis/redis.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { RedisModule } from './common/redis/redis.module';
     RequestsModule,
     TransactionsModule,
     MediationModule,
+    NotificationsModule,
     BullModule.forRoot({
       connection: {
         host: process.env.REDIS_HOST || 'localhost',

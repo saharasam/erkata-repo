@@ -95,15 +95,21 @@ const AnimatedRoutes = () => {
     </AnimatePresence>
   );
 };
+import { SocketProvider } from './contexts/SocketProvider';
+import { NotificationProvider } from './contexts/NotificationContext';
 
 const App: React.FC = () => {
   return (
     <AuthProvider>
-      <ModalProvider>
-        <HashRouter>
-          <AnimatedRoutes />
-        </HashRouter>
-      </ModalProvider>
+      <SocketProvider>
+        <NotificationProvider>
+          <ModalProvider>
+            <HashRouter>
+              <AnimatedRoutes />
+            </HashRouter>
+          </ModalProvider>
+        </NotificationProvider>
+      </SocketProvider>
     </AuthProvider>
   );
 };

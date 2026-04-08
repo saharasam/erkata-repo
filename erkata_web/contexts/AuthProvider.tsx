@@ -118,7 +118,27 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         ...(data.inviteToken ? { inviteToken: data.inviteToken } : {}),
         ...(data.referralCode ? { referralCode: data.referralCode } : {}),
       };
-      await api.post('/auth/register', payload);
+      const response = await api.post('/auth/register', payload);
+      
+      // Automatic Login after Registration
+      const { user: userData, accessToken } = response.data;
+      
+      if (accessToken && userData) {
+        console.log('[Auth] Auto-login successful after registration.');
+        setAccessToken(accessToken);
+
+        const authenticatedUser: User = {
+          id: userData.id,
+          role: normalizeRole(userData.role),
+          fullName: userData.fullName || 'User',
+          email: userData.email,
+          zoneId: userData.zoneId
+        };
+
+        setUser(authenticatedUser);
+        localStorage.setItem('erkata_user', JSON.stringify(authenticatedUser));
+        setAuthReady(true);
+      }
     } catch (error) {
       console.error('[Auth] Registration failed:', error);
       throw error;

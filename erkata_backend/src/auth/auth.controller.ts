@@ -65,9 +65,12 @@ export class AuthController {
   }
 
   @Post('register')
-  async register(@Body() body: RegisterDto) {
+  async register(
+    @Body() body: RegisterDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     try {
-      return await this.authService.register(body);
+      return await this.authService.register(body, res);
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : 'Registration failed';
       throw new InternalServerErrorException(message);
@@ -78,7 +81,7 @@ export class AuthController {
   @Post('heartbeat')
   async heartbeat(@Req() req: AuthenticatedRequest) {
     const user = req.user;
-    
+
     // Update Redis Presence
     await this.presence.heartbeat(user.id);
 
@@ -91,7 +94,7 @@ export class AuthController {
         where: {
           assignedOperatorId: user.id,
           status: RequestStatus.pending,
-        } as any,
+        },
         select: { id: true },
       });
 

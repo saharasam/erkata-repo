@@ -268,6 +268,32 @@ let RequestsService = class RequestsService {
             orderBy: { createdAt: 'desc' },
         });
     }
+    async confirmFulfillment(requestId, customerId, confirmed) {
+        const request = await this.prisma.request.findUnique({
+            where: { id: requestId },
+        });
+        if (!request)
+            throw new common_1.NotFoundException('Request not found');
+        if (request.customerId !== customerId)
+            throw new common_1.ForbiddenException('Not your request');
+        if (request.status !== client_1.RequestStatus.delivered) {
+            throw new common_1.BadRequestException('Request is not in a confirmable state');
+        }
+        if (confirmed) {
+            await this.prisma.request.update({
+                where: { id: requestId },
+                data: { status: client_1.RequestStatus.completed },
+            });
+        }
+        else {
+            await this.prisma.request.update({
+                where: { id: requestId },
+                data: { status: 'DISPUTED' },
+            });
+            this.eventEmitter.emit('request.disputed', { requestId, customerId });
+        }
+        return { success: true, status: confirmed ? 'completed' : 'disputed' };
+    }
 };
 exports.RequestsService = RequestsService;
 exports.RequestsService = RequestsService = __decorate([

@@ -10,6 +10,7 @@ exports.CommonModule = void 0;
 const common_1 = require("@nestjs/common");
 const config_service_1 = require("./config.service");
 const prisma_module_1 = require("../prisma/prisma.module");
+const request_events_1 = require("./events/request.events");
 let CommonModule = class CommonModule {
 };
 exports.CommonModule = CommonModule;
@@ -17,7 +18,7 @@ exports.CommonModule = CommonModule = __decorate([
     (0, common_1.Global)(),
     (0, common_1.Module)({
         imports: [prisma_module_1.PrismaModule],
-        providers: [config_service_1.ConfigService],
+        providers: [config_service_1.ConfigService, request_events_1.RequestEventListener],
         exports: [config_service_1.ConfigService],
     })
 ], CommonModule);

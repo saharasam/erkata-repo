@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ShoppingBag, 
@@ -43,6 +43,49 @@ const RequestIntakeFlow: React.FC<RequestIntakeFlowProps> = ({ onSuccess, onCanc
     details: ''
   });
 
+  const submissionLock = React.useRef(false);
+  const [isAutoSubmitting, setIsAutoSubmitting] = useState(false);
+
+  // Load draft from localStorage on mount
+  useEffect(() => {
+    const savedDraft = localStorage.getItem('erkata_pending_request');
+    if (savedDraft) {
+      try {
+        const parsed = JSON.parse(savedDraft);
+        const { formData: savedFormData, intent: savedIntent, autoSubmit } = parsed;
+        
+        if (savedFormData) setFormData(prev => ({ ...prev, ...savedFormData }));
+        if (savedIntent) {
+          setIntent(savedIntent);
+          setStep(1);
+        }
+        
+        console.log('[RequestIntake] Loaded draft from localStorage');
+
+        // Automatic submission logic
+        if (autoSubmit && isAuthenticated && savedFormData && savedIntent && !submissionLock.current) {
+            console.log('[RequestIntake] Auto-submitting draft...');
+            setIsAutoSubmitting(true);
+            
+            // PREVENT DUPLICATES: 
+            // 1. Set the local ref lock immediately
+            submissionLock.current = true;
+            
+            // 2. Clear the autoSubmit flag from localStorage so another render doesn't trigger it
+            localStorage.setItem('erkata_pending_request', JSON.stringify({
+                ...parsed,
+                autoSubmit: false
+            }));
+
+            // We need to pass the data directly because state updates (setFormData) might not have committed yet
+            performSubmission(savedFormData, savedIntent);
+        }
+      } catch (e) {
+        console.error('[RequestIntake] Failed to parse saved draft:', e);
+      }
+    }
+  }, [isAuthenticated]); // Re-run when authentication status changes
+
   const kifleKetemas = [
     'Bole', 'Yeka', 'Arada', 'Kirkos', 'Nifas Silk', 'Akaki Kality', 'Gullele', 'Addis Ketema', 'Kolfe Keranio', 'Lideta'
   ];
@@ -57,40 +100,36 @@ const RequestIntakeFlow: React.FC<RequestIntakeFlowProps> = ({ onSuccess, onCanc
     setStep(1);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!isAuthenticated) {
-        showAlert({
-            title: 'Authentication Required',
-            message: 'You need to be logged in to submit a request. Redirecting to registration...',
-            type: 'info'
-        });
-        window.location.href = '/#/register?fromRequest=true';
-        return;
-    }
-
+  const performSubmission = async (currentData: typeof formData, currentIntent: RequestIntent) => {
     setIsSubmitting(true);
     try {
       await api.post('/requests', {
-        category: formData.category,
+        category: currentData.category,
         details: {
-          title: formData.title,
-          description: formData.details,
-          budgetMin: parseFloat(formData.budgetMin) || undefined,
-          budgetMax: parseFloat(formData.budgetMax) || undefined,
-          intent: intent
+          title: currentData.title,
+          description: currentData.details,
+          budgetMin: parseFloat(currentData.budgetMin) || undefined,
+          budgetMax: parseFloat(currentData.budgetMax) || undefined,
+          intent: currentIntent
         },
         locationZone: {
-          kifleKetema: formData.kifleKetema,
-          woreda: formData.woreda
+          kifleKetema: currentData.kifleKetema,
+          woreda: currentData.woreda
         }
       });
+
+      // Clear entire draft on success
+      localStorage.removeItem('erkata_pending_request');
 
       if (onSuccess) {
         onSuccess();
       }
     } catch (error: any) {
       console.error('Error submitting request:', error);
+      // If auto-submit failed, we stay on the page and show the error
+      setIsAutoSubmitting(false);
+      submissionLock.current = false; // Allow manual retry
+      
       showAlert({
         title: 'Submission Failed',
         message: error.response?.data?.message || 'There was an error submitting your request. Please try again.',
@@ -101,6 +140,34 @@ const RequestIntakeFlow: React.FC<RequestIntakeFlowProps> = ({ onSuccess, onCanc
     }
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isAuthenticated) {
+        // Save draft before redirecting
+        localStorage.setItem('erkata_pending_request', JSON.stringify({
+            formData,
+            intent,
+            autoSubmit: true, // Mark for automatic submission after login
+            timestamp: new Date().getTime()
+        }));
+
+        showAlert({
+            title: 'Authentication Required',
+            message: 'You need to be logged in to submit a request. Redirecting to registration...',
+            type: 'info'
+        });
+        
+        // Use a small delay to ensure State persists if any async logic is involved
+        setTimeout(() => {
+            window.location.href = '/#/register?fromRequest=true';
+        }, 500);
+        return;
+    }
+
+    if (submissionLock.current) return;
+    await performSubmission(formData, intent);
+  };
+
   const fadeInUp = {
     initial: { opacity: 0, y: 20 },
     animate: { opacity: 1, y: 0 },
@@ -108,7 +175,24 @@ const RequestIntakeFlow: React.FC<RequestIntakeFlowProps> = ({ onSuccess, onCanc
   };
 
   return (
-    <div className={`${embedded ? '' : 'max-w-4xl mx-auto'}`}>
+    <div className={`${embedded ? '' : 'max-w-4xl mx-auto'} relative`}>
+      <AnimatePresence>
+        {isAutoSubmitting && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.05 }}
+            className="absolute inset-x-[-20px] inset-y-[-20px] z-[100] bg-white/95 backdrop-blur-2xl rounded-[3rem] flex flex-col items-center justify-center text-center p-12 shadow-2xl"
+          >
+            <div className="w-24 h-24 border-[6px] border-erkata-primary/10 border-t-erkata-primary rounded-full animate-spin mb-10"></div>
+            <h2 className="text-4xl font-extrabold text-slate-900 mb-6 tracking-tight">Finalizing</h2>
+            <p className="text-gray-600 text-xl max-w-lg leading-relaxed font-medium">
+              We're automatically submitting your details. One moment while we connect you to our agent network...
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <AnimatePresence mode="wait">
         {step === 0 ? (
           <motion.div 

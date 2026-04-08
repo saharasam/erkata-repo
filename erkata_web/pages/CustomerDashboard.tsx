@@ -10,6 +10,7 @@ import { Can } from '../components/ui/Can';
 import { Action } from '../hooks/usePermissions';
 import api from '../utils/api';
 import { useModal } from '../contexts/ModalContext';
+import FulfillmentConfirmation from '../components/FulfillmentConfirmation';
 
 const CustomerDashboard: React.FC = () => {
   const [requests, setRequests] = useState<any[]>([]);
@@ -19,6 +20,7 @@ const CustomerDashboard: React.FC = () => {
   const location = useLocation();
   const { showAlert } = useModal();
   const showSuccess = location.state?.requestSubmitted;
+  const [confirmationRequest, setConfirmationRequest] = useState<any | null>(null);
 
   const fetchRequests = async () => {
     setIsLoading(true);
@@ -68,6 +70,29 @@ const CustomerDashboard: React.FC = () => {
     }
   };
 
+  const handleConfirmationSuccess = (confirmed: boolean) => {
+    if (confirmed) {
+      // If confirmed, move to feedback phase
+      const req = confirmationRequest;
+      setFeedbackRequest({
+        id: req.id,
+        agentName: req.agentName || 'Assigned Agent',
+        transactionId: req.transactionId
+      });
+      // Also update local status to completed visually immediately
+      setRequests(prev => prev.map(r => r.id === req.id ? { ...r, status: 'completed' } : r));
+    } else {
+      // If disputed, refresh to show new status
+      fetchRequests();
+      showAlert({ 
+        title: 'Dispute Raised', 
+        message: 'A dispute has been raised. Our team will contact you shortly.', 
+        type: 'info' 
+      });
+    }
+    setConfirmationRequest(null);
+  };
+
   const [currentView, setCurrentView] = useState('requests');
 
   return (
@@ -115,10 +140,17 @@ const CustomerDashboard: React.FC = () => {
                 {/* Status Header */}
                 <div className="p-5 pb-3 flex justify-between items-center">
                   <span className={`status-badge ${
-                    request.status === 'fulfilled' ? 'fulfilled' : 
-                    request.status === 'delivered' ? 'delivered' : 'pending'
+                    request.status === 'completed' ? 'fulfilled' : 
+                    request.status === 'delivered' ? 'delivered' : 
+                    request.status === 'matched' ? 'assigned' :
+                    request.status === 'in_progress' ? 'in_progress' :
+                    request.status === 'DISPUTED' ? 'disputed' :
+                    'pending'
                   }`}>
-                    {request.status}
+                    {request.status === 'completed' ? 'Fulfilled' : 
+                     request.status === 'matched' ? 'Assigned' : 
+                     request.status === 'DISPUTED' ? 'Disputed' :
+                     request.status.replace('_', ' ')}
                   </span>
                   <span className="text-[11px] text-slate-400 font-medium">
                     {request.submittedDate}
@@ -151,9 +183,10 @@ const CustomerDashboard: React.FC = () => {
                   <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                     <div
                       className={`h-full bg-erkata-primary transition-all duration-700 ${
-                        request.status === 'fulfilled' ? 'w-full' : 
-                        request.status === 'delivered' ? 'w-3/4' : 
-                        request.status === 'assigned' ? 'w-1/2' : 'w-1/4'
+                        request.status === 'completed' ? 'w-full' : 
+                        request.status === 'delivered' ? 'w-4/5' : 
+                        request.status === 'in_progress' ? 'w-3/5' : 
+                        request.status === 'matched' ? 'w-2/5' : 'w-1/5'
                       }`}
                     />
                   </div>
@@ -164,21 +197,22 @@ const CustomerDashboard: React.FC = () => {
                   {request.status === 'delivered' ? (
                     <Can perform={Action.SUBMIT_CUSTOMER_FEEDBACK}>
                       <button
-                        onClick={() => setFeedbackRequest({ 
-                          id: request.id, 
-                          agentName: request.agentName || 'Assigned Agent',
-                          transactionId: request.transactionId
-                        })}
+                        onClick={() => setConfirmationRequest(request)}
                         className="w-full bg-erkata-primary text-white text-sm font-semibold py-3 rounded-xl hover:opacity-90 transition flex items-center justify-center gap-2"
                       >
-                        <Star className="w-4 h-4" />
-                        Complete & Review
+                        <CheckCircle className="w-4 h-4" />
+                        Confirm Fulfillment
                       </button>
                     </Can>
-                  ) : request.status === 'fulfilled' ? (
+                  ) : request.status === 'completed' ? (
                     <div className="w-full text-green-600 text-sm font-medium py-3 rounded-xl flex items-center justify-center gap-2 bg-green-50">
                       <CheckCircle className="w-4 h-4" />
                       Service Finalized
+                    </div>
+                  ) : request.status === 'matched' || request.status === 'in_progress' ? (
+                    <div className="w-full py-3 flex items-center justify-center text-erkata-primary bg-erkata-primary/5 rounded-xl border border-erkata-primary/10">
+                      <Clock className="w-4 h-4 mr-2 animate-pulse" />
+                      <span className="text-xs font-semibold">Fulfillment in progress</span>
                     </div>
                   ) : (
                     <div className="w-full py-3 flex items-center justify-center text-slate-400">
@@ -201,6 +235,26 @@ const CustomerDashboard: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Fulfillment Confirmation Modal */}
+      <AnimatePresence>
+        {confirmationRequest && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setConfirmationRequest(null)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+            />
+            <FulfillmentConfirmation
+              requestId={confirmationRequest.id}
+              onClose={() => setConfirmationRequest(null)}
+              onSuccess={handleConfirmationSuccess}
+            />
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Feedback Modal */}
       <AnimatePresence>

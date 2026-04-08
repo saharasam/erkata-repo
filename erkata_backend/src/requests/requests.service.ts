@@ -324,4 +324,34 @@ export class RequestsService {
       orderBy: { createdAt: 'desc' },
     });
   }
+
+  async confirmFulfillment(requestId: string, customerId: string, confirmed: boolean) {
+    const request = await this.prisma.request.findUnique({
+      where: { id: requestId },
+    });
+
+    if (!request) throw new NotFoundException('Request not found');
+    if (request.customerId !== customerId) throw new ForbiddenException('Not your request');
+
+    // Only allow confirmation if request is delivered (or completed by agent)
+    if (request.status !== RequestStatus.delivered) {
+      throw new BadRequestException('Request is not in a confirmable state');
+    }
+
+    if (confirmed) {
+      await this.prisma.request.update({
+        where: { id: requestId },
+        data: { status: RequestStatus.completed },
+      });
+    } else {
+      await this.prisma.request.update({
+        where: { id: requestId },
+        data: { status: 'DISPUTED' as any },
+      });
+
+      this.eventEmitter.emit('request.disputed', { requestId, customerId });
+    }
+
+    return { success: true, status: confirmed ? 'completed' : 'disputed' };
+  }
 }

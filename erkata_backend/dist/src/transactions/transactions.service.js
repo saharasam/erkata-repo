@@ -184,7 +184,7 @@ let TransactionsService = class TransactionsService {
             });
             await tx.request.update({
                 where: { id: match.requestId },
-                data: { status: client_1.RequestStatus.completed },
+                data: { status: client_1.RequestStatus.delivered },
             });
             const res = matchResult;
             const budget = Number(res.request?.budgetMax || res.request?.budgetMin || 0);
