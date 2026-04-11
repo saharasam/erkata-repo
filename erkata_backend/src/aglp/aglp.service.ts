@@ -129,13 +129,56 @@ export class AglpService {
     const rate = this.getConversionRate();
     const amountAglp = amountEtb * rate;
 
-    // Credit AGLP Balance
+    // 1. Check for suspicious spikes (Transactional)
+    const thresholdConfig = this.configService.get<{ value: number }>(
+      'alert_commission_spike_threshold',
+      { value: 10000 },
+    );
+    const threshold = Number(thresholdConfig.value);
+
+    const twentyFourHoursAgo = new Date();
+    twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+
+    const recentEarnings = await tx.aglpTransaction.aggregate({
+      where: {
+        profileId,
+        type: AglpTransactionType.EARN,
+        status: AglpTransactionStatus.COMPLETED,
+        createdAt: { gte: twentyFourHoursAgo },
+      },
+      _sum: {
+        etbEquivalent: true,
+      },
+    });
+
+    const totalWithCurrent =
+      Number(recentEarnings._sum.etbEquivalent || 0) + amountEtb;
+
+    if (totalWithCurrent >= threshold) {
+      await tx.auditLog.create({
+        data: {
+          actorId: profileId,
+          action: 'SUSPICIOUS_COMMISSION',
+          targetTable: 'profiles',
+          targetId: profileId,
+          metadata: {
+            referenceId,
+            currentAmount: amountEtb,
+            rolling24hTotal: totalWithCurrent,
+            threshold,
+            reason: 'Commission spike detected',
+          },
+        },
+      });
+    }
+
+    // 2. Credit AGLP Balance
     await tx.profile.update({
       where: { id: profileId },
       data: { aglpBalance: { increment: amountAglp } },
     });
 
-    // Log AGLP Earn Transaction
+    // 3. Log AGLP Earn Transaction
     await tx.aglpTransaction.create({
       data: {
         profileId,
@@ -149,7 +192,7 @@ export class AglpService {
       },
     });
 
-    // Write backwards compatible audit log
+    // 4. Write backwards compatible audit log
     await tx.auditLog.create({
       data: {
         actorId: profileId,

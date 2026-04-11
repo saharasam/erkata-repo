@@ -46,6 +46,8 @@ model Profile {
   zoneId              String?              @map("zone_id")
   referredById        String?              @map("referred_by_id") @db.Uuid
   createdAt           DateTime             @default(now()) @map("created_at")
+  warningCount        Int                  @default(0) @map("warning_count")
+  missedAssignments   Int                  @default(0) @map("missed_assignments")
   aglpBalance         Decimal              @default(0) @map("aglp_balance") @db.Decimal(12, 2)
   aglpPending         Decimal              @default(0) @map("aglp_pending") @db.Decimal(12, 2)
   aglpWithdrawn       Decimal              @default(0) @map("aglp_withdrawn") @db.Decimal(12, 2)
@@ -98,23 +100,24 @@ model ReferralLink {
 }
 
 model Request {
-  id          String        @id @default(uuid())
-  customerId  String        @map("customer_id") @db.Uuid
-  type        RequestType   @default(real_estate)
-  category    String
-  description String?
-  budgetMin   Decimal?      @map("budget_min") @db.Decimal(12, 2)
-  budgetMax   Decimal?      @map("budget_max") @db.Decimal(12, 2)
-  zoneId      String        @map("zone_id")
-  woreda      String?
-  status              RequestStatus @default(pending)
-  createdAt           DateTime      @default(now()) @map("created_at")
-  assignedOperatorId  String?       @map("assigned_operator_id") @db.Uuid
-  assignmentPushedAt  DateTime?     @map("assignment_pushed_at")
-  matches             Match[]
-  customer            Profile       @relation("CustomerRequests", fields: [customerId], references: [id])
-  assignedOperator    Profile?      @relation("AssignedOperator", fields: [assignedOperatorId], references: [id])
-  zone                Zone          @relation(fields: [zoneId], references: [id])
+  id                 String        @id @default(uuid())
+  customerId         String        @map("customer_id") @db.Uuid
+  type               RequestType   @default(real_estate)
+  category           String
+  description        String?
+  budgetMin          Decimal?      @map("budget_min") @db.Decimal(12, 2)
+  budgetMax          Decimal?      @map("budget_max") @db.Decimal(12, 2)
+  zoneId             String        @map("zone_id")
+  woreda             String?
+  status             RequestStatus @default(pending)
+  createdAt          DateTime      @default(now()) @map("created_at")
+  assignedOperatorId String?       @map("assigned_operator_id") @db.Uuid
+  assignmentPushedAt DateTime?     @map("assignment_pushed_at")
+  completedAt        DateTime?     @map("completed_at")
+  matches            Match[]
+  customer           Profile       @relation("CustomerRequests", fields: [customerId], references: [id])
+  assignedOperator   Profile?      @relation("AssignedOperator", fields: [assignedOperatorId], references: [id])
+  zone               Zone          @relation(fields: [zoneId], references: [id])
 
   @@index([customerId])
   @@index([zoneId, status])
@@ -173,6 +176,7 @@ model AglpTransaction {
   profile        Profile               @relation("AglpTransactions", fields: [profileId], references: [id])
 
   @@index([profileId])
+  @@index([createdAt, profileId, type])
   @@map("aglp_transactions")
 }
 
@@ -283,13 +287,10 @@ enum RequestType {
 
 enum RequestStatus {
   pending
-  matched
-  in_progress
-  completed
-  delivered
+  assigned
+  fulfilled
+  disputed
   cancelled
-  ESCALATED
-  DISPUTED
 }
 
 enum MatchStatus {

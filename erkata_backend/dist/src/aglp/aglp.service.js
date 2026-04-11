@@ -99,6 +99,39 @@ let AglpService = class AglpService {
     async earnCommission(tx, profileId, amountEtb, referenceId, reason) {
         const rate = this.getConversionRate();
         const amountAglp = amountEtb * rate;
+        const thresholdConfig = this.configService.get('alert_commission_spike_threshold', { value: 10000 });
+        const threshold = Number(thresholdConfig.value);
+        const twentyFourHoursAgo = new Date();
+        twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+        const recentEarnings = await tx.aglpTransaction.aggregate({
+            where: {
+                profileId,
+                type: client_1.AglpTransactionType.EARN,
+                status: client_1.AglpTransactionStatus.COMPLETED,
+                createdAt: { gte: twentyFourHoursAgo },
+            },
+            _sum: {
+                etbEquivalent: true,
+            },
+        });
+        const totalWithCurrent = Number(recentEarnings._sum.etbEquivalent || 0) + amountEtb;
+        if (totalWithCurrent >= threshold) {
+            await tx.auditLog.create({
+                data: {
+                    actorId: profileId,
+                    action: 'SUSPICIOUS_COMMISSION',
+                    targetTable: 'profiles',
+                    targetId: profileId,
+                    metadata: {
+                        referenceId,
+                        currentAmount: amountEtb,
+                        rolling24hTotal: totalWithCurrent,
+                        threshold,
+                        reason: 'Commission spike detected',
+                    },
+                },
+            });
+        }
         await tx.profile.update({
             where: { id: profileId },
             data: { aglpBalance: { increment: amountAglp } },

@@ -127,6 +127,7 @@ export const PermissionMatrix: Record<string, Action[]> = {
     Action.VIEW_FINANCIAL_REPORTS,
     Action.PROCESS_REFUND,
     Action.VIEW_ASSIGNED_REQUEST_DETAILS,
+    Action.VIEW_SYSTEM_STATISTICS,
   ],
   super_admin: [
     Action.EMERGENCY_ARCHIVE,

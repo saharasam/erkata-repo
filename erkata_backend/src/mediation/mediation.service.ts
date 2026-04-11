@@ -189,7 +189,7 @@ export class MediationService {
     });
     if (!actor) throw new NotFoundException('Actor not found');
 
-    const isEscalated = transaction.match.request.status === 'matched';
+    const isEscalated = transaction.match.request.status === RequestStatus.disputed;
     const budget = transaction.match.request.budgetMax
       ? Number(transaction.match.request.budgetMax)
       : 0;
@@ -253,10 +253,7 @@ export class MediationService {
     });
     if (!transaction) throw new NotFoundException('Transaction not found');
 
-    await this.prisma.request.update({
-      where: { id: transaction.match.requestId },
-      data: { status: 'ESCALATED' as unknown as RequestStatus },
-    });
+
 
     await this.prisma.feedbackBundle.update({
       where: { id: bundleId },

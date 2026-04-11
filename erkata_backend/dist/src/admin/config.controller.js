@@ -75,6 +75,26 @@ let AdminConfigController = class AdminConfigController {
                 }),
                 description: 'Super Admin: Primary agent commission for furniture.',
             },
+            {
+                key: 'alert_bad_performance_limit',
+                value: this.configService.get('alert_bad_performance_limit', 3),
+                description: 'Alert: Rejects + Unfulfilled assignments before flagging.',
+            },
+            {
+                key: 'alert_dispute_pattern_limit',
+                value: this.configService.get('alert_dispute_pattern_limit', 2),
+                description: 'Alert: Weekly dispute count for pattern flagging.',
+            },
+            {
+                key: 'alert_spike_factor',
+                value: this.configService.get('alert_spike_factor', 1.5),
+                description: 'Alert: Volume multiplier for request spikes.',
+            },
+            {
+                key: 'alert_spike_min_threshold',
+                value: this.configService.get('alert_spike_min_threshold', 5),
+                description: 'Alert: Noise floor for spike detection.',
+            },
         ];
     }
     async updateConfig(req, body) {
@@ -85,11 +105,15 @@ let AdminConfigController = class AdminConfigController {
             'COMMISSION_REAL_ESTATE_OVERRIDE',
             'COMMISSION_FURNITURE_PRIMARY',
             'high_risk_threshold_etb',
+            'alert_bad_performance_limit',
+            'alert_dispute_pattern_limit',
+            'alert_spike_factor',
+            'alert_spike_min_threshold',
         ];
         if (superAdminKeys.includes(body.key) && req.user.role !== 'super_admin') {
             throw new common_1.ForbiddenException('Only Super Admin can modify platform economic policy');
         }
-        await this.configService.set(body.key, body.value, body.description);
+        await this.configService.set(body.key, body.value, body.description, req.user.id);
         return { success: true, key: body.key, value: body.value };
     }
 };

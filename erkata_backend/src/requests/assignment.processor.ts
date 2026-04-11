@@ -41,17 +41,34 @@ export class AssignmentProcessor extends WorkerHost {
             } as any,
           });
 
-          // Mark operator as offline
-          await tx.profile.update({
+          // 1. Increment missed assignments counter
+          const profile = await tx.profile.update({
             where: { id: operatorId },
-            data: { isOnline: false } as any,
+            data: {
+              missedAssignments: { increment: 1 },
+            },
           });
 
-          // Kill their Redis presence so the 10-minute sync doesn't bring them back online
-          await this.redis.del(`presence:operator:${operatorId}`);
+          // 2. Only mark offline if they've reached the threshold (3)
+          if (profile.missedAssignments >= 3) {
+            this.logger.warn(
+              `[AssignmentProcessor] Operator ${operatorId} reached ${profile.missedAssignments} misses. Marking offline.`,
+            );
+            await tx.profile.update({
+              where: { id: operatorId },
+              data: { isOnline: false } as any,
+            });
+
+            // Kill their Redis presence so the 10-minute sync doesn't bring them back online
+            await this.redis.del(`presence:operator:${operatorId}`);
+          } else {
+            this.logger.log(
+              `[AssignmentProcessor] Operator ${operatorId} missed assignment (${profile.missedAssignments}/3). Remaining online.`,
+            );
+          }
         });
 
-        this.logger.log(`[AssignmentProcessor] Operator ${operatorId} marked offline. Triggering re-assignment.`);
+        this.logger.log(`[AssignmentProcessor] Request ${requestId} reclaimed. Triggering re-assignment.`);
         
         // Notify system that a request is now unassigned and potentially other operators are needed
         this.eventEmitter.emit('request.created', { id: requestId });

@@ -44,6 +44,7 @@ let AdminsController = class AdminsController {
                 role: true,
                 isActive: true,
                 createdAt: true,
+                missedAssignments: true,
                 _count: {
                     select: {
                         operatorMatches: true,
@@ -55,13 +56,7 @@ let AdminsController = class AdminsController {
         });
     }
     async createInvite(req, body) {
-        const callerRole = req.user.role;
-        if (callerRole === client_1.UserRole.admin) {
-            if (body.role === client_1.UserRole.admin || body.role === client_1.UserRole.super_admin) {
-                throw new common_1.ForbiddenException('Admins are not permitted to invite other administrative-level users.');
-            }
-        }
-        const invite = await this.inviteService.createInvite(body.email, body.fullName, body.phone, body.role, req.user.id);
+        const invite = await this.inviteService.createInvite(body.email, body.fullName, body.phone, body.role, req.user.id, req.user.role);
         return {
             message: 'Personnel invite generated',
             inviteUrl: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/#/register/claim?token=${invite.token}`,

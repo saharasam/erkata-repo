@@ -42,6 +42,8 @@ export declare class UsersService {
         isActive: boolean;
         zoneId: string | null;
         referredById: string | null;
+        warningCount: number;
+        missedAssignments: number;
         aglpBalance: Prisma.Decimal;
         aglpPending: Prisma.Decimal;
         aglpWithdrawn: Prisma.Decimal;
@@ -109,6 +111,8 @@ export declare class UsersService {
         isActive: boolean;
         zoneId: string | null;
         referredById: string | null;
+        warningCount: number;
+        missedAssignments: number;
         aglpBalance: Prisma.Decimal;
         aglpPending: Prisma.Decimal;
         aglpWithdrawn: Prisma.Decimal;
@@ -154,6 +158,8 @@ export declare class UsersService {
         isActive: boolean;
         zoneId: string | null;
         referredById: string | null;
+        warningCount: number;
+        missedAssignments: number;
         aglpBalance: Prisma.Decimal;
         aglpPending: Prisma.Decimal;
         aglpWithdrawn: Prisma.Decimal;
@@ -186,6 +192,8 @@ export declare class UsersService {
         isActive: boolean;
         zoneId: string | null;
         referredById: string | null;
+        warningCount: number;
+        missedAssignments: number;
         aglpBalance: Prisma.Decimal;
         aglpPending: Prisma.Decimal;
         aglpWithdrawn: Prisma.Decimal;
@@ -220,6 +228,8 @@ export declare class UsersService {
         isActive: boolean;
         zoneId: string | null;
         referredById: string | null;
+        warningCount: number;
+        missedAssignments: number;
         aglpBalance: Prisma.Decimal;
         aglpPending: Prisma.Decimal;
         aglpWithdrawn: Prisma.Decimal;

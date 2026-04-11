@@ -108,6 +108,17 @@ async function main() {
       description: 'Commission for primary agent on furniture fulfillment.',
     },
   });
+ 
+  await prisma.systemConfig.upsert({
+    where: { key: 'alert_commission_spike_threshold' },
+    update: {},
+    create: {
+      key: 'alert_commission_spike_threshold',
+      value: { value: 10000 },
+      description:
+        'Threshold for suspicious commission earnings in a rolling 24h window.',
+    },
+  });
 
   console.log('Seeding test users...');
 

@@ -2,14 +2,19 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { UsersService } from '../../users/users.service';
 import { UserRole } from '@prisma/client';
 import { randomBytes } from 'crypto';
 
 @Injectable()
 export class InviteService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private usersService: UsersService,
+  ) {}
 
   async createInvite(
     email: string,
@@ -17,7 +22,15 @@ export class InviteService {
     phone: string,
     role: UserRole,
     createdById: string,
+    callerRole: UserRole,
   ) {
+    // ENFORCEMENT: Hierarchy Authority Check
+    if (!this.usersService.canModifyUser(callerRole, role)) {
+      throw new ForbiddenException(
+        `Your role (${callerRole}) is not authorized to invite a ${role}`,
+      );
+    }
+
     const token = randomBytes(32).toString('hex');
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 72); // 72 hour expiry (3 days)

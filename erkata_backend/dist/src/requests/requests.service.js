@@ -157,12 +157,6 @@ let RequestsService = class RequestsService {
             throw new common_1.ForbiddenException('Your account is suspended.');
         }
         const match = await this.prisma.$transaction(async (tx) => {
-            await tx.request.update({
-                where: { id: requestId },
-                data: {
-                    status: client_1.RequestStatus.matched,
-                },
-            });
             return tx.match.create({
                 data: {
                     requestId,
@@ -276,23 +270,26 @@ let RequestsService = class RequestsService {
             throw new common_1.NotFoundException('Request not found');
         if (request.customerId !== customerId)
             throw new common_1.ForbiddenException('Not your request');
-        if (request.status !== client_1.RequestStatus.delivered) {
+        if (request.status !== client_1.RequestStatus.fulfilled) {
             throw new common_1.BadRequestException('Request is not in a confirmable state');
         }
         if (confirmed) {
             await this.prisma.request.update({
                 where: { id: requestId },
-                data: { status: client_1.RequestStatus.completed },
+                data: {
+                    status: client_1.RequestStatus.fulfilled,
+                    completedAt: new Date()
+                },
             });
         }
         else {
             await this.prisma.request.update({
                 where: { id: requestId },
-                data: { status: 'DISPUTED' },
+                data: { status: client_1.RequestStatus.disputed },
             });
             this.eventEmitter.emit('request.disputed', { requestId, customerId });
         }
-        return { success: true, status: confirmed ? 'completed' : 'disputed' };
+        return { success: true, status: confirmed ? 'fulfilled' : 'disputed' };
     }
 };
 exports.RequestsService = RequestsService;

@@ -16,6 +16,11 @@ interface Agent {
         woreda: string;
     }[];
     createdAt: string;
+    avgRating?: number;
+    acceptedCount?: number;
+    rejectedCount?: number;
+    unfulfilledRate?: number;
+    warningCount?: number;
 }
 
 const AdminAgentList: React.FC = () => {
@@ -94,6 +99,7 @@ const AdminAgentList: React.FC = () => {
                             <th className="px-6 py-4 font-semibold text-slate-600">Status</th>
                             <th className="px-6 py-4 font-semibold text-slate-600">Tier</th>
                             <th className="px-6 py-4 font-semibold text-slate-600">Zones</th>
+                            <th className="px-6 py-4 font-semibold text-slate-600">Performance</th>
                             <th className="px-6 py-4 font-semibold text-slate-600 text-right">Actions</th>
                         </tr>
                     </thead>
@@ -151,6 +157,31 @@ const AdminAgentList: React.FC = () => {
                                         )) : (
                                             <span className="text-[10px] text-slate-300 italic">No zones assigned</span>
                                         )}
+                                    </div>
+                                </td>
+                                <td className="px-6 py-4">
+                                    <div className="flex flex-col gap-1.5">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xs font-bold text-slate-700" title="Average Rating">⭐ {(agent.avgRating || 0) > 0 ? (agent.avgRating || 0).toFixed(1) : 'N/A'}</span>
+                                            <span className="text-[10px] text-slate-400">|</span>
+                                            <span className="text-xs font-bold text-emerald-600" title="Accepted Matches">{agent.acceptedCount || 0}</span>
+                                            <span className="text-[10px] text-slate-400">/</span>
+                                            <span className="text-xs font-bold text-rose-500" title="Rejected Matches">{agent.rejectedCount || 0}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            {(agent.unfulfilledRate || 0) > 0 ? (
+                                              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${(agent.unfulfilledRate || 0) > 20 ? 'bg-rose-50 text-rose-600' : 'bg-slate-50 text-slate-500'}`} title="Unfulfilled Rate">
+                                                  {(agent.unfulfilledRate || 0).toFixed(0)}% fail
+                                              </span>
+                                            ) : (
+                                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600">100% OK</span>
+                                            )}
+                                            {(agent.warningCount || 0) > 0 && (
+                                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-orange-50 text-orange-600" title="Warnings Issued">
+                                                    ⚠️ {agent.warningCount}
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
                                 </td>
                                 <td className="px-6 py-4 text-right relative">

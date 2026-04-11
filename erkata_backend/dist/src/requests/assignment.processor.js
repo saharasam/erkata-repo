@@ -48,13 +48,25 @@ let AssignmentProcessor = AssignmentProcessor_1 = class AssignmentProcessor exte
                             assignmentPushedAt: null,
                         },
                     });
-                    await tx.profile.update({
+                    const profile = await tx.profile.update({
                         where: { id: operatorId },
-                        data: { isOnline: false },
+                        data: {
+                            missedAssignments: { increment: 1 },
+                        },
                     });
-                    await this.redis.del(`presence:operator:${operatorId}`);
+                    if (profile.missedAssignments >= 3) {
+                        this.logger.warn(`[AssignmentProcessor] Operator ${operatorId} reached ${profile.missedAssignments} misses. Marking offline.`);
+                        await tx.profile.update({
+                            where: { id: operatorId },
+                            data: { isOnline: false },
+                        });
+                        await this.redis.del(`presence:operator:${operatorId}`);
+                    }
+                    else {
+                        this.logger.log(`[AssignmentProcessor] Operator ${operatorId} missed assignment (${profile.missedAssignments}/3). Remaining online.`);
+                    }
                 });
-                this.logger.log(`[AssignmentProcessor] Operator ${operatorId} marked offline. Triggering re-assignment.`);
+                this.logger.log(`[AssignmentProcessor] Request ${requestId} reclaimed. Triggering re-assignment.`);
                 this.eventEmitter.emit('request.created', { id: requestId });
             }
         }

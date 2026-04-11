@@ -31,6 +31,7 @@ export declare class AdminConfigController {
     })[];
     updateConfig(req: Request & {
         user: {
+            id: string;
             role: string;
         };
     }, body: {

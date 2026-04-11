@@ -10,6 +10,18 @@ import { UserRole, Prisma, Tier } from '@prisma/client';
 import { ConfigService } from '../common/config.service';
 import { AglpService } from '../aglp/aglp.service';
 
+interface AgentMatchStats {
+  agent_id: string;
+  accepted_count: number | string;
+  rejected_count: number | string;
+  unfulfilled_count: number | string;
+}
+
+interface AgentRatingStats {
+  agent_id: string;
+  avg_rating: number | string;
+}
+
 export const TierPriority: Record<string, number> = {
   ABUNDANT_LIFE: 5,
   UNITY: 4,
@@ -196,7 +208,7 @@ export class UsersService {
       throw new ForbiddenException('Only admins can list all users');
     }
 
-    return this.prisma.profile.findMany({
+    const profiles = await this.prisma.profile.findMany({
       where: {
         role: filters.role,
         isActive: filters.isActive,
@@ -211,6 +223,66 @@ export class UsersService {
       },
       orderBy: { createdAt: 'desc' },
     });
+
+    if (filters.role === UserRole.agent && profiles.length > 0) {
+      const agentIds = profiles.map((p) => p.id);
+
+      const matchStatsRaw = await this.prisma.$queryRaw<AgentMatchStats[]>`
+        SELECT 
+          m.agent_id,
+          COUNT(CASE WHEN m.status = 'accepted' THEN 1 END) as accepted_count,
+          COUNT(CASE WHEN m.status = 'rejected' THEN 1 END) as rejected_count,
+          COUNT(CASE WHEN m.status = 'accepted' AND r.status = 'disputed' THEN 1 END) as unfulfilled_count
+        FROM matches m
+        LEFT JOIN requests r ON m.request_id = r.id
+        WHERE m.agent_id::text IN (${Prisma.join(agentIds)})
+        GROUP BY m.agent_id
+      `;
+
+      const ratingStatsRaw = await this.prisma.$queryRaw<AgentRatingStats[]>`
+        SELECT
+          m.agent_id,
+          AVG(f.rating) as avg_rating
+        FROM feedbacks f
+        JOIN transactions t ON f.transaction_id = t.id
+        JOIN matches m ON t.match_id = m.id
+        WHERE m.agent_id::text IN (${Prisma.join(agentIds)})
+          AND f.author_id != m.agent_id
+        GROUP BY m.agent_id
+      `;
+
+      const matchStats = new Map(
+        matchStatsRaw.map((s) => [s.agent_id, s]),
+      );
+      const ratingStats = new Map(
+        ratingStatsRaw.map((s) => [s.agent_id, s]),
+      );
+
+      return profiles.map((profile) => {
+        const mStats = matchStats.get(profile.id);
+        const rStats = ratingStats.get(profile.id);
+
+        const acceptedCount = Number(mStats?.accepted_count || 0);
+        const rejectedCount = Number(mStats?.rejected_count || 0);
+        const unfulfilledCount = Number(mStats?.unfulfilled_count || 0);
+        const unfulfilledRate =
+          acceptedCount > 0 ? (unfulfilledCount / acceptedCount) * 100 : 0;
+        const avgRating = rStats?.avg_rating
+          ? parseFloat(rStats.avg_rating.toString())
+          : 0;
+
+        return {
+          ...profile,
+          acceptedCount,
+          rejectedCount,
+          unfulfilledCount,
+          unfulfilledRate,
+          avgRating,
+        };
+      });
+    }
+
+    return profiles;
   }
 
   async assignZone(

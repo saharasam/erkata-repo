@@ -1,11 +1,12 @@
 import { PrismaService } from '../../prisma/prisma.service';
+import { UsersService } from '../../users/users.service';
 import { UserRole } from '@prisma/client';
 export declare class InviteService {
     private prisma;
-    constructor(prisma: PrismaService);
-    createInvite(email: string, fullName: string, phone: string, role: UserRole, createdById: string): Promise<{
+    private usersService;
+    constructor(prisma: PrismaService, usersService: UsersService);
+    createInvite(email: string, fullName: string, phone: string, role: UserRole, createdById: string, callerRole: UserRole): Promise<{
         id: string;
-        createdAt: Date;
         email: string;
         fullName: string;
         phone: string;
@@ -13,11 +14,11 @@ export declare class InviteService {
         token: string;
         expiresAt: Date;
         usedAt: Date | null;
+        createdAt: Date;
         createdById: string;
     }>;
     validateInvite(token: string, email: string): Promise<{
         id: string;
-        createdAt: Date;
         email: string;
         fullName: string;
         phone: string;
@@ -25,6 +26,7 @@ export declare class InviteService {
         token: string;
         expiresAt: Date;
         usedAt: Date | null;
+        createdAt: Date;
         createdById: string;
     }>;
     getInviteByToken(token: string): Promise<{
@@ -37,7 +39,6 @@ export declare class InviteService {
     }>;
     markInviteAsUsed(token: string): Promise<{
         id: string;
-        createdAt: Date;
         email: string;
         fullName: string;
         phone: string;
@@ -45,11 +46,11 @@ export declare class InviteService {
         token: string;
         expiresAt: Date;
         usedAt: Date | null;
+        createdAt: Date;
         createdById: string;
     }>;
     findPendingInvites(createdById?: string): Promise<{
         id: string;
-        createdAt: Date;
         email: string;
         fullName: string;
         phone: string;
@@ -57,11 +58,11 @@ export declare class InviteService {
         token: string;
         expiresAt: Date;
         usedAt: Date | null;
+        createdAt: Date;
         createdById: string;
     }[]>;
     deleteInvite(id: string, createdById?: string): Promise<{
         id: string;
-        createdAt: Date;
         email: string;
         fullName: string;
         phone: string;
@@ -69,6 +70,7 @@ export declare class InviteService {
         token: string;
         expiresAt: Date;
         usedAt: Date | null;
+        createdAt: Date;
         createdById: string;
     }>;
 }

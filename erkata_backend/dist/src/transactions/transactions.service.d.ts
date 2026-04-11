@@ -42,6 +42,8 @@ export declare class TransactionsService {
                 isActive: boolean;
                 zoneId: string | null;
                 referredById: string | null;
+                warningCount: number;
+                missedAssignments: number;
                 aglpBalance: Prisma.Decimal;
                 aglpPending: Prisma.Decimal;
                 aglpWithdrawn: Prisma.Decimal;
@@ -61,6 +63,8 @@ export declare class TransactionsService {
             isActive: boolean;
             zoneId: string | null;
             referredById: string | null;
+            warningCount: number;
+            missedAssignments: number;
             aglpBalance: Prisma.Decimal;
             aglpPending: Prisma.Decimal;
             aglpWithdrawn: Prisma.Decimal;
@@ -82,6 +86,7 @@ export declare class TransactionsService {
             woreda: string | null;
             assignedOperatorId: string | null;
             assignmentPushedAt: Date | null;
+            completedAt: Date | null;
         };
     } & {
         id: string;
@@ -142,6 +147,7 @@ export declare class TransactionsService {
             woreda: string | null;
             assignedOperatorId: string | null;
             assignmentPushedAt: Date | null;
+            completedAt: Date | null;
         };
     } & {
         id: string;

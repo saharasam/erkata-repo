@@ -17,6 +17,7 @@ export declare class RequestsController {
         woreda: string | null;
         assignedOperatorId: string | null;
         assignmentPushedAt: Date | null;
+        completedAt: Date | null;
     }>;
     getQueue(zoneId: string): Promise<({
         zone: {
@@ -44,6 +45,7 @@ export declare class RequestsController {
         woreda: string | null;
         assignedOperatorId: string | null;
         assignmentPushedAt: Date | null;
+        completedAt: Date | null;
     })[]>;
     getMyRequests(req: RequestWithUser): Promise<({
         zone: {
@@ -82,6 +84,7 @@ export declare class RequestsController {
         woreda: string | null;
         assignedOperatorId: string | null;
         assignmentPushedAt: Date | null;
+        completedAt: Date | null;
     })[]>;
     findEligibleAgents(): Promise<{
         id: string;
@@ -142,6 +145,7 @@ export declare class RequestsController {
         woreda: string | null;
         assignedOperatorId: string | null;
         assignmentPushedAt: Date | null;
+        completedAt: Date | null;
     }) | {
         customer: {
             id: string;
@@ -213,6 +217,7 @@ export declare class RequestsController {
         woreda: string | null;
         assignedOperatorId: string | null;
         assignmentPushedAt: Date | null;
+        completedAt: Date | null;
     }>;
     assignAgent(id: string, agentId: string, req: RequestWithUser): Promise<{
         id: string;
@@ -274,6 +279,7 @@ export declare class RequestsController {
         woreda: string | null;
         assignedOperatorId: string | null;
         assignmentPushedAt: Date | null;
+        completedAt: Date | null;
     }) | {
         customer: {
             id: string;
@@ -345,5 +351,6 @@ export declare class RequestsController {
         woreda: string | null;
         assignedOperatorId: string | null;
         assignmentPushedAt: Date | null;
+        completedAt: Date | null;
     }>;
 }

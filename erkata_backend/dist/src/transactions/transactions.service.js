@@ -49,7 +49,7 @@ let TransactionsService = class TransactionsService {
             });
             await tx.request.update({
                 where: { id: match.requestId },
-                data: { status: client_1.RequestStatus.in_progress },
+                data: { status: client_1.RequestStatus.assigned },
             });
             await tx.transaction.upsert({
                 where: { matchId: matchId },
@@ -184,7 +184,7 @@ let TransactionsService = class TransactionsService {
             });
             await tx.request.update({
                 where: { id: match.requestId },
-                data: { status: client_1.RequestStatus.delivered },
+                data: { status: client_1.RequestStatus.fulfilled },
             });
             const res = matchResult;
             const budget = Number(res.request?.budgetMax || res.request?.budgetMin || 0);

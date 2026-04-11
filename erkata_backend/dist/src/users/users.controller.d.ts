@@ -39,6 +39,8 @@ export declare class UsersController {
         isActive: boolean;
         zoneId: string | null;
         referredById: string | null;
+        warningCount: number;
+        missedAssignments: number;
         aglpBalance: import("@prisma/client/runtime/library").Decimal;
         aglpPending: import("@prisma/client/runtime/library").Decimal;
         aglpWithdrawn: import("@prisma/client/runtime/library").Decimal;
@@ -80,6 +82,8 @@ export declare class UsersController {
         isActive: boolean;
         zoneId: string | null;
         referredById: string | null;
+        warningCount: number;
+        missedAssignments: number;
         aglpBalance: import("@prisma/client/runtime/library").Decimal;
         aglpPending: import("@prisma/client/runtime/library").Decimal;
         aglpWithdrawn: import("@prisma/client/runtime/library").Decimal;
@@ -166,6 +170,8 @@ export declare class UsersController {
         isActive: boolean;
         zoneId: string | null;
         referredById: string | null;
+        warningCount: number;
+        missedAssignments: number;
         aglpBalance: import("@prisma/client/runtime/library").Decimal;
         aglpPending: import("@prisma/client/runtime/library").Decimal;
         aglpWithdrawn: import("@prisma/client/runtime/library").Decimal;
@@ -185,6 +191,8 @@ export declare class UsersController {
         isActive: boolean;
         zoneId: string | null;
         referredById: string | null;
+        warningCount: number;
+        missedAssignments: number;
         aglpBalance: import("@prisma/client/runtime/library").Decimal;
         aglpPending: import("@prisma/client/runtime/library").Decimal;
         aglpWithdrawn: import("@prisma/client/runtime/library").Decimal;

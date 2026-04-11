@@ -32,6 +32,7 @@ export declare class RequestsService {
         woreda: string | null;
         assignedOperatorId: string | null;
         assignmentPushedAt: Date | null;
+        completedAt: Date | null;
     }>;
     assignToNextReadyOperator(requestId: string): Promise<void>;
     handleOperatorReady(operatorId: string): Promise<void>;
@@ -63,6 +64,7 @@ export declare class RequestsService {
         woreda: string | null;
         assignedOperatorId: string | null;
         assignmentPushedAt: Date | null;
+        completedAt: Date | null;
     })[]>;
     assignAgent(requestId: string, agentId: string, operatorId: string): Promise<{
         id: string;
@@ -124,6 +126,7 @@ export declare class RequestsService {
         woreda: string | null;
         assignedOperatorId: string | null;
         assignmentPushedAt: Date | null;
+        completedAt: Date | null;
     }) | {
         customer: {
             id: string;
@@ -195,6 +198,7 @@ export declare class RequestsService {
         woreda: string | null;
         assignedOperatorId: string | null;
         assignmentPushedAt: Date | null;
+        completedAt: Date | null;
     }>;
     findEligibleAgents(): Promise<{
         id: string;
@@ -240,6 +244,7 @@ export declare class RequestsService {
         woreda: string | null;
         assignedOperatorId: string | null;
         assignmentPushedAt: Date | null;
+        completedAt: Date | null;
     })[]>;
     confirmFulfillment(requestId: string, customerId: string, confirmed: boolean): Promise<{
         success: boolean;

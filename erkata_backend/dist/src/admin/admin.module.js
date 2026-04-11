@@ -17,11 +17,13 @@ const admins_controller_1 = require("./admins.controller");
 const analytics_controller_1 = __importDefault(require("./analytics.controller"));
 const system_broadcasts_controller_1 = __importDefault(require("./system-broadcasts.controller"));
 const payouts_controller_1 = require("./payouts.controller");
+const alerts_controller_1 = require("./alerts.controller");
 const common_module_1 = require("../common/common.module");
 const prisma_module_1 = require("../prisma/prisma.module");
 const aglp_module_1 = require("../aglp/aglp.module");
 const invite_module_1 = require("../auth/invite/invite.module");
 const users_module_1 = require("../users/users.module");
+const alerts_service_1 = require("./alerts.service");
 let AdminModule = class AdminModule {
 };
 exports.AdminModule = AdminModule;
@@ -35,7 +37,10 @@ exports.AdminModule = AdminModule = __decorate([
             analytics_controller_1.default,
             system_broadcasts_controller_1.default,
             payouts_controller_1.PayoutsController,
+            alerts_controller_1.AlertsController,
         ],
+        providers: [alerts_service_1.AlertsService],
+        exports: [alerts_service_1.AlertsService],
     })
 ], AdminModule);
 //# sourceMappingURL=admin.module.js.map

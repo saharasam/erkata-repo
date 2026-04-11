@@ -194,13 +194,6 @@ export class RequestsService {
     }
 
     const match = await this.prisma.$transaction(async (tx) => {
-      await tx.request.update({
-        where: { id: requestId },
-        data: {
-          status: RequestStatus.matched,
-        },
-      });
-
       return tx.match.create({
         data: {
           requestId,
@@ -333,25 +326,28 @@ export class RequestsService {
     if (!request) throw new NotFoundException('Request not found');
     if (request.customerId !== customerId) throw new ForbiddenException('Not your request');
 
-    // Only allow confirmation if request is delivered (or completed by agent)
-    if (request.status !== RequestStatus.delivered) {
+    // Only allow confirmation if request is fulfilled (by agent)
+    if (request.status !== RequestStatus.fulfilled) {
       throw new BadRequestException('Request is not in a confirmable state');
     }
 
     if (confirmed) {
       await this.prisma.request.update({
         where: { id: requestId },
-        data: { status: RequestStatus.completed },
+        data: { 
+          status: RequestStatus.fulfilled,
+          completedAt: new Date()
+        },
       });
     } else {
       await this.prisma.request.update({
         where: { id: requestId },
-        data: { status: 'DISPUTED' as any },
+        data: { status: RequestStatus.disputed },
       });
 
       this.eventEmitter.emit('request.disputed', { requestId, customerId });
     }
 
-    return { success: true, status: confirmed ? 'completed' : 'disputed' };
+    return { success: true, status: confirmed ? 'fulfilled' : 'disputed' };
   }
 }

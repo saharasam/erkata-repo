@@ -118,9 +118,9 @@ const AgentDashboard: React.FC = () => {
       customerName: m.request.customer.fullName,
       zone: m.request.zone?.name || 'Unknown',
       woreda: m.request.woreda || 'N/A',
-      status: m.status === 'accepted' ? 'in-progress' : 
-              m.status === 'completed' ? 'completed' : 
-              m.status === 'assigned' ? 'assigned' : 'cancelled'
+      status: m.request.status === 'assigned' ? 'assigned' : 
+              m.request.status === 'fulfilled' ? 'fulfilled' : 
+              m.request.status === 'disputed' ? 'disputed' : 'pending'
     }));
   };
 

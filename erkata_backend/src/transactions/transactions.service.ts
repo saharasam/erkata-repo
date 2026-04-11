@@ -45,10 +45,10 @@ export class TransactionsService {
           },
         });
 
-        // Sync parent request status to in_progress
+        // Sync parent request status to assigned
         await tx.request.update({
           where: { id: match.requestId },
-          data: { status: RequestStatus.in_progress },
+          data: { status: RequestStatus.assigned },
         });
 
         // ── Create Transaction Record (Locked for Mediation/Feedback) ────
@@ -229,7 +229,7 @@ export class TransactionsService {
 
       await tx.request.update({
         where: { id: match.requestId },
-        data: { status: RequestStatus.delivered },
+        data: { status: RequestStatus.fulfilled },
       });
 
       // ── Commission Splitting Logic (Phase 2) ──────────────────────────
