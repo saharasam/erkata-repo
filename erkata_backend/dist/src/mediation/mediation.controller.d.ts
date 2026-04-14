@@ -22,9 +22,9 @@ export declare class MediationController {
     }): Promise<{
         id: string;
         createdAt: Date;
-        proposedById: string;
         proposedText: string;
         bundleId: string;
+        proposedById: string;
     }>;
     finalizeResolution(proposalId: string, req: AuthenticatedRequest, body: {
         approved: boolean;
@@ -32,40 +32,40 @@ export declare class MediationController {
     }): Promise<{
         id: string;
         createdAt: Date;
-        finalizedById: string;
         approved: boolean;
         comment: string | null;
         proposalId: string;
+        finalizedById: string;
     }>;
     finalizeBundle(bundleId: string, req: AuthenticatedRequest, body: {
         resolutionText: string;
     }): Promise<{
         id: string;
         createdAt: Date;
-        finalizedById: string;
         approved: boolean;
         comment: string | null;
         proposalId: string;
+        finalizedById: string;
     }>;
     getBundles(state?: FeedbackBundleState): Promise<({
         [x: string]: ({
             id: string;
             createdAt: Date;
-            proposedById: string;
             proposedText: string;
             bundleId: string;
+            proposedById: string;
         } | {
             id: string;
             createdAt: Date;
-            proposedById: string;
             proposedText: string;
             bundleId: string;
+            proposedById: string;
         })[] | {
             id: string;
             createdAt: Date;
-            proposedById: string;
             proposedText: string;
             bundleId: string;
+            proposedById: string;
         }[];
         [x: number]: never;
         [x: symbol]: never;

@@ -19,6 +19,11 @@ export default class AnalyticsController {
         platformVolume: string;
         dailyCommissions: string;
         leaderboard: any[];
+        packageDistribution: {
+            tier: string;
+            count: number;
+        }[];
+        packageRevenue: string;
         uptime: string;
     }>;
     getDistribution(): Promise<{

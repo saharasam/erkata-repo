@@ -10,9 +10,18 @@ interface FocusBoardProps {
   onTransfer: (id: string) => void;
   onDecline: (id: string) => void;
   hasReferrals?: boolean;
+  processingIds: Set<string>;
 }
 
-export const FocusBoard: React.FC<FocusBoardProps> = ({ requests, onAccept, onComplete, onTransfer, onDecline, hasReferrals }) => {
+export const FocusBoard: React.FC<FocusBoardProps> = ({ 
+    requests, 
+    onAccept, 
+    onComplete, 
+    onTransfer, 
+    onDecline, 
+    hasReferrals,
+    processingIds
+}) => {
   const [statusFilter, setStatusFilter] = useState<'all' | 'assigned' | 'fulfilled'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -97,6 +106,7 @@ export const FocusBoard: React.FC<FocusBoardProps> = ({ requests, onAccept, onCo
                  onTransfer={onTransfer}
                  onDecline={onDecline}
                  hasReferrals={hasReferrals}
+                 isProcessing={processingIds.has(request.id)}
               />
             ))}
           </AnimatePresence>

@@ -40,7 +40,24 @@ let AdminConfigController = class AdminConfigController {
                 description: 'Enable/disable referral payout logic.',
             },
             {
+                key: 'emergency_lockdown',
+                value: this.configService.get('emergency_lockdown', false),
                 description: 'Suspend all platform transactions.',
+            },
+            {
+                key: 'withdrawal_min_amount',
+                value: this.configService.get('withdrawal_min_amount', 100),
+                description: 'Minimum AGLP per withdrawal.',
+            },
+            {
+                key: 'withdrawal_max_amount_daily',
+                value: this.configService.get('withdrawal_max_amount_daily', 50000),
+                description: 'Maximum AGLP withdrawal per 24h.',
+            },
+            {
+                key: 'withdrawal_fee_percentage',
+                value: this.configService.get('withdrawal_fee_percentage', 0.05),
+                description: 'Processing fee for withdrawals.',
             },
             {
                 key: 'AGLP_TO_ETB_RATE',
@@ -109,6 +126,10 @@ let AdminConfigController = class AdminConfigController {
             'alert_dispute_pattern_limit',
             'alert_spike_factor',
             'alert_spike_min_threshold',
+            'emergency_lockdown',
+            'withdrawal_min_amount',
+            'withdrawal_max_amount_daily',
+            'withdrawal_fee_percentage',
         ];
         if (superAdminKeys.includes(body.key) && req.user.role !== 'super_admin') {
             throw new common_1.ForbiddenException('Only Super Admin can modify platform economic policy');

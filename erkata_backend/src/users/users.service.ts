@@ -44,6 +44,7 @@ export class UsersService {
       include: {
         agentZones: true,
         referralLink: true,
+        package: true,
         referrals: {
           select: {
             id: true,
@@ -70,26 +71,36 @@ export class UsersService {
         referrals: { select: { id: true } },
         referralLink: { select: { tier: true } },
         agentZones: { select: { id: true } },
+        package: true,
       },
     });
 
     if (!profile) throw new NotFoundException('Profile not found');
 
     const tier = profile.tier || 'FREE';
-    const totalSlots = this.getReferralLimit(tier);
+    const totalSlots = await this.getReferralLimit(tier);
     const usedSlots = profile.referrals.length;
 
     const usedZones = profile.agentZones?.length || 0;
-    const totalZones = this.getZoneLimit(tier);
+    const totalZones = await this.getZoneLimit(tier);
 
     const tiers = Object.keys(TierPriority).sort(
       (a, b) => TierPriority[a] - TierPriority[b],
     );
     const currentTierIndex = tiers.indexOf(tier);
-    const nextTier =
+    const nextTierEnum =
       currentTierIndex !== -1 && currentTierIndex < tiers.length - 1
         ? tiers[currentTierIndex + 1]
-        : 'Maximum Tier';
+        : null;
+
+    let nextTier = 'Maximum Tier';
+    if (nextTierEnum) {
+      const nextPkg = await this.prisma.package.findUnique({
+        where: { name: nextTierEnum as Tier },
+        select: { displayName: true },
+      });
+      nextTier = nextPkg?.displayName || nextTierEnum.replace('_', ' ');
+    }
 
     // Fetch audit logs related to commissions and payouts for this user
     const history = await this.prisma.auditLog.findMany({
@@ -138,7 +149,7 @@ export class UsersService {
     });
 
     return {
-      balance: profile.aglpBalance.toString(), // Kept for backwards compatibility temporarily
+      balance: profile.aglpBalance.toString(),
       aglpAvailable: profile.aglpBalance.toString(),
       aglpPending: profile.aglpPending.toString(),
       aglpWithdrawn: profile.aglpWithdrawn.toString(),
@@ -146,7 +157,9 @@ export class UsersService {
       totalSlots,
       usedZones,
       totalZones,
-      currentTier: tier.replace('_', ' '),
+      currentTier: profile.package?.displayName || tier.replace('_', ' '),
+      tier,
+      packageDisplayName: profile.package?.displayName,
       nextTier,
       history: formattedHistory,
     };
@@ -160,8 +173,8 @@ export class UsersService {
   canModifyUser(callerRole: UserRole, targetRole: UserRole): boolean {
     if (callerRole === UserRole.super_admin) return true;
     if (callerRole === UserRole.admin) {
-      // Admin cannot target Super Admin or other Admins
-      const targetRoles: UserRole[] = [UserRole.operator, UserRole.agent];
+      // Admin can only target Operators. Agents are managed by Super Admin (invites/suspension).
+      const targetRoles: UserRole[] = [UserRole.operator];
       return targetRoles.includes(targetRole);
     }
     // Operators, Agents, and Customers have zero write authority over others
@@ -215,6 +228,7 @@ export class UsersService {
       },
       include: {
         referralLink: true,
+        package: true,
         agentZones: {
           include: {
             zone: true,
@@ -251,12 +265,8 @@ export class UsersService {
         GROUP BY m.agent_id
       `;
 
-      const matchStats = new Map(
-        matchStatsRaw.map((s) => [s.agent_id, s]),
-      );
-      const ratingStats = new Map(
-        ratingStatsRaw.map((s) => [s.agent_id, s]),
-      );
+      const matchStats = new Map(matchStatsRaw.map((s) => [s.agent_id, s]));
+      const ratingStats = new Map(ratingStatsRaw.map((s) => [s.agent_id, s]));
 
       return profiles.map((profile) => {
         const mStats = matchStats.get(profile.id);
@@ -285,6 +295,15 @@ export class UsersService {
     return profiles;
   }
 
+  async getAvailablePackages() {
+    return this.prisma.package.findMany({
+      where: {
+        name: { not: 'FREE' },
+      },
+      orderBy: { price: 'asc' },
+    });
+  }
+
   async assignZone(
     callerRole: UserRole,
     agentId: string,
@@ -308,7 +327,7 @@ export class UsersService {
     }
 
     const tier = agent.tier || 'FREE';
-    const zoneLimit = this.getZoneLimit(tier);
+    const zoneLimit = await this.getZoneLimit(tier);
 
     if (agent.agentZones.length >= zoneLimit) {
       throw new Error(`Agent tier "${tier}" is limited to ${zoneLimit} zones`);
@@ -319,19 +338,20 @@ export class UsersService {
     });
   }
 
-  private getZoneLimit(tier: string): number {
-    switch (tier) {
-      case 'ABUNDANT_LIFE':
-        return 100;
-      case 'UNITY':
-        return 5;
-      case 'LOVE':
-        return 3;
-      case 'PEACE':
-        return 2;
-      default:
-        return 1;
-    }
+  private async getZoneLimit(tier: string): Promise<number> {
+    const pkg = await this.prisma.package.findUnique({
+      where: { name: tier as Tier },
+    });
+    if (pkg) return pkg.zoneLimit;
+
+    // Emergency fallbacks if DB is out of sync
+    const fallbacks: Record<string, number> = {
+      ABUNDANT_LIFE: 100,
+      UNITY: 5,
+      LOVE: 3,
+      PEACE: 2,
+    };
+    return fallbacks[tier] || 1;
   }
 
   async updateTier(callerRole: UserRole, agentId: string, tier: string) {
@@ -468,7 +488,7 @@ export class UsersService {
     if (!referrer) throw new NotFoundException('Referrer not found');
 
     const tier = referrer.tier || 'FREE';
-    const limit = this.getReferralLimit(tier);
+    const limit = await this.getReferralLimit(tier);
 
     if (referrer.referrals.length >= limit) {
       throw new Error(
@@ -479,19 +499,19 @@ export class UsersService {
     return true;
   }
 
-  private getReferralLimit(tier: string): number {
-    switch (tier) {
-      case 'ABUNDANT_LIFE':
-        return 31;
-      case 'UNITY':
-        return 23;
-      case 'LOVE':
-        return 16;
-      case 'PEACE':
-        return 7;
-      default:
-        return 3;
-    }
+  private async getReferralLimit(tier: string): Promise<number> {
+    const pkg = await this.prisma.package.findUnique({
+      where: { name: tier as Tier },
+    });
+    if (pkg) return pkg.referralSlots;
+
+    const fallbacks: Record<string, number> = {
+      ABUNDANT_LIFE: 31,
+      UNITY: 23,
+      LOVE: 16,
+      PEACE: 7,
+    };
+    return fallbacks[tier] || 3;
   }
 
   async suspendUser(callerRole: UserRole, userId: string) {

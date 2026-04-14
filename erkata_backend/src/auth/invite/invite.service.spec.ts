@@ -11,7 +11,11 @@ describe('InviteService (Hierarchy)', () => {
 
   const mockPrisma = {
     invite: {
-      create: jest.fn().mockImplementation((args) => Promise.resolve({ id: 'new-id', ...args.data })),
+      create: jest
+        .fn()
+        .mockImplementation((args) =>
+          Promise.resolve({ id: 'new-id', ...args.data }),
+        ),
     },
   };
 

@@ -1,5 +1,5 @@
 // Import React and the useState hook for managing local state
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 // Import animation primitives from framer-motion for transitions and staggered entry effects
 import { motion, AnimatePresence } from 'framer-motion';
@@ -91,11 +91,45 @@ export const PackageSelection: React.FC<PackageSelectionProps> = ({ currentTier,
 
   const [selectedId, setSelectedId] = useState<string | null>(null); // Tracks which tier the user clicked (for loading state)
   const [isSubmitting, setIsSubmitting] = useState(false);           // True while the API purchase request is in-flight
+  const [dynamicPackages, setDynamicPackages] = useState<any[]>([]);
+  const [loadingPackages, setLoadingPackages] = useState(true);
+
+  useEffect(() => {
+    const fetchTiers = async () => {
+      try {
+        setLoadingPackages(true);
+        const response = await api.get('/users/me/available-packages');
+        setDynamicPackages(response.data);
+      } catch (error) {
+        console.error('Failed to fetch tiers:', error);
+      } finally {
+        setLoadingPackages(false);
+      }
+    };
+    fetchTiers();
+  }, []);
+
+  // Merge dynamic data with static UI metadata
+  const mergedPackages = dynamicPackages.map(dp => {
+    const staticMeta = packages.find(p => p.id === dp.name) || packages[0];
+    return {
+      ...staticMeta,
+      id: dp.name,
+      name: dp.displayName || dp.name.replace('_', ' '),
+      price: dp.price.toLocaleString(),
+      limit: dp.zoneLimit === 100 ? 'Unlimited Zones' : `${dp.zoneLimit} Zones`,
+      slots: `${dp.referralSlots} Direct Referrals`,
+      description: dp.description || staticMeta.description,
+      rawPrice: dp.price
+    };
+  });
+
+  const displayPackages = mergedPackages.length > 0 ? mergedPackages : packages;
 
   // Handles the user clicking "Get Started" on a specific package card
   const handleSelect = async (pkgId: string, paymentMethod: 'ETB' | 'AGLP' = 'ETB') => {
     setSelectedId(pkgId); // Mark this card as the active/selected card
-    const pkg = packages.find(p => p.id === pkgId); // Look up the full package metadata by ID
+    const pkg = displayPackages.find(p => p.id === pkgId); // Look up the full package metadata by ID
 
     const message = paymentMethod === 'ETB'
       ? `You are about to subscribe to the ${pkg?.name} package for ${pkg?.price} ETB. You will receive an equivalent amount of AGLP as a reward. This will unlock ${pkg?.limit} and ${pkg?.slots}. Proceed?`
@@ -133,6 +167,15 @@ export const PackageSelection: React.FC<PackageSelectionProps> = ({ currentTier,
       setSelectedId(null); // If the user cancelled the modal, deselect the card
     }
   };
+
+  if (loadingPackages) {
+    return (
+      <div className="h-[60vh] flex flex-col items-center justify-center gap-4 text-slate-400">
+        <Loader2 className="w-10 h-10 animate-spin text-indigo-500" />
+        <p className="text-sm font-black uppercase tracking-[0.2em]">Synchronizing Tiers...</p>
+      </div>
+    );
+  }
 
   return (
     // Outer wrapper: fades in on mount, provides relative positioning for the decorative blobs
@@ -176,7 +219,7 @@ export const PackageSelection: React.FC<PackageSelectionProps> = ({ currentTier,
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 w-full max-w-7xl mx-auto">
         {/* AnimatePresence allows cards to animate in/out correctly */}
         <AnimatePresence>
-          {packages.map((pkg, index) => {
+          {displayPackages.map((pkg, index) => {
             const Icon = pkg.icon;            // Resolve the icon component for this specific package
             const isSelected = selectedId === pkg.id; // True if this card triggered the last purchase attempt
 

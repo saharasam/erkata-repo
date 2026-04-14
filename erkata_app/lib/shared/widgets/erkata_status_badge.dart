@@ -44,7 +44,7 @@ class ErkataStatusBadge extends StatelessWidget {
   ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     switch (status) {
-      case RequestStatus.newRequest:
+      case RequestStatus.pending:
         return (
           isDark
               ? AppColors.infoBlue.withValues(alpha: 0.2)
@@ -58,15 +58,20 @@ class ErkataStatusBadge extends StatelessWidget {
               : AppColors.warningOrangeLight,
           isDark ? AppColors.warningOrangeLight : AppColors.warningOrange,
         );
-      case RequestStatus.inProgress:
+      case RequestStatus.fulfilled:
         return (
           isDark
               ? AppColors.successGreen.withValues(alpha: 0.2)
               : AppColors.successGreenLight,
           isDark ? AppColors.successGreenLight : AppColors.successGreen,
         );
-      case RequestStatus.fulfilled:
-        return (AppColors.successGreen, AppColors.pureWhite);
+      case RequestStatus.disputed:
+        return (
+          isDark
+              ? AppColors.errorRed.withValues(alpha: 0.2)
+              : AppColors.errorRedLight,
+          isDark ? AppColors.errorRedLight : AppColors.errorRed,
+        );
     }
   }
 }

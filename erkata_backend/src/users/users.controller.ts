@@ -46,6 +46,11 @@ export class UsersController {
     return this.usersService.getFinanceSummary(req.user.id);
   }
 
+  @Get('me/available-packages')
+  async getAvailablePackages() {
+    return this.usersService.getAvailablePackages();
+  }
+
   @Post('me/withdraw')
   async requestWithdrawal(
     @Req() req: AuthenticatedRequest,

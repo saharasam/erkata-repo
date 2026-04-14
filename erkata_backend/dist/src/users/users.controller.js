@@ -35,6 +35,9 @@ let UsersController = class UsersController {
     async getFinance(req) {
         return this.usersService.getFinanceSummary(req.user.id);
     }
+    async getAvailablePackages() {
+        return this.usersService.getAvailablePackages();
+    }
     async requestWithdrawal(req, amount) {
         return this.usersService.requestWithdrawal(req.user.id, amount);
     }
@@ -86,6 +89,12 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "getFinance", null);
+__decorate([
+    (0, common_1.Get)('me/available-packages'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "getAvailablePackages", null);
 __decorate([
     (0, common_1.Post)('me/withdraw'),
     __param(0, (0, common_1.Req)()),

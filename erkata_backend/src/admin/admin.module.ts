@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AdminConfigController } from './config.controller';
+import { AdminPackagesController } from './packages.controller';
 import { AuditLogsController } from './audit-logs.controller';
 import { AdminsController } from './admins.controller';
 import AnalyticsController from './analytics.controller';
@@ -17,6 +18,7 @@ import { AlertsService } from './alerts.service';
   imports: [CommonModule, PrismaModule, AglpModule, InviteModule, UsersModule],
   controllers: [
     AdminConfigController,
+    AdminPackagesController,
     AuditLogsController,
     AdminsController,
     AnalyticsController,

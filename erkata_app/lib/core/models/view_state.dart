@@ -1,7 +1,7 @@
 enum ViewState {
   auth,
   home,
-  newRequest,
+  intake,
   tracking,
   payment,
   profile,

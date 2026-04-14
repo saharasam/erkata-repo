@@ -13,10 +13,6 @@ export declare class AdminConfigController {
         value: boolean;
         description: string;
     } | {
-        description: string;
-        key?: undefined;
-        value?: undefined;
-    } | {
         key: string;
         value: {
             rate: number;

@@ -345,6 +345,7 @@ export class TransactionsService {
           woreda: req.woreda,
           type: req.type,
           status: req.status,
+          metadata: req.metadata ?? {},
           zone: req.zone?.name || 'Unknown',
           customer: isAccepted
             ? {
@@ -367,11 +368,15 @@ export class TransactionsService {
     return this.prisma.match.findMany({
       where: query?.status ? { status: query.status as MatchStatus } : {},
       include: {
+        agent: {
+          select: { id: true, fullName: true, phone: true },
+        },
         request: {
           include: {
             customer: {
-              select: { id: true, fullName: true },
+              select: { id: true, fullName: true, phone: true },
             },
+            zone: true,
           },
         },
       },

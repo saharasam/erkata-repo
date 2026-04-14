@@ -18,14 +18,10 @@ class ScaffoldWithNavBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
-    // DEMO MODE: derive role from URL when not authenticated,
-    // so the nav bar is always visible regardless of auth state.
     final roleStr = authState.user?.role;
     final UserRole role = switch (roleStr) {
       'agent' => UserRole.agent,
-      'customer' => UserRole.customer,
-      // Fall back to URL-based detection for demo mode
-      _ => location.startsWith('/agent') ? UserRole.agent : UserRole.customer,
+      _ => UserRole.customer,
     };
 
     return Scaffold(

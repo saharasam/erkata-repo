@@ -168,8 +168,31 @@ let AglpService = class AglpService {
         if (!profile || Number(profile.aglpBalance) < amountAglp) {
             throw new Error('Insufficient AGLP balance');
         }
+        const minAmount = this.configService.get('withdrawal_min_amount', 100);
+        if (amountAglp < minAmount) {
+            throw new Error(`Minimum withdrawal amount is ${minAmount} AGLP`);
+        }
+        const maxDaily = this.configService.get('withdrawal_max_amount_daily', 50000);
+        const twentyFourHoursAgo = new Date();
+        twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+        const recentWithdrawals = await tx.aglpTransaction.aggregate({
+            where: {
+                profileId,
+                type: client_1.AglpTransactionType.WITHDRAWAL,
+                status: { not: client_1.AglpTransactionStatus.REJECTED },
+                createdAt: { gte: twentyFourHoursAgo },
+            },
+            _sum: { amount: true },
+        });
+        const totalWithdrawn24h = Number(recentWithdrawals._sum.amount || 0);
+        if (totalWithdrawn24h + amountAglp > maxDaily) {
+            throw new Error(`Daily withdrawal limit reached. Max: ${maxDaily} AGLP. Already withdrawn in 24h: ${totalWithdrawn24h} AGLP.`);
+        }
+        const feePct = this.configService.get('withdrawal_fee_percentage', 0.05);
+        const feeAmountAglp = amountAglp * feePct;
+        const netAglp = amountAglp - feeAmountAglp;
         const rate = this.getConversionRate();
-        const amountEtb = amountAglp / rate;
+        const netEtb = netAglp / rate;
         await tx.profile.update({
             where: { id: profileId },
             data: {
@@ -182,7 +205,7 @@ let AglpService = class AglpService {
                 profileId,
                 type: client_1.AglpTransactionType.WITHDRAWAL,
                 amount: amountAglp,
-                etbEquivalent: amountEtb,
+                etbEquivalent: netEtb,
                 conversionRate: rate,
                 status: client_1.AglpTransactionStatus.PENDING,
                 referenceType: 'PAYOUT',
@@ -196,7 +219,9 @@ let AglpService = class AglpService {
                 targetId: profileId,
                 metadata: {
                     amountAglp,
-                    amountEtb,
+                    feeAglp: feeAmountAglp,
+                    netAglp,
+                    amountEtb: netEtb,
                     aglpTxId: aglpTx.id,
                 },
             },

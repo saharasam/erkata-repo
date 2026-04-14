@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
-import EmergencyArchive from '../components/super-admin/EmergencyArchive';
+import DisputesAudit from '../components/super-admin/DisputesAudit';
 import AdminManagement from '../components/super-admin/AdminManagement';
 import GlobalRightsOversight from '../components/super-admin/GlobalRightsOversight';
 import OperatorOversight from '../components/super-admin/OperatorOversight';
@@ -8,6 +8,7 @@ import SystemAnalytics from '../components/super-admin/SystemAnalytics';
 import AuditLog from '../components/super-admin/AuditLog';
 import BroadcastNotices from '../components/super-admin/BroadcastNotices';
 import ConfigFlags from '../components/super-admin/ConfigFlags';
+import PackageManagement from '../components/super-admin/PackageManagement';
 import {
   ShieldAlert,
   History,
@@ -131,7 +132,8 @@ const SuperAdminDashboard: React.FC = () => {
                             transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
                          >
                              {currentView === 'analytics' && <SystemAnalytics />}
-                             {currentView === 'emergency' && <EmergencyArchive />}
+                             {currentView === 'tiers' && <PackageManagement />}
+                             {currentView === 'disputes' && <DisputesAudit />}
                              {currentView === 'admins' && <AdminManagement />}
                              {currentView === 'agents' && <GlobalRightsOversight />}
                              {currentView === 'operators' && <OperatorOversight />}

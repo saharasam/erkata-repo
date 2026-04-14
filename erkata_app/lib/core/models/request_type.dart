@@ -1,5 +1,5 @@
 enum RequestType {
-  property('Property'),
+  realEstate('Real Estate'),
   furniture('Furniture');
 
   final String label;

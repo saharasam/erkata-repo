@@ -151,7 +151,7 @@ class _RequestCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final imageUrl = request.type == RequestType.property
+    final imageUrl = request.type == RequestType.realEstate
         ? 'https://lh3.googleusercontent.com/aida-public/AB6AXuBhjbYgA0zDCprIiCjUZ_u9zudXAkCc0_uxJM-KtfNoFk0P8ZCRQJC3gFygYd55L_vSbYl5Hf7OMgnK0ZW3TJEGNAVKv5xFdO397yNTM8qPb3oVDmDt7zK1ORX_mQB189EXVO4kP9S09ndpnsJJGiPAajcUUPVROk_TaxedTXOkvGCk8kyw9OzTrboQyK-cYlEqPMYAryBM9ReBze5OL6gmairMmlDocWt0nPjoMfFTiPCPGV3ra-Da-JThYZF7-7mQ6YJPMzOA29NQ'
         : 'https://lh3.googleusercontent.com/aida-public/AB6AXuDGAXc3Mbyc4713K5yW5fQOPPIvXHXHh7wuFWxHxPnz_E5pAV7WbbcNGoVO9vXTtimgOswpsZIOKFaNnJEaRq44F9e7XyVxIx98lgCp-c2hwjWYEOPM_Iieuv7InM4dhj1kL19A4vthjQXa67aXJjegD4ZIOfD4OdSQSwc4jvSVaA76p9j-cgiL3R0JvTJMs0fAtq2CZsGt_OViUC3a_gkt6ijN8D4uYvWJre3EfOZZTI7FJkXXV0QDtjjoPHjV9zkrVSxK1adT9-qm';
 
@@ -282,18 +282,18 @@ class _StatusBadge extends StatelessWidget {
     Color text;
 
     switch (status) {
-      case RequestStatus.newRequest:
+      case RequestStatus.pending:
         bg = AppColors.infoBlueLight;
         text = AppColors.brandPrimary;
       case RequestStatus.assigned:
         bg = AppColors.warningOrangeLight;
         text = AppColors.warningOrange;
-      case RequestStatus.inProgress:
-        bg = AppColors.successGreen.withValues(alpha: 0.1);
-        text = AppColors.successGreen;
       case RequestStatus.fulfilled:
         bg = AppColors.successGreen;
         text = AppColors.pureWhite;
+      case RequestStatus.disputed:
+        bg = AppColors.errorRedLight;
+        text = AppColors.errorRed;
     }
 
     return Container(

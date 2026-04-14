@@ -1,6 +1,7 @@
 import { Injectable, OnModuleInit, Inject, Logger } from '@nestjs/common';
 import { Redis } from 'ioredis';
 import { PrismaService } from '../../prisma/prisma.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class RedisPresenceService implements OnModuleInit {
@@ -10,6 +11,7 @@ export class RedisPresenceService implements OnModuleInit {
     @Inject('REDIS_CLIENT') private readonly redis: Redis,
     @Inject('REDIS_SUBSCRIBER') private readonly subscriber: Redis,
     private readonly prisma: PrismaService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async onModuleInit() {
@@ -45,29 +47,39 @@ export class RedisPresenceService implements OnModuleInit {
   }
 
   private startBackupSync() {
-    setInterval(async () => {
-      this.logger.log('[RedisPresenceService] Running 10-minute backup sync...');
-      try {
-        const sqlOnlineOperators = await this.prisma.profile.findMany({
-          where: { isOnline: true },
-          select: { id: true },
-        });
+    setInterval(
+      async () => {
+        this.logger.log(
+          '[RedisPresenceService] Running 10-minute backup sync...',
+        );
+        try {
+          const sqlOnlineOperators = await this.prisma.profile.findMany({
+            where: { isOnline: true },
+            select: { id: true },
+          });
 
-        const redisOnlineIds = await this.getOnlineOperatorIds();
+          const redisOnlineIds = await this.getOnlineOperatorIds();
 
-        for (const op of sqlOnlineOperators) {
-          if (!redisOnlineIds.includes(op.id)) {
-            this.logger.warn(`[RedisPresenceService] Syncing: Operator ${op.id} is Offline in Redis but Online in SQL. Correcting...`);
-            await this.prisma.profile.update({
-              where: { id: op.id },
-              data: { isOnline: false } as any,
-            });
+          for (const op of sqlOnlineOperators) {
+            if (!redisOnlineIds.includes(op.id)) {
+              this.logger.warn(
+                `[RedisPresenceService] Syncing: Operator ${op.id} is Offline in Redis but Online in SQL. Correcting...`,
+              );
+              await this.prisma.profile.update({
+                where: { id: op.id },
+                data: { isOnline: false } as any,
+              });
+            }
           }
+        } catch (err) {
+          this.logger.error(
+            '[RedisPresenceService] Error during backup sync',
+            err,
+          );
         }
-      } catch (err) {
-        this.logger.error('[RedisPresenceService] Error during backup sync', err);
-      }
-    }, 10 * 60 * 1000); // 10 minutes
+      },
+      10 * 60 * 1000,
+    ); // 10 minutes
   }
 
   private async handleExpiredKey(message: string) {
@@ -96,17 +108,17 @@ export class RedisPresenceService implements OnModuleInit {
 
   async heartbeat(operatorId: string) {
     const key = `presence:operator:${operatorId}`;
-    
+
     // Check if they were already online in SQL
     // To minimize SQL writes, we could cache this in Redis too, but let's keep it simple first
     // and only sync when the key is *created* if we want to tracking "Login"
     // However, the customer's requirement was: "Redis updates instantly. The main database does nothing."
     // and "Redis sends one update when the threshold is crossed."
-    
+
     // We do need to handle the "Go Online" moment.
     // If the key doesn't exist, it's their "first" heartbeat or they were offline.
     const exists = await this.redis.exists(key);
-    
+
     if (!exists) {
       // First heartbeat or back from offline - Sync SQL to Online
       try {
@@ -117,6 +129,9 @@ export class RedisPresenceService implements OnModuleInit {
         this.logger.log(
           `[RedisPresenceService] Operator ${operatorId} marked as Online in SQL.`,
         );
+
+        // Notify that operator is now ready for queue pushes
+        this.eventEmitter.emit('operator.online', { operatorId });
       } catch (err) {
         this.logger.error(
           `[RedisPresenceService] Failed to sync online status for ${operatorId}`,

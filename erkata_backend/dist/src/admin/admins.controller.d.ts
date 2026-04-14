@@ -71,13 +71,14 @@ export declare class AdminsController {
         zoneId: string | null;
         referredById: string | null;
         createdAt: Date;
-        warningCount: number;
-        missedAssignments: number;
         aglpBalance: import("@prisma/client/runtime/library").Decimal;
         aglpPending: import("@prisma/client/runtime/library").Decimal;
         aglpWithdrawn: import("@prisma/client/runtime/library").Decimal;
         referralCode: string | null;
         isOnline: boolean;
         lastAssignmentAt: Date | null;
+        missedAssignments: number;
+        warningCount: number;
+        avatarUrl: string | null;
     }>;
 }

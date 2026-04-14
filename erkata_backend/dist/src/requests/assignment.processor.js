@@ -38,7 +38,9 @@ let AssignmentProcessor = AssignmentProcessor_1 = class AssignmentProcessor exte
             const request = await this.prisma.request.findUnique({
                 where: { id: requestId },
             });
-            if (request && request.status === client_1.RequestStatus.pending && request.assignedOperatorId === operatorId) {
+            if (request &&
+                request.status === client_1.RequestStatus.pending &&
+                request.assignedOperatorId === operatorId) {
                 this.logger.warn(`[AssignmentProcessor] Request ${requestId} timed out for operator ${operatorId}. Reclaiming...`);
                 await this.prisma.$transaction(async (tx) => {
                     await tx.request.update({
@@ -68,6 +70,23 @@ let AssignmentProcessor = AssignmentProcessor_1 = class AssignmentProcessor exte
                 });
                 this.logger.log(`[AssignmentProcessor] Request ${requestId} reclaimed. Triggering re-assignment.`);
                 this.eventEmitter.emit('request.created', { id: requestId });
+            }
+        }
+        if (job.name === 'queue-sweeper') {
+            this.logger.log('[AssignmentProcessor] Running Queue Sweeper...');
+            const unassignedRequests = await this.prisma.request.findMany({
+                where: {
+                    status: client_1.RequestStatus.pending,
+                    assignedOperatorId: null,
+                },
+                take: 10,
+                orderBy: { createdAt: 'asc' },
+            });
+            if (unassignedRequests.length > 0) {
+                this.logger.log(`[AssignmentProcessor] Sweeper found ${unassignedRequests.length} unassigned requests. Re-triggering...`);
+                for (const req of unassignedRequests) {
+                    this.eventEmitter.emit('request.created', { id: req.id });
+                }
             }
         }
     }

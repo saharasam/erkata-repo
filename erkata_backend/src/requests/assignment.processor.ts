@@ -21,15 +21,23 @@ export class AssignmentProcessor extends WorkerHost {
   async process(job: Job<any, any, string>): Promise<any> {
     if (job.name === 'check-timeout') {
       const { requestId, operatorId } = job.data;
-      this.logger.log(`[AssignmentProcessor] Checking timeout for request ${requestId} assigned to ${operatorId}`);
+      this.logger.log(
+        `[AssignmentProcessor] Checking timeout for request ${requestId} assigned to ${operatorId}`,
+      );
 
       const request = await this.prisma.request.findUnique({
         where: { id: requestId },
       });
 
       // If request is still pending and still assigned to this operator, it's a timeout
-      if (request && request.status === RequestStatus.pending && (request as any).assignedOperatorId === operatorId) {
-        this.logger.warn(`[AssignmentProcessor] Request ${requestId} timed out for operator ${operatorId}. Reclaiming...`);
+      if (
+        request &&
+        request.status === RequestStatus.pending &&
+        (request as any).assignedOperatorId === operatorId
+      ) {
+        this.logger.warn(
+          `[AssignmentProcessor] Request ${requestId} timed out for operator ${operatorId}. Reclaiming...`,
+        );
 
         await this.prisma.$transaction(async (tx) => {
           // Unassign the request
@@ -68,10 +76,33 @@ export class AssignmentProcessor extends WorkerHost {
           }
         });
 
-        this.logger.log(`[AssignmentProcessor] Request ${requestId} reclaimed. Triggering re-assignment.`);
-        
+        this.logger.log(
+          `[AssignmentProcessor] Request ${requestId} reclaimed. Triggering re-assignment.`,
+        );
+
         // Notify system that a request is now unassigned and potentially other operators are needed
         this.eventEmitter.emit('request.created', { id: requestId });
+      }
+    }
+
+    if (job.name === 'queue-sweeper') {
+      this.logger.log('[AssignmentProcessor] Running Queue Sweeper...');
+      const unassignedRequests = await this.prisma.request.findMany({
+        where: {
+          status: RequestStatus.pending,
+          assignedOperatorId: null,
+        } as any,
+        take: 10,
+        orderBy: { createdAt: 'asc' },
+      });
+
+      if (unassignedRequests.length > 0) {
+        this.logger.log(
+          `[AssignmentProcessor] Sweeper found ${unassignedRequests.length} unassigned requests. Re-triggering...`,
+        );
+        for (const req of unassignedRequests) {
+          this.eventEmitter.emit('request.created', { id: req.id });
+        }
       }
     }
   }

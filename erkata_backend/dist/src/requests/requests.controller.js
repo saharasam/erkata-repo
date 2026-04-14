@@ -36,6 +36,9 @@ let RequestsController = class RequestsController {
     findEligibleAgents() {
         return this.requestsService.findEligibleAgents();
     }
+    getDisputeHistory() {
+        return this.requestsService.getDisputeHistory();
+    }
     getRequest(id, req) {
         const user = req.user;
         return this.requestsService.getRequest(id, user.id, user.role);
@@ -46,6 +49,18 @@ let RequestsController = class RequestsController {
     getStatus(id, req) {
         const user = req.user;
         return this.requestsService.getRequest(id, user.id, user.role);
+    }
+    confirmFulfillment(id, confirmed, req) {
+        return this.requestsService.confirmFulfillment(id, req.user.id, confirmed);
+    }
+    resolveDispute(id, req, note) {
+        return this.requestsService.resolveDispute(id, req.user.id, note);
+    }
+    escalateDispute(id, req, note) {
+        return this.requestsService.escalateDispute(id, req.user.id, note);
+    }
+    voidDispute(id, req, note) {
+        return this.requestsService.voidDispute(id, req.user.id, note);
     }
 };
 exports.RequestsController = RequestsController;
@@ -82,6 +97,13 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], RequestsController.prototype, "findEligibleAgents", null);
 __decorate([
+    (0, common_1.Get)('admin/dispute-history'),
+    (0, guards_1.RequirePermission)(permissions_1.Action.VIEW_SYSTEM_STATISTICS),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], RequestsController.prototype, "getDisputeHistory", null);
+__decorate([
     (0, common_1.Get)(':id'),
     (0, guards_1.RequirePermission)(permissions_1.Action.VIEW_ASSIGNED_REQUEST_DETAILS),
     __param(0, (0, common_1.Param)('id')),
@@ -108,6 +130,46 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", void 0)
 ], RequestsController.prototype, "getStatus", null);
+__decorate([
+    (0, common_1.Post)(':id/confirm-fulfillment'),
+    (0, guards_1.RequirePermission)(permissions_1.Action.CONFIRM_FULFILLMENT),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)('confirmed')),
+    __param(2, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Boolean, Object]),
+    __metadata("design:returntype", void 0)
+], RequestsController.prototype, "confirmFulfillment", null);
+__decorate([
+    (0, common_1.Patch)(':id/resolve-dispute'),
+    (0, guards_1.RequirePermission)(permissions_1.Action.RESOLVE_DISPUTE),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Req)()),
+    __param(2, (0, common_1.Body)('note')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, String]),
+    __metadata("design:returntype", void 0)
+], RequestsController.prototype, "resolveDispute", null);
+__decorate([
+    (0, common_1.Patch)(':id/escalate-dispute'),
+    (0, guards_1.RequirePermission)(permissions_1.Action.ESCALATE_DISPUTE),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Req)()),
+    __param(2, (0, common_1.Body)('note')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, String]),
+    __metadata("design:returntype", void 0)
+], RequestsController.prototype, "escalateDispute", null);
+__decorate([
+    (0, common_1.Patch)(':id/void-dispute'),
+    (0, guards_1.RequirePermission)(permissions_1.Action.RESOLVE_DISPUTE),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Req)()),
+    __param(2, (0, common_1.Body)('note')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, String]),
+    __metadata("design:returntype", void 0)
+], RequestsController.prototype, "voidDispute", null);
 exports.RequestsController = RequestsController = __decorate([
     (0, common_1.Controller)('requests'),
     (0, common_1.UseGuards)(guards_1.JwtAuthGuard, guards_1.RolesGuard),

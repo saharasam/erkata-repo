@@ -31,13 +31,15 @@ export class NotificationsGateway
     if (token?.startsWith('Bearer ')) {
       token = token.split(' ')[1];
     }
-    
+
     if (!token) {
       token = client.handshake.query?.token as string;
     }
 
     if (!token) {
-      this.logger.warn(`Connection rejected: No token provided (Client: ${client.id})`);
+      this.logger.warn(
+        `Connection rejected: No token provided (Client: ${client.id})`,
+      );
       client.disconnect();
       return;
     }
@@ -54,9 +56,13 @@ export class NotificationsGateway
       const existing = this.userSockets.get(userId) || [];
       this.userSockets.set(userId, [...existing, client.id]);
 
-      this.logger.log(`Client connected: ${client.id} (User: ${userId}, Role: ${payload.role})`);
+      this.logger.log(
+        `Client connected: ${client.id} (User: ${userId}, Role: ${payload.role})`,
+      );
     } catch (e) {
-      this.logger.error(`Connection authentication failed for client ${client.id}: ${e instanceof Error ? e.message : 'Unknown error'}`);
+      this.logger.error(
+        `Connection authentication failed for client ${client.id}: ${e instanceof Error ? e.message : 'Unknown error'}`,
+      );
       client.disconnect();
     }
   }
@@ -78,7 +84,9 @@ export class NotificationsGateway
   sendToUser(userId: string, event: string, data: unknown) {
     const sockets = this.userSockets.get(userId);
     if (sockets) {
-      this.logger.debug(`Sending ${event} to user ${userId} (${sockets.length} sockets)`);
+      this.logger.debug(
+        `Sending ${event} to user ${userId} (${sockets.length} sockets)`,
+      );
       sockets.forEach((socketId) => {
         this.server.to(socketId).emit(event, data);
       });

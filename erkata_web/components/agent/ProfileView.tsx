@@ -13,19 +13,11 @@ interface ProfileViewProps {
 const ProfileView: React.FC<ProfileViewProps> = ({ profile }) => {
   if (!profile) return null;
 
-  const tier = profile.referralLink?.tier || 'FREE';
-  
-  const getLimits = (tier: string) => {
-    switch (tier) {
-      case 'ABUNDANT_LIFE': return { zones: 100, referrals: 31 };
-      case 'UNITY': return { zones: 5, referrals: 23 };
-      case 'LOVE': return { zones: 3, referrals: 16 };
-      case 'PEACE': return { zones: 2, referrals: 7 };
-      default: return { zones: 1, referrals: 3 };
-    }
+  const tierName = profile.package?.displayName || profile.tier?.replace('_', ' ') || 'FREE';
+  const limits = {
+    zones: profile.package?.zoneLimit || 1,
+    referrals: profile.package?.referralSlots || 3
   };
-
-  const limits = getLimits(tier);
   const zoneUsage = (profile.agentZones?.length || 0) / limits.zones;
 
   return (
@@ -37,7 +29,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile }) => {
         </div>
         <div className="flex items-center gap-2 px-4 py-2 bg-erkata-primary/10 text-erkata-primary rounded-2xl border border-erkata-primary/20">
            <Shield className="w-4 h-4" />
-           <span className="text-sm font-bold uppercase tracking-wider">{tier.replace('_', ' ')}</span>
+           <span className="text-sm font-bold uppercase tracking-wider">{tierName}</span>
         </div>
       </div>
 

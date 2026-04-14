@@ -1,6 +1,5 @@
 import { Controller, Get, UseGuards, Query } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { AlertsService } from './alerts.service';
 import { RolesGuard, RequirePermission, JwtAuthGuard } from '../auth/guards';
 import { Action } from '../auth/permissions';
 import {
@@ -52,6 +51,8 @@ export default class AnalyticsController {
       platformVolumeAgg,
       dailyCommissionsAgg,
       leaderboardRaw,
+      distributionRaw,
+      packageRevenueAgg,
     ] = await Promise.all([
       this.prisma.profile.count(),
       this.prisma.request.count(),
@@ -119,11 +120,31 @@ export default class AnalyticsController {
         ORDER BY "total" DESC
         LIMIT 5
       `,
+      this.prisma.profile.groupBy({
+        where: { role: UserRole.agent },
+        by: ['tier'],
+        _count: { _all: true },
+      }),
+      this.prisma.aglpTransaction.aggregate({
+        where: {
+          type: AglpTransactionType.DEPOSIT,
+          referenceType: 'PACKAGE_PURCHASE',
+          status: AglpTransactionStatus.COMPLETED,
+        },
+        _sum: { etbEquivalent: true },
+      }),
     ]);
 
     // Calculate resolution rate
     const resolutionRate =
       totalBundles > 0 ? (totalFinalized / totalBundles) * 100 : 0;
+
+    const packageDistribution = (
+      distributionRaw as { tier: string | null; _count: { _all: number } }[]
+    ).map((d) => ({
+      tier: d.tier?.replace('_', ' ') || 'FREE',
+      count: d._count._all,
+    }));
 
     return {
       totalUsers,
@@ -139,10 +160,14 @@ export default class AnalyticsController {
       window,
       avgAssignmentTimeMs: avgAssignment[0]?.avg || null,
       avgFulfillmentTimeMs: avgFulfillment[0]?.avg || null,
-      platformVolume: (platformVolumeAgg?._sum?.etbEquivalent || 0).toString() + ' ETB',
+      platformVolume:
+        (platformVolumeAgg?._sum?.etbEquivalent || 0).toString() + ' ETB',
       dailyCommissions:
         (dailyCommissionsAgg?._sum?.etbEquivalent || 0).toString() + ' ETB',
       leaderboard: leaderboardRaw,
+      packageDistribution,
+      packageRevenue:
+        (packageRevenueAgg?._sum?.etbEquivalent || 0).toString() + ' ETB',
       uptime: '99.99%',
     };
   }

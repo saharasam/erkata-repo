@@ -20,17 +20,17 @@ export declare class MediationService {
     proposeResolution(bundleId: string, adminId: string, proposedText: string): Promise<{
         id: string;
         createdAt: Date;
-        proposedById: string;
         proposedText: string;
         bundleId: string;
+        proposedById: string;
     }>;
     finalizeResolution(proposalId: string, actorId: string, approved: boolean, comment?: string): Promise<{
         id: string;
         createdAt: Date;
-        finalizedById: string;
         approved: boolean;
         comment: string | null;
         proposalId: string;
+        finalizedById: string;
     }>;
     escalateToSuperAdmin(bundleId: string, adminId: string, reason: string): Promise<{
         escalated: boolean;
@@ -38,30 +38,30 @@ export declare class MediationService {
     overrideResolution(resolutionId: string, superAdminId: string, newApproved: boolean, comment: string): Promise<{
         id: string;
         createdAt: Date;
-        finalizedById: string;
         approved: boolean;
         comment: string | null;
         proposalId: string;
+        finalizedById: string;
     }>;
     getBundles(state?: FeedbackBundleState): Promise<({
         [x: string]: ({
             id: string;
             createdAt: Date;
-            proposedById: string;
             proposedText: string;
             bundleId: string;
+            proposedById: string;
         } | {
             id: string;
             createdAt: Date;
-            proposedById: string;
             proposedText: string;
             bundleId: string;
+            proposedById: string;
         })[] | {
             id: string;
             createdAt: Date;
-            proposedById: string;
             proposedText: string;
             bundleId: string;
+            proposedById: string;
         }[];
         [x: number]: never;
         [x: symbol]: never;
@@ -75,9 +75,9 @@ export declare class MediationService {
     finalizeBundleDirectly(bundleId: string, actorId: string, resolutionText: string): Promise<{
         id: string;
         createdAt: Date;
-        finalizedById: string;
         approved: boolean;
         comment: string | null;
         proposalId: string;
+        finalizedById: string;
     }>;
 }

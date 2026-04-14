@@ -22,9 +22,14 @@ export class RequestEventListener {
   }
 
   @OnEvent('request.pushed')
-  async handleRequestPushed(payload: { requestId: string; operatorId: string }) {
-    this.logger.log(`[EVENT] request.pushed → requestId=${payload.requestId}, operatorId=${payload.operatorId}`);
-    
+  async handleRequestPushed(payload: {
+    requestId: string;
+    operatorId: string;
+  }) {
+    this.logger.log(
+      `[EVENT] request.pushed → requestId=${payload.requestId}, operatorId=${payload.operatorId}`,
+    );
+
     const notification = await this.notifications.create({
       userId: payload.operatorId,
       title: 'New Request Assigned',
@@ -39,11 +44,12 @@ export class RequestEventListener {
   @OnEvent('match.created')
   async handleMatchCreated(payload: { match: any; agentId: string }) {
     this.logger.log(`[EVENT] match.created → agentId=${payload.agentId}`);
-    
+
     const notification = await this.notifications.create({
       userId: payload.agentId,
       title: 'New Lead Assignment',
-      message: 'An operator has assigned a new lead to you. Accept it to see details.',
+      message:
+        'An operator has assigned a new lead to you. Accept it to see details.',
       type: 'match.created',
       link: `/agent/tasks/${payload.match.id}`,
     });
@@ -54,7 +60,7 @@ export class RequestEventListener {
   @OnEvent('match.accepted')
   async handleMatchAccepted(payload: any) {
     this.logger.log(`[EVENT] match.accepted → requestId=${payload.requestId}`);
-    
+
     // Notify Customer
     const request = await this.prisma.request.findUnique({
       where: { id: payload.requestId },
@@ -64,8 +70,9 @@ export class RequestEventListener {
     if (request) {
       const notification = await this.notifications.create({
         userId: request.customerId,
-        title: 'Agent Accepted',
-        message: 'An agent has accepted your request. You can now see their contact details.',
+        title: 'Request has been assigned',
+        message:
+          'An agent has accepted your request and will contact you soon.',
         type: 'match.accepted',
         link: `/dashboard/requests/${request.id}`,
       });
@@ -77,7 +84,7 @@ export class RequestEventListener {
   @OnEvent('match.completed')
   async handleMatchCompleted(payload: any) {
     this.logger.log(`[EVENT] match.completed → requestId=${payload.requestId}`);
-    
+
     // Notify Customer
     const request = await this.prisma.request.findUnique({
       where: { id: payload.requestId },
@@ -88,7 +95,8 @@ export class RequestEventListener {
       const notification = await this.notifications.create({
         userId: request.customerId,
         title: 'Job Delivered',
-        message: 'The agent has marked your request as delivered. Please confirm fulfillment.',
+        message:
+          'The agent has marked your request as delivered. Please confirm fulfillment.',
         type: 'match.completed',
         link: `/dashboard/requests/${request.id}`,
       });
@@ -98,9 +106,14 @@ export class RequestEventListener {
   }
 
   @OnEvent('request.disputed')
-  async handleRequestDisputed(payload: { requestId: string; customerId: string }) {
-    this.logger.log(`[EVENT] request.disputed → requestId=${payload.requestId}`);
-    
+  async handleRequestDisputed(payload: {
+    requestId: string;
+    customerId: string;
+  }) {
+    this.logger.log(
+      `[EVENT] request.disputed → requestId=${payload.requestId}`,
+    );
+
     const request = await this.prisma.request.findUnique({
       where: { id: payload.requestId },
       include: { assignedOperator: true },
@@ -111,7 +124,7 @@ export class RequestEventListener {
       select: { id: true },
     });
 
-    const targets = new Set(admins.map(a => a.id));
+    const targets = new Set(admins.map((a) => a.id));
     if (request?.assignedOperatorId) targets.add(request.assignedOperatorId);
 
     for (const targetId of targets) {

@@ -99,6 +99,39 @@ export class ConfigService implements OnModuleInit {
           'Minimum absolute number of requests in an hour to trigger a spike alert (avoids noise).',
         );
       }
+
+      // --- PLATFORM GOVERNANCE & WITHDRAWAL POLICIES ---
+      if (!this.configs.has('emergency_lockdown')) {
+        await this.set(
+          'emergency_lockdown',
+          false,
+          'Emergency lockdown flag. When true, all non-administrative requests are rejected.',
+        );
+      }
+
+      if (!this.configs.has('withdrawal_min_amount')) {
+        await this.set(
+          'withdrawal_min_amount',
+          100,
+          'Minimum AGLP amount allowed per withdrawal request.',
+        );
+      }
+
+      if (!this.configs.has('withdrawal_max_amount_daily')) {
+        await this.set(
+          'withdrawal_max_amount_daily',
+          50000,
+          'Maximum cumulative AGLP amount allowed for withdrawal per agent per 24h window.',
+        );
+      }
+
+      if (!this.configs.has('withdrawal_fee_percentage')) {
+        await this.set(
+          'withdrawal_fee_percentage',
+          0.05,
+          'Processing fee percentage applied to withdrawals (e.g., 0.05 for 5%).',
+        );
+      }
     } catch (error) {
       this.logger.error(
         '[ConfigService] Error loading configs. Ensure Prisma models are generated.',

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, Award, MoreHorizontal, ShieldOff, ShieldCheck, UserPlus } from 'lucide-react';
+import { Search, MapPin, Award, MoreHorizontal, ShieldOff, ShieldCheck } from 'lucide-react';
 import api from '../../utils/api';
 import { Loader2 } from 'lucide-react';
 import InvitePersonnelModal from '../ui/InvitePersonnelModal';
@@ -28,7 +28,6 @@ const AdminAgentList: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [actionMenuOpen, setActionMenuOpen] = useState<string | null>(null);
-    const [inviteModalOpen, setInviteModalOpen] = useState(false);
 
     const fetchAgents = async () => {
         setIsLoading(true);
@@ -81,13 +80,6 @@ const AdminAgentList: React.FC = () => {
                             className="pl-10 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 w-64"
                         />
                     </div>
-                    <button
-                        onClick={() => setInviteModalOpen(true)}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white text-sm font-black rounded-2xl shadow-lg shadow-slate-900/20 hover:bg-black transition-all active:scale-95"
-                    >
-                        <UserPlus className="w-4 h-4" />
-                        Invite Agent
-                    </button>
                 </div>
             </div>
 
@@ -226,13 +218,6 @@ const AdminAgentList: React.FC = () => {
                 </table>
             </div>
         </div>
-
-        <InvitePersonnelModal
-            isOpen={inviteModalOpen}
-            onClose={() => { setInviteModalOpen(false); fetchAgents(); }}
-            availableRoles={['agent']}
-            defaultRole="agent"
-        />
         </>
     );
 };

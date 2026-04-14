@@ -31,11 +31,20 @@ let RequestsService = class RequestsService {
         this.presence = presence;
         this.timeoutQueue = timeoutQueue;
     }
+    async onModuleInit() {
+        await this.timeoutQueue.add('queue-sweeper', {}, {
+            repeat: { every: 60000 },
+            removeOnComplete: true,
+            removeOnFail: true,
+            jobId: 'global-queue-sweeper',
+        });
+    }
     redact(user, message) {
         return {
             id: '00000000-0000-0000-0000-000000000000',
             fullName: message,
             phone: '',
+            avatarUrl: null,
             createdAt: user.createdAt || new Date(),
         };
     }
@@ -49,9 +58,11 @@ let RequestsService = class RequestsService {
             data: {
                 customerId,
                 category: dto.category,
+                type: dto.type || 'real_estate',
                 description: dto.details.description,
                 budgetMin: dto.details.budgetMin,
                 budgetMax: dto.details.budgetMax,
+                metadata: dto.metadata || {},
                 zoneId: zone.id,
                 woreda: dto.locationZone.woreda,
                 status: client_1.RequestStatus.pending,
@@ -64,42 +75,52 @@ let RequestsService = class RequestsService {
     async assignToNextReadyOperator(requestId) {
         const request = await this.prisma.request.findUnique({
             where: { id: requestId },
-            include: { zone: true },
         });
-        if (!request || request.status !== client_1.RequestStatus.pending || request.assignedOperatorId) {
+        if (!request ||
+            request.status !== client_1.RequestStatus.pending ||
+            request.assignedOperatorId) {
             return;
         }
-        const operator = await this.prisma.profile.findFirst({
-            where: {
-                role: client_1.UserRole.operator,
-                isOnline: true,
-                assignedRequests: {
-                    none: {
-                        status: client_1.RequestStatus.pending,
-                    },
-                },
-            },
-            orderBy: { lastAssignmentAt: 'asc' },
-        });
-        if (!operator)
+        const operators = await this.prisma.$queryRaw `
+      SELECT p.id 
+      FROM profiles p
+      WHERE p.role = 'operator' 
+        AND p.is_online = true
+        AND NOT EXISTS (
+          SELECT 1 FROM requests r 
+          WHERE r.assigned_operator_id = p.id 
+          AND r.status = 'pending'
+        )
+      ORDER BY p.last_assignment_at ASC NULLS FIRST
+      LIMIT 1
+      FOR UPDATE SKIP LOCKED
+    `;
+        const operatorId = operators[0]?.id;
+        if (!operatorId)
             return;
         await this.prisma.$transaction(async (tx) => {
-            const updatedRequest = await tx.request.update({
-                where: { id: requestId, assignedOperatorId: null },
+            const targetRequest = await tx.request.findUnique({
+                where: { id: requestId },
+            });
+            if (!targetRequest || targetRequest.assignedOperatorId) {
+                return;
+            }
+            await tx.request.update({
+                where: { id: requestId },
                 data: {
-                    assignedOperatorId: operator.id,
+                    assignedOperatorId: operatorId,
                     assignmentPushedAt: new Date(),
                 },
             });
             await tx.profile.update({
-                where: { id: operator.id },
+                where: { id: operatorId },
                 data: { lastAssignmentAt: new Date() },
             });
-            await this.timeoutQueue.add('check-timeout', { requestId: updatedRequest.id, operatorId: operator.id }, { delay: 5 * 60 * 1000, jobId: `timeout-${updatedRequest.id}` });
+            await this.timeoutQueue.add('check-timeout', { requestId, operatorId }, { delay: 5 * 60 * 1000, jobId: `timeout-${requestId}` });
         });
-        this.eventEmitter.emit('request.pushed', { requestId, operatorId: operator.id });
+        this.eventEmitter.emit('request.pushed', { requestId, operatorId });
     }
-    async handleOperatorReady(operatorId) {
+    async handleOperatorReady() {
         const oldestRequest = await this.prisma.request.findFirst({
             where: {
                 status: client_1.RequestStatus.pending,
@@ -111,9 +132,17 @@ let RequestsService = class RequestsService {
             await this.assignToNextReadyOperator(oldestRequest.id);
         }
     }
+    async handleRequestCreatedEvent(payload) {
+        const requestId = typeof payload === 'string' ? payload : payload.id;
+        await this.assignToNextReadyOperator(requestId);
+    }
+    async handleOperatorOnlineEvent(payload) {
+        await this.handleOperatorReady();
+    }
     async getOperatorQueue(filters) {
         const whereClause = {
             status: client_1.RequestStatus.pending,
+            assignedOperatorId: null,
         };
         if (filters?.zoneId) {
             whereClause.zoneId = filters.zoneId;
@@ -138,6 +167,9 @@ let RequestsService = class RequestsService {
             throw new common_1.NotFoundException('Request not found');
         if (request.status !== client_1.RequestStatus.pending) {
             throw new common_1.BadRequestException(`Request status "${request.status}" does not allow assignment`);
+        }
+        if (request.assignedOperatorId !== operatorId) {
+            throw new common_1.ForbiddenException('This request is not assigned to you');
         }
         const agent = await this.prisma.profile.findUnique({
             where: { id: agentId },
@@ -167,6 +199,7 @@ let RequestsService = class RequestsService {
             });
         });
         this.eventEmitter.emit('match.created', { match, agentId });
+        await this.handleOperatorReady();
         return match;
     }
     async getRequest(requestId, userId, role) {
@@ -179,7 +212,12 @@ let RequestsService = class RequestsService {
                 matches: {
                     include: {
                         agent: {
-                            select: { id: true, fullName: true, phone: true },
+                            select: {
+                                id: true,
+                                fullName: true,
+                                phone: true,
+                                avatarUrl: true,
+                            },
                         },
                         transaction: true,
                     },
@@ -229,7 +267,11 @@ let RequestsService = class RequestsService {
             },
         });
         const tierPriority = {
-            ABUNDANT_LIFE: 5, UNITY: 4, LOVE: 3, PEACE: 2, FREE: 1,
+            ABUNDANT_LIFE: 5,
+            UNITY: 4,
+            LOVE: 3,
+            PEACE: 2,
+            FREE: 1,
         };
         return agents
             .map((agent) => ({
@@ -254,7 +296,7 @@ let RequestsService = class RequestsService {
                 zone: true,
                 matches: {
                     include: {
-                        agent: { select: { id: true, fullName: true } },
+                        agent: { select: { id: true, fullName: true, avatarUrl: true } },
                         transaction: { select: { id: true } },
                     },
                 },
@@ -278,7 +320,7 @@ let RequestsService = class RequestsService {
                 where: { id: requestId },
                 data: {
                     status: client_1.RequestStatus.fulfilled,
-                    completedAt: new Date()
+                    completedAt: new Date(),
                 },
             });
         }
@@ -291,8 +333,139 @@ let RequestsService = class RequestsService {
         }
         return { success: true, status: confirmed ? 'fulfilled' : 'disputed' };
     }
+    async resolveDispute(requestId, operatorId, note) {
+        const request = await this.prisma.request.findUnique({
+            where: { id: requestId },
+        });
+        if (!request)
+            throw new common_1.NotFoundException('Request not found');
+        if (request.status !== client_1.RequestStatus.disputed) {
+            throw new common_1.BadRequestException('Request is not in a disputed state');
+        }
+        const currentMetadata = request.metadata || {};
+        const updated = await this.prisma.request.update({
+            where: { id: requestId },
+            data: {
+                status: client_1.RequestStatus.fulfilled,
+                completedAt: new Date(),
+                isEscalated: false,
+                metadata: {
+                    ...currentMetadata,
+                    resolutionNote: note || 'Resolved by operator.',
+                    resolvedAt: new Date().toISOString(),
+                    resolvedBy: operatorId,
+                },
+            },
+            include: { customer: true, matches: { include: { agent: true } } },
+        });
+        this.eventEmitter.emit('request.resolved', { requestId, operatorId, note });
+        return updated;
+    }
+    async escalateDispute(requestId, operatorId, note) {
+        const request = await this.prisma.request.findUnique({
+            where: { id: requestId },
+        });
+        if (!request)
+            throw new common_1.NotFoundException('Request not found');
+        if (request.status !== client_1.RequestStatus.disputed) {
+            throw new common_1.BadRequestException('Request is not in a disputed state');
+        }
+        const currentMetadata = request.metadata || {};
+        const updated = await this.prisma.request.update({
+            where: { id: requestId },
+            data: {
+                isEscalated: true,
+                metadata: {
+                    ...currentMetadata,
+                    escalationNote: note || 'No description provided by operator.',
+                    escalatedAt: new Date().toISOString(),
+                    escalatedBy: operatorId,
+                },
+            },
+        });
+        this.eventEmitter.emit('request.escalated', {
+            requestId,
+            operatorId,
+            note,
+        });
+        return updated;
+    }
+    async voidDispute(requestId, operatorId, note) {
+        const request = await this.prisma.request.findUnique({
+            where: { id: requestId },
+        });
+        if (!request)
+            throw new common_1.NotFoundException('Request not found');
+        if (request.status !== client_1.RequestStatus.disputed) {
+            throw new common_1.BadRequestException('Request is not in a disputed state');
+        }
+        const currentMetadata = request.metadata || {};
+        const updated = await this.prisma.request.update({
+            where: { id: requestId },
+            data: {
+                status: client_1.RequestStatus.assigned,
+                isEscalated: false,
+                metadata: {
+                    ...currentMetadata,
+                    needsRedo: true,
+                    voidNote: note || 'Fulfillment voided. Redo required.',
+                    voidAt: new Date().toISOString(),
+                    voidBy: operatorId,
+                    resolvedAt: new Date().toISOString(),
+                },
+            },
+        });
+        this.eventEmitter.emit('request.voided', {
+            requestId,
+            operatorId,
+            note,
+        });
+        return updated;
+    }
+    async getDisputeHistory() {
+        return this.prisma.request.findMany({
+            where: {
+                OR: [
+                    { status: client_1.RequestStatus.disputed },
+                    { isEscalated: true },
+                    {
+                        metadata: {
+                            path: ['resolvedAt'],
+                            not: client_1.Prisma.JsonNull,
+                        },
+                    },
+                ],
+            },
+            include: {
+                customer: {
+                    select: { id: true, fullName: true, phone: true },
+                },
+                matches: {
+                    include: {
+                        agent: {
+                            select: { id: true, fullName: true, phone: true },
+                        },
+                    },
+                },
+                zone: true,
+            },
+            orderBy: { createdAt: 'desc' },
+        });
+    }
 };
 exports.RequestsService = RequestsService;
+__decorate([
+    (0, event_emitter_1.OnEvent)('request.created'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], RequestsService.prototype, "handleRequestCreatedEvent", null);
+__decorate([
+    (0, event_emitter_1.OnEvent)('operator.online'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], RequestsService.prototype, "handleOperatorOnlineEvent", null);
 exports.RequestsService = RequestsService = __decorate([
     (0, common_1.Injectable)(),
     __param(3, (0, bullmq_1.InjectQueue)('assignment-timeout')),

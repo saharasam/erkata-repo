@@ -41,7 +41,30 @@ export class AdminConfigController {
         description: 'Enable/disable referral payout logic.',
       },
       {
+        key: 'emergency_lockdown',
+        value: this.configService.get<boolean>('emergency_lockdown', false),
         description: 'Suspend all platform transactions.',
+      },
+      {
+        key: 'withdrawal_min_amount',
+        value: this.configService.get<number>('withdrawal_min_amount', 100),
+        description: 'Minimum AGLP per withdrawal.',
+      },
+      {
+        key: 'withdrawal_max_amount_daily',
+        value: this.configService.get<number>(
+          'withdrawal_max_amount_daily',
+          50000,
+        ),
+        description: 'Maximum AGLP withdrawal per 24h.',
+      },
+      {
+        key: 'withdrawal_fee_percentage',
+        value: this.configService.get<number>(
+          'withdrawal_fee_percentage',
+          0.05,
+        ),
+        description: 'Processing fee for withdrawals.',
       },
       {
         key: 'AGLP_TO_ETB_RATE',
@@ -79,7 +102,8 @@ export class AdminConfigController {
       {
         key: 'alert_bad_performance_limit',
         value: this.configService.get<number>('alert_bad_performance_limit', 3),
-        description: 'Alert: Rejects + Unfulfilled assignments before flagging.',
+        description:
+          'Alert: Rejects + Unfulfilled assignments before flagging.',
       },
       {
         key: 'alert_dispute_pattern_limit',
@@ -121,6 +145,10 @@ export class AdminConfigController {
       'alert_dispute_pattern_limit',
       'alert_spike_factor',
       'alert_spike_min_threshold',
+      'emergency_lockdown',
+      'withdrawal_min_amount',
+      'withdrawal_max_amount_daily',
+      'withdrawal_fee_percentage',
     ];
 
     if (superAdminKeys.includes(body.key) && req.user.role !== 'super_admin') {

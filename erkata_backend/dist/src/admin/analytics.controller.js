@@ -33,7 +33,7 @@ let AnalyticsController = class AnalyticsController {
         if (startDate) {
             requestWhere.createdAt = { gte: startDate };
         }
-        const [totalUsers, totalRequests, activeRequests, fulfilledInWindow, totalBundles, totalFinalized, activeDisputes, agentCount, operatorCount, avgAssignment, avgFulfillment, platformVolumeAgg, dailyCommissionsAgg, leaderboardRaw,] = await Promise.all([
+        const [totalUsers, totalRequests, activeRequests, fulfilledInWindow, totalBundles, totalFinalized, activeDisputes, agentCount, operatorCount, avgAssignment, avgFulfillment, platformVolumeAgg, dailyCommissionsAgg, leaderboardRaw, distributionRaw, packageRevenueAgg,] = await Promise.all([
             this.prisma.profile.count(),
             this.prisma.request.count(),
             this.prisma.request.count({
@@ -100,8 +100,25 @@ let AnalyticsController = class AnalyticsController {
         ORDER BY "total" DESC
         LIMIT 5
       `,
+            this.prisma.profile.groupBy({
+                where: { role: client_1.UserRole.agent },
+                by: ['tier'],
+                _count: { _all: true },
+            }),
+            this.prisma.aglpTransaction.aggregate({
+                where: {
+                    type: client_1.AglpTransactionType.DEPOSIT,
+                    referenceType: 'PACKAGE_PURCHASE',
+                    status: client_1.AglpTransactionStatus.COMPLETED,
+                },
+                _sum: { etbEquivalent: true },
+            }),
         ]);
         const resolutionRate = totalBundles > 0 ? (totalFinalized / totalBundles) * 100 : 0;
+        const packageDistribution = distributionRaw.map((d) => ({
+            tier: d.tier?.replace('_', ' ') || 'FREE',
+            count: d._count._all,
+        }));
         return {
             totalUsers,
             totalRequests,
@@ -119,6 +136,8 @@ let AnalyticsController = class AnalyticsController {
             platformVolume: (platformVolumeAgg?._sum?.etbEquivalent || 0).toString() + ' ETB',
             dailyCommissions: (dailyCommissionsAgg?._sum?.etbEquivalent || 0).toString() + ' ETB',
             leaderboard: leaderboardRaw,
+            packageDistribution,
+            packageRevenue: (packageRevenueAgg?._sum?.etbEquivalent || 0).toString() + ' ETB',
             uptime: '99.99%',
         };
     }

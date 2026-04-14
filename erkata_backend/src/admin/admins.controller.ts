@@ -72,6 +72,12 @@ export class AdminsController {
       role: UserRole;
     },
   ) {
+    if (req.user.role === UserRole.admin && body.role === UserRole.agent) {
+      throw new ForbiddenException(
+        'As an Admin, you do not have the authority to invite Agents. This action is reserved for Super Admins.',
+      );
+    }
+
     const invite = await this.inviteService.createInvite(
       body.email,
       body.fullName,

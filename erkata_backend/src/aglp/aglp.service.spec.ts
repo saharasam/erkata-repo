@@ -48,7 +48,7 @@ describe('AglpService', () => {
       const profileId = 'agent-1';
       const amountEtb = 5000;
       const threshold = 8000;
-      
+
       mockConfig.get.mockReturnValue({ value: threshold });
       mockConfig.get.mockReturnValueOnce({ rate: 1.0 }); // conversion rate
       mockConfig.get.mockReturnValueOnce({ value: threshold }); // threshold
@@ -58,7 +58,13 @@ describe('AglpService', () => {
       });
 
       // Execute
-      await service.earnCommission(tx, profileId, amountEtb, 'ref-1', 'Test reason');
+      await service.earnCommission(
+        tx,
+        profileId,
+        amountEtb,
+        'ref-1',
+        'Test reason',
+      );
 
       // Verify
       expect(tx.auditLog.create).toHaveBeenCalledWith(
@@ -86,11 +92,19 @@ describe('AglpService', () => {
       });
 
       // Execute
-      await service.earnCommission(tx, profileId, amountEtb, 'ref-2', 'Safe reason');
+      await service.earnCommission(
+        tx,
+        profileId,
+        amountEtb,
+        'ref-2',
+        'Safe reason',
+      );
 
       // Verify
       const calls = tx.auditLog.create.mock.calls;
-      const suspiciousCalls = calls.filter((c: any) => c[0].data.action === 'SUSPICIOUS_COMMISSION');
+      const suspiciousCalls = calls.filter(
+        (c: any) => c[0].data.action === 'SUSPICIOUS_COMMISSION',
+      );
       expect(suspiciousCalls.length).toBe(0);
     });
   });

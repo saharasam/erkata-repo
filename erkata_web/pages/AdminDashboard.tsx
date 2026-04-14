@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import SystemHealth from '../components/admin/SystemHealth';
-import EscalatedBundles from '../components/admin/EscalatedBundles';
+import EscalatedDisputes from '../components/admin/EscalatedDisputes';
 import AdminAgentList from '../components/admin/AdminAgentList';
 import AdminOperatorList from '../components/admin/AdminOperatorList';
 import PendingActions from '../components/admin/PendingActions';
@@ -49,7 +49,7 @@ const AdminDashboard: React.FC = () => {
 
                         {/* Existing Views */}
                         {currentView === 'zones' && <ZoneCoverage />}
-                        {currentView === 'bundles' && <EscalatedBundles />}
+                        {currentView === 'disputes' && <EscalatedDisputes />}
                         {currentView === 'actions' && <PendingActions />}
                         {currentView === 'history' && <ProposalHistory />}
                         {currentView === 'agents' && <AdminAgentList />}

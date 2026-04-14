@@ -11,10 +11,10 @@ export declare class InviteService {
         fullName: string;
         phone: string;
         role: import(".prisma/client").$Enums.UserRole;
+        createdAt: Date;
         token: string;
         expiresAt: Date;
         usedAt: Date | null;
-        createdAt: Date;
         createdById: string;
     }>;
     validateInvite(token: string, email: string): Promise<{
@@ -23,10 +23,10 @@ export declare class InviteService {
         fullName: string;
         phone: string;
         role: import(".prisma/client").$Enums.UserRole;
+        createdAt: Date;
         token: string;
         expiresAt: Date;
         usedAt: Date | null;
-        createdAt: Date;
         createdById: string;
     }>;
     getInviteByToken(token: string): Promise<{
@@ -43,10 +43,10 @@ export declare class InviteService {
         fullName: string;
         phone: string;
         role: import(".prisma/client").$Enums.UserRole;
+        createdAt: Date;
         token: string;
         expiresAt: Date;
         usedAt: Date | null;
-        createdAt: Date;
         createdById: string;
     }>;
     findPendingInvites(createdById?: string): Promise<{
@@ -55,10 +55,10 @@ export declare class InviteService {
         fullName: string;
         phone: string;
         role: import(".prisma/client").$Enums.UserRole;
+        createdAt: Date;
         token: string;
         expiresAt: Date;
         usedAt: Date | null;
-        createdAt: Date;
         createdById: string;
     }[]>;
     deleteInvite(id: string, createdById?: string): Promise<{
@@ -67,10 +67,10 @@ export declare class InviteService {
         fullName: string;
         phone: string;
         role: import(".prisma/client").$Enums.UserRole;
+        createdAt: Date;
         token: string;
         expiresAt: Date;
         usedAt: Date | null;
-        createdAt: Date;
         createdById: string;
     }>;
 }

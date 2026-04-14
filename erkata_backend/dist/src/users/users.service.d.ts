@@ -11,28 +11,39 @@ export declare class UsersService {
     getCurrentProfile(userId: string): Promise<{
         agentZones: {
             id: string;
-            createdAt: Date;
             zoneId: string | null;
+            createdAt: Date;
             agentId: string;
             woreda: string;
             kifleKetema: string;
         }[];
         referrals: {
             id: string;
-            createdAt: Date;
             fullName: string;
             role: import(".prisma/client").$Enums.UserRole;
+            createdAt: Date;
         }[];
         referralLink: {
             id: string;
-            createdAt: Date;
             tier: import(".prisma/client").$Enums.Tier;
+            createdAt: Date;
             referrerId: string;
             code: string;
         } | null;
+        package: {
+            id: string;
+            createdAt: Date;
+            name: import(".prisma/client").$Enums.Tier;
+            description: string | null;
+            updatedAt: Date;
+            price: Prisma.Decimal;
+            referralSlots: number;
+            zoneLimit: number;
+            requiresApproval: boolean;
+            displayName: string;
+        } | null;
     } & {
         id: string;
-        createdAt: Date;
         email: string;
         passwordHash: string | null;
         fullName: string;
@@ -42,14 +53,16 @@ export declare class UsersService {
         isActive: boolean;
         zoneId: string | null;
         referredById: string | null;
-        warningCount: number;
-        missedAssignments: number;
+        createdAt: Date;
         aglpBalance: Prisma.Decimal;
         aglpPending: Prisma.Decimal;
         aglpWithdrawn: Prisma.Decimal;
         referralCode: string | null;
         isOnline: boolean;
         lastAssignmentAt: Date | null;
+        missedAssignments: number;
+        warningCount: number;
+        avatarUrl: string | null;
     }>;
     getFinanceSummary(userId: string): Promise<{
         balance: string;
@@ -61,6 +74,8 @@ export declare class UsersService {
         usedZones: number;
         totalZones: number;
         currentTier: string;
+        tier: import(".prisma/client").$Enums.Tier;
+        packageDisplayName: string | undefined;
         nextTier: string;
         history: {
             id: string;
@@ -86,22 +101,33 @@ export declare class UsersService {
             } | null;
         } & {
             id: string;
-            createdAt: Date;
             zoneId: string | null;
+            createdAt: Date;
             agentId: string;
             woreda: string;
             kifleKetema: string;
         })[];
         referralLink: {
             id: string;
-            createdAt: Date;
             tier: import(".prisma/client").$Enums.Tier;
+            createdAt: Date;
             referrerId: string;
             code: string;
         } | null;
+        package: {
+            id: string;
+            createdAt: Date;
+            name: import(".prisma/client").$Enums.Tier;
+            description: string | null;
+            updatedAt: Date;
+            price: Prisma.Decimal;
+            referralSlots: number;
+            zoneLimit: number;
+            requiresApproval: boolean;
+            displayName: string;
+        } | null;
     } & {
         id: string;
-        createdAt: Date;
         email: string;
         passwordHash: string | null;
         fullName: string;
@@ -111,19 +137,33 @@ export declare class UsersService {
         isActive: boolean;
         zoneId: string | null;
         referredById: string | null;
-        warningCount: number;
-        missedAssignments: number;
+        createdAt: Date;
         aglpBalance: Prisma.Decimal;
         aglpPending: Prisma.Decimal;
         aglpWithdrawn: Prisma.Decimal;
         referralCode: string | null;
         isOnline: boolean;
         lastAssignmentAt: Date | null;
+        missedAssignments: number;
+        warningCount: number;
+        avatarUrl: string | null;
     })[]>;
-    assignZone(callerRole: UserRole, agentId: string, zoneId: string, woreda: string): Promise<{
+    getAvailablePackages(): Promise<{
         id: string;
         createdAt: Date;
+        name: import(".prisma/client").$Enums.Tier;
+        description: string | null;
+        updatedAt: Date;
+        price: Prisma.Decimal;
+        referralSlots: number;
+        zoneLimit: number;
+        requiresApproval: boolean;
+        displayName: string;
+    }[]>;
+    assignZone(callerRole: UserRole, agentId: string, zoneId: string, woreda: string): Promise<{
+        id: string;
         zoneId: string | null;
+        createdAt: Date;
         agentId: string;
         woreda: string;
         kifleKetema: string;
@@ -131,15 +171,15 @@ export declare class UsersService {
     private getZoneLimit;
     updateTier(callerRole: UserRole, agentId: string, tier: string): Promise<{
         id: string;
-        createdAt: Date;
         tier: import(".prisma/client").$Enums.Tier;
+        createdAt: Date;
         referrerId: string;
         code: string;
     }>;
     purchasePackage(agentId: string, tier: string, paymentMethod?: 'ETB' | 'AGLP'): Promise<{
         id: string;
-        createdAt: Date;
         tier: import(".prisma/client").$Enums.Tier;
+        createdAt: Date;
         referrerId: string;
         code: string;
     }>;
@@ -148,7 +188,6 @@ export declare class UsersService {
     private getReferralLimit;
     suspendUser(callerRole: UserRole, userId: string): Promise<{
         id: string;
-        createdAt: Date;
         email: string;
         passwordHash: string | null;
         fullName: string;
@@ -158,31 +197,32 @@ export declare class UsersService {
         isActive: boolean;
         zoneId: string | null;
         referredById: string | null;
-        warningCount: number;
-        missedAssignments: number;
+        createdAt: Date;
         aglpBalance: Prisma.Decimal;
         aglpPending: Prisma.Decimal;
         aglpWithdrawn: Prisma.Decimal;
         referralCode: string | null;
         isOnline: boolean;
         lastAssignmentAt: Date | null;
+        missedAssignments: number;
+        warningCount: number;
+        avatarUrl: string | null;
     }>;
     requestWithdrawal(userId: string, amountAglp: number): Promise<{
         id: string;
-        profileId: string;
+        createdAt: Date;
+        status: import(".prisma/client").$Enums.AglpTransactionStatus;
         type: import(".prisma/client").$Enums.AglpTransactionType;
         amount: Prisma.Decimal;
         etbEquivalent: Prisma.Decimal | null;
         conversionRate: Prisma.Decimal | null;
-        status: import(".prisma/client").$Enums.AglpTransactionStatus;
         referenceId: string | null;
         referenceType: string | null;
-        createdAt: Date;
         updatedAt: Date;
+        profileId: string;
     }>;
     activateUser(callerRole: UserRole, userId: string): Promise<{
         id: string;
-        createdAt: Date;
         email: string;
         passwordHash: string | null;
         fullName: string;
@@ -192,14 +232,16 @@ export declare class UsersService {
         isActive: boolean;
         zoneId: string | null;
         referredById: string | null;
-        warningCount: number;
-        missedAssignments: number;
+        createdAt: Date;
         aglpBalance: Prisma.Decimal;
         aglpPending: Prisma.Decimal;
         aglpWithdrawn: Prisma.Decimal;
         referralCode: string | null;
         isOnline: boolean;
         lastAssignmentAt: Date | null;
+        missedAssignments: number;
+        warningCount: number;
+        avatarUrl: string | null;
     }>;
     generateReferralCode(userId: string): Promise<{
         code: string;
@@ -211,14 +253,13 @@ export declare class UsersService {
         }[];
         referralLink: {
             id: string;
-            createdAt: Date;
             tier: import(".prisma/client").$Enums.Tier;
+            createdAt: Date;
             referrerId: string;
             code: string;
         } | null;
     } & {
         id: string;
-        createdAt: Date;
         email: string;
         passwordHash: string | null;
         fullName: string;
@@ -228,13 +269,15 @@ export declare class UsersService {
         isActive: boolean;
         zoneId: string | null;
         referredById: string | null;
-        warningCount: number;
-        missedAssignments: number;
+        createdAt: Date;
         aglpBalance: Prisma.Decimal;
         aglpPending: Prisma.Decimal;
         aglpWithdrawn: Prisma.Decimal;
         referralCode: string | null;
         isOnline: boolean;
         lastAssignmentAt: Date | null;
+        missedAssignments: number;
+        warningCount: number;
+        avatarUrl: string | null;
     }>;
 }

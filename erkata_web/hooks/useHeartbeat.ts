@@ -48,5 +48,9 @@ export const useHeartbeat = (isOnline: boolean) => {
     };
   }, [user, isOnline]);
 
-  return { pushedRequestId, error };
+  const trigger = () => {
+    sendHeartbeat();
+  };
+
+  return { pushedRequestId, error, trigger };
 };

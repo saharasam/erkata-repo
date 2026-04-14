@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Package, Clock, CheckCircle, Star, MessageSquare, Plus, X, MapPin, Calendar, ChevronRight, Info } from 'lucide-react';
+import { Package, Clock, CheckCircle, Star, MessageSquare, Plus, X, MapPin, Calendar, ChevronRight, Info, AlertTriangle } from 'lucide-react';
 import FeedbackForm, { FeedbackData } from '../components/FeedbackForm';
 import RequestIntakeFlow from '../components/RequestIntakeFlow';
 import { agentRequests } from '../utils/mockData';
@@ -11,6 +11,7 @@ import { Action } from '../hooks/usePermissions';
 import api from '../utils/api';
 import { useModal } from '../contexts/ModalContext';
 import FulfillmentConfirmation from '../components/FulfillmentConfirmation';
+import { useSocket } from '../contexts/SocketContext';
 
 const CustomerDashboard: React.FC = () => {
   const [requests, setRequests] = useState<any[]>([]);
@@ -46,6 +47,31 @@ const CustomerDashboard: React.FC = () => {
   useEffect(() => {
     fetchRequests();
   }, []);
+
+  const { socket } = useSocket();
+
+  useEffect(() => {
+    if (socket) {
+      const handleStatusUpdate = (notification: any) => {
+        // Refresh for any event that changes request status
+        const relevantTypes = [
+          'match.accepted', 
+          'match.completed', 
+          'request.disputed', 
+          'request.fulfilled'
+        ];
+        
+        if (relevantTypes.includes(notification.type)) {
+          fetchRequests();
+        }
+      };
+
+      socket.on('notification', handleStatusUpdate);
+      return () => {
+        socket.off('notification', handleStatusUpdate);
+      };
+    }
+  }, [socket]);
 
   const handleFeedbackSubmit = async (data: FeedbackData) => {
     try {
@@ -200,9 +226,29 @@ const CustomerDashboard: React.FC = () => {
                       </Can>
                     </div>
                   ) : request.status === 'assigned' ? (
-                    <div className="w-full py-3 flex items-center justify-center text-erkata-primary bg-erkata-primary/5 rounded-xl border border-erkata-primary/10">
-                      <Clock className="w-4 h-4 mr-2 animate-pulse" />
-                      <span className="text-xs font-semibold">Fulfillment in progress</span>
+                    <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                      <div className="flex items-center gap-3 mb-3">
+                        {request.agentAvatar ? (
+                          <img src={request.agentAvatar} alt={request.agentName} className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm" />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-erkata-primary flex items-center justify-center text-white font-bold text-sm shadow-sm">
+                            {request.agentName?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || 'A'}
+                          </div>
+                        )}
+                        <div className="flex-1">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Assigned Agent</p>
+                          <p className="text-sm font-bold text-slate-900 leading-tight">{request.agentName || 'Verifying Agent...'}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-start gap-2 text-erkata-primary bg-white p-2.5 rounded-xl border border-erkata-primary/10 shadow-sm">
+                        <div className="bg-erkata-primary/10 p-1 rounded-md mt-0.5">
+                          <Clock className="w-3 h-3 animate-pulse" />
+                        </div>
+                        <p className="text-[11px] font-medium leading-relaxed">
+                          Our agent will contact you soon to finalize fulfillment.
+                        </p>
+                      </div>
                     </div>
                   ) : request.status === 'disputed' ? (
                     <div className="w-full py-3 flex items-center justify-center text-rose-600 bg-rose-50 rounded-xl border border-rose-100">

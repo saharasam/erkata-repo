@@ -8,6 +8,9 @@ import '../../../core/theme/colors.dart';
 import '../../../shared/widgets/primary_button.dart';
 import '../../../shared/widgets/erkata_screen_header.dart';
 import '../../../shared/widgets/erkata_dropdown.dart';
+import '../../auth/state/auth_provider.dart';
+import '../data/repositories/request_repository.dart';
+import '../state/customer_requests_provider.dart';
 
 // Form Data Model
 class RequestFormData {
@@ -97,6 +100,7 @@ class RequestIntakeScreen extends HookConsumerWidget {
 
     // Page Controller for transitions
     final pageController = usePageController();
+    final isLoading = useState(false);
 
     // Sync PageController with step state
     useEffect(() {
@@ -110,12 +114,64 @@ class RequestIntakeScreen extends HookConsumerWidget {
       return null;
     }, [step.value]);
 
+    Future<void> submitRequest() async {
+      final authState = ref.read(authProvider);
+      if (!authState.isAuthenticated) {
+        context.go('/auth');
+        return;
+      }
+
+      isLoading.value = true;
+      try {
+        final data = formData.value;
+        
+        // Map form to Backend DTO
+        final payload = {
+          'category': data.type == RequestType.realEstate 
+              ? data.propertyType 
+              : data.furnitureContext,
+          'type': data.type == RequestType.realEstate ? 'real_estate' : 'furniture',
+          'details': {
+            'description': data.notes,
+            'budgetMin': data.budgetMin,
+            'budgetMax': data.budgetMax,
+            'bedrooms': data.bedrooms,
+            'quantity': data.quantity,
+            'condition': data.condition,
+            'furnitureCategories': data.furnitureCategories,
+          },
+          'locationZone': {
+            'kifleKetema': data.kifleKetema,
+            'woreda': data.wereda,
+          },
+        };
+
+        await ref.read(requestRepositoryProvider).createRequest(payload);
+        
+        // Refresh the customer history
+        ref.read(customerRequestsProvider.notifier).refresh();
+        
+        if (context.mounted) {
+          context.go('/request/status');
+        }
+      } catch (e) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to submit: $e')),
+          );
+        }
+      } finally {
+        if (context.mounted) {
+          isLoading.value = false;
+        }
+      }
+    }
+
     void handleNext() {
       if (step.value < totalSteps) {
         step.value++;
       } else {
-        // Submit
-        context.go('/'); // Redirect to home page
+        submitRequest();
       }
     }
 
@@ -128,6 +184,7 @@ class RequestIntakeScreen extends HookConsumerWidget {
     }
 
     bool isNextDisabled() {
+      if (isLoading.value) return true;
       if (step.value == 1 && formData.value.type == null) return true;
       if (step.value == 2 &&
           formData.value.type == RequestType.furniture &&
@@ -292,10 +349,10 @@ class _Step1TypeSelection extends HookWidget {
             child: _SelectionCard(
               label: 'Property',
               icon: Icons.home_rounded,
-              isSelected: formData.value.type == RequestType.property,
+              isSelected: formData.value.type == RequestType.realEstate,
               onTap: () {
                 formData.value = formData.value.copyWith(
-                  type: RequestType.property,
+                  type: RequestType.realEstate,
                 );
                 // Delay slightly for visual feedback
                 Future.delayed(const Duration(milliseconds: 200), onNext);
@@ -326,6 +383,31 @@ class _Step1TypeSelection extends HookWidget {
                 // Delay slightly for visual feedback
                 Future.delayed(const Duration(milliseconds: 200), onNext);
               },
+            ),
+          ),
+          const SizedBox(height: 40),
+          // Returning User Link
+          Center(
+            child: TextButton(
+              onPressed: () => context.go('/auth'),
+              child: RichText(
+                text: TextSpan(
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontSize: 14,
+                  ),
+                  children: [
+                    const TextSpan(text: 'Already have an account? '),
+                    TextSpan(
+                      text: 'Log in',
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ],

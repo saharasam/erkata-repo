@@ -11,10 +11,10 @@ export declare class TransactionsService {
     constructor(prisma: PrismaService, eventEmitter: EventEmitter2, aglpService: AglpService, configService: ConfigService);
     acceptAssignment(matchId: string, agentId: string): Promise<{
         id: string;
-        status: import(".prisma/client").$Enums.MatchStatus;
         requestId: string;
         agentId: string;
         operatorId: string;
+        status: import(".prisma/client").$Enums.MatchStatus;
         assignedAt: Date;
     }>;
     declineAssignment(matchId: string, agentId: string): Promise<{
@@ -22,17 +22,16 @@ export declare class TransactionsService {
     }>;
     transferAssignment(matchId: string, fromAgentId: string, toAgentId: string): Promise<{
         id: string;
-        status: import(".prisma/client").$Enums.MatchStatus;
         requestId: string;
         agentId: string;
         operatorId: string;
+        status: import(".prisma/client").$Enums.MatchStatus;
         assignedAt: Date;
     }>;
     markComplete(matchId: string, agentId: string): Promise<{
         agent: {
             referredBy: {
                 id: string;
-                createdAt: Date;
                 email: string;
                 passwordHash: string | null;
                 fullName: string;
@@ -42,18 +41,19 @@ export declare class TransactionsService {
                 isActive: boolean;
                 zoneId: string | null;
                 referredById: string | null;
-                warningCount: number;
-                missedAssignments: number;
+                createdAt: Date;
                 aglpBalance: Prisma.Decimal;
                 aglpPending: Prisma.Decimal;
                 aglpWithdrawn: Prisma.Decimal;
                 referralCode: string | null;
                 isOnline: boolean;
                 lastAssignmentAt: Date | null;
+                missedAssignments: number;
+                warningCount: number;
+                avatarUrl: string | null;
             } | null;
         } & {
             id: string;
-            createdAt: Date;
             email: string;
             passwordHash: string | null;
             fullName: string;
@@ -63,37 +63,41 @@ export declare class TransactionsService {
             isActive: boolean;
             zoneId: string | null;
             referredById: string | null;
-            warningCount: number;
-            missedAssignments: number;
+            createdAt: Date;
             aglpBalance: Prisma.Decimal;
             aglpPending: Prisma.Decimal;
             aglpWithdrawn: Prisma.Decimal;
             referralCode: string | null;
             isOnline: boolean;
             lastAssignmentAt: Date | null;
+            missedAssignments: number;
+            warningCount: number;
+            avatarUrl: string | null;
         };
         request: {
             id: string;
-            type: import(".prisma/client").$Enums.RequestType;
-            status: import(".prisma/client").$Enums.RequestStatus;
-            createdAt: Date;
             zoneId: string;
-            description: string | null;
+            createdAt: Date;
+            status: import(".prisma/client").$Enums.RequestStatus;
             customerId: string;
+            type: import(".prisma/client").$Enums.RequestType;
             category: string;
+            description: string | null;
             budgetMin: Prisma.Decimal | null;
             budgetMax: Prisma.Decimal | null;
             woreda: string | null;
             assignedOperatorId: string | null;
             assignmentPushedAt: Date | null;
             completedAt: Date | null;
+            metadata: Prisma.JsonValue | null;
+            isEscalated: boolean;
         };
     } & {
         id: string;
-        status: import(".prisma/client").$Enums.MatchStatus;
         requestId: string;
         agentId: string;
         operatorId: string;
+        status: import(".prisma/client").$Enums.MatchStatus;
         assignedAt: Date;
     }>;
     getAgentJobs(agentId: string): Promise<{
@@ -113,6 +117,7 @@ export declare class TransactionsService {
             woreda: string | null;
             type: import(".prisma/client").$Enums.RequestType;
             status: import(".prisma/client").$Enums.RequestStatus;
+            metadata: string | number | boolean | Prisma.JsonObject | Prisma.JsonArray;
             zone: string;
             customer: {
                 id: string;
@@ -128,33 +133,47 @@ export declare class TransactionsService {
     getOperatorTransactions(query?: {
         status?: string;
     }): Promise<({
+        agent: {
+            id: string;
+            fullName: string;
+            phone: string;
+        };
         request: {
+            zone: {
+                id: string;
+                isActive: boolean;
+                name: string;
+                city: string | null;
+            };
             customer: {
                 id: string;
                 fullName: string;
+                phone: string;
             };
         } & {
             id: string;
-            type: import(".prisma/client").$Enums.RequestType;
-            status: import(".prisma/client").$Enums.RequestStatus;
-            createdAt: Date;
             zoneId: string;
-            description: string | null;
+            createdAt: Date;
+            status: import(".prisma/client").$Enums.RequestStatus;
             customerId: string;
+            type: import(".prisma/client").$Enums.RequestType;
             category: string;
+            description: string | null;
             budgetMin: Prisma.Decimal | null;
             budgetMax: Prisma.Decimal | null;
             woreda: string | null;
             assignedOperatorId: string | null;
             assignmentPushedAt: Date | null;
             completedAt: Date | null;
+            metadata: Prisma.JsonValue | null;
+            isEscalated: boolean;
         };
     } & {
         id: string;
-        status: import(".prisma/client").$Enums.MatchStatus;
         requestId: string;
         agentId: string;
         operatorId: string;
+        status: import(".prisma/client").$Enums.MatchStatus;
         assignedAt: Date;
     })[]>;
 }

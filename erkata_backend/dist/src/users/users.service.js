@@ -37,6 +37,7 @@ let UsersService = class UsersService {
             include: {
                 agentZones: true,
                 referralLink: true,
+                package: true,
                 referrals: {
                     select: {
                         id: true,
@@ -62,20 +63,29 @@ let UsersService = class UsersService {
                 referrals: { select: { id: true } },
                 referralLink: { select: { tier: true } },
                 agentZones: { select: { id: true } },
+                package: true,
             },
         });
         if (!profile)
             throw new common_1.NotFoundException('Profile not found');
         const tier = profile.tier || 'FREE';
-        const totalSlots = this.getReferralLimit(tier);
+        const totalSlots = await this.getReferralLimit(tier);
         const usedSlots = profile.referrals.length;
         const usedZones = profile.agentZones?.length || 0;
-        const totalZones = this.getZoneLimit(tier);
+        const totalZones = await this.getZoneLimit(tier);
         const tiers = Object.keys(exports.TierPriority).sort((a, b) => exports.TierPriority[a] - exports.TierPriority[b]);
         const currentTierIndex = tiers.indexOf(tier);
-        const nextTier = currentTierIndex !== -1 && currentTierIndex < tiers.length - 1
+        const nextTierEnum = currentTierIndex !== -1 && currentTierIndex < tiers.length - 1
             ? tiers[currentTierIndex + 1]
-            : 'Maximum Tier';
+            : null;
+        let nextTier = 'Maximum Tier';
+        if (nextTierEnum) {
+            const nextPkg = await this.prisma.package.findUnique({
+                where: { name: nextTierEnum },
+                select: { displayName: true },
+            });
+            nextTier = nextPkg?.displayName || nextTierEnum.replace('_', ' ');
+        }
         const history = await this.prisma.auditLog.findMany({
             where: {
                 OR: [{ actorId: userId }, { targetId: userId }],
@@ -120,7 +130,9 @@ let UsersService = class UsersService {
             totalSlots,
             usedZones,
             totalZones,
-            currentTier: tier.replace('_', ' '),
+            currentTier: profile.package?.displayName || tier.replace('_', ' '),
+            tier,
+            packageDisplayName: profile.package?.displayName,
             nextTier,
             history: formattedHistory,
         };
@@ -129,7 +141,7 @@ let UsersService = class UsersService {
         if (callerRole === client_1.UserRole.super_admin)
             return true;
         if (callerRole === client_1.UserRole.admin) {
-            const targetRoles = [client_1.UserRole.operator, client_1.UserRole.agent];
+            const targetRoles = [client_1.UserRole.operator];
             return targetRoles.includes(targetRole);
         }
         return false;
@@ -167,6 +179,7 @@ let UsersService = class UsersService {
             },
             include: {
                 referralLink: true,
+                package: true,
                 agentZones: {
                     include: {
                         zone: true,
@@ -223,6 +236,14 @@ let UsersService = class UsersService {
         }
         return profiles;
     }
+    async getAvailablePackages() {
+        return this.prisma.package.findMany({
+            where: {
+                name: { not: 'FREE' },
+            },
+            orderBy: { price: 'asc' },
+        });
+    }
     async assignZone(callerRole, agentId, zoneId, woreda) {
         const agent = await this.prisma.profile.findUnique({
             where: { id: agentId },
@@ -235,7 +256,7 @@ let UsersService = class UsersService {
             throw new common_1.ForbiddenException('Insufficient privilege to modify this agent');
         }
         const tier = agent.tier || 'FREE';
-        const zoneLimit = this.getZoneLimit(tier);
+        const zoneLimit = await this.getZoneLimit(tier);
         if (agent.agentZones.length >= zoneLimit) {
             throw new Error(`Agent tier "${tier}" is limited to ${zoneLimit} zones`);
         }
@@ -243,19 +264,19 @@ let UsersService = class UsersService {
             data: { agentId, zoneId, woreda, kifleKetema: 'DEPRECATED' },
         });
     }
-    getZoneLimit(tier) {
-        switch (tier) {
-            case 'ABUNDANT_LIFE':
-                return 100;
-            case 'UNITY':
-                return 5;
-            case 'LOVE':
-                return 3;
-            case 'PEACE':
-                return 2;
-            default:
-                return 1;
-        }
+    async getZoneLimit(tier) {
+        const pkg = await this.prisma.package.findUnique({
+            where: { name: tier },
+        });
+        if (pkg)
+            return pkg.zoneLimit;
+        const fallbacks = {
+            ABUNDANT_LIFE: 100,
+            UNITY: 5,
+            LOVE: 3,
+            PEACE: 2,
+        };
+        return fallbacks[tier] || 1;
     }
     async updateTier(callerRole, agentId, tier) {
         const agent = await this.prisma.profile.findUnique({
@@ -339,25 +360,25 @@ let UsersService = class UsersService {
         if (!referrer)
             throw new common_1.NotFoundException('Referrer not found');
         const tier = referrer.tier || 'FREE';
-        const limit = this.getReferralLimit(tier);
+        const limit = await this.getReferralLimit(tier);
         if (referrer.referrals.length >= limit) {
             throw new Error(`Referrer tier "${tier}" is limited to ${limit} referral slots`);
         }
         return true;
     }
-    getReferralLimit(tier) {
-        switch (tier) {
-            case 'ABUNDANT_LIFE':
-                return 31;
-            case 'UNITY':
-                return 23;
-            case 'LOVE':
-                return 16;
-            case 'PEACE':
-                return 7;
-            default:
-                return 3;
-        }
+    async getReferralLimit(tier) {
+        const pkg = await this.prisma.package.findUnique({
+            where: { name: tier },
+        });
+        if (pkg)
+            return pkg.referralSlots;
+        const fallbacks = {
+            ABUNDANT_LIFE: 31,
+            UNITY: 23,
+            LOVE: 16,
+            PEACE: 7,
+        };
+        return fallbacks[tier] || 3;
     }
     async suspendUser(callerRole, userId) {
         const user = await this.prisma.profile.findUnique({

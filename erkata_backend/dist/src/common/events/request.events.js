@@ -60,8 +60,8 @@ let RequestEventListener = RequestEventListener_1 = class RequestEventListener {
         if (request) {
             const notification = await this.notifications.create({
                 userId: request.customerId,
-                title: 'Agent Accepted',
-                message: 'An agent has accepted your request. You can now see their contact details.',
+                title: 'Request has been assigned',
+                message: 'An agent has accepted your request and will contact you soon.',
                 type: 'match.accepted',
                 link: `/dashboard/requests/${request.id}`,
             });
@@ -95,7 +95,7 @@ let RequestEventListener = RequestEventListener_1 = class RequestEventListener {
             where: { role: 'admin' },
             select: { id: true },
         });
-        const targets = new Set(admins.map(a => a.id));
+        const targets = new Set(admins.map((a) => a.id));
         if (request?.assignedOperatorId)
             targets.add(request.assignedOperatorId);
         for (const targetId of targets) {

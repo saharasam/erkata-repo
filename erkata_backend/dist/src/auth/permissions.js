@@ -63,6 +63,9 @@ var Action;
     Action["EXPORT_ALL_REPORTS"] = "EXPORT_ALL_REPORTS";
     Action["OVERRIDE_FINANCIAL_STATE"] = "OVERRIDE_FINANCIAL_STATE";
     Action["EXPORT_FINANCIAL_AUDIT"] = "EXPORT_FINANCIAL_AUDIT";
+    Action["CONFIRM_FULFILLMENT"] = "CONFIRM_FULFILLMENT";
+    Action["RESOLVE_DISPUTE"] = "RESOLVE_DISPUTE";
+    Action["ESCALATE_DISPUTE"] = "ESCALATE_DISPUTE";
 })(Action || (exports.Action = Action = {}));
 exports.PermissionMatrix = {
     customer: [
@@ -79,6 +82,7 @@ exports.PermissionMatrix = {
         Action.INITIATE_PAYMENT,
         Action.VIEW_PAYMENT_STATUS,
         Action.REQUEST_REFUND,
+        Action.CONFIRM_FULFILLMENT,
     ],
     agent: [
         Action.ACCEPT_REQUEST,
@@ -102,6 +106,8 @@ exports.PermissionMatrix = {
         Action.BUNDLE_FEEDBACK,
         Action.VIEW_MANAGED_TRANSACTIONS,
         Action.VIEW_ASSIGNED_REQUEST_DETAILS,
+        Action.RESOLVE_DISPUTE,
+        Action.ESCALATE_DISPUTE,
     ],
     admin: [
         Action.PROPOSE_RESOLUTION,
@@ -122,6 +128,7 @@ exports.PermissionMatrix = {
         Action.PROCESS_REFUND,
         Action.VIEW_ASSIGNED_REQUEST_DETAILS,
         Action.VIEW_SYSTEM_STATISTICS,
+        Action.RESOLVE_DISPUTE,
     ],
     super_admin: [
         Action.EMERGENCY_ARCHIVE,

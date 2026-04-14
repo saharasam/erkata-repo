@@ -220,10 +220,52 @@ export class AglpService {
       throw new Error('Insufficient AGLP balance');
     }
 
-    const rate = this.getConversionRate();
-    const amountEtb = amountAglp / rate;
+    // 1. Enforce Minimum Amount
+    const minAmount = this.configService.get<number>(
+      'withdrawal_min_amount',
+      100,
+    );
+    if (amountAglp < minAmount) {
+      throw new Error(`Minimum withdrawal amount is ${minAmount} AGLP`);
+    }
 
-    // 1. Update Profile Balances
+    // 2. Enforce Daily Maximum
+    const maxDaily = this.configService.get<number>(
+      'withdrawal_max_amount_daily',
+      50000,
+    );
+    const twentyFourHoursAgo = new Date();
+    twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+
+    const recentWithdrawals = await tx.aglpTransaction.aggregate({
+      where: {
+        profileId,
+        type: AglpTransactionType.WITHDRAWAL,
+        status: { not: AglpTransactionStatus.REJECTED },
+        createdAt: { gte: twentyFourHoursAgo },
+      },
+      _sum: { amount: true },
+    });
+
+    const totalWithdrawn24h = Number(recentWithdrawals._sum.amount || 0);
+    if (totalWithdrawn24h + amountAglp > maxDaily) {
+      throw new Error(
+        `Daily withdrawal limit reached. Max: ${maxDaily} AGLP. Already withdrawn in 24h: ${totalWithdrawn24h} AGLP.`,
+      );
+    }
+
+    // 3. Apply Processing Fee
+    const feePct = this.configService.get<number>(
+      'withdrawal_fee_percentage',
+      0.05,
+    );
+    const feeAmountAglp = amountAglp * feePct;
+    const netAglp = amountAglp - feeAmountAglp;
+
+    const rate = this.getConversionRate();
+    const netEtb = netAglp / rate;
+
+    // 4. Update Profile Balances (Gross amount deducted)
     await tx.profile.update({
       where: { id: profileId },
       data: {
@@ -232,20 +274,20 @@ export class AglpService {
       },
     });
 
-    // 2. Log AGLP Withdrawal Transaction
+    // 5. Log AGLP Withdrawal Transaction
     const aglpTx = await tx.aglpTransaction.create({
       data: {
         profileId,
         type: AglpTransactionType.WITHDRAWAL,
         amount: amountAglp,
-        etbEquivalent: amountEtb,
+        etbEquivalent: netEtb,
         conversionRate: rate,
-        status: AglpTransactionStatus.PENDING, // PENDING until admin approves
+        status: AglpTransactionStatus.PENDING,
         referenceType: 'PAYOUT',
       },
     });
 
-    // 3. Write audit log for the request
+    // 6. Write audit log
     await tx.auditLog.create({
       data: {
         actorId: profileId,
@@ -254,7 +296,9 @@ export class AglpService {
         targetId: profileId,
         metadata: {
           amountAglp,
-          amountEtb,
+          feeAglp: feeAmountAglp,
+          netAglp,
+          amountEtb: netEtb,
           aglpTxId: aglpTx.id,
         },
       },

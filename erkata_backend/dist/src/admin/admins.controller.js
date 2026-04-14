@@ -56,6 +56,9 @@ let AdminsController = class AdminsController {
         });
     }
     async createInvite(req, body) {
+        if (req.user.role === client_1.UserRole.admin && body.role === client_1.UserRole.agent) {
+            throw new common_1.ForbiddenException('As an Admin, you do not have the authority to invite Agents. This action is reserved for Super Admins.');
+        }
         const invite = await this.inviteService.createInvite(body.email, body.fullName, body.phone, body.role, req.user.id, req.user.role);
         return {
             message: 'Personnel invite generated',

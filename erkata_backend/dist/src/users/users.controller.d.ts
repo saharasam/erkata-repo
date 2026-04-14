@@ -14,22 +14,33 @@ export declare class UsersController {
             } | null;
         } & {
             id: string;
-            createdAt: Date;
             zoneId: string | null;
+            createdAt: Date;
             agentId: string;
             woreda: string;
             kifleKetema: string;
         })[];
         referralLink: {
             id: string;
-            createdAt: Date;
             tier: import(".prisma/client").$Enums.Tier;
+            createdAt: Date;
             referrerId: string;
             code: string;
         } | null;
+        package: {
+            id: string;
+            createdAt: Date;
+            name: import(".prisma/client").$Enums.Tier;
+            description: string | null;
+            updatedAt: Date;
+            price: import("@prisma/client/runtime/library").Decimal;
+            referralSlots: number;
+            zoneLimit: number;
+            requiresApproval: boolean;
+            displayName: string;
+        } | null;
     } & {
         id: string;
-        createdAt: Date;
         email: string;
         passwordHash: string | null;
         fullName: string;
@@ -39,40 +50,53 @@ export declare class UsersController {
         isActive: boolean;
         zoneId: string | null;
         referredById: string | null;
-        warningCount: number;
-        missedAssignments: number;
+        createdAt: Date;
         aglpBalance: import("@prisma/client/runtime/library").Decimal;
         aglpPending: import("@prisma/client/runtime/library").Decimal;
         aglpWithdrawn: import("@prisma/client/runtime/library").Decimal;
         referralCode: string | null;
         isOnline: boolean;
         lastAssignmentAt: Date | null;
+        missedAssignments: number;
+        warningCount: number;
+        avatarUrl: string | null;
     })[]>;
     getMe(req: AuthenticatedRequest): Promise<{
         agentZones: {
             id: string;
-            createdAt: Date;
             zoneId: string | null;
+            createdAt: Date;
             agentId: string;
             woreda: string;
             kifleKetema: string;
         }[];
         referrals: {
             id: string;
-            createdAt: Date;
             fullName: string;
             role: import(".prisma/client").$Enums.UserRole;
+            createdAt: Date;
         }[];
         referralLink: {
             id: string;
-            createdAt: Date;
             tier: import(".prisma/client").$Enums.Tier;
+            createdAt: Date;
             referrerId: string;
             code: string;
         } | null;
+        package: {
+            id: string;
+            createdAt: Date;
+            name: import(".prisma/client").$Enums.Tier;
+            description: string | null;
+            updatedAt: Date;
+            price: import("@prisma/client/runtime/library").Decimal;
+            referralSlots: number;
+            zoneLimit: number;
+            requiresApproval: boolean;
+            displayName: string;
+        } | null;
     } & {
         id: string;
-        createdAt: Date;
         email: string;
         passwordHash: string | null;
         fullName: string;
@@ -82,14 +106,16 @@ export declare class UsersController {
         isActive: boolean;
         zoneId: string | null;
         referredById: string | null;
-        warningCount: number;
-        missedAssignments: number;
+        createdAt: Date;
         aglpBalance: import("@prisma/client/runtime/library").Decimal;
         aglpPending: import("@prisma/client/runtime/library").Decimal;
         aglpWithdrawn: import("@prisma/client/runtime/library").Decimal;
         referralCode: string | null;
         isOnline: boolean;
         lastAssignmentAt: Date | null;
+        missedAssignments: number;
+        warningCount: number;
+        avatarUrl: string | null;
     }>;
     getFinance(req: AuthenticatedRequest): Promise<{
         balance: string;
@@ -101,6 +127,8 @@ export declare class UsersController {
         usedZones: number;
         totalZones: number;
         currentTier: string;
+        tier: import(".prisma/client").$Enums.Tier;
+        packageDisplayName: string | undefined;
         nextTier: string;
         history: {
             id: string;
@@ -111,18 +139,30 @@ export declare class UsersController {
             description: string;
         }[];
     }>;
+    getAvailablePackages(): Promise<{
+        id: string;
+        createdAt: Date;
+        name: import(".prisma/client").$Enums.Tier;
+        description: string | null;
+        updatedAt: Date;
+        price: import("@prisma/client/runtime/library").Decimal;
+        referralSlots: number;
+        zoneLimit: number;
+        requiresApproval: boolean;
+        displayName: string;
+    }[]>;
     requestWithdrawal(req: AuthenticatedRequest, amount: number): Promise<{
         id: string;
-        profileId: string;
+        createdAt: Date;
+        status: import(".prisma/client").$Enums.AglpTransactionStatus;
         type: import(".prisma/client").$Enums.AglpTransactionType;
         amount: import("@prisma/client/runtime/library").Decimal;
         etbEquivalent: import("@prisma/client/runtime/library").Decimal | null;
         conversionRate: import("@prisma/client/runtime/library").Decimal | null;
-        status: import(".prisma/client").$Enums.AglpTransactionStatus;
         referenceId: string | null;
         referenceType: string | null;
-        createdAt: Date;
         updatedAt: Date;
+        profileId: string;
     }>;
     generateReferralCode(req: AuthenticatedRequest): Promise<{
         code: string;
@@ -133,8 +173,8 @@ export declare class UsersController {
         woreda: string;
     }): Promise<{
         id: string;
-        createdAt: Date;
         zoneId: string | null;
+        createdAt: Date;
         agentId: string;
         woreda: string;
         kifleKetema: string;
@@ -143,8 +183,8 @@ export declare class UsersController {
         tier: string;
     }): Promise<{
         id: string;
-        createdAt: Date;
         tier: import(".prisma/client").$Enums.Tier;
+        createdAt: Date;
         referrerId: string;
         code: string;
     }>;
@@ -153,14 +193,13 @@ export declare class UsersController {
         paymentMethod?: 'ETB' | 'AGLP';
     }): Promise<{
         id: string;
-        createdAt: Date;
         tier: import(".prisma/client").$Enums.Tier;
+        createdAt: Date;
         referrerId: string;
         code: string;
     }>;
     suspendUser(req: AuthenticatedRequest, userId: string): Promise<{
         id: string;
-        createdAt: Date;
         email: string;
         passwordHash: string | null;
         fullName: string;
@@ -170,18 +209,19 @@ export declare class UsersController {
         isActive: boolean;
         zoneId: string | null;
         referredById: string | null;
-        warningCount: number;
-        missedAssignments: number;
+        createdAt: Date;
         aglpBalance: import("@prisma/client/runtime/library").Decimal;
         aglpPending: import("@prisma/client/runtime/library").Decimal;
         aglpWithdrawn: import("@prisma/client/runtime/library").Decimal;
         referralCode: string | null;
         isOnline: boolean;
         lastAssignmentAt: Date | null;
+        missedAssignments: number;
+        warningCount: number;
+        avatarUrl: string | null;
     }>;
     activateUser(req: AuthenticatedRequest, userId: string): Promise<{
         id: string;
-        createdAt: Date;
         email: string;
         passwordHash: string | null;
         fullName: string;
@@ -191,13 +231,15 @@ export declare class UsersController {
         isActive: boolean;
         zoneId: string | null;
         referredById: string | null;
-        warningCount: number;
-        missedAssignments: number;
+        createdAt: Date;
         aglpBalance: import("@prisma/client/runtime/library").Decimal;
         aglpPending: import("@prisma/client/runtime/library").Decimal;
         aglpWithdrawn: import("@prisma/client/runtime/library").Decimal;
         referralCode: string | null;
         isOnline: boolean;
         lastAssignmentAt: Date | null;
+        missedAssignments: number;
+        warningCount: number;
+        avatarUrl: string | null;
     }>;
 }

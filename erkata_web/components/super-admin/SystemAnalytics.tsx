@@ -18,13 +18,22 @@ import { useModal } from '../../contexts/ModalContext';
 interface AnalyticsSummary {
     totalUsers: number;
     totalRequests: number;
-    totalTransactions: number;
+    activeRequests: number;
+    fulfilledInWindow: number;
     totalBundles: number;
     totalFinalized: number;
+    activeDisputes: number;
     agentCount: number;
     operatorCount: number;
     resolutionRate: string;
+    window: string;
+    avgAssignmentTimeMs: number | null;
+    avgFulfillmentTimeMs: number | null;
     platformVolume: string;
+    dailyCommissions: string;
+    leaderboard: any[];
+    packageDistribution: { tier: string; count: number }[];
+    packageRevenue: string;
     uptime: string;
 }
 
@@ -167,6 +176,43 @@ const SystemAnalytics: React.FC = () => {
                     <button onClick={fetchAnalytics} className="px-8 py-4 bg-white text-indigo-600 font-black rounded-2xl shadow-xl hover:bg-slate-50 transition-all hover:scale-105 active:scale-95 uppercase text-xs tracking-widest">
                         Refresh Telemetry
                     </button>
+                </div>
+            </div>
+            <div className="bg-white rounded-[2.5rem] border border-slate-100 p-10 shadow-xl shadow-slate-200/20 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-10 opacity-[0.03] group-hover:rotate-12 transition-transform duration-700">
+                    <Box className="w-64 h-64 text-slate-900" />
+                </div>
+                
+                <div className="flex justify-between items-end mb-10 relative z-10">
+                    <div>
+                        <h3 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+                            <Box className="w-5 h-5 text-indigo-500" />
+                            Tier Performance & Distribution
+                        </h3>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Agent package adoption & revenue yield</p>
+                    </div>
+                    <div className="text-right">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">CUMULATIVE PACKAGE YIELD</p>
+                        <p className="text-3xl font-black text-emerald-600 tracking-tighter">{summary?.packageRevenue || '0 ETB'}</p>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-6 relative z-10">
+                    {summary?.packageDistribution.map((tier, i) => (
+                        <div key={i} className="bg-slate-50 border border-slate-100 p-6 rounded-3xl group/card hover:bg-white hover:border-indigo-500/30 transition-all shadow-sm flex flex-col items-center text-center">
+                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg mb-4 border-2 ${
+                                tier.tier === 'ABUNDANT LIFE' ? 'bg-amber-50 border-amber-200 text-amber-600' :
+                                tier.tier === 'UNITY' ? 'bg-indigo-50 border-indigo-200 text-indigo-600' :
+                                tier.tier === 'LOVE' ? 'bg-emerald-50 border-emerald-200 text-emerald-600' :
+                                'bg-slate-200/50 border-slate-300 text-slate-700'
+                            }`}>
+                                {tier.tier.charAt(0)}
+                            </div>
+                            <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{tier.tier}</h5>
+                            <p className="text-2xl font-black text-slate-900 leading-none">{tier.count}</p>
+                            <p className="text-[10px] font-bold text-slate-400 mt-2">Active Nodes</p>
+                        </div>
+                    ))}
                 </div>
             </div>
         </div>

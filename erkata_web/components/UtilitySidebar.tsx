@@ -37,7 +37,8 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
 
   const superAdminTools = [
     { id: 'analytics', icon: BarChart4, label: 'Analytics' },
-    { id: 'emergency', icon: Archive, label: 'Emergency Archive' },
+    { id: 'tiers', icon: Package, label: 'Tier Architecture' },
+    { id: 'disputes', icon: ShieldAlert, label: 'Disputes Audit' },
     { id: 'admins', icon: ShieldAlert, label: 'Admin Management' },
     { id: 'config', icon: Settings2, label: 'Config Flags' },
     { id: 'notices', icon: Megaphone, label: 'Broadcasts' },
@@ -49,7 +50,7 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
   const adminTools = [
     { id: 'overview', icon: BarChart4, label: 'Operations Hub' },
     { id: 'zones', icon: MapPin, label: 'Zone Coverage' },
-    { id: 'bundles', icon: ShieldAlert, label: 'Escalated Bundles' },
+    { id: 'disputes', icon: ShieldAlert, label: 'Disputes' },
     { id: 'actions', icon: Settings2, label: 'Pending Actions' },
     { id: 'history', icon: History, label: 'My Proposals' },
     { id: 'finance', icon: Wallet, label: 'Financial Desk' },
@@ -60,6 +61,7 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
 
   const operatorTools = [
     { id: 'overview', icon: LayoutGrid, label: 'Overview' },
+    { id: 'disputes', icon: ShieldAlert, label: 'Disputes' },
     { id: 'history', icon: History, label: 'Assignment History' },
   ];
 

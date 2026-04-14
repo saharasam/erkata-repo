@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AdminModule = void 0;
 const common_1 = require("@nestjs/common");
 const config_controller_1 = require("./config.controller");
+const packages_controller_1 = require("./packages.controller");
 const audit_logs_controller_1 = require("./audit-logs.controller");
 const admins_controller_1 = require("./admins.controller");
 const analytics_controller_1 = __importDefault(require("./analytics.controller"));
@@ -32,6 +33,7 @@ exports.AdminModule = AdminModule = __decorate([
         imports: [common_module_1.CommonModule, prisma_module_1.PrismaModule, aglp_module_1.AglpModule, invite_module_1.InviteModule, users_module_1.UsersModule],
         controllers: [
             config_controller_1.AdminConfigController,
+            packages_controller_1.AdminPackagesController,
             audit_logs_controller_1.AuditLogsController,
             admins_controller_1.AdminsController,
             analytics_controller_1.default,
