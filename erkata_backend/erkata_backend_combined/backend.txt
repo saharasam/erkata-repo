@@ -11979,6 +11979,9 @@ model Package {
   requiresApproval Boolean  @default(true) @map("requires_approval")
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
+  displayName      String   @default("") @map("display_name")
+  profiles         Profile[]
+  referralLinks    ReferralLink[]
 
   @@map("packages")
 }
@@ -11995,12 +11998,15 @@ model Profile {
   zoneId              String?              @map("zone_id")
   referredById        String?              @map("referred_by_id") @db.Uuid
   createdAt           DateTime             @default(now()) @map("created_at")
-  warningCount        Int                  @default(0) @map("warning_count")
-  missedAssignments   Int                  @default(0) @map("missed_assignments")
   aglpBalance         Decimal              @default(0) @map("aglp_balance") @db.Decimal(12, 2)
   aglpPending         Decimal              @default(0) @map("aglp_pending") @db.Decimal(12, 2)
   aglpWithdrawn       Decimal              @default(0) @map("aglp_withdrawn") @db.Decimal(12, 2)
   referralCode        String?              @unique @map("referral_code")
+  isOnline            Boolean              @default(false) @map("is_online")
+  lastAssignmentAt    DateTime?            @map("last_assignment_at")
+  missedAssignments   Int                  @default(0) @map("missed_assignments")
+  warningCount        Int                  @default(0) @map("warning_count")
+  avatarUrl           String?              @map("avatar_url")
   agentZones          AgentZone[]
   aglpTransactions    AglpTransaction[]    @relation("AglpTransactions")
   auditLogs           AuditLog[]
@@ -12009,17 +12015,15 @@ model Profile {
   createdInvites      Invite[]             @relation("CreatedInvites")
   agentMatches        Match[]              @relation("AgentMatches")
   operatorMatches     Match[]              @relation("OperatorMatches")
+  notifications       Notification[]
   referredBy          Profile?             @relation("Referrals", fields: [referredById], references: [id])
   referrals           Profile[]            @relation("Referrals")
-  avatarUrl           String?              @map("avatar_url")
-  isOnline            Boolean              @default(false) @map("is_online")
-  lastAssignmentAt    DateTime?            @map("last_assignment_at")
-  assignedRequests    Request[]            @relation("AssignedOperator")
   zone                Zone?                @relation(fields: [zoneId], references: [id])
   referralLink        ReferralLink?
+  assignedRequests    Request[]            @relation("AssignedOperator")
   customerRequests    Request[]            @relation("CustomerRequests")
   resolutionProposals ResolutionProposal[]
-  notifications       Notification[]
+  package             Package?             @relation(fields: [tier], references: [name])
 
   @@map("profiles")
 }
@@ -12045,6 +12049,7 @@ model ReferralLink {
   tier       Tier     @default(FREE)
   createdAt  DateTime @default(now()) @map("created_at")
   referrer   Profile  @relation(fields: [referrerId], references: [id])
+  package    Package? @relation(fields: [tier], references: [name])
 
   @@map("referral_links")
 }
@@ -12060,15 +12065,15 @@ model Request {
   zoneId             String        @map("zone_id")
   woreda             String?
   status             RequestStatus @default(pending)
-  isEscalated        Boolean       @default(false) @map("is_escalated")
-  metadata           Json?         @default("{}")
   createdAt          DateTime      @default(now()) @map("created_at")
   assignedOperatorId String?       @map("assigned_operator_id") @db.Uuid
   assignmentPushedAt DateTime?     @map("assignment_pushed_at")
   completedAt        DateTime?     @map("completed_at")
+  metadata           Json?         @default("{}")
+  isEscalated        Boolean       @default(false) @map("is_escalated")
   matches            Match[]
-  customer           Profile       @relation("CustomerRequests", fields: [customerId], references: [id])
   assignedOperator   Profile?      @relation("AssignedOperator", fields: [assignedOperatorId], references: [id])
+  customer           Profile       @relation("CustomerRequests", fields: [customerId], references: [id])
   zone               Zone          @relation(fields: [zoneId], references: [id])
 
   @@index([customerId])
@@ -12138,8 +12143,8 @@ model Feedback {
   authorId      String      @map("author_id") @db.Uuid
   content       String
   rating        Int
-  categories    String[]    @default([])
   createdAt     DateTime    @default(now()) @map("created_at")
+  categories    String[]    @default([])
   author        Profile     @relation(fields: [authorId], references: [id])
   transaction   Transaction @relation(fields: [transactionId], references: [id])
 
@@ -12210,18 +12215,32 @@ model SystemConfig {
 model Invite {
   id          String    @id @default(uuid())
   email       String
-  fullName    String    @map("full_name")
-  phone       String
   role        UserRole
   token       String    @unique
   expiresAt   DateTime  @map("expires_at")
   usedAt      DateTime? @map("used_at")
   createdById String    @map("created_by_id") @db.Uuid
   createdAt   DateTime  @default(now()) @map("created_at")
+  fullName    String    @map("full_name")
+  phone       String
   createdBy   Profile   @relation("CreatedInvites", fields: [createdById], references: [id])
 
   @@index([token])
   @@map("invites")
+}
+
+model Notification {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  title     String
+  message   String
+  type      String
+  read      Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now()) @map("created_at")
+  user      Profile  @relation(fields: [userId], references: [id])
+
+  @@map("notifications")
 }
 
 enum UserRole {
@@ -12288,20 +12307,6 @@ enum FeedbackBundleState {
   RESOLVED
   REJECTED
   TIMED_OUT
-}
-
-model Notification {
-  id        String   @id @default(uuid()) @db.Uuid
-  userId    String   @map("user_id") @db.Uuid
-  title     String
-  message   String
-  type      String
-  read      Boolean  @default(false)
-  link      String?
-  createdAt DateTime @default(now()) @map("created_at")
-  user      Profile  @relation(fields: [userId], references: [id])
-
-  @@map("notifications")
 }
 
 
@@ -12433,7 +12438,7 @@ async function main() {
 
   for (const user of testUsers) {
     await prisma.profile.upsert({
-      where: { id: user.id },
+      where: { email: user.email },
       update: {
         isActive: user.isActive ?? true,
       },
@@ -12451,7 +12456,16 @@ async function main() {
   console.log('Seeding packages...');
   const packages = [
     {
+      name: 'FREE',
+      displayName: 'Free',
+      price: 0,
+      referralSlots: 3,
+      zoneLimit: 1,
+      description: 'Standard access for newly onboarded agents.',
+    },
+    {
       name: 'PEACE',
+      displayName: 'Peace',
       price: 2500,
       referralSlots: 7,
       zoneLimit: 2,
@@ -12459,6 +12473,7 @@ async function main() {
     },
     {
       name: 'LOVE',
+      displayName: 'Love',
       price: 5000,
       referralSlots: 16,
       zoneLimit: 3,
@@ -12466,6 +12481,7 @@ async function main() {
     },
     {
       name: 'UNITY',
+      displayName: 'Unity',
       price: 10000,
       referralSlots: 23,
       zoneLimit: 5,
@@ -12473,6 +12489,7 @@ async function main() {
     },
     {
       name: 'ABUNDANT_LIFE',
+      displayName: 'Abundant Life',
       price: 25000,
       referralSlots: 31,
       zoneLimit: 100,
@@ -12485,6 +12502,7 @@ async function main() {
       // @ts-expect-error - Tier is an enum in Prisma, string name is expected to work but type-checked strictly
       where: { name: pkg.name },
       update: {
+        displayName: pkg.displayName,
         price: pkg.price,
         referralSlots: pkg.referralSlots,
         zoneLimit: pkg.zoneLimit,
@@ -12493,6 +12511,7 @@ async function main() {
       create: {
         // @ts-expect-error - Tier is an enum in Prisma
         name: pkg.name,
+        displayName: pkg.displayName,
         price: pkg.price,
         referralSlots: pkg.referralSlots,
         zoneLimit: pkg.zoneLimit,
@@ -12623,6 +12642,49 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
 
 
+===== FILE: scratch\check_config.ts =====
+
+import { PrismaClient } from '@prisma/client';
+
+async function checkConfig() {
+  const prisma = new PrismaClient();
+  try {
+    const configs = await prisma.systemConfig.findMany();
+    console.log('Current System Configs:');
+    configs.forEach(c => {
+      console.log(`${c.key}: ${JSON.stringify(c.value)}`);
+    });
+  } catch (e) {
+    console.error('Error fetching configs:', e);
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+checkConfig();
+
+
+===== FILE: scratch\check_user.ts =====
+
+import { PrismaClient } from '@prisma/client';
+
+async function checkUser() {
+  const prisma = new PrismaClient();
+  try {
+    const user = await prisma.profile.findFirst({
+        where: { role: 'agent' }
+    });
+    console.log('Agent User:', JSON.stringify(user));
+  } catch (e) {
+    console.error('Error fetching user:', e);
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+checkUser();
+
+
 ===== FILE: scripts\flush-requests.ts =====
 
 import { PrismaClient } from '@prisma/client';
@@ -12681,6 +12743,7 @@ main();
 
 import { Module } from '@nestjs/common';
 import { AdminConfigController } from './config.controller';
+import { AdminPackagesController } from './packages.controller';
 import { AuditLogsController } from './audit-logs.controller';
 import { AdminsController } from './admins.controller';
 import AnalyticsController from './analytics.controller';
@@ -12698,6 +12761,7 @@ import { AlertsService } from './alerts.service';
   imports: [CommonModule, PrismaModule, AglpModule, InviteModule, UsersModule],
   controllers: [
     AdminConfigController,
+    AdminPackagesController,
     AuditLogsController,
     AdminsController,
     AnalyticsController,
@@ -13149,7 +13213,6 @@ describe('AnalyticsController', () => {
 
 import { Controller, Get, UseGuards, Query } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { AlertsService } from './alerts.service';
 import { RolesGuard, RequirePermission, JwtAuthGuard } from '../auth/guards';
 import { Action } from '../auth/permissions';
 import {
@@ -13201,6 +13264,8 @@ export default class AnalyticsController {
       platformVolumeAgg,
       dailyCommissionsAgg,
       leaderboardRaw,
+      distributionRaw,
+      packageRevenueAgg,
     ] = await Promise.all([
       this.prisma.profile.count(),
       this.prisma.request.count(),
@@ -13268,11 +13333,31 @@ export default class AnalyticsController {
         ORDER BY "total" DESC
         LIMIT 5
       `,
+      this.prisma.profile.groupBy({
+        where: { role: UserRole.agent },
+        by: ['tier'],
+        _count: { _all: true },
+      }),
+      this.prisma.aglpTransaction.aggregate({
+        where: {
+          type: AglpTransactionType.DEPOSIT,
+          referenceType: 'PACKAGE_PURCHASE',
+          status: AglpTransactionStatus.COMPLETED,
+        },
+        _sum: { etbEquivalent: true },
+      }),
     ]);
 
     // Calculate resolution rate
     const resolutionRate =
       totalBundles > 0 ? (totalFinalized / totalBundles) * 100 : 0;
+
+    const packageDistribution = (
+      distributionRaw as { tier: string | null; _count: { _all: number } }[]
+    ).map((d) => ({
+      tier: d.tier?.replace('_', ' ') || 'FREE',
+      count: d._count._all,
+    }));
 
     return {
       totalUsers,
@@ -13288,10 +13373,14 @@ export default class AnalyticsController {
       window,
       avgAssignmentTimeMs: avgAssignment[0]?.avg || null,
       avgFulfillmentTimeMs: avgFulfillment[0]?.avg || null,
-      platformVolume: (platformVolumeAgg?._sum?.etbEquivalent || 0).toString() + ' ETB',
+      platformVolume:
+        (platformVolumeAgg?._sum?.etbEquivalent || 0).toString() + ' ETB',
       dailyCommissions:
         (dailyCommissionsAgg?._sum?.etbEquivalent || 0).toString() + ' ETB',
       leaderboard: leaderboardRaw,
+      packageDistribution,
+      packageRevenue:
+        (packageRevenueAgg?._sum?.etbEquivalent || 0).toString() + ' ETB',
       uptime: '99.99%',
     };
   }
@@ -13402,7 +13491,30 @@ export class AdminConfigController {
         description: 'Enable/disable referral payout logic.',
       },
       {
+        key: 'emergency_lockdown',
+        value: this.configService.get<boolean>('emergency_lockdown', false),
         description: 'Suspend all platform transactions.',
+      },
+      {
+        key: 'withdrawal_min_amount',
+        value: this.configService.get<number>('withdrawal_min_amount', 100),
+        description: 'Minimum AGLP per withdrawal.',
+      },
+      {
+        key: 'withdrawal_max_amount_daily',
+        value: this.configService.get<number>(
+          'withdrawal_max_amount_daily',
+          50000,
+        ),
+        description: 'Maximum AGLP withdrawal per 24h.',
+      },
+      {
+        key: 'withdrawal_fee_percentage',
+        value: this.configService.get<number>(
+          'withdrawal_fee_percentage',
+          0.05,
+        ),
+        description: 'Processing fee for withdrawals.',
       },
       {
         key: 'AGLP_TO_ETB_RATE',
@@ -13440,7 +13552,8 @@ export class AdminConfigController {
       {
         key: 'alert_bad_performance_limit',
         value: this.configService.get<number>('alert_bad_performance_limit', 3),
-        description: 'Alert: Rejects + Unfulfilled assignments before flagging.',
+        description:
+          'Alert: Rejects + Unfulfilled assignments before flagging.',
       },
       {
         key: 'alert_dispute_pattern_limit',
@@ -13482,6 +13595,10 @@ export class AdminConfigController {
       'alert_dispute_pattern_limit',
       'alert_spike_factor',
       'alert_spike_min_threshold',
+      'emergency_lockdown',
+      'withdrawal_min_amount',
+      'withdrawal_max_amount_daily',
+      'withdrawal_fee_percentage',
     ];
 
     if (superAdminKeys.includes(body.key) && req.user.role !== 'super_admin') {
@@ -13497,6 +13614,84 @@ export class AdminConfigController {
       req.user.id,
     );
     return { success: true, key: body.key, value: body.value };
+  }
+}
+
+
+===== FILE: src\admin\packages.controller.ts =====
+
+import {
+  Controller,
+  Get,
+  Patch,
+  Param,
+  Body,
+  UseGuards,
+  NotFoundException,
+} from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { JwtAuthGuard, RolesGuard, RequirePermission } from '../auth/guards';
+import { Action } from '../auth/permissions';
+import { Tier, Prisma } from '@prisma/client';
+
+@Controller('admin/packages')
+@UseGuards(JwtAuthGuard, RolesGuard)
+export class AdminPackagesController {
+  constructor(private prisma: PrismaService) {}
+
+  @Get()
+  @RequirePermission(Action.VIEW_SYSTEM_STATISTICS)
+  async getAllPackages() {
+    return this.prisma.package.findMany({
+      orderBy: { price: 'asc' },
+    });
+  }
+
+  @Get(':id')
+  @RequirePermission(Action.VIEW_SYSTEM_STATISTICS)
+  async getPackage(@Param('id') id: string) {
+    const pkg = await this.prisma.package.findUnique({
+      where: { id },
+    });
+    if (!pkg) throw new NotFoundException('Package not found');
+    return pkg;
+  }
+
+  @Patch(':id')
+  @RequirePermission(Action.MODIFY_GOVERNANCE)
+  async updatePackage(
+    @Param('id') id: string,
+    @Body()
+    data: {
+      displayName?: string;
+      price?: number;
+      referralSlots?: number;
+      zoneLimit?: number;
+      description?: string;
+      requiresApproval?: boolean;
+    },
+  ) {
+    const pkg = await this.prisma.package.findUnique({
+      where: { id },
+    });
+    if (!pkg) throw new NotFoundException('Package not found');
+
+    const updateData: Prisma.PackageUpdateInput = {};
+    if (data.displayName !== undefined)
+      updateData.displayName = data.displayName;
+    if (data.price !== undefined) updateData.price = data.price;
+    if (data.referralSlots !== undefined)
+      updateData.referralSlots = data.referralSlots;
+    if (data.zoneLimit !== undefined) updateData.zoneLimit = data.zoneLimit;
+    if (data.description !== undefined)
+      updateData.description = data.description;
+    if (data.requiresApproval !== undefined)
+      updateData.requiresApproval = data.requiresApproval;
+
+    return this.prisma.package.update({
+      where: { id },
+      data: updateData,
+    });
   }
 }
 
@@ -13757,7 +13952,7 @@ describe('AglpService', () => {
       const profileId = 'agent-1';
       const amountEtb = 5000;
       const threshold = 8000;
-      
+
       mockConfig.get.mockReturnValue({ value: threshold });
       mockConfig.get.mockReturnValueOnce({ rate: 1.0 }); // conversion rate
       mockConfig.get.mockReturnValueOnce({ value: threshold }); // threshold
@@ -13767,7 +13962,13 @@ describe('AglpService', () => {
       });
 
       // Execute
-      await service.earnCommission(tx, profileId, amountEtb, 'ref-1', 'Test reason');
+      await service.earnCommission(
+        tx,
+        profileId,
+        amountEtb,
+        'ref-1',
+        'Test reason',
+      );
 
       // Verify
       expect(tx.auditLog.create).toHaveBeenCalledWith(
@@ -13795,11 +13996,19 @@ describe('AglpService', () => {
       });
 
       // Execute
-      await service.earnCommission(tx, profileId, amountEtb, 'ref-2', 'Safe reason');
+      await service.earnCommission(
+        tx,
+        profileId,
+        amountEtb,
+        'ref-2',
+        'Safe reason',
+      );
 
       // Verify
       const calls = tx.auditLog.create.mock.calls;
-      const suspiciousCalls = calls.filter((c: any) => c[0].data.action === 'SUSPICIOUS_COMMISSION');
+      const suspiciousCalls = calls.filter(
+        (c: any) => c[0].data.action === 'SUSPICIOUS_COMMISSION',
+      );
       expect(suspiciousCalls.length).toBe(0);
     });
   });
@@ -14030,10 +14239,52 @@ export class AglpService {
       throw new Error('Insufficient AGLP balance');
     }
 
-    const rate = this.getConversionRate();
-    const amountEtb = amountAglp / rate;
+    // 1. Enforce Minimum Amount
+    const minAmount = this.configService.get<number>(
+      'withdrawal_min_amount',
+      100,
+    );
+    if (amountAglp < minAmount) {
+      throw new Error(`Minimum withdrawal amount is ${minAmount} AGLP`);
+    }
 
-    // 1. Update Profile Balances
+    // 2. Enforce Daily Maximum
+    const maxDaily = this.configService.get<number>(
+      'withdrawal_max_amount_daily',
+      50000,
+    );
+    const twentyFourHoursAgo = new Date();
+    twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+
+    const recentWithdrawals = await tx.aglpTransaction.aggregate({
+      where: {
+        profileId,
+        type: AglpTransactionType.WITHDRAWAL,
+        status: { not: AglpTransactionStatus.REJECTED },
+        createdAt: { gte: twentyFourHoursAgo },
+      },
+      _sum: { amount: true },
+    });
+
+    const totalWithdrawn24h = Number(recentWithdrawals._sum.amount || 0);
+    if (totalWithdrawn24h + amountAglp > maxDaily) {
+      throw new Error(
+        `Daily withdrawal limit reached. Max: ${maxDaily} AGLP. Already withdrawn in 24h: ${totalWithdrawn24h} AGLP.`,
+      );
+    }
+
+    // 3. Apply Processing Fee
+    const feePct = this.configService.get<number>(
+      'withdrawal_fee_percentage',
+      0.05,
+    );
+    const feeAmountAglp = amountAglp * feePct;
+    const netAglp = amountAglp - feeAmountAglp;
+
+    const rate = this.getConversionRate();
+    const netEtb = netAglp / rate;
+
+    // 4. Update Profile Balances (Gross amount deducted)
     await tx.profile.update({
       where: { id: profileId },
       data: {
@@ -14042,20 +14293,20 @@ export class AglpService {
       },
     });
 
-    // 2. Log AGLP Withdrawal Transaction
+    // 5. Log AGLP Withdrawal Transaction
     const aglpTx = await tx.aglpTransaction.create({
       data: {
         profileId,
         type: AglpTransactionType.WITHDRAWAL,
         amount: amountAglp,
-        etbEquivalent: amountEtb,
+        etbEquivalent: netEtb,
         conversionRate: rate,
-        status: AglpTransactionStatus.PENDING, // PENDING until admin approves
+        status: AglpTransactionStatus.PENDING,
         referenceType: 'PAYOUT',
       },
     });
 
-    // 3. Write audit log for the request
+    // 6. Write audit log
     await tx.auditLog.create({
       data: {
         actorId: profileId,
@@ -14064,7 +14315,9 @@ export class AglpService {
         targetId: profileId,
         metadata: {
           amountAglp,
-          amountEtb,
+          feeAglp: feeAmountAglp,
+          netAglp,
+          amountEtb: netEtb,
           aglpTxId: aglpTx.id,
         },
       },
@@ -14330,8 +14583,9 @@ import { BullModule } from '@nestjs/bullmq';
 import { RequestsModule } from './requests/requests.module';
 import { TransactionsModule } from './transactions/transactions.module';
 import { MediationModule } from './mediation/mediation.module';
-import { APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_INTERCEPTOR, APP_GUARD } from '@nestjs/core';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor';
+import { LockdownGuard } from './common/guards/lockdown.guard';
 import { CommonModule } from './common/common.module';
 import { AdminModule } from './admin/admin.module';
 import { AglpModule } from './aglp/aglp.module';
@@ -14366,6 +14620,10 @@ import { NotificationsModule } from './notifications/notifications.module';
     {
       provide: APP_INTERCEPTOR,
       useClass: AuditInterceptor,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: LockdownGuard,
     },
   ],
 })
@@ -15080,7 +15338,11 @@ describe('InviteService (Hierarchy)', () => {
 
   const mockPrisma = {
     invite: {
-      create: jest.fn().mockImplementation((args) => Promise.resolve({ id: 'new-id', ...args.data })),
+      create: jest
+        .fn()
+        .mockImplementation((args) =>
+          Promise.resolve({ id: 'new-id', ...args.data }),
+        ),
     },
   };
 
@@ -15708,6 +15970,39 @@ export class ConfigService implements OnModuleInit {
           'Minimum absolute number of requests in an hour to trigger a spike alert (avoids noise).',
         );
       }
+
+      // --- PLATFORM GOVERNANCE & WITHDRAWAL POLICIES ---
+      if (!this.configs.has('emergency_lockdown')) {
+        await this.set(
+          'emergency_lockdown',
+          false,
+          'Emergency lockdown flag. When true, all non-administrative requests are rejected.',
+        );
+      }
+
+      if (!this.configs.has('withdrawal_min_amount')) {
+        await this.set(
+          'withdrawal_min_amount',
+          100,
+          'Minimum AGLP amount allowed per withdrawal request.',
+        );
+      }
+
+      if (!this.configs.has('withdrawal_max_amount_daily')) {
+        await this.set(
+          'withdrawal_max_amount_daily',
+          50000,
+          'Maximum cumulative AGLP amount allowed for withdrawal per agent per 24h window.',
+        );
+      }
+
+      if (!this.configs.has('withdrawal_fee_percentage')) {
+        await this.set(
+          'withdrawal_fee_percentage',
+          0.05,
+          'Processing fee percentage applied to withdrawals (e.g., 0.05 for 5%).',
+        );
+      }
     } catch (error) {
       this.logger.error(
         '[ConfigService] Error loading configs. Ensure Prisma models are generated.',
@@ -15781,9 +16076,14 @@ export class RequestEventListener {
   }
 
   @OnEvent('request.pushed')
-  async handleRequestPushed(payload: { requestId: string; operatorId: string }) {
-    this.logger.log(`[EVENT] request.pushed → requestId=${payload.requestId}, operatorId=${payload.operatorId}`);
-    
+  async handleRequestPushed(payload: {
+    requestId: string;
+    operatorId: string;
+  }) {
+    this.logger.log(
+      `[EVENT] request.pushed → requestId=${payload.requestId}, operatorId=${payload.operatorId}`,
+    );
+
     const notification = await this.notifications.create({
       userId: payload.operatorId,
       title: 'New Request Assigned',
@@ -15798,11 +16098,12 @@ export class RequestEventListener {
   @OnEvent('match.created')
   async handleMatchCreated(payload: { match: any; agentId: string }) {
     this.logger.log(`[EVENT] match.created → agentId=${payload.agentId}`);
-    
+
     const notification = await this.notifications.create({
       userId: payload.agentId,
       title: 'New Lead Assignment',
-      message: 'An operator has assigned a new lead to you. Accept it to see details.',
+      message:
+        'An operator has assigned a new lead to you. Accept it to see details.',
       type: 'match.created',
       link: `/agent/tasks/${payload.match.id}`,
     });
@@ -15813,7 +16114,7 @@ export class RequestEventListener {
   @OnEvent('match.accepted')
   async handleMatchAccepted(payload: any) {
     this.logger.log(`[EVENT] match.accepted → requestId=${payload.requestId}`);
-    
+
     // Notify Customer
     const request = await this.prisma.request.findUnique({
       where: { id: payload.requestId },
@@ -15824,7 +16125,8 @@ export class RequestEventListener {
       const notification = await this.notifications.create({
         userId: request.customerId,
         title: 'Request has been assigned',
-        message: 'An agent has accepted your request and will contact you soon.',
+        message:
+          'An agent has accepted your request and will contact you soon.',
         type: 'match.accepted',
         link: `/dashboard/requests/${request.id}`,
       });
@@ -15836,7 +16138,7 @@ export class RequestEventListener {
   @OnEvent('match.completed')
   async handleMatchCompleted(payload: any) {
     this.logger.log(`[EVENT] match.completed → requestId=${payload.requestId}`);
-    
+
     // Notify Customer
     const request = await this.prisma.request.findUnique({
       where: { id: payload.requestId },
@@ -15847,7 +16149,8 @@ export class RequestEventListener {
       const notification = await this.notifications.create({
         userId: request.customerId,
         title: 'Job Delivered',
-        message: 'The agent has marked your request as delivered. Please confirm fulfillment.',
+        message:
+          'The agent has marked your request as delivered. Please confirm fulfillment.',
         type: 'match.completed',
         link: `/dashboard/requests/${request.id}`,
       });
@@ -15857,9 +16160,14 @@ export class RequestEventListener {
   }
 
   @OnEvent('request.disputed')
-  async handleRequestDisputed(payload: { requestId: string; customerId: string }) {
-    this.logger.log(`[EVENT] request.disputed → requestId=${payload.requestId}`);
-    
+  async handleRequestDisputed(payload: {
+    requestId: string;
+    customerId: string;
+  }) {
+    this.logger.log(
+      `[EVENT] request.disputed → requestId=${payload.requestId}`,
+    );
+
     const request = await this.prisma.request.findUnique({
       where: { id: payload.requestId },
       include: { assignedOperator: true },
@@ -15870,7 +16178,7 @@ export class RequestEventListener {
       select: { id: true },
     });
 
-    const targets = new Set(admins.map(a => a.id));
+    const targets = new Set(admins.map((a) => a.id));
     if (request?.assignedOperatorId) targets.add(request.assignedOperatorId);
 
     for (const targetId of targets) {
@@ -15884,6 +16192,82 @@ export class RequestEventListener {
 
       this.gateway.sendToUser(targetId, 'notification', notification);
     }
+  }
+}
+
+
+===== FILE: src\common\guards\lockdown.guard.ts =====
+
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  ServiceUnavailableException,
+} from '@nestjs/common';
+import { ConfigService } from '../config.service';
+import { UserRole } from '@prisma/client';
+import * as jwt from 'jsonwebtoken';
+import { AuthenticatedRequest } from '../../auth/guards/authenticated-request.interface';
+
+interface JwtPayload {
+  id: string;
+  role: UserRole;
+}
+
+@Injectable()
+export class LockdownGuard implements CanActivate {
+  constructor(private readonly configService: ConfigService) {}
+
+  canActivate(context: ExecutionContext): boolean {
+    const isLockdown = this.configService.get<boolean>(
+      'emergency_lockdown',
+      false,
+    );
+
+    if (!isLockdown) {
+      return true;
+    }
+
+    const request = context.switchToHttp().getRequest<AuthenticatedRequest>();
+    const url = request.url;
+
+    // Always allow authentication routes so users can log in
+    if (url.startsWith('/auth')) {
+      return true;
+    }
+
+    const user = request.user;
+
+    // Bypass lockdown for Super Admins and Admins so they can manage the platform
+    if (
+      user &&
+      (user.role === UserRole.super_admin || user.role === UserRole.admin)
+    ) {
+      return true;
+    }
+
+    // If running as a global guard, JwtAuthGuard may not have run yet.
+    // Manually check for an admin token in the headers for emergency access.
+    const authHeader = request.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      try {
+        const decoded = jwt.decode(token) as JwtPayload | null;
+        if (
+          decoded &&
+          (decoded.role === UserRole.super_admin ||
+            decoded.role === UserRole.admin)
+        ) {
+          return true;
+        }
+      } catch {
+        // Token invalid, proceed to common lockdown check
+      }
+    }
+
+    throw new ServiceUnavailableException(
+      'The Erkata Platform is currently in emergency lockdown mode. All non-administrative operations are suspended.',
+    );
   }
 }
 
@@ -16157,29 +16541,39 @@ export class RedisPresenceService implements OnModuleInit {
   }
 
   private startBackupSync() {
-    setInterval(async () => {
-      this.logger.log('[RedisPresenceService] Running 10-minute backup sync...');
-      try {
-        const sqlOnlineOperators = await this.prisma.profile.findMany({
-          where: { isOnline: true },
-          select: { id: true },
+    setInterval(
+      () => {
+        this.runBackupSync().catch((err) => {
+          this.logger.error(
+            '[RedisPresenceService] Error during backup sync',
+            err,
+          );
         });
+      },
+      10 * 60 * 1000,
+    ); // 10 minutes
+  }
 
-        const redisOnlineIds = await this.getOnlineOperatorIds();
+  private async runBackupSync() {
+    this.logger.log('[RedisPresenceService] Running 10-minute backup sync...');
+    const sqlOnlineOperators = await this.prisma.profile.findMany({
+      where: { isOnline: true },
+      select: { id: true },
+    });
 
-        for (const op of sqlOnlineOperators) {
-          if (!redisOnlineIds.includes(op.id)) {
-            this.logger.warn(`[RedisPresenceService] Syncing: Operator ${op.id} is Offline in Redis but Online in SQL. Correcting...`);
-            await this.prisma.profile.update({
-              where: { id: op.id },
-              data: { isOnline: false } as any,
-            });
-          }
-        }
-      } catch (err) {
-        this.logger.error('[RedisPresenceService] Error during backup sync', err);
+    const redisOnlineIds = await this.getOnlineOperatorIds();
+
+    for (const op of sqlOnlineOperators) {
+      if (!redisOnlineIds.includes(op.id)) {
+        this.logger.warn(
+          `[RedisPresenceService] Syncing: Operator ${op.id} is Offline in Redis but Online in SQL. Correcting...`,
+        );
+        await this.prisma.profile.update({
+          where: { id: op.id },
+          data: { isOnline: false },
+        });
       }
-    }, 10 * 60 * 1000); // 10 minutes
+    }
   }
 
   private async handleExpiredKey(message: string) {
@@ -16192,7 +16586,7 @@ export class RedisPresenceService implements OnModuleInit {
       try {
         await this.prisma.profile.update({
           where: { id: operatorId },
-          data: { isOnline: false } as any,
+          data: { isOnline: false },
         });
         this.logger.log(
           `[RedisPresenceService] Operator ${operatorId} marked as Offline in SQL.`,
@@ -16208,23 +16602,23 @@ export class RedisPresenceService implements OnModuleInit {
 
   async heartbeat(operatorId: string) {
     const key = `presence:operator:${operatorId}`;
-    
+
     // Check if they were already online in SQL
     // To minimize SQL writes, we could cache this in Redis too, but let's keep it simple first
     // and only sync when the key is *created* if we want to tracking "Login"
     // However, the customer's requirement was: "Redis updates instantly. The main database does nothing."
     // and "Redis sends one update when the threshold is crossed."
-    
+
     // We do need to handle the "Go Online" moment.
     // If the key doesn't exist, it's their "first" heartbeat or they were offline.
     const exists = await this.redis.exists(key);
-    
+
     if (!exists) {
       // First heartbeat or back from offline - Sync SQL to Online
       try {
         await this.prisma.profile.update({
           where: { id: operatorId },
-          data: { isOnline: true, lastAssignmentAt: new Date() } as any,
+          data: { isOnline: true, lastAssignmentAt: new Date() },
         });
         this.logger.log(
           `[RedisPresenceService] Operator ${operatorId} marked as Online in SQL.`,
@@ -16318,7 +16712,6 @@ bootstrap().catch((err) => {
   console.error('Error during startup:', err);
   process.exit(1);
 });
- 
 
 
 ===== FILE: src\mediation\combine.cjs =====
@@ -17433,7 +17826,8 @@ export class MediationService {
     });
     if (!actor) throw new NotFoundException('Actor not found');
 
-    const isEscalated = transaction.match.request.status === RequestStatus.disputed;
+    const isEscalated =
+      transaction.match.request.status === RequestStatus.disputed;
     const budget = transaction.match.request.budgetMax
       ? Number(transaction.match.request.budgetMax)
       : 0;
@@ -17496,8 +17890,6 @@ export class MediationService {
       include: { match: true },
     });
     if (!transaction) throw new NotFoundException('Transaction not found');
-
-
 
     await this.prisma.feedbackBundle.update({
       where: { id: bundleId },
@@ -17681,13 +18073,15 @@ export class NotificationsGateway
     if (token?.startsWith('Bearer ')) {
       token = token.split(' ')[1];
     }
-    
+
     if (!token) {
       token = client.handshake.query?.token as string;
     }
 
     if (!token) {
-      this.logger.warn(`Connection rejected: No token provided (Client: ${client.id})`);
+      this.logger.warn(
+        `Connection rejected: No token provided (Client: ${client.id})`,
+      );
       client.disconnect();
       return;
     }
@@ -17695,7 +18089,7 @@ export class NotificationsGateway
     try {
       const payload = this.jwtService.verify(token, {
         secret: process.env.JWT_SECRET,
-      }) as { sub: string; role: string };
+      });
 
       const userId = payload.sub;
       client.data.userId = userId;
@@ -17704,9 +18098,13 @@ export class NotificationsGateway
       const existing = this.userSockets.get(userId) || [];
       this.userSockets.set(userId, [...existing, client.id]);
 
-      this.logger.log(`Client connected: ${client.id} (User: ${userId}, Role: ${payload.role})`);
+      this.logger.log(
+        `Client connected: ${client.id} (User: ${userId}, Role: ${payload.role})`,
+      );
     } catch (e) {
-      this.logger.error(`Connection authentication failed for client ${client.id}: ${e instanceof Error ? e.message : 'Unknown error'}`);
+      this.logger.error(
+        `Connection authentication failed for client ${client.id}: ${e instanceof Error ? e.message : 'Unknown error'}`,
+      );
       client.disconnect();
     }
   }
@@ -17728,7 +18126,9 @@ export class NotificationsGateway
   sendToUser(userId: string, event: string, data: unknown) {
     const sockets = this.userSockets.get(userId);
     if (sockets) {
-      this.logger.debug(`Sending ${event} to user ${userId} (${sockets.length} sockets)`);
+      this.logger.debug(
+        `Sending ${event} to user ${userId} (${sockets.length} sockets)`,
+      );
       sockets.forEach((socketId) => {
         this.server.to(socketId).emit(event, data);
       });
@@ -17859,10 +18259,15 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service';
-import { RequestStatus, UserRole } from '@prisma/client';
+import { RequestStatus } from '@prisma/client';
 import { Logger, Inject } from '@nestjs/common';
 import { Redis } from 'ioredis';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+
+interface AssignmentJobData {
+  requestId?: string;
+  operatorId?: string;
+}
 
 @Processor('assignment-timeout')
 export class AssignmentProcessor extends WorkerHost {
@@ -17876,18 +18281,26 @@ export class AssignmentProcessor extends WorkerHost {
     super();
   }
 
-  async process(job: Job<any, any, string>): Promise<any> {
+  async process(job: Job<AssignmentJobData, any, string>): Promise<any> {
     if (job.name === 'check-timeout') {
       const { requestId, operatorId } = job.data;
-      this.logger.log(`[AssignmentProcessor] Checking timeout for request ${requestId} assigned to ${operatorId}`);
+      this.logger.log(
+        `[AssignmentProcessor] Checking timeout for request ${requestId} assigned to ${operatorId}`,
+      );
 
       const request = await this.prisma.request.findUnique({
         where: { id: requestId },
       });
 
       // If request is still pending and still assigned to this operator, it's a timeout
-      if (request && request.status === RequestStatus.pending && (request as any).assignedOperatorId === operatorId) {
-        this.logger.warn(`[AssignmentProcessor] Request ${requestId} timed out for operator ${operatorId}. Reclaiming...`);
+      if (
+        request &&
+        request.status === RequestStatus.pending &&
+        request.assignedOperatorId === operatorId
+      ) {
+        this.logger.warn(
+          `[AssignmentProcessor] Request ${requestId} timed out for operator ${operatorId}. Reclaiming...`,
+        );
 
         await this.prisma.$transaction(async (tx) => {
           // Unassign the request
@@ -17896,7 +18309,7 @@ export class AssignmentProcessor extends WorkerHost {
             data: {
               assignedOperatorId: null,
               assignmentPushedAt: null,
-            } as any,
+            },
           });
 
           // 1. Increment missed assignments counter
@@ -17914,7 +18327,7 @@ export class AssignmentProcessor extends WorkerHost {
             );
             await tx.profile.update({
               where: { id: operatorId },
-              data: { isOnline: false } as any,
+              data: { isOnline: false },
             });
 
             // Kill their Redis presence so the 10-minute sync doesn't bring them back online
@@ -17926,8 +18339,10 @@ export class AssignmentProcessor extends WorkerHost {
           }
         });
 
-        this.logger.log(`[AssignmentProcessor] Request ${requestId} reclaimed. Triggering re-assignment.`);
-        
+        this.logger.log(
+          `[AssignmentProcessor] Request ${requestId} reclaimed. Triggering re-assignment.`,
+        );
+
         // Notify system that a request is now unassigned and potentially other operators are needed
         this.eventEmitter.emit('request.created', { id: requestId });
       }
@@ -17939,13 +18354,15 @@ export class AssignmentProcessor extends WorkerHost {
         where: {
           status: RequestStatus.pending,
           assignedOperatorId: null,
-        } as any,
+        },
         take: 10,
         orderBy: { createdAt: 'asc' },
       });
 
       if (unassignedRequests.length > 0) {
-        this.logger.log(`[AssignmentProcessor] Sweeper found ${unassignedRequests.length} unassigned requests. Re-triggering...`);
+        this.logger.log(
+          `[AssignmentProcessor] Sweeper found ${unassignedRequests.length} unassigned requests. Re-triggering...`,
+        );
         for (const req of unassignedRequests) {
           this.eventEmitter.emit('request.created', { id: req.id });
         }
@@ -18007,6 +18424,13 @@ export class RequestsController {
     return this.requestsService.findEligibleAgents();
   }
 
+  // Fetch all historical disputes (Resolved/Escalated) for Admin Audit
+  @Get('admin/dispute-history')
+  @RequirePermission(Action.VIEW_SYSTEM_STATISTICS) // This action fits global administration permissions
+  getDisputeHistory() {
+    return this.requestsService.getDisputeHistory();
+  }
+
   // Operator fetching their pushed request details
   @Get(':id')
   @RequirePermission(Action.VIEW_ASSIGNED_REQUEST_DETAILS)
@@ -18047,19 +18471,34 @@ export class RequestsController {
   // Operator resolves a dispute
   @Patch(':id/resolve-dispute')
   @RequirePermission(Action.RESOLVE_DISPUTE)
-  resolveDispute(@Param('id') id: string, @Req() req: RequestWithUser) {
-    return this.requestsService.resolveDispute(id, req.user.id);
+  resolveDispute(
+    @Param('id') id: string,
+    @Req() req: RequestWithUser,
+    @Body('note') note?: string,
+  ) {
+    return this.requestsService.resolveDispute(id, req.user.id, note);
   }
 
   // Operator escalates a dispute
   @Patch(':id/escalate-dispute')
   @RequirePermission(Action.ESCALATE_DISPUTE)
   escalateDispute(
-    @Param('id') id: string, 
+    @Param('id') id: string,
     @Req() req: RequestWithUser,
     @Body('note') note?: string,
   ) {
     return this.requestsService.escalateDispute(id, req.user.id, note);
+  }
+
+  // Operator voids a dispute (returns for redo)
+  @Patch(':id/void-dispute')
+  @RequirePermission(Action.RESOLVE_DISPUTE)
+  voidDispute(
+    @Param('id') id: string,
+    @Req() req: RequestWithUser,
+    @Body('note') note?: string,
+  ) {
+    return this.requestsService.voidDispute(id, req.user.id, note);
   }
 }
 
@@ -18098,7 +18537,7 @@ import {
 } from '@nestjs/common';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
-import { RequestStatus, UserRole } from '@prisma/client';
+import { RequestStatus, UserRole, Prisma } from '@prisma/client';
 import { RedisPresenceService } from '../common/redis/redis-presence.service';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
@@ -18112,6 +18551,14 @@ export interface CreateRequestDto {
     kifleKetema: string;
     woreda: string;
   };
+}
+
+interface OperatorIdResult {
+  id: string;
+}
+
+interface RequestCreatedPayload {
+  id: string;
 }
 
 @Injectable()
@@ -18181,10 +18628,10 @@ export class RequestsService implements OnModuleInit {
     });
 
     this.eventEmitter.emit('request.created', request);
-    
+
     // Trigger instant assignment attempt
     await this.assignToNextReadyOperator(request.id);
-    
+
     return request;
   }
 
@@ -18194,7 +18641,11 @@ export class RequestsService implements OnModuleInit {
       where: { id: requestId },
     });
 
-    if (!request || request.status !== RequestStatus.pending || (request as any).assignedOperatorId) {
+    if (
+      !request ||
+      request.status !== RequestStatus.pending ||
+      request.assignedOperatorId
+    ) {
       return;
     }
 
@@ -18204,7 +18655,7 @@ export class RequestsService implements OnModuleInit {
     // - Has no pending assignments
     // - Is the least recently assigned (fairness)
     // We use FOR UPDATE SKIP LOCKED to ensure concurrency safety
-    const operators = await this.prisma.$queryRaw<any[]>`
+    const operators = await this.prisma.$queryRaw<OperatorIdResult[]>`
       SELECT p.id 
       FROM profiles p
       WHERE p.role = 'operator' 
@@ -18228,7 +18679,7 @@ export class RequestsService implements OnModuleInit {
         where: { id: requestId },
       });
 
-      if (!targetRequest || (targetRequest as any).assignedOperatorId) {
+      if (!targetRequest || targetRequest.assignedOperatorId) {
         return;
       }
 
@@ -18237,12 +18688,12 @@ export class RequestsService implements OnModuleInit {
         data: {
           assignedOperatorId: operatorId,
           assignmentPushedAt: new Date(),
-        } as any,
+        },
       });
 
       await tx.profile.update({
         where: { id: operatorId },
-        data: { lastAssignmentAt: new Date() } as any,
+        data: { lastAssignmentAt: new Date() },
       });
 
       await this.timeoutQueue.add(
@@ -18255,12 +18706,12 @@ export class RequestsService implements OnModuleInit {
     this.eventEmitter.emit('request.pushed', { requestId, operatorId });
   }
 
-  async handleOperatorReady(operatorId: string) {
+  async handleOperatorReady() {
     const oldestRequest = await this.prisma.request.findFirst({
       where: {
         status: RequestStatus.pending,
         assignedOperatorId: null,
-      } as any,
+      },
       orderBy: { createdAt: 'asc' },
     });
 
@@ -18270,19 +18721,19 @@ export class RequestsService implements OnModuleInit {
   }
 
   @OnEvent('request.created')
-  async handleRequestCreatedEvent(payload: any) {
+  async handleRequestCreatedEvent(payload: string | RequestCreatedPayload) {
     const requestId = typeof payload === 'string' ? payload : payload.id;
     await this.assignToNextReadyOperator(requestId);
   }
 
   @OnEvent('operator.online')
-  async handleOperatorOnlineEvent(payload: { operatorId: string }) {
-    await this.handleOperatorReady(payload.operatorId);
+  async handleOperatorOnlineEvent() {
+    await this.handleOperatorReady();
   }
 
   // ── 2. Operator views incoming queue (customer PII redacted) ─────────────
   async getOperatorQueue(filters?: { zoneId?: string }) {
-    const whereClause: any = {
+    const whereClause: Prisma.RequestWhereInput = {
       status: RequestStatus.pending,
       assignedOperatorId: null, // Only show unassigned/unpushed requests
     };
@@ -18319,7 +18770,7 @@ export class RequestsService implements OnModuleInit {
     }
 
     // Authority Check: Only the assigned operator can assign an agent
-    if ((request as any).assignedOperatorId !== operatorId) {
+    if (request.assignedOperatorId !== operatorId) {
       throw new ForbiddenException('This request is not assigned to you');
     }
 
@@ -18346,6 +18797,26 @@ export class RequestsService implements OnModuleInit {
     }
 
     const match = await this.prisma.$transaction(async (tx) => {
+      const existing = await tx.match.findUnique({
+        where: {
+          requestId_agentId: { requestId, agentId },
+        },
+      });
+
+      if (existing) {
+        // If the match was previously rejected, reset it to assigned
+        if (existing.status === 'rejected') {
+          return tx.match.update({
+            where: { id: existing.id },
+            data: {
+              status: 'assigned',
+              assignedAt: new Date(),
+            },
+          });
+        }
+        return existing;
+      }
+
       return tx.match.create({
         data: {
           requestId,
@@ -18357,10 +18828,10 @@ export class RequestsService implements OnModuleInit {
     });
 
     this.eventEmitter.emit('match.created', { match, agentId });
-    
+
     // Trigger ready for next task
-    await this.handleOperatorReady(operatorId);
-    
+    await this.handleOperatorReady();
+
     return match;
   }
 
@@ -18375,7 +18846,12 @@ export class RequestsService implements OnModuleInit {
         matches: {
           include: {
             agent: {
-              select: { id: true, fullName: true, phone: true, avatarUrl: true },
+              select: {
+                id: true,
+                fullName: true,
+                phone: true,
+                avatarUrl: true,
+              },
             },
             transaction: true,
           },
@@ -18389,7 +18865,12 @@ export class RequestsService implements OnModuleInit {
     if (role === UserRole.customer) {
       if (request.customerId !== userId) throw new ForbiddenException();
       const activeMatch = request.matches[0];
-      let agentInfo: any = activeMatch?.agent;
+      let agentInfo: {
+        id: string;
+        fullName: string;
+        phone: string;
+        avatarUrl?: string | null;
+      } | null = activeMatch?.agent || null;
 
       if (activeMatch && activeMatch.status === 'assigned') {
         agentInfo = this.redact(
@@ -18406,7 +18887,7 @@ export class RequestsService implements OnModuleInit {
     }
 
     if (role === UserRole.operator) {
-      const isAssigned = (request as any).assignedOperatorId === userId;
+      const isAssigned = request.assignedOperatorId === userId;
       const isPending = request.status === RequestStatus.pending;
 
       if (!isAssigned && !isPending) {
@@ -18415,7 +18896,10 @@ export class RequestsService implements OnModuleInit {
 
       return {
         ...request,
-        customer: this.redact(request.customer, 'Customer PII is hidden until assignment.'),
+        customer: this.redact(
+          request.customer,
+          'Customer PII is hidden until assignment.',
+        ),
       };
     }
 
@@ -18438,7 +18922,11 @@ export class RequestsService implements OnModuleInit {
     });
 
     const tierPriority: Record<string, number> = {
-      ABUNDANT_LIFE: 5, UNITY: 4, LOVE: 3, PEACE: 2, FREE: 1,
+      ABUNDANT_LIFE: 5,
+      UNITY: 4,
+      LOVE: 3,
+      PEACE: 2,
+      FREE: 1,
     };
 
     return agents
@@ -18474,13 +18962,18 @@ export class RequestsService implements OnModuleInit {
     });
   }
 
-  async confirmFulfillment(requestId: string, customerId: string, confirmed: boolean) {
+  async confirmFulfillment(
+    requestId: string,
+    customerId: string,
+    confirmed: boolean,
+  ) {
     const request = await this.prisma.request.findUnique({
       where: { id: requestId },
     });
 
     if (!request) throw new NotFoundException('Request not found');
-    if (request.customerId !== customerId) throw new ForbiddenException('Not your request');
+    if (request.customerId !== customerId)
+      throw new ForbiddenException('Not your request');
 
     // Only allow confirmation if request is fulfilled (by agent)
     if (request.status !== RequestStatus.fulfilled) {
@@ -18490,9 +18983,9 @@ export class RequestsService implements OnModuleInit {
     if (confirmed) {
       await this.prisma.request.update({
         where: { id: requestId },
-        data: { 
+        data: {
           status: RequestStatus.fulfilled,
-          completedAt: new Date()
+          completedAt: new Date(),
         },
       });
     } else {
@@ -18508,7 +19001,7 @@ export class RequestsService implements OnModuleInit {
   }
 
   // Operator resolves a dispute by marking it fulfilled
-  async resolveDispute(requestId: string, operatorId: string) {
+  async resolveDispute(requestId: string, operatorId: string, note?: string) {
     const request = await this.prisma.request.findUnique({
       where: { id: requestId },
     });
@@ -18518,17 +19011,25 @@ export class RequestsService implements OnModuleInit {
       throw new BadRequestException('Request is not in a disputed state');
     }
 
+    const currentMetadata = (request.metadata as Record<string, any>) || {};
+
     const updated = await this.prisma.request.update({
       where: { id: requestId },
-      data: { 
+      data: {
         status: RequestStatus.fulfilled,
         completedAt: new Date(),
         isEscalated: false,
+        metadata: {
+          ...currentMetadata,
+          resolutionNote: note || 'Resolved by operator.',
+          resolvedAt: new Date().toISOString(),
+          resolvedBy: operatorId,
+        },
       },
-      include: { customer: true, matches: { include: { agent: true } } }
+      include: { customer: true, matches: { include: { agent: true } } },
     });
 
-    this.eventEmitter.emit('request.resolved', { requestId, operatorId });
+    this.eventEmitter.emit('request.resolved', { requestId, operatorId, note });
     return updated;
   }
 
@@ -18547,19 +19048,93 @@ export class RequestsService implements OnModuleInit {
 
     const updated = await this.prisma.request.update({
       where: { id: requestId },
-      data: { 
+      data: {
         isEscalated: true,
         metadata: {
           ...currentMetadata,
           escalationNote: note || 'No description provided by operator.',
           escalatedAt: new Date().toISOString(),
-          escalatedBy: operatorId
-        }
+          escalatedBy: operatorId,
+        },
       },
     });
 
-    this.eventEmitter.emit('request.escalated', { requestId, operatorId, note });
+    this.eventEmitter.emit('request.escalated', {
+      requestId,
+      operatorId,
+      note,
+    });
     return updated;
+  }
+
+  // Operator voiding a dispute, returning it to the agent for a redo
+  async voidDispute(requestId: string, operatorId: string, note?: string) {
+    const request = await this.prisma.request.findUnique({
+      where: { id: requestId },
+    });
+
+    if (!request) throw new NotFoundException('Request not found');
+    if (request.status !== RequestStatus.disputed) {
+      throw new BadRequestException('Request is not in a disputed state');
+    }
+
+    const currentMetadata = (request.metadata as Record<string, any>) || {};
+
+    const updated = await this.prisma.request.update({
+      where: { id: requestId },
+      data: {
+        status: RequestStatus.assigned,
+        isEscalated: false,
+        metadata: {
+          ...currentMetadata,
+          needsRedo: true,
+          voidNote: note || 'Fulfillment voided. Redo required.',
+          voidAt: new Date().toISOString(),
+          voidBy: operatorId,
+          resolvedAt: new Date().toISOString(),
+        },
+      },
+    });
+
+    this.eventEmitter.emit('request.voided', {
+      requestId,
+      operatorId,
+      note,
+    });
+    return updated;
+  }
+
+  // Fetch historical disputes for the audit dashboard
+  async getDisputeHistory() {
+    // We look for requests that are currently disputed OR have dispute resolution metadata
+    return this.prisma.request.findMany({
+      where: {
+        OR: [
+          { status: RequestStatus.disputed },
+          { isEscalated: true },
+          {
+            metadata: {
+              path: ['resolvedAt'],
+              not: Prisma.JsonNull,
+            },
+          },
+        ],
+      },
+      include: {
+        customer: {
+          select: { id: true, fullName: true, phone: true },
+        },
+        matches: {
+          include: {
+            agent: {
+              select: { id: true, fullName: true, phone: true },
+            },
+          },
+        },
+        zone: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
   }
 }
 
@@ -18746,6 +19321,7 @@ export class TransactionsService {
   async declineAssignment(matchId: string, agentId: string) {
     const match = await this.prisma.match.findUnique({
       where: { id: matchId },
+      include: { agent: true, request: true },
     });
 
     if (!match) throw new NotFoundException('Match not found');
@@ -18758,17 +19334,26 @@ export class TransactionsService {
       );
     }
 
+    const agentName = match.agent.fullName;
+    const currentMetadata = (match.request.metadata as Record<string, any>) || {};
+
     await this.prisma.$transaction(async (tx) => {
       await tx.match.update({
         where: { id: matchId },
         data: { status: 'rejected' },
       });
 
-      // Re-enter the request into pending status
+      // Re-enter the request into pending status and record decline metadata
       await tx.request.update({
         where: { id: match.requestId },
         data: {
           status: RequestStatus.pending,
+          metadata: {
+            ...currentMetadata,
+            declinedByAgentName: agentName,
+            declinedByAgentId: agentId,
+            declinedAt: new Date().toISOString(),
+          },
         },
       });
     });
@@ -18973,7 +19558,10 @@ export class TransactionsService {
   // ── Agent fetches their assigned jobs ────────────────────────────────────
   async getAgentJobs(agentId: string) {
     const matches = await this.prisma.match.findMany({
-      where: { agentId },
+      where: {
+        agentId,
+        status: { not: 'rejected' },
+      },
       include: {
         transaction: true,
         request: {
@@ -19101,6 +19689,11 @@ export class UsersController {
   @Get('me/finance')
   async getFinance(@Req() req: AuthenticatedRequest) {
     return this.usersService.getFinanceSummary(req.user.id);
+  }
+
+  @Get('me/available-packages')
+  async getAvailablePackages() {
+    return this.usersService.getAvailablePackages();
   }
 
   @Post('me/withdraw')
@@ -19242,6 +19835,7 @@ export class UsersService {
       include: {
         agentZones: true,
         referralLink: true,
+        package: true,
         referrals: {
           select: {
             id: true,
@@ -19268,26 +19862,36 @@ export class UsersService {
         referrals: { select: { id: true } },
         referralLink: { select: { tier: true } },
         agentZones: { select: { id: true } },
+        package: true,
       },
     });
 
     if (!profile) throw new NotFoundException('Profile not found');
 
     const tier = profile.tier || 'FREE';
-    const totalSlots = this.getReferralLimit(tier);
+    const totalSlots = await this.getReferralLimit(tier);
     const usedSlots = profile.referrals.length;
 
     const usedZones = profile.agentZones?.length || 0;
-    const totalZones = this.getZoneLimit(tier);
+    const totalZones = await this.getZoneLimit(tier);
 
     const tiers = Object.keys(TierPriority).sort(
       (a, b) => TierPriority[a] - TierPriority[b],
     );
     const currentTierIndex = tiers.indexOf(tier);
-    const nextTier =
+    const nextTierEnum =
       currentTierIndex !== -1 && currentTierIndex < tiers.length - 1
         ? tiers[currentTierIndex + 1]
-        : 'Maximum Tier';
+        : null;
+
+    let nextTier = 'Maximum Tier';
+    if (nextTierEnum) {
+      const nextPkg = await this.prisma.package.findUnique({
+        where: { name: nextTierEnum as Tier },
+        select: { displayName: true },
+      });
+      nextTier = nextPkg?.displayName || nextTierEnum.replace('_', ' ');
+    }
 
     // Fetch audit logs related to commissions and payouts for this user
     const history = await this.prisma.auditLog.findMany({
@@ -19336,7 +19940,7 @@ export class UsersService {
     });
 
     return {
-      balance: profile.aglpBalance.toString(), // Kept for backwards compatibility temporarily
+      balance: profile.aglpBalance.toString(),
       aglpAvailable: profile.aglpBalance.toString(),
       aglpPending: profile.aglpPending.toString(),
       aglpWithdrawn: profile.aglpWithdrawn.toString(),
@@ -19344,7 +19948,9 @@ export class UsersService {
       totalSlots,
       usedZones,
       totalZones,
-      currentTier: tier.replace('_', ' '),
+      currentTier: profile.package?.displayName || tier.replace('_', ' '),
+      tier,
+      packageDisplayName: profile.package?.displayName,
       nextTier,
       history: formattedHistory,
     };
@@ -19413,6 +20019,7 @@ export class UsersService {
       },
       include: {
         referralLink: true,
+        package: true,
         agentZones: {
           include: {
             zone: true,
@@ -19449,12 +20056,8 @@ export class UsersService {
         GROUP BY m.agent_id
       `;
 
-      const matchStats = new Map(
-        matchStatsRaw.map((s) => [s.agent_id, s]),
-      );
-      const ratingStats = new Map(
-        ratingStatsRaw.map((s) => [s.agent_id, s]),
-      );
+      const matchStats = new Map(matchStatsRaw.map((s) => [s.agent_id, s]));
+      const ratingStats = new Map(ratingStatsRaw.map((s) => [s.agent_id, s]));
 
       return profiles.map((profile) => {
         const mStats = matchStats.get(profile.id);
@@ -19483,6 +20086,15 @@ export class UsersService {
     return profiles;
   }
 
+  async getAvailablePackages() {
+    return this.prisma.package.findMany({
+      where: {
+        name: { not: 'FREE' },
+      },
+      orderBy: { price: 'asc' },
+    });
+  }
+
   async assignZone(
     callerRole: UserRole,
     agentId: string,
@@ -19506,7 +20118,7 @@ export class UsersService {
     }
 
     const tier = agent.tier || 'FREE';
-    const zoneLimit = this.getZoneLimit(tier);
+    const zoneLimit = await this.getZoneLimit(tier);
 
     if (agent.agentZones.length >= zoneLimit) {
       throw new Error(`Agent tier "${tier}" is limited to ${zoneLimit} zones`);
@@ -19517,19 +20129,20 @@ export class UsersService {
     });
   }
 
-  private getZoneLimit(tier: string): number {
-    switch (tier) {
-      case 'ABUNDANT_LIFE':
-        return 100;
-      case 'UNITY':
-        return 5;
-      case 'LOVE':
-        return 3;
-      case 'PEACE':
-        return 2;
-      default:
-        return 1;
-    }
+  private async getZoneLimit(tier: string): Promise<number> {
+    const pkg = await this.prisma.package.findUnique({
+      where: { name: tier as Tier },
+    });
+    if (pkg) return pkg.zoneLimit;
+
+    // Emergency fallbacks if DB is out of sync
+    const fallbacks: Record<string, number> = {
+      ABUNDANT_LIFE: 100,
+      UNITY: 5,
+      LOVE: 3,
+      PEACE: 2,
+    };
+    return fallbacks[tier] || 1;
   }
 
   async updateTier(callerRole: UserRole, agentId: string, tier: string) {
@@ -19666,7 +20279,7 @@ export class UsersService {
     if (!referrer) throw new NotFoundException('Referrer not found');
 
     const tier = referrer.tier || 'FREE';
-    const limit = this.getReferralLimit(tier);
+    const limit = await this.getReferralLimit(tier);
 
     if (referrer.referrals.length >= limit) {
       throw new Error(
@@ -19677,19 +20290,19 @@ export class UsersService {
     return true;
   }
 
-  private getReferralLimit(tier: string): number {
-    switch (tier) {
-      case 'ABUNDANT_LIFE':
-        return 31;
-      case 'UNITY':
-        return 23;
-      case 'LOVE':
-        return 16;
-      case 'PEACE':
-        return 7;
-      default:
-        return 3;
-    }
+  private async getReferralLimit(tier: string): Promise<number> {
+    const pkg = await this.prisma.package.findUnique({
+      where: { name: tier as Tier },
+    });
+    if (pkg) return pkg.referralSlots;
+
+    const fallbacks: Record<string, number> = {
+      ABUNDANT_LIFE: 31,
+      UNITY: 23,
+      LOVE: 16,
+      PEACE: 7,
+    };
+    return fallbacks[tier] || 3;
   }
 
   async suspendUser(callerRole: UserRole, userId: string) {

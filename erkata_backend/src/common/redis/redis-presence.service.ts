@@ -48,38 +48,38 @@ export class RedisPresenceService implements OnModuleInit {
 
   private startBackupSync() {
     setInterval(
-      async () => {
-        this.logger.log(
-          '[RedisPresenceService] Running 10-minute backup sync...',
-        );
-        try {
-          const sqlOnlineOperators = await this.prisma.profile.findMany({
-            where: { isOnline: true },
-            select: { id: true },
-          });
-
-          const redisOnlineIds = await this.getOnlineOperatorIds();
-
-          for (const op of sqlOnlineOperators) {
-            if (!redisOnlineIds.includes(op.id)) {
-              this.logger.warn(
-                `[RedisPresenceService] Syncing: Operator ${op.id} is Offline in Redis but Online in SQL. Correcting...`,
-              );
-              await this.prisma.profile.update({
-                where: { id: op.id },
-                data: { isOnline: false } as any,
-              });
-            }
-          }
-        } catch (err) {
+      () => {
+        this.runBackupSync().catch((err) => {
           this.logger.error(
             '[RedisPresenceService] Error during backup sync',
             err,
           );
-        }
+        });
       },
       10 * 60 * 1000,
     ); // 10 minutes
+  }
+
+  private async runBackupSync() {
+    this.logger.log('[RedisPresenceService] Running 10-minute backup sync...');
+    const sqlOnlineOperators = await this.prisma.profile.findMany({
+      where: { isOnline: true },
+      select: { id: true },
+    });
+
+    const redisOnlineIds = await this.getOnlineOperatorIds();
+
+    for (const op of sqlOnlineOperators) {
+      if (!redisOnlineIds.includes(op.id)) {
+        this.logger.warn(
+          `[RedisPresenceService] Syncing: Operator ${op.id} is Offline in Redis but Online in SQL. Correcting...`,
+        );
+        await this.prisma.profile.update({
+          where: { id: op.id },
+          data: { isOnline: false },
+        });
+      }
+    }
   }
 
   private async handleExpiredKey(message: string) {
@@ -92,7 +92,7 @@ export class RedisPresenceService implements OnModuleInit {
       try {
         await this.prisma.profile.update({
           where: { id: operatorId },
-          data: { isOnline: false } as any,
+          data: { isOnline: false },
         });
         this.logger.log(
           `[RedisPresenceService] Operator ${operatorId} marked as Offline in SQL.`,
@@ -124,7 +124,7 @@ export class RedisPresenceService implements OnModuleInit {
       try {
         await this.prisma.profile.update({
           where: { id: operatorId },
-          data: { isOnline: true, lastAssignmentAt: new Date() } as any,
+          data: { isOnline: true, lastAssignmentAt: new Date() },
         });
         this.logger.log(
           `[RedisPresenceService] Operator ${operatorId} marked as Online in SQL.`,

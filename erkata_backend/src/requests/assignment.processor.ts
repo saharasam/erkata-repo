@@ -1,10 +1,17 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service';
-import { RequestStatus, UserRole } from '@prisma/client';
+import { RequestStatus } from '@prisma/client';
 import { Logger, Inject } from '@nestjs/common';
 import { Redis } from 'ioredis';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+
+interface AssignmentJobData {
+  requestId?: string;
+  operatorId?: string;
+  agentId?: string;
+  matchId?: string;
+}
 
 @Processor('assignment-timeout')
 export class AssignmentProcessor extends WorkerHost {
@@ -18,7 +25,7 @@ export class AssignmentProcessor extends WorkerHost {
     super();
   }
 
-  async process(job: Job<any, any, string>): Promise<any> {
+  async process(job: Job<AssignmentJobData, any, string>): Promise<any> {
     if (job.name === 'check-timeout') {
       const { requestId, operatorId } = job.data;
       this.logger.log(
@@ -33,7 +40,7 @@ export class AssignmentProcessor extends WorkerHost {
       if (
         request &&
         request.status === RequestStatus.pending &&
-        (request as any).assignedOperatorId === operatorId
+        request.assignedOperatorId === operatorId
       ) {
         this.logger.warn(
           `[AssignmentProcessor] Request ${requestId} timed out for operator ${operatorId}. Reclaiming...`,
@@ -46,7 +53,7 @@ export class AssignmentProcessor extends WorkerHost {
             data: {
               assignedOperatorId: null,
               assignmentPushedAt: null,
-            } as any,
+            },
           });
 
           // 1. Increment missed assignments counter
@@ -64,7 +71,7 @@ export class AssignmentProcessor extends WorkerHost {
             );
             await tx.profile.update({
               where: { id: operatorId },
-              data: { isOnline: false } as any,
+              data: { isOnline: false },
             });
 
             // Kill their Redis presence so the 10-minute sync doesn't bring them back online
@@ -85,13 +92,90 @@ export class AssignmentProcessor extends WorkerHost {
       }
     }
 
+    if (job.name === 'check-agent-timeout') {
+      const { requestId, matchId, agentId } = job.data;
+      this.logger.log(
+        `[AssignmentProcessor] Checking agent timeout for match ${matchId} (Request: ${requestId})`
+      );
+
+      const match = await this.prisma.match.findUnique({
+        where: { id: matchId },
+      });
+
+      // If the match is still in 'assigned' status, the agent ghosted it.
+      if (match && match.status === 'assigned') {
+        this.logger.warn(
+          `[AssignmentProcessor] Agent ${agentId} timed out on match ${matchId}. Returning request to operator.`
+        );
+
+        await this.prisma.$transaction(async (tx) => {
+          // 1. Mark match as rejected (or expired)
+          await tx.match.update({
+            where: { id: matchId },
+            data: { status: 'rejected' },
+          });
+
+          const currentRequest = await tx.request.findUnique({ where: { id: requestId } });
+
+          // 2. Reset request status to pending so operator sees it again
+          await tx.request.update({
+            where: { id: requestId },
+            data: {
+              status: RequestStatus.pending,
+              metadata: {
+                ...(typeof currentRequest?.metadata === 'object' ? (currentRequest.metadata as any) : {}),
+                agentTimeoutAt: new Date().toISOString(),
+                lastTimedOutAgentId: agentId,
+              },
+            },
+          });
+        });
+
+        // Notify operator dashboard to refresh
+        this.eventEmitter.emit('request.updated', { id: requestId });
+      }
+    }
+
+    if (job.name === 'check-fulfillment-timeout') {
+      const { requestId } = job.data;
+      this.logger.log(
+        `[AssignmentProcessor] Checking fulfillment auto-confirm for request ${requestId}`
+      );
+
+      const request = await this.prisma.request.findUnique({
+        where: { id: requestId },
+      });
+
+      if (
+        request &&
+        request.status === RequestStatus.fulfilled &&
+        !request.completedAt
+      ) {
+        this.logger.log(
+          `[AssignmentProcessor] Auto-confirming request ${requestId} after 72h window.`
+        );
+
+        await this.prisma.request.update({
+          where: { id: requestId },
+          data: {
+            status: RequestStatus.fulfilled,
+            completedAt: new Date(),
+            metadata: {
+              ...(typeof request.metadata === 'object' ? request.metadata : {}),
+              autoConfirmedAt: new Date().toISOString(),
+            },
+          },
+        });
+      }
+    }
+
     if (job.name === 'queue-sweeper') {
       this.logger.log('[AssignmentProcessor] Running Queue Sweeper...');
       const unassignedRequests = await this.prisma.request.findMany({
         where: {
           status: RequestStatus.pending,
           assignedOperatorId: null,
-        } as any,
+        },
         take: 10,
         orderBy: { createdAt: 'asc' },
       });

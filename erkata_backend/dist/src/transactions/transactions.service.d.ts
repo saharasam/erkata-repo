@@ -1,3 +1,4 @@
+import { Queue } from 'bullmq';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
@@ -8,7 +9,8 @@ export declare class TransactionsService {
     private readonly eventEmitter;
     private readonly aglpService;
     private readonly configService;
-    constructor(prisma: PrismaService, eventEmitter: EventEmitter2, aglpService: AglpService, configService: ConfigService);
+    private readonly timeoutQueue;
+    constructor(prisma: PrismaService, eventEmitter: EventEmitter2, aglpService: AglpService, configService: ConfigService, timeoutQueue: Queue);
     acceptAssignment(matchId: string, agentId: string): Promise<{
         id: string;
         requestId: string;

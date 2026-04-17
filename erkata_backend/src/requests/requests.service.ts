@@ -130,11 +130,11 @@ export class RequestsService implements OnModuleInit {
       FROM profiles p
       WHERE p.role = 'operator' 
         AND p.is_online = true
-        AND NOT EXISTS (
-          SELECT 1 FROM requests r 
+        AND (
+          SELECT count(*) FROM requests r 
           WHERE r.assigned_operator_id = p.id 
           AND r.status = 'pending'
-        )
+        ) < 5
       ORDER BY p.last_assignment_at ASC NULLS FIRST
       LIMIT 1
       FOR UPDATE SKIP LOCKED
@@ -197,7 +197,7 @@ export class RequestsService implements OnModuleInit {
   }
 
   @OnEvent('operator.online')
-  async handleOperatorOnlineEvent(payload: { operatorId: string }) {
+  async handleOperatorOnlineEvent() {
     await this.handleOperatorReady();
   }
 
@@ -267,6 +267,26 @@ export class RequestsService implements OnModuleInit {
     }
 
     const match = await this.prisma.$transaction(async (tx) => {
+      const existing = await tx.match.findUnique({
+        where: {
+          requestId_agentId: { requestId, agentId },
+        },
+      });
+
+      if (existing) {
+        // If the match was previously rejected, reset it to assigned
+        if (existing.status === 'rejected') {
+          return tx.match.update({
+            where: { id: existing.id },
+            data: {
+              status: 'assigned',
+              assignedAt: new Date(),
+            },
+          });
+        }
+        return existing;
+      }
+
       return tx.match.create({
         data: {
           requestId,
@@ -278,6 +298,13 @@ export class RequestsService implements OnModuleInit {
     });
 
     this.eventEmitter.emit('match.created', { match, agentId });
+
+    // Fallback: If agent doesn't accept/decline in 1 hour, reclaim to operator pool
+    await this.timeoutQueue.add(
+      'check-agent-timeout',
+      { requestId, agentId, matchId: match.id },
+      { delay: 60 * 60 * 1000, jobId: `agent-timeout-${match.id}` },
+    );
 
     // Trigger ready for next task
     await this.handleOperatorReady();
@@ -315,8 +342,12 @@ export class RequestsService implements OnModuleInit {
     if (role === UserRole.customer) {
       if (request.customerId !== userId) throw new ForbiddenException();
       const activeMatch = request.matches[0];
-      let agentInfo: { id: string; fullName: string; phone: string } | null =
-        activeMatch?.agent as any;
+      let agentInfo: {
+        id: string;
+        fullName: string;
+        phone: string;
+        avatarUrl?: string | null;
+      } | null = activeMatch?.agent || null;
 
       if (activeMatch && activeMatch.status === 'assigned') {
         agentInfo = this.redact(

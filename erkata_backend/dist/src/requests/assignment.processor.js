@@ -72,6 +72,58 @@ let AssignmentProcessor = AssignmentProcessor_1 = class AssignmentProcessor exte
                 this.eventEmitter.emit('request.created', { id: requestId });
             }
         }
+        if (job.name === 'check-agent-timeout') {
+            const { requestId, matchId, agentId } = job.data;
+            this.logger.log(`[AssignmentProcessor] Checking agent timeout for match ${matchId} (Request: ${requestId})`);
+            const match = await this.prisma.match.findUnique({
+                where: { id: matchId },
+            });
+            if (match && match.status === 'assigned') {
+                this.logger.warn(`[AssignmentProcessor] Agent ${agentId} timed out on match ${matchId}. Returning request to operator.`);
+                await this.prisma.$transaction(async (tx) => {
+                    await tx.match.update({
+                        where: { id: matchId },
+                        data: { status: 'rejected' },
+                    });
+                    const currentRequest = await tx.request.findUnique({ where: { id: requestId } });
+                    await tx.request.update({
+                        where: { id: requestId },
+                        data: {
+                            status: client_1.RequestStatus.pending,
+                            metadata: {
+                                ...(typeof currentRequest?.metadata === 'object' ? currentRequest.metadata : {}),
+                                agentTimeoutAt: new Date().toISOString(),
+                                lastTimedOutAgentId: agentId,
+                            },
+                        },
+                    });
+                });
+                this.eventEmitter.emit('request.updated', { id: requestId });
+            }
+        }
+        if (job.name === 'check-fulfillment-timeout') {
+            const { requestId } = job.data;
+            this.logger.log(`[AssignmentProcessor] Checking fulfillment auto-confirm for request ${requestId}`);
+            const request = await this.prisma.request.findUnique({
+                where: { id: requestId },
+            });
+            if (request &&
+                request.status === client_1.RequestStatus.fulfilled &&
+                !request.completedAt) {
+                this.logger.log(`[AssignmentProcessor] Auto-confirming request ${requestId} after 72h window.`);
+                await this.prisma.request.update({
+                    where: { id: requestId },
+                    data: {
+                        status: client_1.RequestStatus.fulfilled,
+                        completedAt: new Date(),
+                        metadata: {
+                            ...(typeof request.metadata === 'object' ? request.metadata : {}),
+                            autoConfirmedAt: new Date().toISOString(),
+                        },
+                    },
+                });
+            }
+        }
         if (job.name === 'queue-sweeper') {
             this.logger.log('[AssignmentProcessor] Running Queue Sweeper...');
             const unassignedRequests = await this.prisma.request.findMany({

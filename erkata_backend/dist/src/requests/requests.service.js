@@ -86,11 +86,11 @@ let RequestsService = class RequestsService {
       FROM profiles p
       WHERE p.role = 'operator' 
         AND p.is_online = true
-        AND NOT EXISTS (
-          SELECT 1 FROM requests r 
+        AND (
+          SELECT count(*) FROM requests r 
           WHERE r.assigned_operator_id = p.id 
           AND r.status = 'pending'
-        )
+        ) < 5
       ORDER BY p.last_assignment_at ASC NULLS FIRST
       LIMIT 1
       FOR UPDATE SKIP LOCKED
@@ -136,7 +136,7 @@ let RequestsService = class RequestsService {
         const requestId = typeof payload === 'string' ? payload : payload.id;
         await this.assignToNextReadyOperator(requestId);
     }
-    async handleOperatorOnlineEvent(payload) {
+    async handleOperatorOnlineEvent() {
         await this.handleOperatorReady();
     }
     async getOperatorQueue(filters) {
@@ -189,6 +189,23 @@ let RequestsService = class RequestsService {
             throw new common_1.ForbiddenException('Your account is suspended.');
         }
         const match = await this.prisma.$transaction(async (tx) => {
+            const existing = await tx.match.findUnique({
+                where: {
+                    requestId_agentId: { requestId, agentId },
+                },
+            });
+            if (existing) {
+                if (existing.status === 'rejected') {
+                    return tx.match.update({
+                        where: { id: existing.id },
+                        data: {
+                            status: 'assigned',
+                            assignedAt: new Date(),
+                        },
+                    });
+                }
+                return existing;
+            }
             return tx.match.create({
                 data: {
                     requestId,
@@ -199,6 +216,7 @@ let RequestsService = class RequestsService {
             });
         });
         this.eventEmitter.emit('match.created', { match, agentId });
+        await this.timeoutQueue.add('check-agent-timeout', { requestId, agentId, matchId: match.id }, { delay: 60 * 60 * 1000, jobId: `agent-timeout-${match.id}` });
         await this.handleOperatorReady();
         return match;
     }
@@ -231,7 +249,7 @@ let RequestsService = class RequestsService {
             if (request.customerId !== userId)
                 throw new common_1.ForbiddenException();
             const activeMatch = request.matches[0];
-            let agentInfo = activeMatch?.agent;
+            let agentInfo = activeMatch?.agent || null;
             if (activeMatch && activeMatch.status === 'assigned') {
                 agentInfo = this.redact({ id: '', fullName: '', phone: '' }, 'An agent has been assigned — details will be visible once they accept.');
             }
@@ -463,7 +481,7 @@ __decorate([
 __decorate([
     (0, event_emitter_1.OnEvent)('operator.online'),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], RequestsService.prototype, "handleOperatorOnlineEvent", null);
 exports.RequestsService = RequestsService = __decorate([

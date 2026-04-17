@@ -3084,7 +3084,7 @@ export default AdminSidebar;
 ===== FILE: components\admin\EscalatedDisputes.tsx =====
 
 import React, { useState, useEffect } from 'react';
-import { AlertTriangle, FileText, CheckCircle2, Phone, User, ExternalLink, Loader2, X, MessageSquare, ShieldCheck } from 'lucide-react';
+import { AlertTriangle, FileText, CheckCircle2, Phone, User, ExternalLink, Loader2, X, MessageSquare, ShieldCheck, RotateCcw } from 'lucide-react';
 import api from '../../utils/api';
 import { useModal } from '../../contexts/ModalContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -3144,6 +3144,42 @@ const EscalatedDisputes: React.FC = () => {
         } catch (error) {
             console.error('Failed to resolve dispute:', error);
             showAlert({ title: 'Error', message: 'Failed to update dispute status.', type: 'error' });
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    const handleVoid = async () => {
+        if (!selectedDispute) return;
+
+        const confirmed = await showConfirm({
+            title: 'Void Fulfillment',
+            message: "Reject this fulfillment attempt and return the job to the agent's dash for a redo? This counts as a formal resolution to the dispute.",
+            confirmText: 'Void & Redo',
+            type: 'warning'
+        });
+
+        if (!confirmed) return;
+
+        setIsProcessing(true);
+        try {
+            await api.patch(`/requests/${selectedDispute.request.id}/void-dispute`, {
+                note: 'Voided by Admin at Escalation Desk.'
+            });
+            
+            // UI Update
+            setDisputes(prev => prev.filter(d => d.id !== selectedDispute.id));
+            setShowResolutionDesk(false);
+            setSelectedDispute(null);
+            
+            showAlert({ 
+                title: 'Fulfillment Voided', 
+                message: 'The agent has been notified and the request returned for a redo.', 
+                type: 'info' 
+            });
+        } catch (error) {
+            console.error('Failed to void dispute:', error);
+            showAlert({ title: 'Error', message: 'Failed to void fulfillment.', type: 'error' });
         } finally {
             setIsProcessing(false);
         }
@@ -3329,12 +3365,20 @@ const EscalatedDisputes: React.FC = () => {
                             </div>
 
                             {/* Footer */}
-                            <div className="p-8 border-t border-slate-100 bg-slate-50/50 flex gap-4">
+                            <div className="p-8 border-t border-slate-100 bg-slate-50/50 flex flex-wrap gap-4">
                                 <button 
                                     onClick={() => setShowResolutionDesk(false)}
-                                    className="px-8 py-4 bg-white text-slate-600 font-black rounded-2xl border border-slate-200 hover:bg-slate-50 transition-all shadow-sm"
+                                    className="px-6 py-4 bg-white text-slate-600 font-black rounded-2xl border border-slate-200 hover:bg-slate-50 transition-all shadow-sm"
                                 >
                                     Cancel
+                                </button>
+                                <button 
+                                    onClick={handleVoid}
+                                    disabled={isProcessing}
+                                    className="px-6 py-4 bg-amber-100 text-amber-700 font-black rounded-2xl hover:bg-amber-200 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                                >
+                                    {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : <RotateCcw className="w-5 h-5" />}
+                                    Void & Request Redo
                                 </button>
                                 <button 
                                     onClick={handleResolve}
@@ -3979,9 +4023,18 @@ interface FocusBoardProps {
   onTransfer: (id: string) => void;
   onDecline: (id: string) => void;
   hasReferrals?: boolean;
+  processingIds: Set<string>;
 }
 
-export const FocusBoard: React.FC<FocusBoardProps> = ({ requests, onAccept, onComplete, onTransfer, onDecline, hasReferrals }) => {
+export const FocusBoard: React.FC<FocusBoardProps> = ({ 
+    requests, 
+    onAccept, 
+    onComplete, 
+    onTransfer, 
+    onDecline, 
+    hasReferrals,
+    processingIds
+}) => {
   const [statusFilter, setStatusFilter] = useState<'all' | 'assigned' | 'fulfilled'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -4066,6 +4119,7 @@ export const FocusBoard: React.FC<FocusBoardProps> = ({ requests, onAccept, onCo
                  onTransfer={onTransfer}
                  onDecline={onDecline}
                  hasReferrals={hasReferrals}
+                 isProcessing={processingIds.has(request.id)}
               />
             ))}
           </AnimatePresence>
@@ -4298,7 +4352,7 @@ export default NetworkView;
 ===== FILE: components\agent\PackageSelection.tsx =====
 
 // Import React and the useState hook for managing local state
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 // Import animation primitives from framer-motion for transitions and staggered entry effects
 import { motion, AnimatePresence } from 'framer-motion';
@@ -4390,11 +4444,45 @@ export const PackageSelection: React.FC<PackageSelectionProps> = ({ currentTier,
 
   const [selectedId, setSelectedId] = useState<string | null>(null); // Tracks which tier the user clicked (for loading state)
   const [isSubmitting, setIsSubmitting] = useState(false);           // True while the API purchase request is in-flight
+  const [dynamicPackages, setDynamicPackages] = useState<any[]>([]);
+  const [loadingPackages, setLoadingPackages] = useState(true);
+
+  useEffect(() => {
+    const fetchTiers = async () => {
+      try {
+        setLoadingPackages(true);
+        const response = await api.get('/users/me/available-packages');
+        setDynamicPackages(response.data);
+      } catch (error) {
+        console.error('Failed to fetch tiers:', error);
+      } finally {
+        setLoadingPackages(false);
+      }
+    };
+    fetchTiers();
+  }, []);
+
+  // Merge dynamic data with static UI metadata
+  const mergedPackages = dynamicPackages.map(dp => {
+    const staticMeta = packages.find(p => p.id === dp.name) || packages[0];
+    return {
+      ...staticMeta,
+      id: dp.name,
+      name: dp.displayName || dp.name.replace('_', ' '),
+      price: dp.price.toLocaleString(),
+      limit: dp.zoneLimit === 100 ? 'Unlimited Zones' : `${dp.zoneLimit} Zones`,
+      slots: `${dp.referralSlots} Direct Referrals`,
+      description: dp.description || staticMeta.description,
+      rawPrice: dp.price
+    };
+  });
+
+  const displayPackages = mergedPackages.length > 0 ? mergedPackages : packages;
 
   // Handles the user clicking "Get Started" on a specific package card
   const handleSelect = async (pkgId: string, paymentMethod: 'ETB' | 'AGLP' = 'ETB') => {
     setSelectedId(pkgId); // Mark this card as the active/selected card
-    const pkg = packages.find(p => p.id === pkgId); // Look up the full package metadata by ID
+    const pkg = displayPackages.find(p => p.id === pkgId); // Look up the full package metadata by ID
 
     const message = paymentMethod === 'ETB'
       ? `You are about to subscribe to the ${pkg?.name} package for ${pkg?.price} ETB. You will receive an equivalent amount of AGLP as a reward. This will unlock ${pkg?.limit} and ${pkg?.slots}. Proceed?`
@@ -4432,6 +4520,15 @@ export const PackageSelection: React.FC<PackageSelectionProps> = ({ currentTier,
       setSelectedId(null); // If the user cancelled the modal, deselect the card
     }
   };
+
+  if (loadingPackages) {
+    return (
+      <div className="h-[60vh] flex flex-col items-center justify-center gap-4 text-slate-400">
+        <Loader2 className="w-10 h-10 animate-spin text-indigo-500" />
+        <p className="text-sm font-black uppercase tracking-[0.2em]">Synchronizing Tiers...</p>
+      </div>
+    );
+  }
 
   return (
     // Outer wrapper: fades in on mount, provides relative positioning for the decorative blobs
@@ -4475,7 +4572,7 @@ export const PackageSelection: React.FC<PackageSelectionProps> = ({ currentTier,
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 w-full max-w-7xl mx-auto">
         {/* AnimatePresence allows cards to animate in/out correctly */}
         <AnimatePresence>
-          {packages.map((pkg, index) => {
+          {displayPackages.map((pkg, index) => {
             const Icon = pkg.icon;            // Resolve the icon component for this specific package
             const isSelected = selectedId === pkg.id; // True if this card triggered the last purchase attempt
 
@@ -4648,7 +4745,7 @@ const tierMeta: Record<string, { icon: any, color: string, bg: string, text: str
 export const PackagesView: React.FC<PackagesViewProps> = ({ finance, profile, onUpgradeComplete }) => {
   const [isUpgrading, setIsUpgrading] = useState(false);
 
-  const rawTier = finance?.currentTier?.toUpperCase().replace(' ', '_') || 'FREE';
+  const rawTier = finance?.tier || 'FREE';
   const meta = tierMeta[rawTier] || tierMeta.FREE;
   const Icon = meta.icon;
 
@@ -4854,19 +4951,11 @@ interface ProfileViewProps {
 const ProfileView: React.FC<ProfileViewProps> = ({ profile }) => {
   if (!profile) return null;
 
-  const tier = profile.referralLink?.tier || 'FREE';
-  
-  const getLimits = (tier: string) => {
-    switch (tier) {
-      case 'ABUNDANT_LIFE': return { zones: 100, referrals: 31 };
-      case 'UNITY': return { zones: 5, referrals: 23 };
-      case 'LOVE': return { zones: 3, referrals: 16 };
-      case 'PEACE': return { zones: 2, referrals: 7 };
-      default: return { zones: 1, referrals: 3 };
-    }
+  const tierName = profile.package?.displayName || profile.tier?.replace('_', ' ') || 'FREE';
+  const limits = {
+    zones: profile.package?.zoneLimit || 1,
+    referrals: profile.package?.referralSlots || 3
   };
-
-  const limits = getLimits(tier);
   const zoneUsage = (profile.agentZones?.length || 0) / limits.zones;
 
   return (
@@ -4878,7 +4967,7 @@ const ProfileView: React.FC<ProfileViewProps> = ({ profile }) => {
         </div>
         <div className="flex items-center gap-2 px-4 py-2 bg-erkata-primary/10 text-erkata-primary rounded-2xl border border-erkata-primary/20">
            <Shield className="w-4 h-4" />
-           <span className="text-sm font-bold uppercase tracking-wider">{tier.replace('_', ' ')}</span>
+           <span className="text-sm font-bold uppercase tracking-wider">{tierName}</span>
         </div>
       </div>
 
@@ -4965,7 +5054,7 @@ export default ProfileView;
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Clock, CheckCircle, Share2, ChevronDown, MapPin, DollarSign, Home, LayoutGrid } from 'lucide-react';
+import { Clock, CheckCircle, Share2, ChevronDown, MapPin, DollarSign, Home, LayoutGrid, Loader2 } from 'lucide-react';
 import { Can } from '../ui/Can';
 import { Action } from '../../hooks/usePermissions';
 
@@ -4989,6 +5078,7 @@ interface RequestCardProps {
   onTransfer: (id: string) => void;
   onDecline: (id: string) => void;
   hasReferrals?: boolean;
+  isProcessing?: boolean;
 }
 
 // Maps raw metadata keys to human-readable labels and optional icons
@@ -5020,7 +5110,7 @@ const MetadataBadge: React.FC<{ metaKey: string; value: any }> = ({ metaKey, val
 };
 
 export const RequestCard = React.forwardRef<HTMLDivElement, RequestCardProps>(
-  ({ request, onAccept, onComplete, onTransfer, onDecline, hasReferrals }, ref) => {
+  ({ request, onAccept, onComplete, onTransfer, onDecline, hasReferrals, isProcessing }, ref) => {
     const [isExpanded, setIsExpanded] = useState(false);
 
     const getStatusColor = (status: string) => {
@@ -5028,6 +5118,8 @@ export const RequestCard = React.forwardRef<HTMLDivElement, RequestCardProps>(
         case 'assigned':  return 'bg-indigo-500';
         case 'accepted':  return 'bg-amber-500';
         case 'fulfilled': return 'bg-emerald-500';
+        case 'completed': return 'bg-emerald-500 text-white';
+        case 'rejected':  return 'bg-slate-300';
         case 'disputed':  return 'bg-rose-500';
         case 'pending':   return 'bg-blue-500';
         default:          return 'bg-slate-300';
@@ -5106,6 +5198,20 @@ export const RequestCard = React.forwardRef<HTMLDivElement, RequestCardProps>(
             </div>
           </div>
 
+          {/* Redo Warning */}
+          {request.metadata?.needsRedo && (
+            <div className="mb-4 bg-amber-50 border border-amber-100 p-3 rounded-xl">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-amber-600 text-xs font-black uppercase tracking-widest flex items-center gap-1">
+                  ❗ Redo Required
+                </span>
+              </div>
+              <p className="text-[10px] font-medium text-amber-700 leading-relaxed italic">
+                "{request.metadata?.voidNote || 'Your previous fulfillment was voided. Please review and resubmit.'}"
+              </p>
+            </div>
+          )}
+
           {/* Budget tag */}
           {formattedBudget && (
             <div className="mb-4">
@@ -5155,9 +5261,17 @@ export const RequestCard = React.forwardRef<HTMLDivElement, RequestCardProps>(
               <Can perform={Action.ACCEPT_REQUEST}>
                 <button
                   onClick={() => onAccept(request.id)}
-                  className="flex-1 bg-slate-900 text-white text-xs font-bold py-2.5 rounded-xl hover:bg-slate-800 transition-colors"
+                  disabled={isProcessing}
+                  className={`flex-1 bg-slate-900 text-white text-xs font-bold py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 ${isProcessing ? 'opacity-70 cursor-not-allowed' : 'hover:bg-slate-800'}`}
                 >
-                  Accept Assignment
+                  {isProcessing ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      Processing...
+                    </>
+                  ) : (
+                    'Accept Assignment'
+                  )}
                 </button>
               </Can>
             )}
@@ -5174,9 +5288,10 @@ export const RequestCard = React.forwardRef<HTMLDivElement, RequestCardProps>(
                 ) : (
                   <button
                     onClick={() => onDecline(request.id)}
-                    className="flex-1 bg-white border border-slate-200 text-red-600 text-xs font-bold py-2.5 rounded-xl hover:bg-red-50 hover:border-red-100 transition-colors"
+                    disabled={isProcessing}
+                    className={`flex-1 bg-white border border-slate-200 text-red-600 text-xs font-bold py-2.5 rounded-xl transition-all ${isProcessing ? 'opacity-50 cursor-not-allowed' : 'hover:bg-red-50 hover:border-red-100'}`}
                   >
-                    Decline
+                    {isProcessing ? <Loader2 className="w-3.5 h-3.5 animate-spin mx-auto" /> : 'Decline'}
                   </button>
                 )}
               </Can>
@@ -5197,9 +5312,17 @@ export const RequestCard = React.forwardRef<HTMLDivElement, RequestCardProps>(
               <Can perform={Action.SUBMIT_PROOF}>
                 <button
                   onClick={() => onComplete(request.id, request.transactionId, request.customerName)}
-                  className="flex-1 bg-erkata-primary text-white text-xs font-bold py-2.5 rounded-xl hover:bg-erkata-secondary transition-colors"
+                  disabled={isProcessing}
+                  className={`flex-1 bg-erkata-primary text-white text-xs font-bold py-2.5 rounded-xl transition-all flex items-center justify-center gap-2 ${isProcessing ? 'opacity-70 cursor-not-allowed' : 'hover:bg-erkata-secondary'}`}
                 >
-                  Complete &amp; Confirm
+                   {isProcessing ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      Refining...
+                    </>
+                  ) : (
+                    request.metadata?.needsRedo ? 'Resubmit Proof' : 'Complete & Confirm'
+                  )}
                 </button>
               </Can>
             )}
@@ -6748,7 +6871,8 @@ import {
   ExternalLink,
   MessageSquare,
   ShieldCheck,
-  Info
+  Info,
+  RotateCcw
 } from 'lucide-react';
 import { useModal } from '../../contexts/ModalContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -6761,6 +6885,7 @@ const DisputesBoard: React.FC = () => {
     const [escalatingId, setEscalatingId] = useState<string | null>(null);
     const [escalationNote, setEscalationNote] = useState('');
     const [resolvingTx, setResolvingTx] = useState<any | null>(null);
+    const [resolutionNote, setResolutionNote] = useState('');
 
     const fetchDisputes = async () => {
         setIsLoading(true);
@@ -6792,13 +6917,45 @@ const DisputesBoard: React.FC = () => {
         if (confirmed) {
             setProcessingId(resolvingTx.request.id);
             try {
-                await api.patch(`/requests/${resolvingTx.request.id}/resolve-dispute`);
+                await api.patch(`/requests/${resolvingTx.request.id}/resolve-dispute`, { 
+                    note: resolutionNote 
+                });
                 showAlert({ title: 'Success', message: 'Dispute resolved successfully.', type: 'success' });
                 setResolvingTx(null);
+                setResolutionNote('');
                 fetchDisputes();
             } catch (error) {
                 console.error('Failed to resolve dispute:', error);
                 showAlert({ title: 'Error', message: 'Failed to resolve dispute.', type: 'error' });
+            } finally {
+                setProcessingId(null);
+            }
+        }
+    };
+
+    const handleVoid = async () => {
+        if (!resolvingTx) return;
+
+        const confirmed = await showConfirm({
+            title: 'Void & Request Redo',
+            message: "This will officially void the agent's current fulfillment attempt and return the request to their active dashboard for a redo. Are you sure?",
+            confirmText: 'Yes, Send Back',
+            type: 'warning'
+        });
+
+        if (confirmed) {
+            setProcessingId(resolvingTx.request.id);
+            try {
+                await api.patch(`/requests/${resolvingTx.request.id}/void-dispute`, { 
+                    note: resolutionNote 
+                });
+                showAlert({ title: 'Voided', message: 'Fulfillment voided. Request returned to agent.', type: 'info' });
+                setResolvingTx(null);
+                setResolutionNote('');
+                fetchDisputes();
+            } catch (error) {
+                console.error('Failed to void dispute:', error);
+                showAlert({ title: 'Error', message: 'Failed to void dispute.', type: 'error' });
             } finally {
                 setProcessingId(null);
             }
@@ -7009,25 +7166,46 @@ const DisputesBoard: React.FC = () => {
                                      </div>
                                 </div>
 
-                                <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100/50 flex gap-3 italic">
+                                 <div className="bg-blue-50/50 p-4 rounded-2xl border border-blue-100/50 flex gap-3 italic">
                                     <Info className="w-5 h-5 text-blue-500 shrink-0" />
                                     <p className="text-[11px] font-bold text-blue-700 leading-tight uppercase">
                                         Verification Required: Please confirm with both parties that the fulfillment has been successfully addressed before closing this case.
                                     </p>
                                 </div>
+
+                                <div className="space-y-4 pt-2">
+                                    <label className="text-xs font-black text-slate-500 uppercase tracking-widest px-1 flex items-center gap-2">
+                                        Resolution Summary
+                                        <span className="text-emerald-600 font-bold">(Mandatory)</span>
+                                    </label>
+                                    <textarea
+                                        value={resolutionNote}
+                                        onChange={(e) => setResolutionNote(e.target.value)}
+                                        placeholder="Describe how the dispute was settled (e.g. Agent agreed to re-visit customer, Customer accepted a partial refund from agent outside platform...)"
+                                        className="w-full h-32 p-5 rounded-[1.5rem] border border-slate-100 bg-slate-50 text-slate-700 text-sm focus:outline-none focus:ring-4 focus:ring-emerald-500/10 placeholder-slate-300 resize-none font-medium text-xs"
+                                    />
+                                </div>
                             </div>
 
                             {/* Modal Footer */}
-                            <div className="p-8 bg-slate-50 border-t border-slate-100 flex gap-4">
+                            <div className="p-8 bg-slate-50 border-t border-slate-100 flex flex-wrap gap-4">
                                 <button 
                                     onClick={() => setResolvingTx(null)}
-                                    className="px-8 py-4 bg-white text-slate-600 font-bold rounded-2xl border border-slate-200 hover:bg-slate-50 transition-all"
+                                    className="px-6 py-4 bg-white text-slate-600 font-bold rounded-2xl border border-slate-200 hover:bg-slate-50 transition-all"
                                 >
                                     Dismiss
                                 </button>
                                 <button 
+                                    onClick={handleVoid}
+                                    disabled={processingId === resolvingTx.request.id || !resolutionNote.trim()}
+                                    className="px-6 py-4 bg-amber-100 text-amber-700 font-black rounded-2xl hover:bg-amber-200 transition-all flex items-center justify-center gap-2 disabled:opacity-50 active:scale-[0.98]"
+                                >
+                                    {processingId === resolvingTx.request.id ? <Loader2 className="w-5 h-5 animate-spin" /> : <RotateCcw className="w-5 h-5" />}
+                                    Send Back for Redo
+                                </button>
+                                <button 
                                     onClick={handleFinalResolve}
-                                    disabled={processingId === resolvingTx.request.id}
+                                    disabled={processingId === resolvingTx.request.id || !resolutionNote.trim()}
                                     className="flex-1 py-4 bg-emerald-600 text-white font-black rounded-2xl hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-600/20 flex items-center justify-center gap-2 disabled:opacity-50 active:scale-[0.98]"
                                 >
                                     {processingId === resolvingTx.request.id ? <Loader2 className="w-5 h-5 animate-spin" /> : <ShieldCheck className="w-5 h-5" />}
@@ -8968,6 +9146,87 @@ const ConfigFlags: React.FC = () => {
                         </div>
                     </div>
                 </div>
+
+                <div className="mt-12 space-y-8 pt-8 border-t border-slate-100">
+                    <div className="flex items-center justify-between mb-2">
+                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Economic Splits & Commission Logic</h4>
+                        <span className="text-[10px] bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full font-black uppercase italic">Revenue Architecture</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {[
+                            { key: 'COMMISSION_REAL_ESTATE_PRIMARY', label: 'R.E. Primary', icon: ShieldCheck },
+                            { key: 'COMMISSION_REAL_ESTATE_OVERRIDE', label: 'R.E. Override', icon: TrendingUp },
+                            { key: 'COMMISSION_FURNITURE_PRIMARY', label: 'Furniture Primary', icon: Zap },
+                            { key: 'AGLP_COMMISSION_PACKAGE_REFERRAL', label: 'Package Referral', icon: Clock },
+                        ].map((comm) => {
+                            const val = getConfigValue(comm.key, { value: 0.1 }).value;
+                            return (
+                                <div key={comm.key} className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+                                    <div className="flex items-center gap-2 text-slate-900 font-black text-[10px] mb-3 uppercase tracking-tight">
+                                        <comm.icon className="w-3 h-3 text-indigo-600" />
+                                        {comm.label}
+                                    </div>
+                                    <div className="relative">
+                                        <input 
+                                            type="number" 
+                                            step="0.01"
+                                            defaultValue={val}
+                                            onBlur={(e) => {
+                                                const newVal = parseFloat(e.target.value);
+                                                if (newVal !== val && !isNaN(newVal)) {
+                                                    updateConfig(comm.key, { value: newVal });
+                                                }
+                                            }}
+                                            className="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-black text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" 
+                                        />
+                                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400">% / 100</span>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                <div className="mt-12 space-y-8 pt-8 border-t border-slate-100">
+                    <div className="flex items-center justify-between mb-2">
+                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Financial Disbursement (Withdrawal Policies)</h4>
+                        <span className="text-[10px] bg-amber-50 text-amber-600 px-2 py-0.5 rounded-full font-black uppercase italic">Capital Integrity</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {[
+                            { key: 'withdrawal_min_amount', label: 'Min Withdrawal', icon: ShieldAlert, suffix: 'AGLP' },
+                            { key: 'withdrawal_max_amount_daily', label: 'Daily Cap', icon: AlertTriangle, suffix: 'AGLP' },
+                            { key: 'withdrawal_fee_percentage', label: 'Processing Fee', icon: Save, suffix: '%' },
+                        ].map((policy) => {
+                            const val = getConfigValue(policy.key, policy.key.includes('fee') ? 0.05 : 100);
+                            return (
+                                <div key={policy.key} className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+                                    <div className="flex items-center gap-2 text-slate-900 font-black text-[10px] mb-3 uppercase tracking-tight">
+                                        <policy.icon className="w-3 h-3 text-indigo-600" />
+                                        {policy.label}
+                                    </div>
+                                    <div className="relative">
+                                        <input 
+                                            type="number" 
+                                            step={policy.key.includes('fee') ? "0.01" : "1"}
+                                            defaultValue={val}
+                                            onBlur={(e) => {
+                                                const newVal = parseFloat(e.target.value);
+                                                if (newVal !== val && !isNaN(newVal)) {
+                                                    updateConfig(policy.key, newVal);
+                                                }
+                                            }}
+                                            className="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-black text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" 
+                                        />
+                                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400">{policy.suffix}</span>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
             </div>
             
             <div className={`rounded-3xl p-8 border flex items-center justify-between group transition-all duration-500 ${emergencyLockdown ? 'bg-red-50 border-red-200' : 'bg-red-950 border-red-900/50'}`}>
@@ -9000,157 +9259,282 @@ export default ConfigFlags;
 
 
 
-===== FILE: components\super-admin\EmergencyArchive.tsx =====
+===== FILE: components\super-admin\DisputesAudit.tsx =====
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  Archive, 
-  AlertTriangle, 
-  Timer, 
-  Trash2, 
-  ShieldAlert,
+  ShieldAlert, 
   Search,
-  CheckCircle2
+  CheckCircle2,
+  AlertTriangle,
+  User,
+  ShieldCheck,
+  Calendar,
+  ExternalLink,
+  Loader2,
+  ArrowUpRight,
+  Info,
+  RotateCcw,
+  Check,
+  ShieldAlert as ShieldAlertIcon
 } from 'lucide-react';
-import { useModal } from '../../contexts/ModalContext';
+import api from '../../utils/api';
+import { motion, AnimatePresence } from 'framer-motion';
 
-interface AbandonedCase {
+interface DisputeRecord {
   id: string;
-  type: string;
-  daysStuck: number;
-  lastActivity: string;
+  category: string;
   status: string;
+  isEscalated: boolean;
+  createdAt: string;
+  updatedAt: string;
+  customer: {
+    fullName: string;
+    phone: string;
+  };
+  matches: Array<{
+    agent: {
+      fullName: string;
+      phone: string;
+    }
+  }>;
+  metadata: {
+    resolutionNote?: string;
+    escalationNote?: string;
+    resolvedAt?: string;
+    resolvedBy?: string;
+    escalatedAt?: string;
+    escalatedBy?: string;
+  };
 }
 
-const MOCK_ABANDONED: AbandonedCase[] = [
-  { id: 'BND-1920', type: 'Mediation Timeout', daysStuck: 42, lastActivity: '2026-01-01', status: 'TimedOut' },
-  { id: 'REQ-4402', type: 'Proposal Stale', daysStuck: 35, lastActivity: '2026-01-08', status: 'Proposed' },
-  { id: 'BND-2210', type: 'Agent Abandoned', daysStuck: 31, lastActivity: '2026-01-12', status: 'In-Progress' },
-];
+const DisputesAudit: React.FC = () => {
+    const [records, setRecords] = useState<DisputeRecord[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState('');
 
-const EmergencyArchive: React.FC = () => {
-    const { showConfirm, showAlert } = useModal();
-    const [selectedId, setSelectedId] = useState<string | null>(null);
-
-    const handleArchive = async () => {
-        if (!selectedId) return;
-
-        const firstConfirm = await showConfirm({
-            title: 'EMERGENCY ARCHIVE',
-            message: 'This will permanently close the case without a final decision. This is a break-glass procedure. Do you wish to proceed?',
-            confirmText: 'Continue to Reason',
-            type: 'error'
-        });
-
-        if (firstConfirm) {
-            const reason = prompt('Please enter the mandatory reason for emergency archive (min 10 chars):');
-            if (reason && reason.length >= 10) {
-                 const finalConfirm = await showConfirm({
-                    title: 'CRITICAL CONFIRMATION',
-                    message: `Reason: "${reason}". Final confirmation for emergency archive of ${selectedId}.`,
-                    confirmText: 'Permanently Archive',
-                    type: 'error'
-                });
-
-                if (finalConfirm) {
-                    showAlert({
-                        title: 'Emergency Action Logged',
-                        message: `Case ${selectedId} has been archived with code EMERGENCY_ARCHIVE_NO_DECISION.`,
-                        type: 'success'
-                    });
-                    setSelectedId(null);
-                }
-            } else if (reason !== null) {
-                showAlert({
-                    title: 'Action Cancelled',
-                    message: 'A valid reason is mandatory for emergency archival.',
-                    type: 'error'
-                });
-            }
+    const fetchHistory = async () => {
+        setIsLoading(true);
+        try {
+            const res = await api.get('/requests/admin/dispute-history');
+            setRecords(res.data);
+        } catch (error) {
+            console.error('Failed to fetch dispute history:', error);
+        } finally {
+            setIsLoading(false);
         }
     };
 
+    const handleVoid = async (id: string) => {
+        const note = window.prompt('Enter reason for voiding this fulfillment and requesting a redo:');
+        if (note === null) return;
+
+        try {
+            await api.patch(`/requests/${id}/void-dispute`, { note });
+            await fetchHistory(); // Refresh
+            alert('Fulfillment voided. Request returned to agent for redo.');
+        } catch (error) {
+            console.error('Failed to void dispute:', error);
+            alert('Action failed. Check console for details.');
+        }
+    };
+
+    useEffect(() => {
+        fetchHistory();
+    }, []);
+
+    const filteredRecords = records.filter(r => 
+        r.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        r.customer.fullName.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    if (isLoading) {
+        return (
+            <div className="flex flex-col items-center justify-center h-96 space-y-4">
+                <Loader2 className="w-10 h-10 animate-spin text-slate-300" />
+                <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Synchronizing Audit Logs...</p>
+            </div>
+        );
+    }
+
     return (
-        <div className="space-y-6">
-            <div className="bg-red-50 border border-red-100 rounded-2xl p-6 flex gap-4 items-start">
-                <ShieldAlert className="w-8 h-8 text-red-600 shrink-0" />
-                <div>
-                    <h3 className="text-lg font-black text-red-900 tracking-tight">Break-Glass Archive Facility</h3>
-                    <p className="text-sm text-red-700/80 font-medium max-w-2xl leading-relaxed">
-                        This interface is reserved for cases stuck beyond 30 days or abandoned due to systemic failure. 
-                        Archiving here creates a permanent "NO_DECISION" state and closes the mediation chain.
+        <div className="space-y-8">
+            {/* Header section */}
+            <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-2xl">
+                <div className="absolute top-0 right-0 p-8 opacity-10">
+                    <ShieldAlert className="w-32 h-32" />
+                </div>
+                <div className="relative z-10 space-y-4">
+                    <div className="flex items-center gap-3">
+                         <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center backdrop-blur-md">
+                            <ShieldAlert className="w-6 h-6 text-amber-400" />
+                         </div>
+                         <div>
+                             <h2 className="text-2xl font-black italic tracking-tight">Disputes Governance</h2>
+                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Platform Resolution Archive & Audit</p>
+                         </div>
+                    </div>
+                    <p className="text-slate-400 text-sm max-w-xl leading-relaxed font-medium">
+                        This view monitors all customer-triggered disputes. Super Admins can review resolutions 
+                        settled by operators and verify escalation notes for ongoing administrative interventions.
                     </p>
                 </div>
             </div>
 
-            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                <div className="p-4 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
-                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Stuck / Abandoned Queue</h4>
-                    <div className="relative">
-                        <Search className="w-3 h-3 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <input type="text" placeholder="Search ID..." className="pl-8 pr-4 py-1.5 bg-white border border-slate-200 rounded-lg text-[10px] font-bold outline-none focus:ring-1 focus:ring-red-500 w-48" />
+            {/* Stats & Search */}
+            <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+                <div className="flex flex-wrap gap-4">
+                    <div className="px-5 py-3 bg-white rounded-2xl border border-slate-100 shadow-sm flex items-center gap-3">
+                         <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+                         <span className="text-xs font-black text-slate-600 uppercase tracking-widest">
+                            {records.filter(r => r.status === 'disputed' && !r.isEscalated).length} OPEN
+                         </span>
+                    </div>
+                    <div className="px-5 py-3 bg-white rounded-2xl border border-slate-100 shadow-sm flex items-center gap-3">
+                         <div className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+                         <span className="text-xs font-black text-slate-600 uppercase tracking-widest">
+                            {records.filter(r => r.status === 'disputed' && r.isEscalated).length} ESCALATED
+                         </span>
+                    </div>
+                    <div className="px-5 py-3 bg-white rounded-2xl border border-slate-100 shadow-sm flex items-center gap-3">
+                         <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                         <span className="text-xs font-black text-slate-600 uppercase tracking-widest">
+                            {records.filter(r => r.status === 'fulfilled').length} RESOLVED
+                         </span>
+                    </div>
+                    <div className="px-5 py-3 bg-white rounded-2xl border border-slate-100 shadow-sm flex items-center gap-3">
+                         <div className="w-2 h-2 rounded-full bg-slate-400" />
+                         <span className="text-xs font-black text-slate-600 uppercase tracking-widest">
+                            {records.filter(r => r.status === 'cancelled').length} VOIDED
+                         </span>
                     </div>
                 </div>
 
+                <div className="relative w-full md:w-96">
+                    <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input 
+                        type="text" 
+                        placeholder="Search by Case ID or Customer..." 
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-12 pr-6 py-4 bg-white border border-slate-100 rounded-2xl text-xs font-bold shadow-sm outline-none focus:ring-4 focus:ring-slate-900/5 transition-all"
+                    />
+                </div>
+            </div>
+
+            {/* Audit Table */}
+            <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left">
+                    <table className="w-full text-left border-collapse">
                         <thead>
-                            <tr className="border-b border-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                <th className="px-6 py-4">Case ID</th>
-                                <th className="px-6 py-4">Classification</th>
-                                <th className="px-6 py-4">Days Stuck</th>
-                                <th className="px-6 py-4">Current state</th>
-                                <th className="px-6 py-4 text-right">Action</th>
+                            <tr className="bg-slate-50/50 border-b border-slate-50">
+                                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Case Context</th>
+                                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Involved Parties</th>
+                                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Resolution Summary</th>
+                                <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">State</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-50 text-xs font-semibold">
-                            {MOCK_ABANDONED.map((k) => (
-                                <tr key={k.id} className={`hover:bg-red-50/30 transition-colors ${selectedId === k.id ? 'bg-red-50/50' : ''}`}>
-                                    <td className="px-6 py-4 font-black text-slate-900">{k.id}</td>
-                                    <td className="px-6 py-4 text-slate-600">{k.type}</td>
-                                    <td className="px-6 py-4">
-                                        <div className="flex items-center gap-2">
-                                            <Timer className="w-3 h-3 text-red-500" />
-                                            <span className="text-red-600 font-bold">{k.daysStuck}d</span>
+                        <tbody className="divide-y divide-slate-50">
+                            {filteredRecords.map((r) => (
+                                <tr key={r.id} className="hover:bg-slate-50/50 transition-colors group">
+                                    <td className="px-8 py-6">
+                                        <div className="space-y-1">
+                                            <p className="text-xs font-black text-slate-900 group-hover:text-indigo-600 transition-colors">
+                                                ID: {r.id.split('-')[0].toUpperCase()}
+                                            </p>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">{r.category}</p>
+                                            <div className="flex items-center gap-1.5 text-[9px] font-bold text-slate-400 mt-2">
+                                                <Calendar className="w-3 h-3" />
+                                                {new Date(r.createdAt).toLocaleDateString()}
+                                            </div>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4">
-                                        <span className="px-2 py-0.5 bg-slate-100 rounded text-[9px] font-bold text-slate-500">{k.status}</span>
+                                    <td className="px-8 py-6">
+                                        <div className="space-y-3">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-7 h-7 bg-indigo-50 rounded-lg flex items-center justify-center">
+                                                    <User className="w-3.5 h-3.5 text-indigo-600" />
+                                                </div>
+                                                <span className="text-xs font-black text-slate-700">{r.customer.fullName}</span>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-7 h-7 bg-emerald-50 rounded-lg flex items-center justify-center">
+                                                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                                                </div>
+                                                <span className="text-xs font-black text-slate-700">{r.matches[0]?.agent?.fullName || 'N/A'}</span>
+                                            </div>
+                                        </div>
                                     </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <button 
-                                            onClick={() => setSelectedId(k.id)}
-                                            className={`p-2 rounded-lg transition-all ${selectedId === k.id ? 'bg-red-600 text-white shadow-lg shadow-red-600/20' : 'text-slate-400 hover:bg-white hover:text-red-600 border border-transparent hover:border-red-100'}`}
-                                        >
-                                            <Archive className="w-4 h-4" />
-                                        </button>
+                                    <td className="px-8 py-6 max-w-md">
+                                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 group-hover:bg-white group-hover:border-slate-200 transition-all">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <Info className="w-3 h-3 text-slate-400" />
+                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                                                    {r.isEscalated ? 'Escalation Note' : 'Resolution Note'}
+                                                </span>
+                                            </div>
+                                            <p className="text-[11px] font-medium text-slate-600 leading-relaxed italic">
+                                                "{r.metadata.resolutionNote || r.metadata.escalationNote || 'No documentation provided.'}"
+                                            </p>
+                                            <div className="mt-2 text-[9px] font-bold text-slate-400 flex items-center gap-2">
+                                                <span>Mediated by: <span className="text-slate-900">{r.metadata.resolvedBy || r.metadata.escalatedBy || 'System'}</span></span>
+                                                <span className="w-1 h-1 bg-slate-200 rounded-full" />
+                                                <span>{new Date(r.metadata.resolvedAt || r.metadata.escalatedAt || r.updatedAt).toLocaleString()}</span>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="px-8 py-6 text-right">
+                                        <div className="flex flex-col items-end gap-2">
+                                            <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest ${
+                                                r.status === 'fulfilled'
+                                                ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                                                : r.status === 'cancelled'
+                                                ? 'bg-slate-50 text-slate-500 border border-slate-200'
+                                                : r.isEscalated
+                                                ? 'bg-rose-50 text-rose-600 border border-rose-100'
+                                                : 'bg-amber-50 text-amber-600 border border-amber-100'
+                                            }`}>
+                                                {r.status === 'fulfilled' ? 'Resolved' : 
+                                                 r.status === 'cancelled' ? 'Voided' :
+                                                 r.isEscalated ? 'Escalated' : 'Open'}
+                                            </span>
+                                            <div className="flex items-center gap-1">
+                                                {(r.status === 'disputed') && (
+                                                    <button 
+                                                        onClick={() => handleVoid(r.id)}
+                                                        title="Void & Redo"
+                                                        className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
+                                                    >
+                                                        <RotateCcw className="w-4 h-4" />
+                                                    </button>
+                                                )}
+                                                <button className="p-2 text-slate-300 hover:text-indigo-600 transition-colors">
+                                                    <ExternalLink className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
                 </div>
-            </div>
 
-            <div className="flex justify-end pt-4">
-                <button 
-                    disabled={!selectedId}
-                    onClick={handleArchive}
-                    className={`px-8 py-3 rounded-2xl font-black text-sm flex items-center gap-2 transition-all ${
-                        selectedId 
-                        ? 'bg-red-600 text-white shadow-xl shadow-red-600/30 hover:bg-red-700' 
-                        : 'bg-slate-100 text-slate-300 cursor-not-allowed'
-                    }`}
-                >
-                    <Trash2 className="w-4 h-4" />
-                    Emergency Archive Selection
-                </button>
+                {filteredRecords.length === 0 && (
+                    <div className="py-24 text-center">
+                        <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <Search className="w-8 h-8 text-slate-200" />
+                        </div>
+                        <h3 className="text-sm font-black text-slate-900 mb-1">No Dispute Records Found</h3>
+                        <p className="text-xs text-slate-500 font-medium">Try adjusting your search filters if applicable.</p>
+                    </div>
+                )}
             </div>
         </div>
     );
 };
 
-export default EmergencyArchive;
+export default DisputesAudit;
 
 
 ===== FILE: components\super-admin\FinalResolutions.tsx =====
@@ -9526,7 +9910,9 @@ import {
   Search,
   ArrowUpRight,
   Activity,
-  Zap
+  Zap,
+  UserCheck,
+  UserMinus
 } from 'lucide-react';
 import { useModal } from '../../contexts/ModalContext';
 import api from '../../utils/api';
@@ -9537,6 +9923,14 @@ interface AgentRecord {
   role: string;
   isActive: boolean;
   tier: string;
+  acceptedCount: number;
+  rejectedCount: number;
+  unfulfilledCount: number;
+  avgRating: number;
+  package?: {
+    displayName: string;
+    description?: string;
+  };
   referralLink?: {
     tier: string;
   };
@@ -9628,6 +10022,37 @@ const GlobalRightsOversight: React.FC = () => {
             }
         }
     };
+    
+    const toggleStatus = async (agent: AgentRecord) => {
+        const action = agent.isActive ? 'SUSPEND' : 'ACTIVATE';
+        const confirmed = await showConfirm({
+            title: `${action} AGENT PROTOCOL`,
+            message: `You are about to ${action.toLowerCase()} platform access for ${agent.fullName}. ${agent.isActive ? 'This will instantly block all dashboard access.' : 'This will restore full operational authority.'}`,
+            confirmText: `Confirm ${action}`,
+            type: agent.isActive ? 'error' : 'success'
+        });
+
+        if (confirmed) {
+            try {
+              setActionLoading(agent.id);
+              await api.patch(`/admin/users/${agent.id}/status`, { isActive: !agent.isActive });
+              showAlert({
+                  title: 'Governance Synchronized',
+                  message: `Agent ${agent.fullName} status updated to ${!agent.isActive ? 'ACTIVE' : 'SUSPENDED'}.`,
+                  type: 'success'
+              });
+              fetchAgents();
+            } catch (err) {
+              showAlert({
+                title: 'Override Rejected',
+                message: 'Internal system validation failed for status modification.',
+                type: 'error'
+              });
+            } finally {
+              setActionLoading(null);
+            }
+        }
+    };
 
     const filteredAgents = agents.filter(a => 
         a.fullName.toLowerCase().includes(searchTerm.toLowerCase())
@@ -9680,6 +10105,7 @@ const GlobalRightsOversight: React.FC = () => {
                                 <th className="px-8 py-5">Agent Identity</th>
                                 <th className="px-8 py-5">Geographic Zones</th>
                                 <th className="px-8 py-5">Tier Status</th>
+                                <th className="px-8 py-5">Account Status</th>
                                 <th className="px-8 py-5">Performance</th>
                                 <th className="px-8 py-5 text-right">Oversight Actions</th>
                             </tr>
@@ -9693,7 +10119,7 @@ const GlobalRightsOversight: React.FC = () => {
                                 ))
                             ) : filteredAgents.length > 0 ? (
                                 filteredAgents.map((agent) => (
-                                    <tr key={agent.id} className="hover:bg-slate-50/30 transition-colors group">
+                                    <tr key={agent.id} className={`hover:bg-slate-50/30 transition-colors group ${!agent.isActive ? 'opacity-60 grayscale-[0.5]' : ''}`}>
                                         <td className="px-8 py-6">
                                             <div className="flex items-center gap-4">
                                                 <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center font-black text-indigo-600 text-xs uppercase group-hover:scale-110 transition-transform">
@@ -9718,8 +10144,17 @@ const GlobalRightsOversight: React.FC = () => {
                                             </div>
                                         </td>
                                         <td className="px-8 py-6">
-                                            <span className={`px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest border ${TIER_CONFIG[agent.referralLink?.tier || 'FREE']?.color} ${TIER_CONFIG[agent.referralLink?.tier || 'FREE']?.border}`}>
-                                                {agent.referralLink?.tier.replace('_', ' ') || 'FREE'}
+                                            <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-tighter border ${
+                                                TIER_CONFIG[agent.tier]?.color || TIER_CONFIG.FREE.color
+                                            } ${TIER_CONFIG[agent.tier]?.border || TIER_CONFIG.FREE.border}`}>
+                                                {agent.package?.displayName || agent.tier.replace('_', ' ')}
+                                            </span>
+                                        </td>
+                                        <td className="px-8 py-6">
+                                            <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-tighter ${
+                                                agent.isActive ? 'text-emerald-600 bg-emerald-50' : 'text-red-500 bg-red-50'
+                                            }`}>
+                                                {agent.isActive ? '● active' : '○ suspended'}
                                             </span>
                                         </td>
                                         <td className="px-8 py-6">
@@ -9748,6 +10183,18 @@ const GlobalRightsOversight: React.FC = () => {
                                                     className="p-2.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-2xl border border-transparent hover:border-emerald-100 transition-all active:scale-90"
                                                 >
                                                     <ChevronUp className="w-4 h-4" />
+                                                </button>
+                                                <button 
+                                                    disabled={actionLoading === agent.id}
+                                                    onClick={() => toggleStatus(agent)}
+                                                    className={`p-2.5 rounded-2xl border transition-all active:scale-90 ${
+                                                        agent.isActive 
+                                                        ? 'text-slate-400 hover:text-red-600 hover:bg-red-50 hover:border-red-100' 
+                                                        : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 hover:border-emerald-100'
+                                                    }`}
+                                                    title={agent.isActive ? 'Suspend Agent' : 'Activate Agent'}
+                                                >
+                                                    {agent.isActive ? <UserMinus className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
                                                 </button>
                                                 <button className="p-2.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-2xl border border-transparent hover:border-indigo-100 transition-all active:scale-90">
                                                     <ArrowUpRight className="w-4 h-4" />
@@ -10029,6 +10476,252 @@ export default OperatorOversight;
 
 
 
+===== FILE: components\super-admin\PackageManagement.tsx =====
+
+import React, { useState, useEffect } from 'react';
+import { Package, DollarSign, Users, Map, Info, Save, RotateCcw } from 'lucide-react';
+import { useModal } from '../../contexts/ModalContext';
+import api from '../../utils/api';
+
+interface SystemPackage {
+    id: string;
+    name: string;
+    displayName: string;
+    price: number;
+    referralSlots: number;
+    zoneLimit: number;
+    description: string;
+    requiresApproval: boolean;
+}
+
+const PackageManagement: React.FC = () => {
+    const { showConfirm, showAlert } = useModal();
+    const [loading, setLoading] = useState(true);
+    const [packages, setPackages] = useState<SystemPackage[]>([]);
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [editData, setEditData] = useState<Partial<SystemPackage>>({});
+
+    useEffect(() => {
+        fetchPackages();
+    }, []);
+
+    const fetchPackages = async () => {
+        try {
+            setLoading(true);
+            const response = await api.get('/admin/packages');
+            setPackages(response.data);
+        } catch (error) {
+            console.error('Failed to fetch packages:', error);
+            showAlert({
+                title: 'Data Retrieval Error',
+                message: 'Could not synchronize with the package repository.',
+                type: 'error'
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleEdit = (pkg: SystemPackage) => {
+        setEditingId(pkg.id);
+        setEditData(pkg);
+    };
+
+    const handleCancel = () => {
+        setEditingId(null);
+        setEditData({});
+    };
+
+    const handleSave = async (id: string) => {
+        const confirmed = await showConfirm({
+            title: 'Authorize Package Restructuring',
+            message: 'Updating package parameters will immediately affect future upgrades and agent capacity limits. Proceed with deployment?',
+            confirmText: 'Deploy Changes',
+            type: 'warning'
+        });
+
+        if (confirmed) {
+            try {
+                await api.patch(`/admin/packages/${id}`, editData);
+                await fetchPackages();
+                setEditingId(null);
+                showAlert({
+                    title: 'Deployment Successful',
+                    message: 'Package parameters have been propagated across the network.',
+                    type: 'success'
+                });
+            } catch (error) {
+                console.error('Failed to update package:', error);
+                showAlert({
+                    title: 'Deployment Failed',
+                    message: 'The system rejected the package modification. Check connectivity and permissions.',
+                    type: 'error'
+                });
+            }
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-64">
+                <div className="flex flex-col items-center gap-4">
+                    <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                    <p className="text-indigo-400 font-black text-xs uppercase tracking-widest animate-pulse">Syncing Tiers...</p>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-6">
+            <div className="flex items-center justify-between mb-4">
+                <div>
+                    <h3 className="text-xl font-black text-slate-900 flex items-center gap-3">
+                        <Package className="w-6 h-6 text-indigo-600" />
+                        Tier Architecture
+                    </h3>
+                    <p className="text-slate-500 text-xs font-medium mt-1 uppercase tracking-wider">Configure economic & capacity limits for agent tiers</p>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4">
+                {packages.map((pkg) => {
+                    const isEditing = editingId === pkg.id;
+                    return (
+                        <div key={pkg.id} className={`bg-white rounded-2xl border transition-all duration-300 overflow-hidden ${isEditing ? 'border-indigo-500 ring-4 ring-indigo-500/5 shadow-xl scale-[1.01]' : 'border-slate-100 hover:border-slate-200 shadow-sm'}`}>
+                            <div className="p-6">
+                                <div className="flex items-start justify-between">
+                                    <div className="flex items-center gap-4">
+                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-sm border-2 ${
+                                            pkg.name === 'ABUNDANT_LIFE' ? 'bg-amber-50 border-amber-200 text-amber-700' :
+                                            pkg.name === 'UNITY' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' :
+                                            pkg.name === 'LOVE' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' :
+                                            'bg-slate-50 border-slate-200 text-slate-700'
+                                        }`}>
+                                            {pkg.name.charAt(0)}
+                                        </div>
+                                        <div>
+                                            {isEditing ? (
+                                                <input 
+                                                    type="text"
+                                                    value={editData.displayName || ''}
+                                                    onChange={(e) => setEditData({...editData, displayName: e.target.value})}
+                                                    className="text-lg font-black text-slate-900 tracking-tight border-b-2 border-indigo-200 focus:outline-none bg-transparent w-full"
+                                                />
+                                            ) : (
+                                                <h4 className="text-lg font-black text-slate-900 tracking-tight">{pkg.displayName || pkg.name.replace('_', ' ')}</h4>
+                                            )}
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <span className="text-[10px] font-black bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded uppercase tracking-tighter">INTERNAL: {pkg.name}</span>
+                                                {isEditing ? (
+                                                    <input 
+                                                        type="text"
+                                                        value={editData.description || ''}
+                                                        onChange={(e) => setEditData({...editData, description: e.target.value})}
+                                                        className="text-xs text-slate-600 border-b border-indigo-200 focus:outline-none flex-grow bg-transparent font-medium italic"
+                                                    />
+                                                ) : (
+                                                    <p className="text-xs text-slate-500 italic font-medium">{pkg.description}</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        {isEditing ? (
+                                            <>
+                                                <button onClick={handleCancel} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
+                                                    <RotateCcw className="w-5 h-5" />
+                                                </button>
+                                                <button onClick={() => handleSave(pkg.id)} className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-black hover:bg-indigo-500 transition-all active:scale-95 shadow-lg shadow-indigo-500/20">
+                                                    <Save className="w-4 h-4" />
+                                                    DEPLOY
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <button onClick={() => handleEdit(pkg)} className="text-indigo-600 hover:bg-indigo-50 px-4 py-2 rounded-xl text-xs font-black transition-colors uppercase tracking-widest border border-indigo-100">
+                                                Edit Config
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-3 gap-8 mt-8 border-t border-slate-50 pt-6">
+                                    <div className="space-y-1">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                            <DollarSign className="w-3 h-3" />
+                                            Acquisition Cost
+                                        </p>
+                                        {isEditing ? (
+                                            <div className="flex items-center gap-2 text-indigo-600">
+                                                <input 
+                                                    type="number" 
+                                                    value={editData.price || 0}
+                                                    onChange={(e) => setEditData({...editData, price: parseFloat(e.target.value)})}
+                                                    className="w-24 text-xl font-black focus:outline-none bg-slate-50 rounded-lg px-2 py-1"
+                                                />
+                                                <span className="text-sm font-black">ETB</span>
+                                            </div>
+                                        ) : (
+                                            <p className="text-xl font-black text-slate-900">{parseFloat(pkg.price.toString()).toLocaleString()} <span className="text-sm text-slate-400 font-bold uppercase tracking-tight ml-1">ETB</span></p>
+                                        )}
+                                    </div>
+
+                                    <div className="space-y-1">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                            <Users className="w-3 h-3" />
+                                            Referral Slots
+                                        </p>
+                                        {isEditing ? (
+                                            <input 
+                                                type="number" 
+                                                value={editData.referralSlots || 0}
+                                                onChange={(e) => setEditData({...editData, referralSlots: parseInt(e.target.value)})}
+                                                className="w-16 text-xl font-black focus:outline-none bg-slate-50 rounded-lg px-2 py-1"
+                                            />
+                                        ) : (
+                                            <p className="text-xl font-black text-slate-900">{pkg.referralSlots} <span className="text-sm text-slate-400 font-bold uppercase tracking-tight ml-1">Slots</span></p>
+                                        )}
+                                    </div>
+
+                                    <div className="space-y-1">
+                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                                            <Map className="w-3 h-3" />
+                                            Zone Capacity
+                                        </p>
+                                        {isEditing ? (
+                                            <input 
+                                                type="number" 
+                                                value={editData.zoneLimit || 0}
+                                                onChange={(e) => setEditData({...editData, zoneLimit: parseInt(e.target.value)})}
+                                                className="w-16 text-xl font-black focus:outline-none bg-slate-50 rounded-lg px-2 py-1"
+                                            />
+                                        ) : (
+                                            <p className="text-xl font-black text-slate-900">{pkg.zoneLimit === 100 ? '∞' : pkg.zoneLimit} <span className="text-sm text-slate-400 font-bold uppercase tracking-tight ml-1">Zones</span></p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+
+            <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform">
+                    <Info className="w-12 h-12 text-white" />
+                </div>
+                <h5 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-3">Governance Notice</h5>
+                <p className="text-slate-400 text-xs font-medium leading-relaxed max-w-2xl">
+                    Package modifications are destructive to local tier caches. Agents currently in the upgrade flow may experience a session reset. All price changes must be verified against the AGLP Liquidity Pool.
+                </p>
+            </div>
+        </div>
+    );
+};
+
+export default PackageManagement;
+
+
 ===== FILE: components\super-admin\SystemAnalytics.tsx =====
 
 import React, { useState, useEffect } from 'react';
@@ -10051,13 +10744,22 @@ import { useModal } from '../../contexts/ModalContext';
 interface AnalyticsSummary {
     totalUsers: number;
     totalRequests: number;
-    totalTransactions: number;
+    activeRequests: number;
+    fulfilledInWindow: number;
     totalBundles: number;
     totalFinalized: number;
+    activeDisputes: number;
     agentCount: number;
     operatorCount: number;
     resolutionRate: string;
+    window: string;
+    avgAssignmentTimeMs: number | null;
+    avgFulfillmentTimeMs: number | null;
     platformVolume: string;
+    dailyCommissions: string;
+    leaderboard: any[];
+    packageDistribution: { tier: string; count: number }[];
+    packageRevenue: string;
     uptime: string;
 }
 
@@ -10200,6 +10902,43 @@ const SystemAnalytics: React.FC = () => {
                     <button onClick={fetchAnalytics} className="px-8 py-4 bg-white text-indigo-600 font-black rounded-2xl shadow-xl hover:bg-slate-50 transition-all hover:scale-105 active:scale-95 uppercase text-xs tracking-widest">
                         Refresh Telemetry
                     </button>
+                </div>
+            </div>
+            <div className="bg-white rounded-[2.5rem] border border-slate-100 p-10 shadow-xl shadow-slate-200/20 relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-10 opacity-[0.03] group-hover:rotate-12 transition-transform duration-700">
+                    <Box className="w-64 h-64 text-slate-900" />
+                </div>
+                
+                <div className="flex justify-between items-end mb-10 relative z-10">
+                    <div>
+                        <h3 className="text-xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+                            <Box className="w-5 h-5 text-indigo-500" />
+                            Tier Performance & Distribution
+                        </h3>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Agent package adoption & revenue yield</p>
+                    </div>
+                    <div className="text-right">
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">CUMULATIVE PACKAGE YIELD</p>
+                        <p className="text-3xl font-black text-emerald-600 tracking-tighter">{summary?.packageRevenue || '0 ETB'}</p>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-6 relative z-10">
+                    {summary?.packageDistribution.map((tier, i) => (
+                        <div key={i} className="bg-slate-50 border border-slate-100 p-6 rounded-3xl group/card hover:bg-white hover:border-indigo-500/30 transition-all shadow-sm flex flex-col items-center text-center">
+                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg mb-4 border-2 ${
+                                tier.tier === 'ABUNDANT LIFE' ? 'bg-amber-50 border-amber-200 text-amber-600' :
+                                tier.tier === 'UNITY' ? 'bg-indigo-50 border-indigo-200 text-indigo-600' :
+                                tier.tier === 'LOVE' ? 'bg-emerald-50 border-emerald-200 text-emerald-600' :
+                                'bg-slate-200/50 border-slate-300 text-slate-700'
+                            }`}>
+                                {tier.tier.charAt(0)}
+                            </div>
+                            <h5 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{tier.tier}</h5>
+                            <p className="text-2xl font-black text-slate-900 leading-none">{tier.count}</p>
+                            <p className="text-[10px] font-bold text-slate-400 mt-2">Active Nodes</p>
+                        </div>
+                    ))}
                 </div>
             </div>
         </div>
@@ -10802,7 +11541,8 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
 
   const superAdminTools = [
     { id: 'analytics', icon: BarChart4, label: 'Analytics' },
-    { id: 'emergency', icon: Archive, label: 'Emergency Archive' },
+    { id: 'tiers', icon: Package, label: 'Tier Architecture' },
+    { id: 'disputes', icon: ShieldAlert, label: 'Disputes Audit' },
     { id: 'admins', icon: ShieldAlert, label: 'Admin Management' },
     { id: 'config', icon: Settings2, label: 'Config Flags' },
     { id: 'notices', icon: Megaphone, label: 'Broadcasts' },
@@ -18327,6 +19067,14 @@ const AgentDashboard: React.FC = () => {
   const [requests, setRequests] = useState<any[]>([]);
   const [feedbackRequest, setFeedbackRequest] = useState<{id: string, transactionId: string, customerName: string} | null>(null);
   const [transferringJobId, setTransferringJobId] = useState<string | null>(null);
+  const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
+
+  const addProcessingId = (id: string) => setProcessingIds(prev => new Set(prev).add(id));
+  const removeProcessingId = (id: string) => setProcessingIds(prev => {
+    const next = new Set(prev);
+    next.delete(id);
+    return next;
+  });
 
   const handleTransferClick = (jobId: string) => {
     setTransferringJobId(jobId);
@@ -18342,18 +19090,22 @@ const AgentDashboard: React.FC = () => {
 
     if (confirmed) {
       try {
+        addProcessingId(jobId);
         await api.patch(`/transactions/${jobId}/decline`);
         setRequests(prev => prev.filter(req => req.id !== jobId));
         showAlert({ title: 'Success', message: 'Assignment declined.', type: 'success' });
       } catch (error) {
         console.error('Failed to decline job:', error);
         showAlert({ title: 'Error', message: 'Failed to decline assignment.', type: 'error' });
+      } finally {
+        removeProcessingId(jobId);
       }
     }
   };
 
   const handleAccept = async (jobId: string) => {
     try {
+      addProcessingId(jobId);
       await api.patch(`/transactions/${jobId}/accept`);
       
       // Perform a silent refresh of specifically the jobs to get un-redacted customer details
@@ -18368,6 +19120,8 @@ const AgentDashboard: React.FC = () => {
     } catch (error) {
        console.error('Failed to accept job:', error);
        showAlert({ title: 'Error', message: 'Failed to accept assignment.', type: 'error' });
+    } finally {
+      removeProcessingId(jobId);
     }
   };
 
@@ -18422,11 +19176,14 @@ const AgentDashboard: React.FC = () => {
 
     if (confirmed) {
       try {
+        addProcessingId(jobId);
         await api.patch(`/transactions/${jobId}/complete`);
         setFeedbackRequest({ id: jobId, transactionId, customerName });
       } catch (error) {
         console.error('Failed to complete job:', error);
         showAlert({ title: 'Error', message: 'Failed to mark job as complete.', type: 'error' });
+      } finally {
+        removeProcessingId(jobId);
       }
     }
   };
@@ -18576,6 +19333,7 @@ const AgentDashboard: React.FC = () => {
                 onTransfer={handleTransferClick}
                 onDecline={handleDecline}
                 hasReferrals={!!profile?.referrals?.length}
+                processingIds={processingIds}
              />
           )}
 
@@ -20183,6 +20941,12 @@ const OperatorDashboard: React.FC = () => {
                                             <span className="text-xs font-bold text-indigo-400 uppercase tracking-widest block mb-1">
                                                 {pushedRequest.category}
                                             </span>
+                                            {pushedRequest.metadata?.declinedByAgentName && (
+                                                <div className="mb-4 p-3 bg-amber-50 border border-amber-100 rounded-xl flex items-center gap-2 text-amber-700 text-xs font-bold">
+                                                    <ShieldAlert className="w-4 h-4" />
+                                                    PREVIOUSLY DECLINED BY: {pushedRequest.metadata.declinedByAgentName.toUpperCase()}
+                                                </div>
+                                            )}
                                             <h3 className="text-3xl font-black text-slate-900">
                                                 {pushedRequest.description || pushedRequest.category}
                                             </h3>
@@ -20924,7 +21688,7 @@ export default RequestIntake;
 
 import React, { useState } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
-import EmergencyArchive from '../components/super-admin/EmergencyArchive';
+import DisputesAudit from '../components/super-admin/DisputesAudit';
 import AdminManagement from '../components/super-admin/AdminManagement';
 import GlobalRightsOversight from '../components/super-admin/GlobalRightsOversight';
 import OperatorOversight from '../components/super-admin/OperatorOversight';
@@ -20932,6 +21696,7 @@ import SystemAnalytics from '../components/super-admin/SystemAnalytics';
 import AuditLog from '../components/super-admin/AuditLog';
 import BroadcastNotices from '../components/super-admin/BroadcastNotices';
 import ConfigFlags from '../components/super-admin/ConfigFlags';
+import PackageManagement from '../components/super-admin/PackageManagement';
 import {
   ShieldAlert,
   History,
@@ -21055,7 +21820,8 @@ const SuperAdminDashboard: React.FC = () => {
                             transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
                          >
                              {currentView === 'analytics' && <SystemAnalytics />}
-                             {currentView === 'emergency' && <EmergencyArchive />}
+                             {currentView === 'tiers' && <PackageManagement />}
+                             {currentView === 'disputes' && <DisputesAudit />}
                              {currentView === 'admins' && <AdminManagement />}
                              {currentView === 'agents' && <GlobalRightsOversight />}
                              {currentView === 'operators' && <OperatorOversight />}

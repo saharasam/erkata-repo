@@ -47,28 +47,28 @@ let RedisPresenceService = RedisPresenceService_1 = class RedisPresenceService {
         this.startBackupSync();
     }
     startBackupSync() {
-        setInterval(async () => {
-            this.logger.log('[RedisPresenceService] Running 10-minute backup sync...');
-            try {
-                const sqlOnlineOperators = await this.prisma.profile.findMany({
-                    where: { isOnline: true },
-                    select: { id: true },
-                });
-                const redisOnlineIds = await this.getOnlineOperatorIds();
-                for (const op of sqlOnlineOperators) {
-                    if (!redisOnlineIds.includes(op.id)) {
-                        this.logger.warn(`[RedisPresenceService] Syncing: Operator ${op.id} is Offline in Redis but Online in SQL. Correcting...`);
-                        await this.prisma.profile.update({
-                            where: { id: op.id },
-                            data: { isOnline: false },
-                        });
-                    }
-                }
-            }
-            catch (err) {
+        setInterval(() => {
+            this.runBackupSync().catch((err) => {
                 this.logger.error('[RedisPresenceService] Error during backup sync', err);
-            }
+            });
         }, 10 * 60 * 1000);
+    }
+    async runBackupSync() {
+        this.logger.log('[RedisPresenceService] Running 10-minute backup sync...');
+        const sqlOnlineOperators = await this.prisma.profile.findMany({
+            where: { isOnline: true },
+            select: { id: true },
+        });
+        const redisOnlineIds = await this.getOnlineOperatorIds();
+        for (const op of sqlOnlineOperators) {
+            if (!redisOnlineIds.includes(op.id)) {
+                this.logger.warn(`[RedisPresenceService] Syncing: Operator ${op.id} is Offline in Redis but Online in SQL. Correcting...`);
+                await this.prisma.profile.update({
+                    where: { id: op.id },
+                    data: { isOnline: false },
+                });
+            }
+        }
     }
     async handleExpiredKey(message) {
         if (message.startsWith('presence:operator:')) {

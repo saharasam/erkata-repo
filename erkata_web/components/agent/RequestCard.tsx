@@ -64,6 +64,8 @@ export const RequestCard = React.forwardRef<HTMLDivElement, RequestCardProps>(
         case 'assigned':  return 'bg-indigo-500';
         case 'accepted':  return 'bg-amber-500';
         case 'fulfilled': return 'bg-emerald-500';
+        case 'completed': return 'bg-emerald-500 text-white';
+        case 'rejected':  return 'bg-slate-300';
         case 'disputed':  return 'bg-rose-500';
         case 'pending':   return 'bg-blue-500';
         default:          return 'bg-slate-300';

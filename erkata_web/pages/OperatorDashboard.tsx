@@ -231,6 +231,12 @@ const OperatorDashboard: React.FC = () => {
                                             <span className="text-xs font-bold text-indigo-400 uppercase tracking-widest block mb-1">
                                                 {pushedRequest.category}
                                             </span>
+                                            {pushedRequest.metadata?.declinedByAgentName && (
+                                                <div className="mb-4 p-3 bg-amber-50 border border-amber-100 rounded-xl flex items-center gap-2 text-amber-700 text-xs font-bold">
+                                                    <ShieldAlert className="w-4 h-4" />
+                                                    PREVIOUSLY DECLINED BY: {pushedRequest.metadata.declinedByAgentName.toUpperCase()}
+                                                </div>
+                                            )}
                                             <h3 className="text-3xl font-black text-slate-900">
                                                 {pushedRequest.description || pushedRequest.category}
                                             </h3>

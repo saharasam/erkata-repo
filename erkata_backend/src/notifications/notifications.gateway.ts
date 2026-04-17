@@ -47,7 +47,7 @@ export class NotificationsGateway
     try {
       const payload = this.jwtService.verify(token, {
         secret: process.env.JWT_SECRET,
-      }) as { sub: string; role: string };
+      });
 
       const userId = payload.sub;
       client.data.userId = userId;

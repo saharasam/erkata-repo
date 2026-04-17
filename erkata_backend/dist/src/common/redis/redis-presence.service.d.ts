@@ -11,6 +11,7 @@ export declare class RedisPresenceService implements OnModuleInit {
     constructor(redis: Redis, subscriber: Redis, prisma: PrismaService, eventEmitter: EventEmitter2);
     onModuleInit(): Promise<void>;
     private startBackupSync;
+    private runBackupSync;
     private handleExpiredKey;
     heartbeat(operatorId: string): Promise<void>;
     getOnlineOperatorIds(): Promise<string[]>;
