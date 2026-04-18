@@ -22,6 +22,9 @@ export declare class PayoutsController {
         conversionRate: import("@prisma/client/runtime/library").Decimal | null;
         referenceId: string | null;
         referenceType: string | null;
+        bankName: string | null;
+        bankAccountNumber: string | null;
+        bankAccountHolder: string | null;
         updatedAt: Date;
         profileId: string;
     })[]>;
@@ -35,6 +38,9 @@ export declare class PayoutsController {
         conversionRate: import("@prisma/client/runtime/library").Decimal | null;
         referenceId: string | null;
         referenceType: string | null;
+        bankName: string | null;
+        bankAccountNumber: string | null;
+        bankAccountHolder: string | null;
         updatedAt: Date;
         profileId: string;
     }>;
@@ -56,6 +62,9 @@ export declare class PayoutsController {
         conversionRate: import("@prisma/client/runtime/library").Decimal | null;
         referenceId: string | null;
         referenceType: string | null;
+        bankName: string | null;
+        bankAccountNumber: string | null;
+        bankAccountHolder: string | null;
         updatedAt: Date;
         profileId: string;
     })[]>;
@@ -76,6 +85,9 @@ export declare class PayoutsController {
         conversionRate: import("@prisma/client/runtime/library").Decimal | null;
         referenceId: string | null;
         referenceType: string | null;
+        bankName: string | null;
+        bankAccountNumber: string | null;
+        bankAccountHolder: string | null;
         updatedAt: Date;
         profileId: string;
     })[]>;

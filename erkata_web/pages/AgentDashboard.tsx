@@ -44,6 +44,7 @@ import { NetworkView } from '../components/agent/NetworkView';
 import { FocusBoard } from '../components/agent/FocusBoard';
 import { Skeleton } from '../components/ui/Skeleton';
 import TransferMatchModal from '../components/agent/TransferMatchModal';
+import PayoutRequestModal from '../components/agent/PayoutRequestModal';
 
 type DashboardView = 'focus' | 'earnings' | 'network' | 'packages' | 'profile';
 
@@ -181,6 +182,7 @@ const AgentDashboard: React.FC = () => {
   const [requests, setRequests] = useState<any[]>([]);
   const [feedbackRequest, setFeedbackRequest] = useState<{id: string, transactionId: string, customerName: string} | null>(null);
   const [transferringJobId, setTransferringJobId] = useState<string | null>(null);
+  const [isPayoutModalOpen, setIsPayoutModalOpen] = useState(false);
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
 
   const addProcessingId = (id: string) => setProcessingIds(prev => new Set(prev).add(id));
@@ -240,34 +242,23 @@ const AgentDashboard: React.FC = () => {
   };
 
   const handlePayoutRequest = async () => {
-    const available = finance?.aglpAvailable || 0;
-    if (available <= 0) {
-      showAlert({ title: 'Insufficient Balance', message: 'You do not have any withdrawable AGLP.', type: 'error' });
-      return;
-    }
+    setIsPayoutModalOpen(true);
+  };
 
-    const confirmed = await showConfirm({
-      title: 'Request Payout',
-      message: `Withdraw your available ${available.toLocaleString()} AGLP to your linked Telebirr account?`,
-      confirmText: 'Confirm Withdrawal',
-      type: 'success'
-    });
-
-    if (confirmed) {
-      try {
-        await api.post('/users/me/withdraw', { amount: available });
-        showAlert({
-          title: 'Payout Requested',
-          message: 'Your request is being processed by the regional admin.',
-          type: 'success'
-        });
-        // Refresh finance data
-        const financeRes = await api.get('/users/me/finance');
-        setFinance(financeRes.data);
-      } catch (error) {
-        console.error('Failed to request payout:', error);
-        showAlert({ title: 'Error', message: 'Failed to submit withdrawal request.', type: 'error' });
-      }
+  const handlePayoutSubmit = async (data: { amount: number; bankName: string; bankAccountNumber: string; bankAccountHolder: string }) => {
+    try {
+      await api.post('/users/me/withdraw', data);
+      showAlert({
+        title: 'Payout Requested',
+        message: 'Your request has been sent to the operator for manual transfer.',
+        type: 'success'
+      });
+      // Refresh finance data
+      const financeRes = await api.get('/users/me/finance');
+      setFinance(financeRes.data);
+    } catch (error) {
+       console.error('Failed to request payout:', error);
+       throw error; // Re-throw to be caught by modal's error handler
     }
   };
 
@@ -505,6 +496,13 @@ const AgentDashboard: React.FC = () => {
         matchId={transferringJobId || ''}
         referrals={profile?.referrals || []}
         onSuccess={fetchData}
+      />
+
+      <PayoutRequestModal 
+        isOpen={isPayoutModalOpen}
+        onClose={() => setIsPayoutModalOpen(false)}
+        availableBalance={parseFloat(finance?.aglpAvailable || '0')}
+        onSubmit={handlePayoutSubmit}
       />
     </DashboardLayout>
   );

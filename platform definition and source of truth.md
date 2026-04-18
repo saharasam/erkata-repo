@@ -72,8 +72,7 @@ Responsibilities:
 - Manage:
   - Agents
   - Operators
-- Approve:
-  - Wallet withdrawals
+
 - Monitor:
   - Agent performance
   - Operator performance
@@ -103,12 +102,13 @@ Responsibilities:
   - Availability (future extension)
 - Handle first-level disputes
 - Escalate unresolved disputes to Admin
+- Approve:
+  - Wallet withdrawals
 
 Restrictions:
 
 - Cannot fulfill requests
 - Cannot view reviews
-- Cannot access or control financial systems
 
 ---
 
@@ -467,6 +467,7 @@ Core characteristics:
     - Reviewing incoming requests
     - Assigning requests to agents
     - Managing initial dispute handling
+    - Approve withdrawal requests
 
 Operators act as the **manual distribution engine**.
 
@@ -498,7 +499,6 @@ Agents operate under a **package-based system** that affects:
 Responsibilities:
 
 - Manage agents and operators
-- Approve withdrawal requests
 - Monitor performance metrics
 - Handle escalated disputes
 - Issue warnings for underperformance
@@ -743,7 +743,7 @@ Value comes from:
 ### 7.4 Withdrawals
 
 - Agents submit withdrawal requests
-- Admin reviews and approves/rejects
+- Operator reviews and approves/rejects
 
 ---
 
@@ -764,11 +764,6 @@ Value comes from:
 - Issue warnings
 - Recommend suspensions
 
----
-
-### Financial Oversight
-
-- Approve withdrawal requests
 
 ---
 
@@ -809,6 +804,7 @@ Responsibilities:
 - Review incoming requests
 - Assign to appropriate agents
 - Handle first-level dispute resolution
+- Approve withdrawal requests
 
 ---
 

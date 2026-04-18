@@ -12128,6 +12128,9 @@ model AglpTransaction {
   status         AglpTransactionStatus @default(PENDING)
   referenceId    String?               @map("reference_id")
   referenceType  String?               @map("reference_type")
+  bankName       String?               @map("bank_name")
+  bankAccountNumber String?            @map("bank_account_number")
+  bankAccountHolder String?            @map("bank_account_holder")
   createdAt      DateTime              @default(now()) @map("created_at")
   updatedAt      DateTime              @updatedAt @map("updated_at")
   profile        Profile               @relation("AglpTransactions", fields: [profileId], references: [id])
@@ -13747,17 +13750,8 @@ export class PayoutsController {
   @Post(':id/approve')
   @RequirePermission(Action.APPROVE_PAYOUT)
   async approvePayout(@Param('id') id: string) {
-    const aglpTx = await this.prisma.aglpTransaction.findUnique({
-      where: { id },
-    });
-
-    if (!aglpTx || aglpTx.status !== AglpTransactionStatus.PENDING) {
-      throw new BadRequestException('Transaction not found or not pending');
-    }
-
-    return this.prisma.aglpTransaction.update({
-      where: { id },
-      data: { status: AglpTransactionStatus.COMPLETED },
+    return this.prisma.$transaction(async (tx) => {
+      return this.aglpService.completeWithdrawal(tx, id);
     });
   }
 
@@ -14233,6 +14227,7 @@ export class AglpService {
     tx: Prisma.TransactionClient,
     profileId: string,
     amountAglp: number,
+    bankDetails: { bankName: string; bankAccountNumber: string; bankAccountHolder: string },
   ) {
     const profile = await tx.profile.findUnique({ where: { id: profileId } });
     if (!profile || Number(profile.aglpBalance) < amountAglp) {
@@ -14284,12 +14279,11 @@ export class AglpService {
     const rate = this.getConversionRate();
     const netEtb = netAglp / rate;
 
-    // 4. Update Profile Balances (Gross amount deducted)
+    // 4. Update Profile Balances (Gross amount deducted from balance only)
     await tx.profile.update({
       where: { id: profileId },
       data: {
         aglpBalance: { decrement: amountAglp },
-        aglpWithdrawn: { increment: amountAglp },
       },
     });
 
@@ -14303,6 +14297,9 @@ export class AglpService {
         conversionRate: rate,
         status: AglpTransactionStatus.PENDING,
         referenceType: 'PAYOUT',
+        bankName: bankDetails.bankName,
+        bankAccountNumber: bankDetails.bankAccountNumber,
+        bankAccountHolder: bankDetails.bankAccountHolder,
       },
     });
 
@@ -14327,6 +14324,7 @@ export class AglpService {
   }
 
   // Handle AGLP withdrawal rejection (Refund)
+  // Handle AGLP withdrawal rejection (Refund)
   async rejectWithdrawal(
     tx: Prisma.TransactionClient,
     aglpTxId: string,
@@ -14341,18 +14339,11 @@ export class AglpService {
       throw new Error('Withdrawal transaction not found');
     }
 
-    if (aglpTx.status !== AglpTransactionStatus.PENDING) {
-      // In my previous implementation I set it to COMPLETED by default,
-      // but for administrative flow PENDING is better.
-      // I will adjust the withdrawAglp method to set status to PENDING.
-    }
-
-    // 1. Refund the AGLP
+    // 1. Refund the AGLP to balance only (since it was never in aglpWithdrawn)
     await tx.profile.update({
       where: { id: aglpTx.profileId },
       data: {
         aglpBalance: { increment: aglpTx.amount },
-        aglpWithdrawn: { decrement: aglpTx.amount },
       },
     });
 
@@ -14373,6 +14364,48 @@ export class AglpService {
           aglpTxId,
           amountAglp: aglpTx.amount,
           reason,
+        },
+      },
+    });
+  }
+
+  // Finalize AGLP withdrawal (Mark as received)
+  async completeWithdrawal(
+    tx: Prisma.TransactionClient,
+    aglpTxId: string,
+  ) {
+    const aglpTx = await tx.aglpTransaction.findUnique({
+      where: { id: aglpTxId },
+    });
+
+    if (!aglpTx || aglpTx.type !== AglpTransactionType.WITHDRAWAL || aglpTx.status !== AglpTransactionStatus.PENDING) {
+      throw new Error('Valid pending withdrawal transaction not found');
+    }
+
+    // 1. Update Profile: Mark money as officially withdrawn
+    await tx.profile.update({
+      where: { id: aglpTx.profileId },
+      data: {
+        aglpWithdrawn: { increment: aglpTx.amount },
+      },
+    });
+
+    // 2. Update Transaction Status
+    await tx.aglpTransaction.update({
+      where: { id: aglpTxId },
+      data: { status: AglpTransactionStatus.COMPLETED },
+    });
+
+    // 3. Log Audit Log
+    await tx.auditLog.create({
+      data: {
+        actorId: aglpTx.profileId,
+        action: 'PAYOUT_COMPLETED',
+        targetTable: 'profiles',
+        targetId: aglpTx.profileId,
+        metadata: {
+          aglpTxId,
+          amountAglp: aglpTx.amount,
         },
       },
     });
@@ -15663,6 +15696,8 @@ export const PermissionMatrix: Record<string, Action[]> = {
     Action.VIEW_ASSIGNED_REQUEST_DETAILS,
     Action.RESOLVE_DISPUTE,
     Action.ESCALATE_DISPUTE,
+    Action.APPROVE_PAYOUT,
+    Action.VIEW_FINANCIAL_REPORTS,
   ],
   admin: [
     Action.PROPOSE_RESOLUTION,
@@ -16191,6 +16226,89 @@ export class RequestEventListener {
       });
 
       this.gateway.sendToUser(targetId, 'notification', notification);
+    }
+  }
+
+  @OnEvent('request.escalated')
+  async handleRequestEscalated(payload: {
+    requestId: string;
+    operatorId: string;
+    note?: string;
+  }) {
+    this.logger.log(
+      `[EVENT] request.escalated → requestId=${payload.requestId}`,
+    );
+    
+    // Clear the active disputed notification since it's now escalated
+    await this.notifications.markRelatedAsRead(payload.requestId, ['request.disputed']);
+
+    const admins = await this.prisma.profile.findMany({
+      where: { role: 'admin' },
+      select: { id: true },
+    });
+    for (const admin of admins) {
+      const notification = await this.notifications.create({
+        userId: admin.id,
+        title: 'Dispute Escalated',
+        message: `Operator escalated a dispute. Note: ${payload.note || 'None'}`,
+        type: 'request.escalated',
+        link: `/admin?view=disputes&requestId=${payload.requestId}`,
+      });
+      this.gateway.sendToUser(admin.id, 'notification', notification);
+    }
+  }
+
+  @OnEvent('request.resolved')
+  async handleRequestResolved(payload: {
+    requestId: string;
+    operatorId: string;
+    note?: string;
+  }) {
+    this.logger.log(
+      `[EVENT] request.resolved → requestId=${payload.requestId}`,
+    );
+
+    // Clear any active dispute or escalation notifications
+    await this.notifications.markRelatedAsRead(payload.requestId, ['request.disputed', 'request.escalated']);
+
+    const request = await this.prisma.request.findUnique({
+      where: { id: payload.requestId },
+    });
+    if (request) {
+      const notification = await this.notifications.create({
+        userId: request.customerId,
+        title: 'Dispute Resolved',
+        message: `Your dispute has been resolved. Note: ${payload.note || 'Resolved by operator.'}`,
+        type: 'request.resolved',
+        link: `/dashboard/requests/${request.id}`,
+      });
+      this.gateway.sendToUser(request.customerId, 'notification', notification);
+    }
+  }
+
+  @OnEvent('request.voided')
+  async handleRequestVoided(payload: {
+    requestId: string;
+    operatorId: string;
+    note?: string;
+  }) {
+    this.logger.log(`[EVENT] request.voided → requestId=${payload.requestId}`);
+    const request = await this.prisma.request.findUnique({
+      where: { id: payload.requestId },
+      include: {
+        matches: { where: { status: 'assigned' }, include: { agent: true } },
+      },
+    });
+    const agent = request?.matches[0]?.agent;
+    if (agent) {
+      const notification = await this.notifications.create({
+        userId: agent.id,
+        title: 'Fulfillment Voided',
+        message: `A fulfillment was voided by an operator (redo required). Note: ${payload.note || 'None'}`,
+        type: 'request.voided',
+        link: '/agent?view=focus',
+      });
+      this.gateway.sendToUser(agent.id, 'notification', notification);
     }
   }
 }
@@ -18046,9 +18164,17 @@ import {
   OnGatewayConnection,
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
-import { Server, Socket } from 'socket.io';
+import { Server, Socket as BaseSocket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
 import { Logger } from '@nestjs/common';
+import { RedisPresenceService } from '../common/redis/redis-presence.service';
+
+interface SocketData {
+  userId: string;
+  role: string;
+}
+
+type AuthenticatedSocket = BaseSocket<any, any, any, SocketData>;
 
 @WebSocketGateway({
   cors: {
@@ -18064,9 +18190,12 @@ export class NotificationsGateway
   private readonly logger = new Logger(NotificationsGateway.name);
   private userSockets = new Map<string, string[]>();
 
-  constructor(private jwtService: JwtService) {}
+  constructor(
+    private jwtService: JwtService,
+    private readonly presence: RedisPresenceService,
+  ) {}
 
-  async handleConnection(client: Socket) {
+  async handleConnection(client: AuthenticatedSocket) {
     const auth = client.handshake.auth as { token?: string };
     let token = auth?.token;
 
@@ -18087,9 +18216,12 @@ export class NotificationsGateway
     }
 
     try {
-      const payload = this.jwtService.verify(token, {
-        secret: process.env.JWT_SECRET,
-      });
+      const payload: { sub: string; role: string } = this.jwtService.verify(
+        token,
+        {
+          secret: process.env.JWT_SECRET,
+        },
+      );
 
       const userId = payload.sub;
       client.data.userId = userId;
@@ -18101,6 +18233,14 @@ export class NotificationsGateway
       this.logger.log(
         `Client connected: ${client.id} (User: ${userId}, Role: ${payload.role})`,
       );
+
+      // Immediately sync operator presence so they're visible to the assignment engine
+      if (payload.role === 'operator') {
+        this.logger.log(
+          `[NotificationsGateway] Operator ${userId} connected via WebSocket. Syncing presence...`,
+        );
+        await this.presence.heartbeat(userId);
+      }
     } catch (e) {
       this.logger.error(
         `Connection authentication failed for client ${client.id}: ${e instanceof Error ? e.message : 'Unknown error'}`,
@@ -18109,8 +18249,8 @@ export class NotificationsGateway
     }
   }
 
-  handleDisconnect(client: Socket) {
-    const userId = client.data.userId as string;
+  handleDisconnect(client: AuthenticatedSocket) {
+    const userId = client.data.userId;
     if (userId) {
       const sockets = this.userSockets.get(userId) || [];
       const updated = sockets.filter((id) => id !== client.id);
@@ -18136,11 +18276,13 @@ export class NotificationsGateway
   }
 
   sendToRole(role: string, event: string, data: unknown) {
-    this.server.sockets.sockets.forEach((socket) => {
-      if (socket.data.role === role) {
-        socket.emit(event, data);
-      }
-    });
+    this.server.sockets.sockets.forEach(
+      (socket: BaseSocket<any, any, any, SocketData>) => {
+        if (socket.data.role === role) {
+          socket.emit(event, data);
+        }
+      },
+    );
   }
 }
 
@@ -18152,6 +18294,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { NotificationsService } from './notifications.service';
 import { NotificationsGateway } from './notifications.gateway';
 import { PrismaModule } from '../prisma/prisma.module';
+import { RedisModule } from '../common/redis/redis.module';
 
 import { NotificationsController } from './notifications.controller';
 
@@ -18163,6 +18306,7 @@ import { NotificationsController } from './notifications.controller';
       signOptions: { expiresIn: '1d' },
     }),
     PrismaModule,
+    RedisModule,
   ],
   controllers: [NotificationsController],
   providers: [NotificationsService, NotificationsGateway],
@@ -18224,6 +18368,17 @@ export class NotificationsService {
       data: { read: true },
     });
   }
+
+  async markRelatedAsRead(requestId: string, eventTypes: string[]): Promise<any> {
+    return await this.prisma.notification.updateMany({
+      where: { 
+        type: { in: eventTypes },
+        link: { contains: requestId },
+        read: false
+      },
+      data: { read: true },
+    });
+  }
 }
 
 
@@ -18267,6 +18422,8 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 interface AssignmentJobData {
   requestId?: string;
   operatorId?: string;
+  agentId?: string;
+  matchId?: string;
 }
 
 @Processor('assignment-timeout')
@@ -18345,6 +18502,83 @@ export class AssignmentProcessor extends WorkerHost {
 
         // Notify system that a request is now unassigned and potentially other operators are needed
         this.eventEmitter.emit('request.created', { id: requestId });
+      }
+    }
+
+    if (job.name === 'check-agent-timeout') {
+      const { requestId, matchId, agentId } = job.data;
+      this.logger.log(
+        `[AssignmentProcessor] Checking agent timeout for match ${matchId} (Request: ${requestId})`
+      );
+
+      const match = await this.prisma.match.findUnique({
+        where: { id: matchId },
+      });
+
+      // If the match is still in 'assigned' status, the agent ghosted it.
+      if (match && match.status === 'assigned') {
+        this.logger.warn(
+          `[AssignmentProcessor] Agent ${agentId} timed out on match ${matchId}. Returning request to operator.`
+        );
+
+        await this.prisma.$transaction(async (tx) => {
+          // 1. Mark match as rejected (or expired)
+          await tx.match.update({
+            where: { id: matchId },
+            data: { status: 'rejected' },
+          });
+
+          const currentRequest = await tx.request.findUnique({ where: { id: requestId } });
+
+          // 2. Reset request status to pending so operator sees it again
+          await tx.request.update({
+            where: { id: requestId },
+            data: {
+              status: RequestStatus.pending,
+              metadata: {
+                ...(typeof currentRequest?.metadata === 'object' ? (currentRequest.metadata as any) : {}),
+                agentTimeoutAt: new Date().toISOString(),
+                lastTimedOutAgentId: agentId,
+              },
+            },
+          });
+        });
+
+        // Notify operator dashboard to refresh
+        this.eventEmitter.emit('request.updated', { id: requestId });
+      }
+    }
+
+    if (job.name === 'check-fulfillment-timeout') {
+      const { requestId } = job.data;
+      this.logger.log(
+        `[AssignmentProcessor] Checking fulfillment auto-confirm for request ${requestId}`
+      );
+
+      const request = await this.prisma.request.findUnique({
+        where: { id: requestId },
+      });
+
+      if (
+        request &&
+        request.status === RequestStatus.fulfilled &&
+        !request.completedAt
+      ) {
+        this.logger.log(
+          `[AssignmentProcessor] Auto-confirming request ${requestId} after 72h window.`
+        );
+
+        await this.prisma.request.update({
+          where: { id: requestId },
+          data: {
+            status: RequestStatus.fulfilled,
+            completedAt: new Date(),
+            metadata: {
+              ...(typeof request.metadata === 'object' ? request.metadata : {}),
+              autoConfirmedAt: new Date().toISOString(),
+            },
+          },
+        });
       }
     }
 
@@ -18660,11 +18894,11 @@ export class RequestsService implements OnModuleInit {
       FROM profiles p
       WHERE p.role = 'operator' 
         AND p.is_online = true
-        AND NOT EXISTS (
-          SELECT 1 FROM requests r 
+        AND (
+          SELECT count(*) FROM requests r 
           WHERE r.assigned_operator_id = p.id 
           AND r.status = 'pending'
-        )
+        ) < 5
       ORDER BY p.last_assignment_at ASC NULLS FIRST
       LIMIT 1
       FOR UPDATE SKIP LOCKED
@@ -18828,6 +19062,13 @@ export class RequestsService implements OnModuleInit {
     });
 
     this.eventEmitter.emit('match.created', { match, agentId });
+
+    // Fallback: If agent doesn't accept/decline in 1 hour, reclaim to operator pool
+    await this.timeoutQueue.add(
+      'check-agent-timeout',
+      { requestId, agentId, matchId: match.id },
+      { delay: 60 * 60 * 1000, jobId: `agent-timeout-${match.id}` },
+    );
 
     // Trigger ready for next task
     await this.handleOperatorReady();
@@ -18994,7 +19235,7 @@ export class RequestsService implements OnModuleInit {
         data: { status: RequestStatus.disputed },
       });
 
-      this.eventEmitter.emit('request.disputed', { requestId, customerId });
+      await this.eventEmitter.emitAsync('request.disputed', { requestId, customerId });
     }
 
     return { success: true, status: confirmed ? 'fulfilled' : 'disputed' };
@@ -19029,7 +19270,7 @@ export class RequestsService implements OnModuleInit {
       include: { customer: true, matches: { include: { agent: true } } },
     });
 
-    this.eventEmitter.emit('request.resolved', { requestId, operatorId, note });
+    await this.eventEmitter.emitAsync('request.resolved', { requestId, operatorId, note });
     return updated;
   }
 
@@ -19059,7 +19300,7 @@ export class RequestsService implements OnModuleInit {
       },
     });
 
-    this.eventEmitter.emit('request.escalated', {
+    await this.eventEmitter.emitAsync('request.escalated', {
       requestId,
       operatorId,
       note,
@@ -19096,7 +19337,7 @@ export class RequestsService implements OnModuleInit {
       },
     });
 
-    this.eventEmitter.emit('request.voided', {
+    await this.eventEmitter.emitAsync('request.voided', {
       requestId,
       operatorId,
       note,
@@ -19228,9 +19469,14 @@ import { TransactionsService } from './transactions.service';
 import { TransactionsController } from './transactions.controller';
 import { PrismaModule } from '../prisma/prisma.module';
 import { AglpModule } from '../aglp/aglp.module';
+import { BullModule } from '@nestjs/bullmq';
 
 @Module({
-  imports: [PrismaModule, AglpModule],
+  imports: [
+    PrismaModule,
+    AglpModule,
+    BullModule.registerQueue({ name: 'assignment-timeout' }),
+  ],
   providers: [TransactionsService],
   controllers: [TransactionsController],
   exports: [TransactionsService],
@@ -19246,6 +19492,8 @@ import {
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
 import { MatchStatus, RequestStatus, Prisma } from '@prisma/client';
@@ -19259,6 +19507,7 @@ export class TransactionsService {
     private readonly eventEmitter: EventEmitter2,
     private readonly aglpService: AglpService,
     private readonly configService: ConfigService,
+    @InjectQueue('assignment-timeout') private readonly timeoutQueue: Queue,
   ) {}
 
   // ── Agent accepts the assignment ─────────────────────────────────────────
@@ -19552,6 +19801,14 @@ export class TransactionsService {
       return matchResult;
     });
     this.eventEmitter.emit('match.completed', result);
+
+    // Schedule 72h auto-confirmation window
+    await this.timeoutQueue.add(
+      'check-fulfillment-timeout',
+      { requestId: result.requestId },
+      { delay: 72 * 60 * 60 * 1000, jobId: `confirm-timeout-${result.requestId}` },
+    );
+
     return result;
   }
 
@@ -19699,9 +19956,19 @@ export class UsersController {
   @Post('me/withdraw')
   async requestWithdrawal(
     @Req() req: AuthenticatedRequest,
-    @Body('amount') amount: number,
+    @Body()
+    body: {
+      amount: number;
+      bankName: string;
+      bankAccountNumber: string;
+      bankAccountHolder: string;
+    },
   ) {
-    return this.usersService.requestWithdrawal(req.user.id, amount);
+    return this.usersService.requestWithdrawal(req.user.id, body.amount, {
+      bankName: body.bankName,
+      bankAccountNumber: body.bankAccountNumber,
+      bankAccountHolder: body.bankAccountHolder,
+    });
   }
 
   @Post('me/referral-code')
@@ -19800,6 +20067,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { UserRole, Prisma, Tier } from '@prisma/client';
 import { ConfigService } from '../common/config.service';
 import { AglpService } from '../aglp/aglp.service';
+import { NotificationsGateway } from '../notifications/notifications.gateway';
 
 interface AgentMatchStats {
   agent_id: string;
@@ -19827,6 +20095,7 @@ export class UsersService {
     private readonly prisma: PrismaService,
     private readonly aglpService: AglpService,
     private readonly configService: ConfigService,
+    private readonly notificationsGateway: NotificationsGateway,
   ) {}
 
   async getCurrentProfile(userId: string) {
@@ -19915,35 +20184,117 @@ export class UsersService {
 
     // Format history for the UI
     const formattedHistory = history.map((log) => {
-      const metadata = log.metadata as {
-        amount?: string | number;
-        amountAglp?: string | number;
-        reason?: string;
-      } | null;
-
+      const metadata = (log.metadata as any) || {};
+      
       const type = log.action.includes('REFERRAL')
         ? 'Referral'
         : log.action.includes('PACKAGE')
           ? 'Package'
-          : 'Commission';
-
-      const rawAmount = metadata?.amount ?? metadata?.amountAglp ?? '0';
+          : log.action.includes('PAYOUT')
+            ? 'Withdrawal'
+            : 'Commission';
 
       return {
         id: log.id,
         action: log.action,
-        amount: rawAmount.toString(),
+        amount: metadata.amount || metadata.amountAglp || 0,
         type,
-        date: log.createdAt,
-        description: metadata?.reason || log.action,
+        createdAt: log.createdAt,
+        metadata: {
+          ...metadata,
+          transactionId: log.transactionId || metadata.aglpTxId || log.id,
+        },
       };
     });
 
+    // Calculate Weekly Growth & Chart Data
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const fourteenDaysAgo = new Date();
+    fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+
+    const currentWeekLogs = await this.prisma.auditLog.findMany({
+      where: {
+        targetId: userId,
+        action: { contains: 'EARNED' },
+        createdAt: { gte: sevenDaysAgo },
+      },
+    });
+
+    const previousWeekLogs = await this.prisma.auditLog.findMany({
+      where: {
+        targetId: userId,
+        action: { contains: 'EARNED' },
+        createdAt: { gte: fourteenDaysAgo, lt: sevenDaysAgo },
+      },
+    });
+
+    const sumLogs = (logs: any[]) =>
+      logs.reduce((acc, log) => {
+        const metadata = (log.metadata as any) || {};
+        const amount = Number(metadata.amount || metadata.amountAglp || 0);
+        return acc + amount;
+      }, 0);
+
+    const currentTotal = sumLogs(currentWeekLogs);
+    const previousTotal = sumLogs(previousWeekLogs);
+
+    let weeklyGrowth = 0;
+    if (previousTotal > 0) {
+      weeklyGrowth = ((currentTotal - previousTotal) / previousTotal) * 100;
+    } else if (currentTotal > 0) {
+      weeklyGrowth = 100;
+    }
+
+    // Chart Data (Last 7 days daily)
+    const chartData = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dayStart = new Date(d.setHours(0, 0, 0, 0));
+      const dayEnd = new Date(d.setHours(23, 59, 59, 999));
+      
+      const dayLogs = currentWeekLogs.filter(
+        (l) => l.createdAt >= dayStart && l.createdAt <= dayEnd
+      );
+      return sumLogs(dayLogs);
+    }).reverse();
+
+    // Fetch dynamic totals from transactions for accuracy
+    const pendingWithdrawalsSum = await this.prisma.aglpTransaction.aggregate({
+      where: {
+        profileId: userId,
+        type: 'WITHDRAWAL',
+        status: 'PENDING',
+      },
+      _sum: { amount: true },
+    });
+
+    const pendingCommissionsSum = await this.prisma.aglpTransaction.aggregate({
+      where: {
+        profileId: userId,
+        type: 'EARN',
+        status: 'PENDING',
+      },
+      _sum: { amount: true },
+    });
+
+    const completedWithdrawalsSum = await this.prisma.aglpTransaction.aggregate({
+      where: {
+        profileId: userId,
+        type: 'WITHDRAWAL',
+        status: 'COMPLETED',
+      },
+      _sum: { amount: true },
+    });
+
+    const dynamicPending = (pendingCommissionsSum._sum.amount?.toNumber() || 0) + (pendingWithdrawalsSum._sum.amount?.toNumber() || 0);
+    const dynamicWithdrawn = completedWithdrawalsSum._sum.amount?.toNumber() || 0;
+
     return {
-      balance: profile.aglpBalance.toString(),
-      aglpAvailable: profile.aglpBalance.toString(),
-      aglpPending: profile.aglpPending.toString(),
-      aglpWithdrawn: profile.aglpWithdrawn.toString(),
+      balance: profile.aglpBalance.toNumber(),
+      aglpAvailable: profile.aglpBalance.toNumber(),
+      aglpPending: dynamicPending,
+      aglpWithdrawn: dynamicWithdrawn,
       usedSlots,
       totalSlots,
       usedZones,
@@ -19952,6 +20303,11 @@ export class UsersService {
       tier,
       packageDisplayName: profile.package?.displayName,
       nextTier,
+      weeklyGrowth: {
+        percentage: weeklyGrowth.toFixed(1),
+        amount: currentTotal - previousTotal,
+        chart: chartData,
+      },
       history: formattedHistory,
     };
   }
@@ -20323,14 +20679,41 @@ export class UsersService {
     });
   }
 
-  async requestWithdrawal(userId: string, amountAglp: number) {
+  async requestWithdrawal(
+    userId: string,
+    amountAglp: number,
+    bankDetails: { bankName: string; bankAccountNumber: string; bankAccountHolder: string },
+  ) {
     if (amountAglp <= 0) {
       throw new BadRequestException('Amount must be positive');
     }
 
-    return this.prisma.$transaction(async (tx) => {
-      return this.aglpService.withdrawAglp(tx, userId, amountAglp);
+    const agent = await this.prisma.profile.findUnique({
+      where: { id: userId },
+      select: { fullName: true, phone: true },
     });
+
+    const result = await this.prisma.$transaction(async (tx) => {
+      return this.aglpService.withdrawAglp(tx, userId, amountAglp, bankDetails);
+    });
+
+    // Notify all online operators in real-time
+    this.notificationsGateway.sendToRole('operator', 'notification', {
+      type: 'payout.requested',
+      title: 'New Payout Request',
+      message: `${agent?.fullName || 'An agent'} has requested a withdrawal of ${amountAglp.toLocaleString()} AGLP.`,
+      agentName: agent?.fullName,
+      agentPhone: agent?.phone,
+      amount: amountAglp,
+      bankName: bankDetails.bankName,
+      bankAccountNumber: bankDetails.bankAccountNumber,
+      bankAccountHolder: bankDetails.bankAccountHolder,
+      read: false,
+      createdAt: new Date().toISOString(),
+      id: result.id,
+    });
+
+    return result;
   }
 
   async activateUser(callerRole: UserRole, userId: string) {

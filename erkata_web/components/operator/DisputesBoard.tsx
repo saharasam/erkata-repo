@@ -19,10 +19,12 @@ import {
   RotateCcw
 } from 'lucide-react';
 import { useModal } from '../../contexts/ModalContext';
+import { useNotifications } from '../../contexts/NotificationContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const DisputesBoard: React.FC = () => {
     const { showAlert, showConfirm } = useModal();
+    const { refreshNotifications } = useNotifications();
     const [disputes, setDisputes] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [processingId, setProcessingId] = useState<string | null>(null);
@@ -68,6 +70,7 @@ const DisputesBoard: React.FC = () => {
                 setResolvingTx(null);
                 setResolutionNote('');
                 fetchDisputes();
+                await refreshNotifications();
             } catch (error) {
                 console.error('Failed to resolve dispute:', error);
                 showAlert({ title: 'Error', message: 'Failed to resolve dispute.', type: 'error' });
@@ -97,6 +100,7 @@ const DisputesBoard: React.FC = () => {
                 setResolvingTx(null);
                 setResolutionNote('');
                 fetchDisputes();
+                await refreshNotifications();
             } catch (error) {
                 console.error('Failed to void dispute:', error);
                 showAlert({ title: 'Error', message: 'Failed to void dispute.', type: 'error' });
@@ -116,6 +120,7 @@ const DisputesBoard: React.FC = () => {
             setEscalatingId(null);
             setEscalationNote('');
             fetchDisputes();
+            await refreshNotifications();
         } catch (error) {
             console.error('Failed to escalate dispute:', error);
             showAlert({ title: 'Error', message: 'Failed to escalate dispute.', type: 'error' });

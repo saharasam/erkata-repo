@@ -10,6 +10,7 @@ interface OperatorSidebarProps {
 const OperatorSidebar: React.FC<OperatorSidebarProps> = ({ currentView, onViewChange }) => {
   const navItems = [
     { id: 'overview', label: 'Operator Overview', category: 'Requests', permission: Action.VIEW_QUEUE },
+    { id: 'finance', label: 'Financial Desk', category: 'Requests', permission: Action.VIEW_FINANCIAL_REPORTS },
     { id: 'history', label: 'Assignment History', category: 'Performance', permission: Action.VIEW_QUEUE },
   ];
 

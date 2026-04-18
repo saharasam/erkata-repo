@@ -214,6 +214,7 @@ export class AglpService {
     tx: Prisma.TransactionClient,
     profileId: string,
     amountAglp: number,
+    bankDetails: { bankName: string; bankAccountNumber: string; bankAccountHolder: string },
   ) {
     const profile = await tx.profile.findUnique({ where: { id: profileId } });
     if (!profile || Number(profile.aglpBalance) < amountAglp) {
@@ -265,12 +266,11 @@ export class AglpService {
     const rate = this.getConversionRate();
     const netEtb = netAglp / rate;
 
-    // 4. Update Profile Balances (Gross amount deducted)
+    // 4. Update Profile Balances (Gross amount deducted from balance only)
     await tx.profile.update({
       where: { id: profileId },
       data: {
         aglpBalance: { decrement: amountAglp },
-        aglpWithdrawn: { increment: amountAglp },
       },
     });
 
@@ -284,6 +284,9 @@ export class AglpService {
         conversionRate: rate,
         status: AglpTransactionStatus.PENDING,
         referenceType: 'PAYOUT',
+        bankName: bankDetails.bankName,
+        bankAccountNumber: bankDetails.bankAccountNumber,
+        bankAccountHolder: bankDetails.bankAccountHolder,
       },
     });
 
@@ -308,6 +311,7 @@ export class AglpService {
   }
 
   // Handle AGLP withdrawal rejection (Refund)
+  // Handle AGLP withdrawal rejection (Refund)
   async rejectWithdrawal(
     tx: Prisma.TransactionClient,
     aglpTxId: string,
@@ -322,18 +326,11 @@ export class AglpService {
       throw new Error('Withdrawal transaction not found');
     }
 
-    if (aglpTx.status !== AglpTransactionStatus.PENDING) {
-      // In my previous implementation I set it to COMPLETED by default,
-      // but for administrative flow PENDING is better.
-      // I will adjust the withdrawAglp method to set status to PENDING.
-    }
-
-    // 1. Refund the AGLP
+    // 1. Refund the AGLP to balance only (since it was never in aglpWithdrawn)
     await tx.profile.update({
       where: { id: aglpTx.profileId },
       data: {
         aglpBalance: { increment: aglpTx.amount },
-        aglpWithdrawn: { decrement: aglpTx.amount },
       },
     });
 
@@ -354,6 +351,48 @@ export class AglpService {
           aglpTxId,
           amountAglp: aglpTx.amount,
           reason,
+        },
+      },
+    });
+  }
+
+  // Finalize AGLP withdrawal (Mark as received)
+  async completeWithdrawal(
+    tx: Prisma.TransactionClient,
+    aglpTxId: string,
+  ) {
+    const aglpTx = await tx.aglpTransaction.findUnique({
+      where: { id: aglpTxId },
+    });
+
+    if (!aglpTx || aglpTx.type !== AglpTransactionType.WITHDRAWAL || aglpTx.status !== AglpTransactionStatus.PENDING) {
+      throw new Error('Valid pending withdrawal transaction not found');
+    }
+
+    // 1. Update Profile: Mark money as officially withdrawn
+    await tx.profile.update({
+      where: { id: aglpTx.profileId },
+      data: {
+        aglpWithdrawn: { increment: aglpTx.amount },
+      },
+    });
+
+    // 2. Update Transaction Status
+    await tx.aglpTransaction.update({
+      where: { id: aglpTxId },
+      data: { status: AglpTransactionStatus.COMPLETED },
+    });
+
+    // 3. Log Audit Log
+    await tx.auditLog.create({
+      data: {
+        actorId: aglpTx.profileId,
+        action: 'PAYOUT_COMPLETED',
+        targetTable: 'profiles',
+        targetId: aglpTx.profileId,
+        metadata: {
+          aglpTxId,
+          amountAglp: aglpTx.amount,
         },
       },
     });

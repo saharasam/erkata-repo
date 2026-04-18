@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { AlertTriangle, FileText, CheckCircle2, Phone, User, ExternalLink, Loader2, X, MessageSquare, ShieldCheck, RotateCcw } from 'lucide-react';
 import api from '../../utils/api';
 import { useModal } from '../../contexts/ModalContext';
+import { useNotifications } from '../../contexts/NotificationContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const EscalatedDisputes: React.FC = () => {
     const { showAlert, showConfirm } = useModal();
+    const { refreshNotifications } = useNotifications();
     const [disputes, setDisputes] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedDispute, setSelectedDispute] = useState<any | null>(null);
@@ -56,6 +58,7 @@ const EscalatedDisputes: React.FC = () => {
                 message: 'The request has been successfully resolved and closed.', 
                 type: 'success' 
             });
+            await refreshNotifications();
         } catch (error) {
             console.error('Failed to resolve dispute:', error);
             showAlert({ title: 'Error', message: 'Failed to update dispute status.', type: 'error' });
@@ -92,6 +95,7 @@ const EscalatedDisputes: React.FC = () => {
                 message: 'The agent has been notified and the request returned for a redo.', 
                 type: 'info' 
             });
+            await refreshNotifications();
         } catch (error) {
             console.error('Failed to void dispute:', error);
             showAlert({ title: 'Error', message: 'Failed to void fulfillment.', type: 'error' });

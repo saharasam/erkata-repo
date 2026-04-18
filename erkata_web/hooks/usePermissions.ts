@@ -118,6 +118,8 @@ export const usePermissions = () => {
         Action.MEDIATE_MESSAGE,
         Action.BUNDLE_FEEDBACK,
         Action.VIEW_MANAGED_TRANSACTIONS,
+        Action.APPROVE_PAYOUT,
+        Action.VIEW_FINANCIAL_REPORTS,
       ],
       [UserRole.ADMIN]: [
         Action.PROPOSE_RESOLUTION,
@@ -132,7 +134,6 @@ export const usePermissions = () => {
         Action.VIEW_MANAGED_TRANSACTIONS,
         Action.VIEW_RESOLUTIONS_BY_ADMIN,
         Action.ESCALATE_TO_SUPER_ADMIN,
-        Action.APPROVE_PAYOUT,
         Action.VIEW_FINANCIAL_REPORTS,
         Action.PROCESS_REFUND,
       ],

@@ -9,6 +9,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { UserRole, Prisma, Tier } from '@prisma/client';
 import { ConfigService } from '../common/config.service';
 import { AglpService } from '../aglp/aglp.service';
+import { NotificationsGateway } from '../notifications/notifications.gateway';
 
 interface AgentMatchStats {
   agent_id: string;
@@ -36,6 +37,7 @@ export class UsersService {
     private readonly prisma: PrismaService,
     private readonly aglpService: AglpService,
     private readonly configService: ConfigService,
+    private readonly notificationsGateway: NotificationsGateway,
   ) {}
 
   async getCurrentProfile(userId: string) {
@@ -124,35 +126,117 @@ export class UsersService {
 
     // Format history for the UI
     const formattedHistory = history.map((log) => {
-      const metadata = log.metadata as {
-        amount?: string | number;
-        amountAglp?: string | number;
-        reason?: string;
-      } | null;
-
+      const metadata = (log.metadata as any) || {};
+      
       const type = log.action.includes('REFERRAL')
         ? 'Referral'
         : log.action.includes('PACKAGE')
           ? 'Package'
-          : 'Commission';
-
-      const rawAmount = metadata?.amount ?? metadata?.amountAglp ?? '0';
+          : log.action.includes('PAYOUT')
+            ? 'Withdrawal'
+            : 'Commission';
 
       return {
         id: log.id,
         action: log.action,
-        amount: rawAmount.toString(),
+        amount: metadata.amount || metadata.amountAglp || 0,
         type,
-        date: log.createdAt,
-        description: metadata?.reason || log.action,
+        createdAt: log.createdAt,
+        metadata: {
+          ...metadata,
+          transactionId: log.transactionId || metadata.aglpTxId || log.id,
+        },
       };
     });
 
+    // Calculate Weekly Growth & Chart Data
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const fourteenDaysAgo = new Date();
+    fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+
+    const currentWeekLogs = await this.prisma.auditLog.findMany({
+      where: {
+        targetId: userId,
+        action: { contains: 'EARNED' },
+        createdAt: { gte: sevenDaysAgo },
+      },
+    });
+
+    const previousWeekLogs = await this.prisma.auditLog.findMany({
+      where: {
+        targetId: userId,
+        action: { contains: 'EARNED' },
+        createdAt: { gte: fourteenDaysAgo, lt: sevenDaysAgo },
+      },
+    });
+
+    const sumLogs = (logs: any[]) =>
+      logs.reduce((acc, log) => {
+        const metadata = (log.metadata as any) || {};
+        const amount = Number(metadata.amount || metadata.amountAglp || 0);
+        return acc + amount;
+      }, 0);
+
+    const currentTotal = sumLogs(currentWeekLogs);
+    const previousTotal = sumLogs(previousWeekLogs);
+
+    let weeklyGrowth = 0;
+    if (previousTotal > 0) {
+      weeklyGrowth = ((currentTotal - previousTotal) / previousTotal) * 100;
+    } else if (currentTotal > 0) {
+      weeklyGrowth = 100;
+    }
+
+    // Chart Data (Last 7 days daily)
+    const chartData = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dayStart = new Date(d.setHours(0, 0, 0, 0));
+      const dayEnd = new Date(d.setHours(23, 59, 59, 999));
+      
+      const dayLogs = currentWeekLogs.filter(
+        (l) => l.createdAt >= dayStart && l.createdAt <= dayEnd
+      );
+      return sumLogs(dayLogs);
+    }).reverse();
+
+    // Fetch dynamic totals from transactions for accuracy
+    const pendingWithdrawalsSum = await this.prisma.aglpTransaction.aggregate({
+      where: {
+        profileId: userId,
+        type: 'WITHDRAWAL',
+        status: 'PENDING',
+      },
+      _sum: { amount: true },
+    });
+
+    const pendingCommissionsSum = await this.prisma.aglpTransaction.aggregate({
+      where: {
+        profileId: userId,
+        type: 'EARN',
+        status: 'PENDING',
+      },
+      _sum: { amount: true },
+    });
+
+    const completedWithdrawalsSum = await this.prisma.aglpTransaction.aggregate({
+      where: {
+        profileId: userId,
+        type: 'WITHDRAWAL',
+        status: 'COMPLETED',
+      },
+      _sum: { amount: true },
+    });
+
+    const dynamicPending = (pendingCommissionsSum._sum.amount?.toNumber() || 0) + (pendingWithdrawalsSum._sum.amount?.toNumber() || 0);
+    const dynamicWithdrawn = completedWithdrawalsSum._sum.amount?.toNumber() || 0;
+
     return {
-      balance: profile.aglpBalance.toString(),
-      aglpAvailable: profile.aglpBalance.toString(),
-      aglpPending: profile.aglpPending.toString(),
-      aglpWithdrawn: profile.aglpWithdrawn.toString(),
+      balance: profile.aglpBalance.toNumber(),
+      aglpAvailable: profile.aglpBalance.toNumber(),
+      aglpPending: dynamicPending,
+      aglpWithdrawn: dynamicWithdrawn,
       usedSlots,
       totalSlots,
       usedZones,
@@ -161,6 +245,11 @@ export class UsersService {
       tier,
       packageDisplayName: profile.package?.displayName,
       nextTier,
+      weeklyGrowth: {
+        percentage: weeklyGrowth.toFixed(1),
+        amount: currentTotal - previousTotal,
+        chart: chartData,
+      },
       history: formattedHistory,
     };
   }
@@ -532,14 +621,41 @@ export class UsersService {
     });
   }
 
-  async requestWithdrawal(userId: string, amountAglp: number) {
+  async requestWithdrawal(
+    userId: string,
+    amountAglp: number,
+    bankDetails: { bankName: string; bankAccountNumber: string; bankAccountHolder: string },
+  ) {
     if (amountAglp <= 0) {
       throw new BadRequestException('Amount must be positive');
     }
 
-    return this.prisma.$transaction(async (tx) => {
-      return this.aglpService.withdrawAglp(tx, userId, amountAglp);
+    const agent = await this.prisma.profile.findUnique({
+      where: { id: userId },
+      select: { fullName: true, phone: true },
     });
+
+    const result = await this.prisma.$transaction(async (tx) => {
+      return this.aglpService.withdrawAglp(tx, userId, amountAglp, bankDetails);
+    });
+
+    // Notify all online operators in real-time
+    this.notificationsGateway.sendToRole('operator', 'notification', {
+      type: 'payout.requested',
+      title: 'New Payout Request',
+      message: `${agent?.fullName || 'An agent'} has requested a withdrawal of ${amountAglp.toLocaleString()} AGLP.`,
+      agentName: agent?.fullName,
+      agentPhone: agent?.phone,
+      amount: amountAglp,
+      bankName: bankDetails.bankName,
+      bankAccountNumber: bankDetails.bankAccountNumber,
+      bankAccountHolder: bankDetails.bankAccountHolder,
+      read: false,
+      createdAt: new Date().toISOString(),
+      id: result.id,
+    });
+
+    return result;
   }
 
   async activateUser(callerRole: UserRole, userId: string) {

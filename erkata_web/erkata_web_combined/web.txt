@@ -3087,10 +3087,12 @@ import React, { useState, useEffect } from 'react';
 import { AlertTriangle, FileText, CheckCircle2, Phone, User, ExternalLink, Loader2, X, MessageSquare, ShieldCheck, RotateCcw } from 'lucide-react';
 import api from '../../utils/api';
 import { useModal } from '../../contexts/ModalContext';
+import { useNotifications } from '../../contexts/NotificationContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const EscalatedDisputes: React.FC = () => {
     const { showAlert, showConfirm } = useModal();
+    const { refreshNotifications } = useNotifications();
     const [disputes, setDisputes] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [selectedDispute, setSelectedDispute] = useState<any | null>(null);
@@ -3141,6 +3143,7 @@ const EscalatedDisputes: React.FC = () => {
                 message: 'The request has been successfully resolved and closed.', 
                 type: 'success' 
             });
+            await refreshNotifications();
         } catch (error) {
             console.error('Failed to resolve dispute:', error);
             showAlert({ title: 'Error', message: 'Failed to update dispute status.', type: 'error' });
@@ -3177,6 +3180,7 @@ const EscalatedDisputes: React.FC = () => {
                 message: 'The agent has been notified and the request returned for a redo.', 
                 type: 'info' 
             });
+            await refreshNotifications();
         } catch (error) {
             console.error('Failed to void dispute:', error);
             showAlert({ title: 'Error', message: 'Failed to void fulfillment.', type: 'error' });
@@ -4934,6 +4938,190 @@ export const PackagesView: React.FC<PackagesViewProps> = ({ finance, profile, on
 };
 
 
+===== FILE: components\agent\PayoutRequestModal.tsx =====
+
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Landmark, Wallet, X, CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
+
+interface PayoutRequestModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    availableBalance: number;
+    onSubmit: (data: { amount: number; bankName: string; bankAccountNumber: string; bankAccountHolder: string }) => Promise<void>;
+}
+
+const PayoutRequestModal: React.FC<PayoutRequestModalProps> = ({ isOpen, onClose, availableBalance, onSubmit }) => {
+    const [amount, setAmount] = useState<string>(availableBalance.toString());
+    const [bankName, setBankName] = useState('');
+    const [bankAccountNumber, setBankAccountNumber] = useState('');
+    const [bankAccountHolder, setBankAccountHolder] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError(null);
+
+        const val = parseFloat(amount);
+        if (isNaN(val) || val <= 0) {
+            setError('Please enter a valid amount.');
+            return;
+        }
+        if (val > availableBalance) {
+            setError('Amount exceeds available balance.');
+            return;
+        }
+        if (!bankName || !bankAccountNumber || !bankAccountHolder) {
+            setError('Please fill in all bank details.');
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            await onSubmit({
+                amount: val,
+                bankName,
+                bankAccountNumber,
+                bankAccountHolder
+            });
+            onClose();
+        } catch (err: any) {
+            setError(err?.response?.data?.message || 'Failed to submit withdrawal request.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <AnimatePresence>
+            {isOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={onClose}
+                        className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+                    />
+                    <motion.div
+                        initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                        animate={{ scale: 1, opacity: 1, y: 0 }}
+                        exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                        className="bg-white w-full max-w-lg rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden"
+                    >
+                        <button onClick={onClose} className="absolute top-6 right-6 p-2 text-slate-400 hover:text-slate-600 transition-colors">
+                            <X className="w-6 h-6" />
+                        </button>
+
+                        <div className="mb-8">
+                            <div className="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center mb-6 shadow-sm">
+                                <Wallet className="w-8 h-8 text-indigo-600" />
+                            </div>
+                            <h3 className="text-2xl font-black text-slate-800 tracking-tight">Request Payout</h3>
+                            <p className="text-slate-500 text-sm font-medium mt-1">Funds will be manually transferred by an operator.</p>
+                        </div>
+
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                            <div className="space-y-4">
+                                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Withdrawal Amount (AGLP)</label>
+                                        <span className="text-[10px] font-bold text-indigo-600">Available: {availableBalance.toLocaleString()}</span>
+                                    </div>
+                                    <input
+                                        type="number"
+                                        value={amount}
+                                        onChange={(e) => setAmount(e.target.value)}
+                                        className="w-full bg-transparent text-2xl font-black text-slate-800 focus:outline-none"
+                                        placeholder="0.00"
+                                        required
+                                    />
+                                </div>
+
+                                <div className="grid grid-cols-1 gap-4">
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Bank Name</label>
+                                        <div className="relative">
+                                            <Landmark className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                            <input
+                                                type="text"
+                                                value={bankName}
+                                                onChange={(e) => setBankName(e.target.value)}
+                                                className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/50 transition-all outline-none"
+                                                placeholder="e.g. Commercial Bank of Ethiopia"
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Account Number</label>
+                                        <input
+                                            type="text"
+                                            value={bankAccountNumber}
+                                            onChange={(e) => setBankAccountNumber(e.target.value)}
+                                            className="w-full px-4 py-3.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/50 transition-all outline-none"
+                                            placeholder="Bank account number"
+                                            required
+                                        />
+                                    </div>
+
+                                    <div className="space-y-1.5">
+                                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Account Holder Name</label>
+                                        <input
+                                            type="text"
+                                            value={bankAccountHolder}
+                                            onChange={(e) => setBankAccountHolder(e.target.value)}
+                                            className="w-full px-4 py-3.5 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold text-slate-700 focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/50 transition-all outline-none"
+                                            placeholder="Full name as on account"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {error && (
+                                <div className="flex items-start gap-2 p-3 bg-rose-50 text-rose-600 rounded-xl text-xs font-bold border border-rose-100">
+                                    <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+                                    <span>{error}</span>
+                                </div>
+                            )}
+
+                            <div className="pt-4 flex gap-3">
+                                <button
+                                    type="button"
+                                    onClick={onClose}
+                                    className="px-6 py-4 bg-slate-50 text-slate-600 font-bold rounded-2xl hover:bg-slate-100 transition-all active:scale-95"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={isSubmitting}
+                                    className="flex-1 py-4 bg-indigo-600 text-white font-black rounded-2xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50 disabled:active:scale-100"
+                                >
+                                    {isSubmitting ? (
+                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                    ) : (
+                                        <>
+                                            <CheckCircle2 className="w-5 h-5" />
+                                            Submit Request
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </form>
+                    </motion.div>
+                </div>
+            )}
+        </AnimatePresence>
+    );
+};
+
+export default PayoutRequestModal;
+
+
 ===== FILE: components\agent\ProfileView.tsx =====
 
 import React from 'react';
@@ -5527,6 +5715,11 @@ interface WalletSummaryProps {
     aglpAvailable?: string;
     aglpPending?: string;
     aglpWithdrawn?: string;
+    weeklyGrowth?: {
+      percentage: string;
+      amount: number;
+      chart: number[];
+    };
     history: any[];
   } | null;
   onPayoutRequest: () => void;
@@ -5594,20 +5787,30 @@ const WalletSummary: React.FC<WalletSummaryProps> = ({ finance, onPayoutRequest 
               </div>
               <span className="text-sm font-bold text-slate-500 uppercase tracking-wider">Weekly Growth</span>
             </div>
-            <p className="text-3xl font-black text-slate-900 mb-1">+12.5%</p>
-            <p className="text-xs text-slate-400 font-medium">Earned 2,450 AGLP more than last week</p>
+            <p className={`text-3xl font-black mb-1 ${Number(finance.weeklyGrowth?.percentage || 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+              {finance.weeklyGrowth?.percentage || '0.0'}%
+            </p>
+            <p className="text-xs text-slate-400 font-medium whitespace-pre-line">
+              {Number(finance.weeklyGrowth?.amount || 0) >= 0 
+                ? `Earned ${Math.round(finance.weeklyGrowth?.amount || 0).toLocaleString()} AGLP more than last week`
+                : `Earned ${Math.abs(Math.round(finance.weeklyGrowth?.amount || 0)).toLocaleString()} AGLP less than last week`}
+            </p>
           </div>
           
           <div className="h-16 flex items-end gap-1">
-             {[30, 45, 25, 60, 40, 75, 50].map((h, i) => (
-               <motion.div 
-                key={i}
-                initial={{ height: 0 }}
-                animate={{ height: `${h}%` }}
-                transition={{ delay: 0.5 + (i * 0.1) }}
-                className="flex-1 bg-emerald-500/20 rounded-t-sm" 
-               />
-             ))}
+             {(finance.weeklyGrowth?.chart || [0, 0, 0, 0, 0, 0, 0]).map((h, i) => {
+               const max = Math.max(...(finance.weeklyGrowth?.chart || [100]), 100);
+               const height = (h / max) * 100;
+               return (
+                 <motion.div 
+                  key={i}
+                  initial={{ height: 0 }}
+                  animate={{ height: `${Math.max(height, 5)}%` }}
+                  transition={{ delay: 0.5 + (i * 0.1) }}
+                  className="flex-1 bg-emerald-500/20 rounded-t-sm" 
+                 />
+               );
+             })}
           </div>
         </motion.div>
       </div>
@@ -5639,12 +5842,14 @@ const WalletSummary: React.FC<WalletSummaryProps> = ({ finance, onPayoutRequest 
             </thead>
             <tbody className="divide-y divide-slate-50">
               {finance.history.map((log) => {
-                const isIncoming = log.action.includes('EARNED');
+                const isIncoming = log.action.includes('EARNED') || log.action.includes('CREDITED') || log.action.includes('RELEASED');
+                const amount = typeof log.amount === 'number' ? log.amount : parseFloat(log.amount || '0');
+                
                 return (
                   <tr key={log.id} className="hover:bg-slate-50/50 transition-colors group">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-xl ${isIncoming ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-600'}`}>
+                        <div className={`p-2 rounded-xl ${isIncoming ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
                           {isIncoming ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
                         </div>
                         <span className="text-sm font-bold text-slate-700">
@@ -5653,12 +5858,12 @@ const WalletSummary: React.FC<WalletSummaryProps> = ({ finance, onPayoutRequest 
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                       <p className="text-xs text-slate-500 font-medium">#{log.metadata?.transactionId?.slice(0, 8) || 'N/A'}</p>
+                       <p className="text-xs text-slate-500 font-medium">#{log.metadata?.transactionId?.slice(0, 8) || log.id.slice(0, 8)}</p>
                        <p className="text-[10px] text-slate-400">{new Date(log.createdAt).toLocaleDateString()}</p>
                     </td>
                     <td className="px-6 py-4 text-right">
-                       <span className={`text-sm font-black ${isIncoming ? 'text-emerald-600' : 'text-slate-900'}`}>
-                         {isIncoming ? '+' : '-'}{log.metadata?.amount?.toLocaleString() || log.amount?.toLocaleString() || '0'} AGLP
+                       <span className={`text-sm font-black ${isIncoming ? 'text-emerald-600' : 'text-rose-600'}`}>
+                         {isIncoming ? '+' : '-'}{amount.toLocaleString()} AGLP
                        </span>
                     </td>
                     <td className="px-6 py-4 text-right">
@@ -6875,10 +7080,12 @@ import {
   RotateCcw
 } from 'lucide-react';
 import { useModal } from '../../contexts/ModalContext';
+import { useNotifications } from '../../contexts/NotificationContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const DisputesBoard: React.FC = () => {
     const { showAlert, showConfirm } = useModal();
+    const { refreshNotifications } = useNotifications();
     const [disputes, setDisputes] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [processingId, setProcessingId] = useState<string | null>(null);
@@ -6924,6 +7131,7 @@ const DisputesBoard: React.FC = () => {
                 setResolvingTx(null);
                 setResolutionNote('');
                 fetchDisputes();
+                await refreshNotifications();
             } catch (error) {
                 console.error('Failed to resolve dispute:', error);
                 showAlert({ title: 'Error', message: 'Failed to resolve dispute.', type: 'error' });
@@ -6953,6 +7161,7 @@ const DisputesBoard: React.FC = () => {
                 setResolvingTx(null);
                 setResolutionNote('');
                 fetchDisputes();
+                await refreshNotifications();
             } catch (error) {
                 console.error('Failed to void dispute:', error);
                 showAlert({ title: 'Error', message: 'Failed to void dispute.', type: 'error' });
@@ -6972,6 +7181,7 @@ const DisputesBoard: React.FC = () => {
             setEscalatingId(null);
             setEscalationNote('');
             fetchDisputes();
+            await refreshNotifications();
         } catch (error) {
             console.error('Failed to escalate dispute:', error);
             showAlert({ title: 'Error', message: 'Failed to escalate dispute.', type: 'error' });
@@ -7278,6 +7488,218 @@ const DisputesBoard: React.FC = () => {
 export default DisputesBoard;
 
 
+===== FILE: components\operator\FinancialDesk.tsx =====
+
+import React, { useState, useEffect } from 'react';
+import { Wallet, CheckCircle, XCircle, Clock, ShieldAlert, Landmark, User, Loader2 } from 'lucide-react';
+import { motion } from 'framer-motion';
+import api from '../../utils/api';
+import { useModal } from '../../contexts/ModalContext';
+import { useNotifications } from '../../contexts/NotificationContext';
+
+interface PayoutRequest {
+    id: string;
+    amount: string;
+    bankName: string;
+    bankAccountNumber: string;
+    bankAccountHolder: string;
+    createdAt: string;
+    profile: {
+        id: string;
+        fullName: string;
+        phone: string;
+    };
+}
+
+const FinancialDesk: React.FC = () => {
+    const { showConfirm, showAlert } = useModal();
+    const { notifications, markAsRead } = useNotifications();
+    const [payouts, setPayouts] = useState<PayoutRequest[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [processingId, setProcessingId] = useState<string | null>(null);
+
+    const fetchPayouts = async () => {
+        try {
+            setIsLoading(true);
+            const res = await api.get('/admin/payouts/pending');
+            setPayouts(res.data);
+        } catch (error) {
+            console.error('Failed to fetch payouts:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchPayouts();
+        // Clear payout badge when operator views this page
+        notifications
+            .filter(n => !n.read && n.type === 'payout.requested')
+            .forEach(n => markAsRead(n.id));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    const handleApprove = async (p: PayoutRequest) => {
+        const confirmed = await showConfirm({
+            title: 'Verify & Approve Payout',
+            message: `IMPORTANT: Ensure you have manually transferred ${parseFloat(p.amount).toLocaleString()} AGLP to ${p.bankAccountHolder} via ${p.bankName} (Acc: ${p.bankAccountNumber}). Have you successfully completed this transfer?`,
+            confirmText: 'Yes, Funds Sent',
+            type: 'success'
+        });
+
+        if (confirmed) {
+            setProcessingId(p.id);
+            try {
+                await api.post(`/admin/payouts/${p.id}/approve`);
+                showAlert({ title: 'Payout Recorded', message: 'The manual transfer has been successfully logged.', type: 'success' });
+                setPayouts(prev => prev.filter(item => item.id !== p.id));
+            } catch (error) {
+                console.error('Approval failed:', error);
+                showAlert({ title: 'Error', message: 'Failed to record approval.', type: 'error' });
+            } finally {
+                setProcessingId(null);
+            }
+        }
+    };
+    const handleReject = async (id: string) => {
+        const reason = window.prompt('Please provide a reason for rejection:');
+        if (reason === null) return;
+        if (!reason.trim()) {
+            showAlert({ title: 'Required', message: 'A reason is required to reject a payout.', type: 'warning' });
+            return;
+        }
+
+        setProcessingId(id);
+        try {
+            await api.post(`/admin/payouts/${id}/reject`, { reason });
+            showAlert({ title: 'Payout Rejected', message: 'The request has been rejected and funds returned to the agent.', type: 'info' });
+            setPayouts(prev => prev.filter(p => p.id !== id));
+        } catch (error) {
+            console.error('Rejection failed:', error);
+            showAlert({ title: 'Error', message: 'Failed to reject payout.', type: 'error' });
+        } finally {
+            setProcessingId(null);
+        }
+    };
+
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-64">
+                <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+            </div>
+        );
+    }
+
+    return (
+        <div className="space-y-6">
+            <div className="mb-8">
+                <h2 className="text-2xl font-black text-slate-900 tracking-tight">Financial Desk</h2>
+                <p className="text-slate-500 text-sm font-medium">Verify and approve manual fund transfers to agents.</p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-6">
+                <div className="bg-white rounded-[2rem] border border-slate-100 shadow-sm p-8">
+                    <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest mb-8 flex items-center gap-2">
+                        <Clock className="w-5 h-5 text-indigo-600" /> Pending Withdrawal Requests
+                    </h3>
+
+                    <div className="space-y-4">
+                        {payouts.length > 0 ? (
+                            payouts.map((p) => (
+                                <motion.div 
+                                    layout
+                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    key={p.id} 
+                                    className="p-6 bg-slate-50 border border-slate-100 rounded-3xl hover:border-indigo-100 transition-all group"
+                                >
+                                    <div className="flex flex-col lg:flex-row justify-between gap-6">
+                                        <div className="space-y-4 flex-1">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm border border-slate-100">
+                                                    <User className="w-5 h-5 text-slate-400" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-black text-slate-800">{p.profile.fullName}</p>
+                                                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight">{p.profile.phone}</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                <div className="p-3 bg-white rounded-2xl border border-slate-100/50">
+                                                    <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Bank</p>
+                                                    <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
+                                                        <Landmark className="w-3.5 h-3.5 text-indigo-500" />
+                                                        {p.bankName}
+                                                    </div>
+                                                </div>
+                                                <div className="p-3 bg-white rounded-2xl border border-slate-100/50">
+                                                    <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Account Number</p>
+                                                    <p className="text-xs font-mono font-bold text-slate-700">{p.bankAccountNumber}</p>
+                                                </div>
+                                                <div className="p-3 bg-white rounded-2xl border border-slate-100/50">
+                                                    <p className="text-[10px] font-black text-slate-400 uppercase mb-1">Holder</p>
+                                                    <p className="text-xs font-bold text-slate-700">{p.bankAccountHolder}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex lg:flex-col justify-between items-end border-t lg:border-t-0 lg:border-l border-slate-200/50 pt-4 lg:pt-0 lg:pl-8 min-w-[140px]">
+                                            <div className="text-right">
+                                                <p className="text-2xl font-black text-slate-900 leading-none">{parseFloat(p.amount).toLocaleString()}</p>
+                                                <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">AGLP Requested</p>
+                                            </div>
+
+                                            <div className="flex gap-2">
+                                                <button 
+                                                    onClick={() => handleReject(p.id)}
+                                                    disabled={!!processingId}
+                                                    className="p-3 bg-rose-50 text-rose-600 rounded-2xl hover:bg-rose-100 transition-all active:scale-95 disabled:opacity-50"
+                                                >
+                                                    <XCircle className="w-5 h-5" />
+                                                </button>
+                                                <button 
+                                                    onClick={() => handleApprove(p)}
+                                                    disabled={!!processingId}
+                                                    className="px-6 py-3 bg-emerald-600 text-white rounded-2xl hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200 flex items-center justify-center gap-2 font-black text-xs active:scale-95 disabled:opacity-50"
+                                                >
+                                                    {processingId === p.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+                                                    APPROVE
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            ))
+                        ) : (
+                            <div className="py-20 text-center border-2 border-dashed border-slate-100 rounded-[2rem]">
+                                <Wallet className="w-12 h-12 text-slate-200 mx-auto mb-4" />
+                                <p className="text-slate-400 font-bold italic">No pending withdrawal requests.</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                <div className="bg-slate-900 rounded-[2rem] p-8 text-white flex items-center gap-6 border border-slate-800 shadow-xl shadow-slate-200">
+                    <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center shrink-0">
+                        <ShieldAlert className="w-8 h-8 text-rose-400" />
+                    </div>
+                    <div>
+                        <h4 className="font-black text-sm uppercase tracking-widest text-indigo-300">Payout Protocol</h4>
+                        <p className="text-xs text-slate-400 font-medium leading-relaxed max-w-xl mt-1">
+                            Before approving, you must manually initiate the transfer via your banking app or Telebirr. Approval here merely audits the completion and deducts final balances.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default FinancialDesk;
+
+
 ===== FILE: components\operator\OperatorSidebar.tsx =====
 
 import React from 'react';
@@ -7292,6 +7714,7 @@ interface OperatorSidebarProps {
 const OperatorSidebar: React.FC<OperatorSidebarProps> = ({ currentView, onViewChange }) => {
   const navItems = [
     { id: 'overview', label: 'Operator Overview', category: 'Requests', permission: Action.VIEW_QUEUE },
+    { id: 'finance', label: 'Financial Desk', category: 'Requests', permission: Action.VIEW_FINANCIAL_REPORTS },
     { id: 'history', label: 'Assignment History', category: 'Performance', permission: Action.VIEW_QUEUE },
   ];
 
@@ -11502,7 +11925,7 @@ export default Skeleton;
 
 ===== FILE: components\UtilitySidebar.tsx =====
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calendar, StickyNote, MessageCircle, X, Globe, User, LogOut, ShieldCheck, Archive, ShieldAlert, Settings2, Megaphone, BarChart4, History, TrendingUp, Users, ChevronRight, ChevronLeft, MapPin, LayoutGrid, FileText, Package, Wallet, Network } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
@@ -11510,6 +11933,9 @@ import { UserRole } from '../utils/constants';
 import { Action } from '../hooks/usePermissions';
 import { useNavigate } from 'react-router-dom';
 import { useModal } from '../contexts/ModalContext';
+import { useNotifications } from '../contexts/NotificationContext';
+import { playPayoutSound } from '../utils/sounds';
+import { useSocket } from '../contexts/SocketContext';
 
 interface UtilitySidebarProps {
   onSettingsClick?: () => void;
@@ -11529,11 +11955,29 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { notifications, payoutCount } = useNotifications();
+  const { socket } = useSocket();
+
+  // Play distinct payout sound when a new payout.requested notification arrives
+  useEffect(() => {
+    if (!socket || user?.role !== UserRole.OPERATOR) return;
+    const handleNotification = (n: any) => {
+      if (n.type === 'payout.requested') {
+        playPayoutSound();
+      }
+    };
+    socket.on('notification', handleNotification);
+    return () => { socket.off('notification', handleNotification); };
+  }, [socket, user]);
+
+  const disputeCount = notifications.filter(
+    (n) => !n.read && (n.type === 'request.disputed' || n.type === 'request.escalated')
+  ).length;
 
   const tools = [
     // { id: 'calendar', icon: Calendar, label: 'Calendar', color: 'text-blue-500' },
     // { id: 'notes', icon: StickyNote, label: 'Notes', color: 'text-yellow-500' },
-    { id: 'support', icon: MessageCircle, label: 'Support', color: 'text-purple-500' },
+    // { id: 'support', icon: MessageCircle, label: 'Support', color: 'text-purple-500' },
     { id: 'language', icon: Globe, label: 'Language', color: 'text-teal-500' },
     { id: 'profile', icon: User, label: 'Profile', color: 'text-slate-500' },
     { id: 'logout', icon: LogOut, label: 'Logout', color: 'text-red-500' },
@@ -11542,7 +11986,7 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
   const superAdminTools = [
     { id: 'analytics', icon: BarChart4, label: 'Analytics' },
     { id: 'tiers', icon: Package, label: 'Tier Architecture' },
-    { id: 'disputes', icon: ShieldAlert, label: 'Disputes Audit' },
+    { id: 'disputes', icon: ShieldAlert, label: 'Disputes Audit', badge: disputeCount > 0 ? disputeCount : undefined },
     { id: 'admins', icon: ShieldAlert, label: 'Admin Management' },
     { id: 'config', icon: Settings2, label: 'Config Flags' },
     { id: 'notices', icon: Megaphone, label: 'Broadcasts' },
@@ -11553,19 +11997,20 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
 
   const adminTools = [
     { id: 'overview', icon: BarChart4, label: 'Operations Hub' },
-    { id: 'zones', icon: MapPin, label: 'Zone Coverage' },
-    { id: 'disputes', icon: ShieldAlert, label: 'Disputes' },
-    { id: 'actions', icon: Settings2, label: 'Pending Actions' },
-    { id: 'history', icon: History, label: 'My Proposals' },
-    { id: 'finance', icon: Wallet, label: 'Financial Desk' },
-    { id: 'network', icon: Network, label: 'Network Intelligence' },
+    // { id: 'zones', icon: MapPin, label: 'Zone Coverage' },
+    { id: 'disputes', icon: ShieldAlert, label: 'Disputes', badge: disputeCount > 0 ? disputeCount : undefined },
+    // { id: 'actions', icon: Settings2, label: 'Pending Actions' },
+    // { id: 'history', icon: History, label: 'My Proposals' },
+    // { id: 'finance', icon: Wallet, label: 'Financial Desk' },
+    // { id: 'network', icon: Network, label: 'Network Intelligence' },
     { id: 'agents', icon: Users, label: 'Agents' },
     { id: 'operators', icon: Users, label: 'Operators' },
   ];
 
   const operatorTools = [
     { id: 'overview', icon: LayoutGrid, label: 'Overview' },
-    { id: 'disputes', icon: ShieldAlert, label: 'Disputes' },
+    { id: 'finance', icon: Wallet, label: 'Financial Desk', badge: payoutCount > 0 ? payoutCount : undefined },
+    { id: 'disputes', icon: ShieldAlert, label: 'Disputes', badge: disputeCount > 0 ? disputeCount : undefined },
     { id: 'history', icon: History, label: 'Assignment History' },
   ];
 
@@ -12224,8 +12669,10 @@ export interface Notification {
 interface NotificationContextType {
   notifications: Notification[];
   unreadCount: number;
+  payoutCount: number;
   markAsRead: (id: string) => Promise<void>;
   markAllAsRead: () => Promise<void>;
+  refreshNotifications: () => Promise<void>;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -12291,9 +12738,10 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   };
 
   const unreadCount = notifications.filter(n => !n.read).length;
+  const payoutCount = notifications.filter(n => !n.read && n.type === 'payout.requested').length;
 
   return (
-    <NotificationContext.Provider value={{ notifications, unreadCount, markAsRead, markAllAsRead }}>
+    <NotificationContext.Provider value={{ notifications, unreadCount, payoutCount, markAsRead, markAllAsRead, refreshNotifications: fetchNotifications }}>
       {children}
     </NotificationContext.Provider>
   );
@@ -12450,7 +12898,7 @@ export const useAuth = () => {
 
 ===== FILE: hooks\useHeartbeat.ts =====
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import api from '../utils/api';
 import { useAuth } from './useAuth';
 
@@ -12466,6 +12914,23 @@ export const useHeartbeat = (isOnline: boolean) => {
   const [error, setError] = useState<string | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  const sendHeartbeat = useCallback(async () => {
+    if (!user || user.role !== 'operator' || !isOnline) return;
+
+    try {
+      const { data } = await api.post<HeartbeatResponse>('/auth/heartbeat');
+      if (data.assignmentFound) {
+        setPushedRequestId(data.requestId);
+      } else {
+        setPushedRequestId(null);
+      }
+      setError(null);
+    } catch (err) {
+      console.error('[Heartbeat] Failed to ping backend', err);
+      setError('Connection lost. Presence may be offline.');
+    }
+  }, [user, isOnline]);
+
   useEffect(() => {
     // Only Operators heartbeat in the current push-system design
     if (!user || user.role !== 'operator' || !isOnline) {
@@ -12473,21 +12938,6 @@ export const useHeartbeat = (isOnline: boolean) => {
       setPushedRequestId(null);
       return;
     }
-
-    const sendHeartbeat = async () => {
-      try {
-        const { data } = await api.post<HeartbeatResponse>('/auth/heartbeat');
-        if (data.assignmentFound) {
-          setPushedRequestId(data.requestId);
-        } else {
-          setPushedRequestId(null);
-        }
-        setError(null);
-      } catch (err) {
-        console.error('[Heartbeat] Failed to ping backend', err);
-        setError('Connection lost. Presence may be offline.');
-      }
-    };
 
     // Initial ping
     sendHeartbeat();
@@ -12498,11 +12948,11 @@ export const useHeartbeat = (isOnline: boolean) => {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [user, isOnline]);
+  }, [user, isOnline, sendHeartbeat]);
 
-  const trigger = () => {
+  const trigger = useCallback(() => {
     sendHeartbeat();
-  };
+  }, [sendHeartbeat]);
 
   return { pushedRequestId, error, trigger };
 };
@@ -12685,6 +13135,8 @@ export const usePermissions = () => {
         Action.MEDIATE_MESSAGE,
         Action.BUNDLE_FEEDBACK,
         Action.VIEW_MANAGED_TRANSACTIONS,
+        Action.APPROVE_PAYOUT,
+        Action.VIEW_FINANCIAL_REPORTS,
       ],
       [UserRole.ADMIN]: [
         Action.PROPOSE_RESOLUTION,
@@ -12699,7 +13151,6 @@ export const usePermissions = () => {
         Action.VIEW_MANAGED_TRANSACTIONS,
         Action.VIEW_RESOLUTIONS_BY_ADMIN,
         Action.ESCALATE_TO_SUPER_ADMIN,
-        Action.APPROVE_PAYOUT,
         Action.VIEW_FINANCIAL_REPORTS,
         Action.PROCESS_REFUND,
       ],
@@ -18930,6 +19381,7 @@ import { NetworkView } from '../components/agent/NetworkView';
 import { FocusBoard } from '../components/agent/FocusBoard';
 import { Skeleton } from '../components/ui/Skeleton';
 import TransferMatchModal from '../components/agent/TransferMatchModal';
+import PayoutRequestModal from '../components/agent/PayoutRequestModal';
 
 type DashboardView = 'focus' | 'earnings' | 'network' | 'packages' | 'profile';
 
@@ -19067,6 +19519,7 @@ const AgentDashboard: React.FC = () => {
   const [requests, setRequests] = useState<any[]>([]);
   const [feedbackRequest, setFeedbackRequest] = useState<{id: string, transactionId: string, customerName: string} | null>(null);
   const [transferringJobId, setTransferringJobId] = useState<string | null>(null);
+  const [isPayoutModalOpen, setIsPayoutModalOpen] = useState(false);
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
 
   const addProcessingId = (id: string) => setProcessingIds(prev => new Set(prev).add(id));
@@ -19126,34 +19579,23 @@ const AgentDashboard: React.FC = () => {
   };
 
   const handlePayoutRequest = async () => {
-    const available = finance?.aglpAvailable || 0;
-    if (available <= 0) {
-      showAlert({ title: 'Insufficient Balance', message: 'You do not have any withdrawable AGLP.', type: 'error' });
-      return;
-    }
+    setIsPayoutModalOpen(true);
+  };
 
-    const confirmed = await showConfirm({
-      title: 'Request Payout',
-      message: `Withdraw your available ${available.toLocaleString()} AGLP to your linked Telebirr account?`,
-      confirmText: 'Confirm Withdrawal',
-      type: 'success'
-    });
-
-    if (confirmed) {
-      try {
-        await api.post('/users/me/withdraw', { amount: available });
-        showAlert({
-          title: 'Payout Requested',
-          message: 'Your request is being processed by the regional admin.',
-          type: 'success'
-        });
-        // Refresh finance data
-        const financeRes = await api.get('/users/me/finance');
-        setFinance(financeRes.data);
-      } catch (error) {
-        console.error('Failed to request payout:', error);
-        showAlert({ title: 'Error', message: 'Failed to submit withdrawal request.', type: 'error' });
-      }
+  const handlePayoutSubmit = async (data: { amount: number; bankName: string; bankAccountNumber: string; bankAccountHolder: string }) => {
+    try {
+      await api.post('/users/me/withdraw', data);
+      showAlert({
+        title: 'Payout Requested',
+        message: 'Your request has been sent to the operator for manual transfer.',
+        type: 'success'
+      });
+      // Refresh finance data
+      const financeRes = await api.get('/users/me/finance');
+      setFinance(financeRes.data);
+    } catch (error) {
+       console.error('Failed to request payout:', error);
+       throw error; // Re-throw to be caught by modal's error handler
     }
   };
 
@@ -19391,6 +19833,13 @@ const AgentDashboard: React.FC = () => {
         matchId={transferringJobId || ''}
         referrals={profile?.referrals || []}
         onSuccess={fetchData}
+      />
+
+      <PayoutRequestModal 
+        isOpen={isPayoutModalOpen}
+        onClose={() => setIsPayoutModalOpen(false)}
+        availableBalance={parseFloat(finance?.aglpAvailable || '0')}
+        onSubmit={handlePayoutSubmit}
       />
     </DashboardLayout>
   );
@@ -20730,8 +21179,10 @@ import { Can } from '../components/ui/Can';
 import { Action } from '../hooks/usePermissions';
 import AgentAssignmentModal from '../components/operator/AgentAssignmentModal';
 import { useHeartbeat } from '../hooks/useHeartbeat';
+import { useSocket } from '../contexts/SocketContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import DisputesBoard from '../components/operator/DisputesBoard.tsx';
+import FinancialDesk from '../components/operator/FinancialDesk';
 
 const OperatorDashboard: React.FC = () => {
     const { user } = useAuth();
@@ -20745,6 +21196,27 @@ const OperatorDashboard: React.FC = () => {
     const [currentView, setCurrentView] = useState('overview');
 
     const { pushedRequestId, error: heartbeatError, trigger: triggerCheck } = useHeartbeat(isOnline);
+    const { socket } = useSocket();
+
+    // Listen for real-time WebSocket push notifications
+    useEffect(() => {
+        if (!socket || !isOnline) return;
+
+        const handleNotification = (notification: any) => {
+            if (notification.type === 'request.pushed') {
+                console.log('[OperatorDashboard] Real-time push received via WebSocket');
+                triggerCheck();
+            } else if (notification.type === 'request.disputed') {
+                console.log('[OperatorDashboard] Real-time dispute received');
+                setCurrentView('disputes');
+            }
+        };
+
+        socket.on('notification', handleNotification);
+        return () => {
+            socket.off('notification', handleNotification);
+        };
+    }, [socket, isOnline, triggerCheck]);
 
     // Fetch active transactions on mount
     useEffect(() => {
@@ -21093,6 +21565,12 @@ const OperatorDashboard: React.FC = () => {
                              <p className="text-slate-500 max-w-sm mx-auto">
                                 You can view your past assignments, completion rates, and performance trends here. This view is currently being optimized.
                              </p>
+                        </div>
+                    )}
+
+                    {currentView === 'finance' && (
+                        <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm min-h-[600px]">
+                             <FinancialDesk />
                         </div>
                     )}
                 </motion.div>
@@ -22327,6 +22805,80 @@ export const operatorZoneActivity: ZoneActivity[] = [
     requestsAssigned: 24,
   },
 ];
+
+
+===== FILE: utils\sounds.ts =====
+
+/**
+ * Sound utilities using the Web Audio API.
+ * No audio files required — all tones are synthesized in the browser.
+ */
+
+function getAudioContext(): AudioContext | null {
+  try {
+    return new (window.AudioContext || (window as any).webkitAudioContext)();
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Plays the incoming customer request alert:
+ * Two rising tones — a clean double-beep (high → higher).
+ */
+export function playRequestSound() {
+  const ctx = getAudioContext();
+  if (!ctx) return;
+
+  const schedule = [
+    { freq: 880, start: 0, duration: 0.12 },
+    { freq: 1100, start: 0.16, duration: 0.15 },
+  ];
+
+  schedule.forEach(({ freq, start, duration }) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, ctx.currentTime + start);
+    gain.gain.setValueAtTime(0, ctx.currentTime + start);
+    gain.gain.linearRampToValueAtTime(0.4, ctx.currentTime + start + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + duration);
+    osc.start(ctx.currentTime + start);
+    osc.stop(ctx.currentTime + start + duration + 0.05);
+  });
+}
+
+/**
+ * Plays the payout request alert:
+ * A descending coin-drop tone — distinct from the request chime.
+ * Three descending tones with a slight metallic quality.
+ */
+export function playPayoutSound() {
+  const ctx = getAudioContext();
+  if (!ctx) return;
+
+  const schedule = [
+    { freq: 1400, start: 0,    duration: 0.08 },
+    { freq: 1050, start: 0.1,  duration: 0.10 },
+    { freq: 700,  start: 0.22, duration: 0.20 },
+  ];
+
+  schedule.forEach(({ freq, start, duration }) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'triangle'; // Slightly metallic vs sine used in request
+    osc.frequency.setValueAtTime(freq, ctx.currentTime + start);
+    gain.gain.setValueAtTime(0, ctx.currentTime + start);
+    gain.gain.linearRampToValueAtTime(0.5, ctx.currentTime + start + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + duration);
+    osc.start(ctx.currentTime + start);
+    osc.stop(ctx.currentTime + start + duration + 0.05);
+  });
+}
 
 
 ===== FILE: utils\verify_jwt_logic.mjs =====

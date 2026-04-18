@@ -16,6 +16,9 @@ export declare class AglpService {
         conversionRate: Prisma.Decimal | null;
         referenceId: string | null;
         referenceType: string | null;
+        bankName: string | null;
+        bankAccountNumber: string | null;
+        bankAccountHolder: string | null;
         updatedAt: Date;
         profileId: string;
     }>;
@@ -29,11 +32,18 @@ export declare class AglpService {
         conversionRate: Prisma.Decimal | null;
         referenceId: string | null;
         referenceType: string | null;
+        bankName: string | null;
+        bankAccountNumber: string | null;
+        bankAccountHolder: string | null;
         updatedAt: Date;
         profileId: string;
     }>;
     earnCommission(tx: Prisma.TransactionClient, profileId: string, amountEtb: number, referenceId: string, reason: string): Promise<void>;
-    withdrawAglp(tx: Prisma.TransactionClient, profileId: string, amountAglp: number): Promise<{
+    withdrawAglp(tx: Prisma.TransactionClient, profileId: string, amountAglp: number, bankDetails: {
+        bankName: string;
+        bankAccountNumber: string;
+        bankAccountHolder: string;
+    }): Promise<{
         id: string;
         createdAt: Date;
         status: import(".prisma/client").$Enums.AglpTransactionStatus;
@@ -43,6 +53,9 @@ export declare class AglpService {
         conversionRate: Prisma.Decimal | null;
         referenceId: string | null;
         referenceType: string | null;
+        bankName: string | null;
+        bankAccountNumber: string | null;
+        bankAccountHolder: string | null;
         updatedAt: Date;
         profileId: string;
     }>;
@@ -57,6 +70,9 @@ export declare class AglpService {
         conversionRate: Prisma.Decimal | null;
         referenceId: string | null;
         referenceType: string | null;
+        bankName: string | null;
+        bankAccountNumber: string | null;
+        bankAccountHolder: string | null;
         updatedAt: Date;
         profileId: string;
     }>;

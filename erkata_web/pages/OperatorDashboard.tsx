@@ -20,8 +20,10 @@ import { Can } from '../components/ui/Can';
 import { Action } from '../hooks/usePermissions';
 import AgentAssignmentModal from '../components/operator/AgentAssignmentModal';
 import { useHeartbeat } from '../hooks/useHeartbeat';
+import { useSocket } from '../contexts/SocketContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import DisputesBoard from '../components/operator/DisputesBoard.tsx';
+import FinancialDesk from '../components/operator/FinancialDesk';
 
 const OperatorDashboard: React.FC = () => {
     const { user } = useAuth();
@@ -35,6 +37,27 @@ const OperatorDashboard: React.FC = () => {
     const [currentView, setCurrentView] = useState('overview');
 
     const { pushedRequestId, error: heartbeatError, trigger: triggerCheck } = useHeartbeat(isOnline);
+    const { socket } = useSocket();
+
+    // Listen for real-time WebSocket push notifications
+    useEffect(() => {
+        if (!socket || !isOnline) return;
+
+        const handleNotification = (notification: any) => {
+            if (notification.type === 'request.pushed') {
+                console.log('[OperatorDashboard] Real-time push received via WebSocket');
+                triggerCheck();
+            } else if (notification.type === 'request.disputed') {
+                console.log('[OperatorDashboard] Real-time dispute received');
+                setCurrentView('disputes');
+            }
+        };
+
+        socket.on('notification', handleNotification);
+        return () => {
+            socket.off('notification', handleNotification);
+        };
+    }, [socket, isOnline, triggerCheck]);
 
     // Fetch active transactions on mount
     useEffect(() => {
@@ -383,6 +406,12 @@ const OperatorDashboard: React.FC = () => {
                              <p className="text-slate-500 max-w-sm mx-auto">
                                 You can view your past assignments, completion rates, and performance trends here. This view is currently being optimized.
                              </p>
+                        </div>
+                    )}
+
+                    {currentView === 'finance' && (
+                        <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm min-h-[600px]">
+                             <FinancialDesk />
                         </div>
                     )}
                 </motion.div>

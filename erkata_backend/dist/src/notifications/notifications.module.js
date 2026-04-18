@@ -12,6 +12,7 @@ const jwt_1 = require("@nestjs/jwt");
 const notifications_service_1 = require("./notifications.service");
 const notifications_gateway_1 = require("./notifications.gateway");
 const prisma_module_1 = require("../prisma/prisma.module");
+const redis_module_1 = require("../common/redis/redis.module");
 const notifications_controller_1 = require("./notifications.controller");
 let NotificationsModule = class NotificationsModule {
 };
@@ -25,6 +26,7 @@ exports.NotificationsModule = NotificationsModule = __decorate([
                 signOptions: { expiresIn: '1d' },
             }),
             prisma_module_1.PrismaModule,
+            redis_module_1.RedisModule,
         ],
         controllers: [notifications_controller_1.NotificationsController],
         providers: [notifications_service_1.NotificationsService, notifications_gateway_1.NotificationsGateway],

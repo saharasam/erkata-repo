@@ -15,6 +15,7 @@ const prisma_service_1 = require("../prisma/prisma.service");
 const client_1 = require("@prisma/client");
 const config_service_1 = require("../common/config.service");
 const aglp_service_1 = require("../aglp/aglp.service");
+const notifications_gateway_1 = require("../notifications/notifications.gateway");
 exports.TierPriority = {
     ABUNDANT_LIFE: 5,
     UNITY: 4,
@@ -26,10 +27,12 @@ let UsersService = class UsersService {
     prisma;
     aglpService;
     configService;
-    constructor(prisma, aglpService, configService) {
+    notificationsGateway;
+    constructor(prisma, aglpService, configService, notificationsGateway) {
         this.prisma = prisma;
         this.aglpService = aglpService;
         this.configService = configService;
+        this.notificationsGateway = notificationsGateway;
     }
     async getCurrentProfile(userId) {
         const profile = await this.prisma.profile.findUnique({
@@ -394,13 +397,32 @@ let UsersService = class UsersService {
             data: { isActive: false },
         });
     }
-    async requestWithdrawal(userId, amountAglp) {
+    async requestWithdrawal(userId, amountAglp, bankDetails) {
         if (amountAglp <= 0) {
             throw new common_1.BadRequestException('Amount must be positive');
         }
-        return this.prisma.$transaction(async (tx) => {
-            return this.aglpService.withdrawAglp(tx, userId, amountAglp);
+        const agent = await this.prisma.profile.findUnique({
+            where: { id: userId },
+            select: { fullName: true, phone: true },
         });
+        const result = await this.prisma.$transaction(async (tx) => {
+            return this.aglpService.withdrawAglp(tx, userId, amountAglp, bankDetails);
+        });
+        this.notificationsGateway.sendToRole('operator', 'notification', {
+            type: 'payout.requested',
+            title: 'New Payout Request',
+            message: `${agent?.fullName || 'An agent'} has requested a withdrawal of ${amountAglp.toLocaleString()} AGLP.`,
+            agentName: agent?.fullName,
+            agentPhone: agent?.phone,
+            amount: amountAglp,
+            bankName: bankDetails.bankName,
+            bankAccountNumber: bankDetails.bankAccountNumber,
+            bankAccountHolder: bankDetails.bankAccountHolder,
+            read: false,
+            createdAt: new Date().toISOString(),
+            id: result.id,
+        });
+        return result;
     }
     async activateUser(callerRole, userId) {
         const user = await this.prisma.profile.findUnique({
@@ -465,6 +487,7 @@ exports.UsersService = UsersService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         aglp_service_1.AglpService,
-        config_service_1.ConfigService])
+        config_service_1.ConfigService,
+        notifications_gateway_1.NotificationsGateway])
 ], UsersService);
 //# sourceMappingURL=users.service.js.map

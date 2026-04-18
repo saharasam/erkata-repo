@@ -163,7 +163,7 @@ let AglpService = class AglpService {
             },
         });
     }
-    async withdrawAglp(tx, profileId, amountAglp) {
+    async withdrawAglp(tx, profileId, amountAglp, bankDetails) {
         const profile = await tx.profile.findUnique({ where: { id: profileId } });
         if (!profile || Number(profile.aglpBalance) < amountAglp) {
             throw new Error('Insufficient AGLP balance');
@@ -209,6 +209,9 @@ let AglpService = class AglpService {
                 conversionRate: rate,
                 status: client_1.AglpTransactionStatus.PENDING,
                 referenceType: 'PAYOUT',
+                bankName: bankDetails.bankName,
+                bankAccountNumber: bankDetails.bankAccountNumber,
+                bankAccountHolder: bankDetails.bankAccountHolder,
             },
         });
         await tx.auditLog.create({

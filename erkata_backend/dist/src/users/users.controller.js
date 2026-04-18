@@ -38,8 +38,12 @@ let UsersController = class UsersController {
     async getAvailablePackages() {
         return this.usersService.getAvailablePackages();
     }
-    async requestWithdrawal(req, amount) {
-        return this.usersService.requestWithdrawal(req.user.id, amount);
+    async requestWithdrawal(req, body) {
+        return this.usersService.requestWithdrawal(req.user.id, body.amount, {
+            bankName: body.bankName,
+            bankAccountNumber: body.bankAccountNumber,
+            bankAccountHolder: body.bankAccountHolder,
+        });
     }
     async generateReferralCode(req) {
         return this.usersService.generateReferralCode(req.user.id);
@@ -98,9 +102,9 @@ __decorate([
 __decorate([
     (0, common_1.Post)('me/withdraw'),
     __param(0, (0, common_1.Req)()),
-    __param(1, (0, common_1.Body)('amount')),
+    __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Number]),
+    __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "requestWithdrawal", null);
 __decorate([

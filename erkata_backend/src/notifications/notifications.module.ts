@@ -3,6 +3,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { NotificationsService } from './notifications.service';
 import { NotificationsGateway } from './notifications.gateway';
 import { PrismaModule } from '../prisma/prisma.module';
+import { RedisModule } from '../common/redis/redis.module';
 
 import { NotificationsController } from './notifications.controller';
 
@@ -14,6 +15,7 @@ import { NotificationsController } from './notifications.controller';
       signOptions: { expiresIn: '1d' },
     }),
     PrismaModule,
+    RedisModule,
   ],
   controllers: [NotificationsController],
   providers: [NotificationsService, NotificationsGateway],

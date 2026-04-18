@@ -471,7 +471,7 @@ export class RequestsService implements OnModuleInit {
         data: { status: RequestStatus.disputed },
       });
 
-      this.eventEmitter.emit('request.disputed', { requestId, customerId });
+      await this.eventEmitter.emitAsync('request.disputed', { requestId, customerId });
     }
 
     return { success: true, status: confirmed ? 'fulfilled' : 'disputed' };
@@ -506,7 +506,7 @@ export class RequestsService implements OnModuleInit {
       include: { customer: true, matches: { include: { agent: true } } },
     });
 
-    this.eventEmitter.emit('request.resolved', { requestId, operatorId, note });
+    await this.eventEmitter.emitAsync('request.resolved', { requestId, operatorId, note });
     return updated;
   }
 
@@ -536,7 +536,7 @@ export class RequestsService implements OnModuleInit {
       },
     });
 
-    this.eventEmitter.emit('request.escalated', {
+    await this.eventEmitter.emitAsync('request.escalated', {
       requestId,
       operatorId,
       note,
@@ -573,7 +573,7 @@ export class RequestsService implements OnModuleInit {
       },
     });
 
-    this.eventEmitter.emit('request.voided', {
+    await this.eventEmitter.emitAsync('request.voided', {
       requestId,
       operatorId,
       note,

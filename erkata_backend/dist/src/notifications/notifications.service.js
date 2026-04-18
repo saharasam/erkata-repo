@@ -41,6 +41,16 @@ let NotificationsService = class NotificationsService {
             data: { read: true },
         });
     }
+    async markRelatedAsRead(requestId, eventTypes) {
+        return await this.prisma.notification.updateMany({
+            where: {
+                type: { in: eventTypes },
+                link: { contains: requestId },
+                read: false
+            },
+            data: { read: true },
+        });
+    }
 };
 exports.NotificationsService = NotificationsService;
 exports.NotificationsService = NotificationsService = __decorate([

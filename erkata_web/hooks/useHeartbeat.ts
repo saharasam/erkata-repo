@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import api from '../utils/api';
 import { useAuth } from './useAuth';
 
@@ -14,6 +14,23 @@ export const useHeartbeat = (isOnline: boolean) => {
   const [error, setError] = useState<string | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  const sendHeartbeat = useCallback(async () => {
+    if (!user || user.role !== 'operator' || !isOnline) return;
+
+    try {
+      const { data } = await api.post<HeartbeatResponse>('/auth/heartbeat');
+      if (data.assignmentFound) {
+        setPushedRequestId(data.requestId);
+      } else {
+        setPushedRequestId(null);
+      }
+      setError(null);
+    } catch (err) {
+      console.error('[Heartbeat] Failed to ping backend', err);
+      setError('Connection lost. Presence may be offline.');
+    }
+  }, [user, isOnline]);
+
   useEffect(() => {
     // Only Operators heartbeat in the current push-system design
     if (!user || user.role !== 'operator' || !isOnline) {
@@ -21,21 +38,6 @@ export const useHeartbeat = (isOnline: boolean) => {
       setPushedRequestId(null);
       return;
     }
-
-    const sendHeartbeat = async () => {
-      try {
-        const { data } = await api.post<HeartbeatResponse>('/auth/heartbeat');
-        if (data.assignmentFound) {
-          setPushedRequestId(data.requestId);
-        } else {
-          setPushedRequestId(null);
-        }
-        setError(null);
-      } catch (err) {
-        console.error('[Heartbeat] Failed to ping backend', err);
-        setError('Connection lost. Presence may be offline.');
-      }
-    };
 
     // Initial ping
     sendHeartbeat();
@@ -46,11 +48,11 @@ export const useHeartbeat = (isOnline: boolean) => {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, [user, isOnline]);
+  }, [user, isOnline, sendHeartbeat]);
 
-  const trigger = () => {
+  const trigger = useCallback(() => {
     sendHeartbeat();
-  };
+  }, [sendHeartbeat]);
 
   return { pushedRequestId, error, trigger };
 };

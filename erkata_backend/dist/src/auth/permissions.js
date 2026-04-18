@@ -108,6 +108,8 @@ exports.PermissionMatrix = {
         Action.VIEW_ASSIGNED_REQUEST_DETAILS,
         Action.RESOLVE_DISPUTE,
         Action.ESCALATE_DISPUTE,
+        Action.APPROVE_PAYOUT,
+        Action.VIEW_FINANCIAL_REPORTS,
     ],
     admin: [
         Action.PROPOSE_RESOLUTION,
