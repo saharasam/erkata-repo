@@ -20,6 +20,7 @@ const transactions_module_1 = require("./transactions/transactions.module");
 const mediation_module_1 = require("./mediation/mediation.module");
 const core_1 = require("@nestjs/core");
 const audit_interceptor_1 = require("./common/interceptors/audit.interceptor");
+const lockdown_guard_1 = require("./common/guards/lockdown.guard");
 const common_module_1 = require("./common/common.module");
 const admin_module_1 = require("./admin/admin.module");
 const aglp_module_1 = require("./aglp/aglp.module");
@@ -65,6 +66,10 @@ exports.AppModule = AppModule = __decorate([
             {
                 provide: core_1.APP_INTERCEPTOR,
                 useClass: audit_interceptor_1.AuditInterceptor,
+            },
+            {
+                provide: core_1.APP_GUARD,
+                useClass: lockdown_guard_1.LockdownGuard,
             },
         ],
     })

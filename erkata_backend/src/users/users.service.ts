@@ -9,6 +9,19 @@ import { PrismaService } from '../prisma/prisma.service';
 import { UserRole, Prisma, Tier } from '@prisma/client';
 import { ConfigService } from '../common/config.service';
 import { AglpService } from '../aglp/aglp.service';
+import { NotificationsGateway } from '../notifications/notifications.gateway';
+
+interface AgentMatchStats {
+  agent_id: string;
+  accepted_count: number | string;
+  rejected_count: number | string;
+  unfulfilled_count: number | string;
+}
+
+interface AgentRatingStats {
+  agent_id: string;
+  avg_rating: number | string;
+}
 
 export const TierPriority: Record<string, number> = {
   ABUNDANT_LIFE: 5,
@@ -24,6 +37,7 @@ export class UsersService {
     private readonly prisma: PrismaService,
     private readonly aglpService: AglpService,
     private readonly configService: ConfigService,
+    private readonly notificationsGateway: NotificationsGateway,
   ) {}
 
   async getCurrentProfile(userId: string) {
@@ -32,6 +46,7 @@ export class UsersService {
       include: {
         agentZones: true,
         referralLink: true,
+        package: true,
         referrals: {
           select: {
             id: true,
@@ -58,26 +73,36 @@ export class UsersService {
         referrals: { select: { id: true } },
         referralLink: { select: { tier: true } },
         agentZones: { select: { id: true } },
+        package: true,
       },
     });
 
     if (!profile) throw new NotFoundException('Profile not found');
 
     const tier = profile.tier || 'FREE';
-    const totalSlots = this.getReferralLimit(tier);
+    const totalSlots = await this.getReferralLimit(tier);
     const usedSlots = profile.referrals.length;
 
     const usedZones = profile.agentZones?.length || 0;
-    const totalZones = this.getZoneLimit(tier);
+    const totalZones = await this.getZoneLimit(tier);
 
     const tiers = Object.keys(TierPriority).sort(
       (a, b) => TierPriority[a] - TierPriority[b],
     );
     const currentTierIndex = tiers.indexOf(tier);
-    const nextTier =
+    const nextTierEnum =
       currentTierIndex !== -1 && currentTierIndex < tiers.length - 1
         ? tiers[currentTierIndex + 1]
-        : 'Maximum Tier';
+        : null;
+
+    let nextTier = 'Maximum Tier';
+    if (nextTierEnum) {
+      const nextPkg = await this.prisma.package.findUnique({
+        where: { name: nextTierEnum as Tier },
+        select: { displayName: true },
+      });
+      nextTier = nextPkg?.displayName || nextTierEnum.replace('_', ' ');
+    }
 
     // Fetch audit logs related to commissions and payouts for this user
     const history = await this.prisma.auditLog.findMany({
@@ -101,41 +126,130 @@ export class UsersService {
 
     // Format history for the UI
     const formattedHistory = history.map((log) => {
-      const metadata = log.metadata as {
-        amount?: string | number;
-        amountAglp?: string | number;
-        reason?: string;
-      } | null;
-
+      const metadata = (log.metadata as any) || {};
+      
       const type = log.action.includes('REFERRAL')
         ? 'Referral'
         : log.action.includes('PACKAGE')
           ? 'Package'
-          : 'Commission';
-
-      const rawAmount = metadata?.amount ?? metadata?.amountAglp ?? '0';
+          : log.action.includes('PAYOUT')
+            ? 'Withdrawal'
+            : 'Commission';
 
       return {
         id: log.id,
         action: log.action,
-        amount: rawAmount.toString(),
+        amount: metadata.amount || metadata.amountAglp || 0,
         type,
-        date: log.createdAt,
-        description: metadata?.reason || log.action,
+        createdAt: log.createdAt,
+        metadata: {
+          ...metadata,
+          transactionId: log.transactionId || metadata.aglpTxId || log.id,
+        },
       };
     });
 
+    // Calculate Weekly Growth & Chart Data
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const fourteenDaysAgo = new Date();
+    fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+
+    const currentWeekLogs = await this.prisma.auditLog.findMany({
+      where: {
+        targetId: userId,
+        action: { contains: 'EARNED' },
+        createdAt: { gte: sevenDaysAgo },
+      },
+    });
+
+    const previousWeekLogs = await this.prisma.auditLog.findMany({
+      where: {
+        targetId: userId,
+        action: { contains: 'EARNED' },
+        createdAt: { gte: fourteenDaysAgo, lt: sevenDaysAgo },
+      },
+    });
+
+    const sumLogs = (logs: any[]) =>
+      logs.reduce((acc, log) => {
+        const metadata = (log.metadata as any) || {};
+        const amount = Number(metadata.amount || metadata.amountAglp || 0);
+        return acc + amount;
+      }, 0);
+
+    const currentTotal = sumLogs(currentWeekLogs);
+    const previousTotal = sumLogs(previousWeekLogs);
+
+    let weeklyGrowth = 0;
+    if (previousTotal > 0) {
+      weeklyGrowth = ((currentTotal - previousTotal) / previousTotal) * 100;
+    } else if (currentTotal > 0) {
+      weeklyGrowth = 100;
+    }
+
+    // Chart Data (Last 7 days daily)
+    const chartData = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dayStart = new Date(d.setHours(0, 0, 0, 0));
+      const dayEnd = new Date(d.setHours(23, 59, 59, 999));
+      
+      const dayLogs = currentWeekLogs.filter(
+        (l) => l.createdAt >= dayStart && l.createdAt <= dayEnd
+      );
+      return sumLogs(dayLogs);
+    }).reverse();
+
+    // Fetch dynamic totals from transactions for accuracy
+    const pendingWithdrawalsSum = await this.prisma.aglpTransaction.aggregate({
+      where: {
+        profileId: userId,
+        type: 'WITHDRAWAL',
+        status: 'PENDING',
+      },
+      _sum: { amount: true },
+    });
+
+    const pendingCommissionsSum = await this.prisma.aglpTransaction.aggregate({
+      where: {
+        profileId: userId,
+        type: 'EARN',
+        status: 'PENDING',
+      },
+      _sum: { amount: true },
+    });
+
+    const completedWithdrawalsSum = await this.prisma.aglpTransaction.aggregate({
+      where: {
+        profileId: userId,
+        type: 'WITHDRAWAL',
+        status: 'COMPLETED',
+      },
+      _sum: { amount: true },
+    });
+
+    const dynamicPending = (pendingCommissionsSum._sum.amount?.toNumber() || 0) + (pendingWithdrawalsSum._sum.amount?.toNumber() || 0);
+    const dynamicWithdrawn = completedWithdrawalsSum._sum.amount?.toNumber() || 0;
+
     return {
-      balance: profile.aglpBalance.toString(), // Kept for backwards compatibility temporarily
-      aglpAvailable: profile.aglpBalance.toString(),
-      aglpPending: profile.aglpPending.toString(),
-      aglpWithdrawn: profile.aglpWithdrawn.toString(),
+      balance: profile.aglpBalance.toNumber(),
+      aglpAvailable: profile.aglpBalance.toNumber(),
+      aglpPending: dynamicPending,
+      aglpWithdrawn: dynamicWithdrawn,
       usedSlots,
       totalSlots,
       usedZones,
       totalZones,
-      currentTier: tier.replace('_', ' '),
+      currentTier: profile.package?.displayName || tier.replace('_', ' '),
+      tier,
+      packageDisplayName: profile.package?.displayName,
       nextTier,
+      weeklyGrowth: {
+        percentage: weeklyGrowth.toFixed(1),
+        amount: currentTotal - previousTotal,
+        chart: chartData,
+      },
       history: formattedHistory,
     };
   }
@@ -148,8 +262,8 @@ export class UsersService {
   canModifyUser(callerRole: UserRole, targetRole: UserRole): boolean {
     if (callerRole === UserRole.super_admin) return true;
     if (callerRole === UserRole.admin) {
-      // Admin cannot target Super Admin or other Admins
-      const targetRoles: UserRole[] = [UserRole.operator, UserRole.agent];
+      // Admin can only target Operators. Agents are managed by Super Admin (invites/suspension).
+      const targetRoles: UserRole[] = [UserRole.operator];
       return targetRoles.includes(targetRole);
     }
     // Operators, Agents, and Customers have zero write authority over others
@@ -196,13 +310,14 @@ export class UsersService {
       throw new ForbiddenException('Only admins can list all users');
     }
 
-    return this.prisma.profile.findMany({
+    const profiles = await this.prisma.profile.findMany({
       where: {
         role: filters.role,
         isActive: filters.isActive,
       },
       include: {
         referralLink: true,
+        package: true,
         agentZones: {
           include: {
             zone: true,
@@ -210,6 +325,71 @@ export class UsersService {
         },
       },
       orderBy: { createdAt: 'desc' },
+    });
+
+    if (filters.role === UserRole.agent && profiles.length > 0) {
+      const agentIds = profiles.map((p) => p.id);
+
+      const matchStatsRaw = await this.prisma.$queryRaw<AgentMatchStats[]>`
+        SELECT 
+          m.agent_id,
+          COUNT(CASE WHEN m.status = 'accepted' THEN 1 END) as accepted_count,
+          COUNT(CASE WHEN m.status = 'rejected' THEN 1 END) as rejected_count,
+          COUNT(CASE WHEN m.status = 'accepted' AND r.status = 'disputed' THEN 1 END) as unfulfilled_count
+        FROM matches m
+        LEFT JOIN requests r ON m.request_id = r.id
+        WHERE m.agent_id::text IN (${Prisma.join(agentIds)})
+        GROUP BY m.agent_id
+      `;
+
+      const ratingStatsRaw = await this.prisma.$queryRaw<AgentRatingStats[]>`
+        SELECT
+          m.agent_id,
+          AVG(f.rating) as avg_rating
+        FROM feedbacks f
+        JOIN transactions t ON f.transaction_id = t.id
+        JOIN matches m ON t.match_id = m.id
+        WHERE m.agent_id::text IN (${Prisma.join(agentIds)})
+          AND f.author_id != m.agent_id
+        GROUP BY m.agent_id
+      `;
+
+      const matchStats = new Map(matchStatsRaw.map((s) => [s.agent_id, s]));
+      const ratingStats = new Map(ratingStatsRaw.map((s) => [s.agent_id, s]));
+
+      return profiles.map((profile) => {
+        const mStats = matchStats.get(profile.id);
+        const rStats = ratingStats.get(profile.id);
+
+        const acceptedCount = Number(mStats?.accepted_count || 0);
+        const rejectedCount = Number(mStats?.rejected_count || 0);
+        const unfulfilledCount = Number(mStats?.unfulfilled_count || 0);
+        const unfulfilledRate =
+          acceptedCount > 0 ? (unfulfilledCount / acceptedCount) * 100 : 0;
+        const avgRating = rStats?.avg_rating
+          ? parseFloat(rStats.avg_rating.toString())
+          : 0;
+
+        return {
+          ...profile,
+          acceptedCount,
+          rejectedCount,
+          unfulfilledCount,
+          unfulfilledRate,
+          avgRating,
+        };
+      });
+    }
+
+    return profiles;
+  }
+
+  async getAvailablePackages() {
+    return this.prisma.package.findMany({
+      where: {
+        name: { not: 'FREE' },
+      },
+      orderBy: { price: 'asc' },
     });
   }
 
@@ -236,7 +416,7 @@ export class UsersService {
     }
 
     const tier = agent.tier || 'FREE';
-    const zoneLimit = this.getZoneLimit(tier);
+    const zoneLimit = await this.getZoneLimit(tier);
 
     if (agent.agentZones.length >= zoneLimit) {
       throw new Error(`Agent tier "${tier}" is limited to ${zoneLimit} zones`);
@@ -247,19 +427,20 @@ export class UsersService {
     });
   }
 
-  private getZoneLimit(tier: string): number {
-    switch (tier) {
-      case 'ABUNDANT_LIFE':
-        return 100;
-      case 'UNITY':
-        return 5;
-      case 'LOVE':
-        return 3;
-      case 'PEACE':
-        return 2;
-      default:
-        return 1;
-    }
+  private async getZoneLimit(tier: string): Promise<number> {
+    const pkg = await this.prisma.package.findUnique({
+      where: { name: tier as Tier },
+    });
+    if (pkg) return pkg.zoneLimit;
+
+    // Emergency fallbacks if DB is out of sync
+    const fallbacks: Record<string, number> = {
+      ABUNDANT_LIFE: 100,
+      UNITY: 5,
+      LOVE: 3,
+      PEACE: 2,
+    };
+    return fallbacks[tier] || 1;
   }
 
   async updateTier(callerRole: UserRole, agentId: string, tier: string) {
@@ -396,7 +577,7 @@ export class UsersService {
     if (!referrer) throw new NotFoundException('Referrer not found');
 
     const tier = referrer.tier || 'FREE';
-    const limit = this.getReferralLimit(tier);
+    const limit = await this.getReferralLimit(tier);
 
     if (referrer.referrals.length >= limit) {
       throw new Error(
@@ -407,19 +588,19 @@ export class UsersService {
     return true;
   }
 
-  private getReferralLimit(tier: string): number {
-    switch (tier) {
-      case 'ABUNDANT_LIFE':
-        return 31;
-      case 'UNITY':
-        return 23;
-      case 'LOVE':
-        return 16;
-      case 'PEACE':
-        return 7;
-      default:
-        return 3;
-    }
+  private async getReferralLimit(tier: string): Promise<number> {
+    const pkg = await this.prisma.package.findUnique({
+      where: { name: tier as Tier },
+    });
+    if (pkg) return pkg.referralSlots;
+
+    const fallbacks: Record<string, number> = {
+      ABUNDANT_LIFE: 31,
+      UNITY: 23,
+      LOVE: 16,
+      PEACE: 7,
+    };
+    return fallbacks[tier] || 3;
   }
 
   async suspendUser(callerRole: UserRole, userId: string) {
@@ -440,14 +621,41 @@ export class UsersService {
     });
   }
 
-  async requestWithdrawal(userId: string, amountAglp: number) {
+  async requestWithdrawal(
+    userId: string,
+    amountAglp: number,
+    bankDetails: { bankName: string; bankAccountNumber: string; bankAccountHolder: string },
+  ) {
     if (amountAglp <= 0) {
       throw new BadRequestException('Amount must be positive');
     }
 
-    return this.prisma.$transaction(async (tx) => {
-      return this.aglpService.withdrawAglp(tx, userId, amountAglp);
+    const agent = await this.prisma.profile.findUnique({
+      where: { id: userId },
+      select: { fullName: true, phone: true },
     });
+
+    const result = await this.prisma.$transaction(async (tx) => {
+      return this.aglpService.withdrawAglp(tx, userId, amountAglp, bankDetails);
+    });
+
+    // Notify all online operators in real-time
+    this.notificationsGateway.sendToRole('operator', 'notification', {
+      type: 'payout.requested',
+      title: 'New Payout Request',
+      message: `${agent?.fullName || 'An agent'} has requested a withdrawal of ${amountAglp.toLocaleString()} AGLP.`,
+      agentName: agent?.fullName,
+      agentPhone: agent?.phone,
+      amount: amountAglp,
+      bankName: bankDetails.bankName,
+      bankAccountNumber: bankDetails.bankAccountNumber,
+      bankAccountHolder: bankDetails.bankAccountHolder,
+      read: false,
+      createdAt: new Date().toISOString(),
+      id: result.id,
+    });
+
+    return result;
   }
 
   async activateUser(callerRole: UserRole, userId: string) {

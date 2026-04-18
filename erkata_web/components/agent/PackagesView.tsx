@@ -21,7 +21,7 @@ const tierMeta: Record<string, { icon: any, color: string, bg: string, text: str
 export const PackagesView: React.FC<PackagesViewProps> = ({ finance, profile, onUpgradeComplete }) => {
   const [isUpgrading, setIsUpgrading] = useState(false);
 
-  const rawTier = finance?.currentTier?.toUpperCase().replace(' ', '_') || 'FREE';
+  const rawTier = finance?.tier || 'FREE';
   const meta = tierMeta[rawTier] || tierMeta.FREE;
   const Icon = meta.icon;
 

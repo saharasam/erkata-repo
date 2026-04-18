@@ -1,8 +1,8 @@
 enum RequestStatus {
-  newRequest('New'),
+  pending('Pending'),
   assigned('Assigned'),
-  inProgress('In-Progress'),
-  fulfilled('Fulfilled');
+  fulfilled('Fulfilled'),
+  disputed('Disputed');
 
   final String label;
   const RequestStatus(this.label);

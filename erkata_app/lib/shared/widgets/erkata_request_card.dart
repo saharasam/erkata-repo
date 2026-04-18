@@ -67,7 +67,7 @@ class ErkataRequestCard extends StatelessWidget {
   }
 
   Widget _imageLayout() {
-    final imageUrl = request.type == RequestType.property
+    final imageUrl = request.type == RequestType.realEstate
         ? _propertyImageUrl
         : _furnitureImageUrl;
 

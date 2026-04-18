@@ -19,23 +19,23 @@ class ErrorHandler {
         return _fromStatusCode(e.response?.statusCode, e.response?.data);
 
       case DioExceptionType.cancel:
-        return const UnknownException('Request cancelled');
+        return const UnknownException(message: 'Request cancelled');
 
       case DioExceptionType.badCertificate:
-        return const NetworkException('Certificate verification failed');
+        return const NetworkException(message: 'Certificate verification failed');
 
       case DioExceptionType.unknown:
         if (e.error.toString().contains('SocketException')) {
           return const NetworkException();
         }
-        return UnknownException(e.message ?? 'Unknown error');
+        return UnknownException(message: e.message ?? 'Unknown error');
     }
   }
 
   static AppException _fromStatusCode(int? code, dynamic data) {
     final message = _extractMessage(data);
 
-    if (code == null) return UnknownException(message ?? 'Unexpected error');
+    if (code == null) return UnknownException(message: message ?? 'Unexpected error');
 
     return switch (code) {
       400 || 422 => ValidationException(
@@ -54,7 +54,7 @@ class ErrorHandler {
         statusCode: code,
         message: message ?? 'Server error',
       ),
-      _ => UnknownException(message ?? 'Unexpected error'),
+      _ => UnknownException(message: message ?? 'Unexpected error'),
     };
   }
 

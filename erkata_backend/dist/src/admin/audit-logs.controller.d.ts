@@ -11,11 +11,11 @@ export declare class AuditLogsController {
         } | null;
         id: string;
         createdAt: Date;
-        actorId: string | null;
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         action: string;
         targetTable: string | null;
         targetId: string | null;
         transactionId: string | null;
-        metadata: import("@prisma/client/runtime/library").JsonValue | null;
+        actorId: string | null;
     }[]>;
 }

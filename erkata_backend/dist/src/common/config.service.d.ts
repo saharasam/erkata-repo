@@ -10,5 +10,5 @@ export declare class ConfigService implements OnModuleInit {
     onModuleInit(): Promise<void>;
     refreshConfigs(): Promise<void>;
     get<T>(key: string, defaultValue?: T): T;
-    set(key: string, value: Prisma.InputJsonValue, description?: string): Promise<void>;
+    set(key: string, value: Prisma.InputJsonValue, description?: string, actorId?: string): Promise<void>;
 }

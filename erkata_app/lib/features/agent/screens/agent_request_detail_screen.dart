@@ -104,8 +104,7 @@ class AgentRequestDetailScreen extends StatelessWidget {
                     const SizedBox(height: 40),
 
                     // Actions based on status
-                    if (req.status == RequestStatus.newRequest ||
-                        req.status == RequestStatus.assigned)
+                    if (req.status == RequestStatus.pending)
                       Row(
                         children: [
                           Expanded(
@@ -146,7 +145,7 @@ class AgentRequestDetailScreen extends StatelessWidget {
                         ],
                       ),
 
-                    if (req.status == RequestStatus.inProgress)
+                    if (req.status == RequestStatus.assigned)
                       ElevatedButton.icon(
                         onPressed: () {
                           // Navigate to completion
@@ -184,8 +183,7 @@ class _StatusBadge extends StatelessWidget {
     Color bgColor;
 
     switch (status) {
-      case RequestStatus.newRequest:
-      case RequestStatus.assigned:
+      case RequestStatus.pending:
         color = Theme.of(context).brightness == Brightness.dark
             ? Colors.blue[300]!
             : AppColors.brandPrimary;
@@ -193,7 +191,7 @@ class _StatusBadge extends StatelessWidget {
             ? Colors.blue.withValues(alpha: 0.1)
             : Colors.blue[50]!;
         break;
-      case RequestStatus.inProgress:
+      case RequestStatus.assigned:
         color = Theme.of(context).brightness == Brightness.dark
             ? Colors.orange[300]!
             : Colors.orange[800]!;
@@ -208,6 +206,14 @@ class _StatusBadge extends StatelessWidget {
         bgColor = Theme.of(context).brightness == Brightness.dark
             ? Colors.green.withValues(alpha: 0.1)
             : Colors.green[50]!;
+        break;
+      case RequestStatus.disputed:
+        color = Theme.of(context).brightness == Brightness.dark
+            ? Colors.red[300]!
+            : AppColors.errorRed;
+        bgColor = Theme.of(context).brightness == Brightness.dark
+            ? Colors.red.withValues(alpha: 0.1)
+            : Colors.red[50]!;
         break;
     }
 

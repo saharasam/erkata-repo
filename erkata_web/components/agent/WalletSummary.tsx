@@ -17,6 +17,11 @@ interface WalletSummaryProps {
     aglpAvailable?: string;
     aglpPending?: string;
     aglpWithdrawn?: string;
+    weeklyGrowth?: {
+      percentage: string;
+      amount: number;
+      chart: number[];
+    };
     history: any[];
   } | null;
   onPayoutRequest: () => void;
@@ -84,20 +89,30 @@ const WalletSummary: React.FC<WalletSummaryProps> = ({ finance, onPayoutRequest 
               </div>
               <span className="text-sm font-bold text-slate-500 uppercase tracking-wider">Weekly Growth</span>
             </div>
-            <p className="text-3xl font-black text-slate-900 mb-1">+12.5%</p>
-            <p className="text-xs text-slate-400 font-medium">Earned 2,450 AGLP more than last week</p>
+            <p className={`text-3xl font-black mb-1 ${Number(finance.weeklyGrowth?.percentage || 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+              {finance.weeklyGrowth?.percentage || '0.0'}%
+            </p>
+            <p className="text-xs text-slate-400 font-medium whitespace-pre-line">
+              {Number(finance.weeklyGrowth?.amount || 0) >= 0 
+                ? `Earned ${Math.round(finance.weeklyGrowth?.amount || 0).toLocaleString()} AGLP more than last week`
+                : `Earned ${Math.abs(Math.round(finance.weeklyGrowth?.amount || 0)).toLocaleString()} AGLP less than last week`}
+            </p>
           </div>
           
           <div className="h-16 flex items-end gap-1">
-             {[30, 45, 25, 60, 40, 75, 50].map((h, i) => (
-               <motion.div 
-                key={i}
-                initial={{ height: 0 }}
-                animate={{ height: `${h}%` }}
-                transition={{ delay: 0.5 + (i * 0.1) }}
-                className="flex-1 bg-emerald-500/20 rounded-t-sm" 
-               />
-             ))}
+             {(finance.weeklyGrowth?.chart || [0, 0, 0, 0, 0, 0, 0]).map((h, i) => {
+               const max = Math.max(...(finance.weeklyGrowth?.chart || [100]), 100);
+               const height = (h / max) * 100;
+               return (
+                 <motion.div 
+                  key={i}
+                  initial={{ height: 0 }}
+                  animate={{ height: `${Math.max(height, 5)}%` }}
+                  transition={{ delay: 0.5 + (i * 0.1) }}
+                  className="flex-1 bg-emerald-500/20 rounded-t-sm" 
+                 />
+               );
+             })}
           </div>
         </motion.div>
       </div>
@@ -129,12 +144,14 @@ const WalletSummary: React.FC<WalletSummaryProps> = ({ finance, onPayoutRequest 
             </thead>
             <tbody className="divide-y divide-slate-50">
               {finance.history.map((log) => {
-                const isIncoming = log.action.includes('EARNED');
+                const isIncoming = log.action.includes('EARNED') || log.action.includes('CREDITED') || log.action.includes('RELEASED');
+                const amount = typeof log.amount === 'number' ? log.amount : parseFloat(log.amount || '0');
+                
                 return (
                   <tr key={log.id} className="hover:bg-slate-50/50 transition-colors group">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-xl ${isIncoming ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-600'}`}>
+                        <div className={`p-2 rounded-xl ${isIncoming ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
                           {isIncoming ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
                         </div>
                         <span className="text-sm font-bold text-slate-700">
@@ -143,12 +160,12 @@ const WalletSummary: React.FC<WalletSummaryProps> = ({ finance, onPayoutRequest 
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                       <p className="text-xs text-slate-500 font-medium">#{log.metadata?.transactionId?.slice(0, 8) || 'N/A'}</p>
+                       <p className="text-xs text-slate-500 font-medium">#{log.metadata?.transactionId?.slice(0, 8) || log.id.slice(0, 8)}</p>
                        <p className="text-[10px] text-slate-400">{new Date(log.createdAt).toLocaleDateString()}</p>
                     </td>
                     <td className="px-6 py-4 text-right">
-                       <span className={`text-sm font-black ${isIncoming ? 'text-emerald-600' : 'text-slate-900'}`}>
-                         {isIncoming ? '+' : '-'}{log.metadata?.amount?.toLocaleString() || log.amount?.toLocaleString() || '0'} AGLP
+                       <span className={`text-sm font-black ${isIncoming ? 'text-emerald-600' : 'text-rose-600'}`}>
+                         {isIncoming ? '+' : '-'}{amount.toLocaleString()} AGLP
                        </span>
                     </td>
                     <td className="px-6 py-4 text-right">

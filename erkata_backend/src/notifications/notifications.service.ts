@@ -39,4 +39,15 @@ export class NotificationsService {
       data: { read: true },
     });
   }
+
+  async markRelatedAsRead(requestId: string, eventTypes: string[]): Promise<any> {
+    return await this.prisma.notification.updateMany({
+      where: { 
+        type: { in: eventTypes },
+        link: { contains: requestId },
+        read: false
+      },
+      data: { read: true },
+    });
+  }
 }

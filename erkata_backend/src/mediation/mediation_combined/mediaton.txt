@@ -1,0 +1,646 @@
+
+
+===== FILE: combine.cjs =====
+
+const fs = require('fs');
+const path = require('path');
+
+const rootDir = process.cwd();
+const rootName = path.basename(rootDir);
+
+const outputDir = path.join(rootDir, `${rootName}_combined`);
+
+if (!fs.existsSync(outputDir)) {
+  fs.mkdirSync(outputDir);
+}
+
+const IGNORE_DIRS = new Set([
+  'node_modules', '.git', 'dist', 'build',
+  'ios', 'android', '.dart_tool',
+  `${rootName}_combined`
+]);
+
+const IGNORE_EXT = new Set([
+  '.png', '.jpg', '.jpeg', '.gif', '.webp',
+  '.mp4', '.mp3', '.zip', '.tar', '.gz', '.exe',
+  '.lock'
+]);
+
+function getOutputFileName(dir) {
+  const relative = path.relative(rootDir, dir);
+  if (!relative) return 'root.txt';
+  return relative.split(path.sep).join('__') + '.txt';
+}
+
+function processDirectory(dir) {
+  const fileName = getOutputFileName(dir);
+  const outputFile = path.join(outputDir, fileName);
+
+  fs.writeFileSync(outputFile, '');
+
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  entries.sort((a, b) => a.name.localeCompare(b.name));
+
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
+
+    if (entry.isDirectory()) {
+      if (IGNORE_DIRS.has(entry.name)) continue;
+      processDirectory(fullPath);
+      continue;
+    }
+
+    const ext = path.extname(entry.name).toLowerCase();
+    if (IGNORE_EXT.has(ext)) continue;
+
+    if (entry.isFile()) {
+      try {
+        const content = fs.readFileSync(fullPath, 'utf-8');
+        const header = `\n\n===== FILE: ${entry.name} =====\n\n`;
+        fs.appendFileSync(outputFile, header + content);
+      } catch {}
+    }
+  }
+}
+
+processDirectory(rootDir);
+
+console.log(`Done: ${outputDir}`);
+
+===== FILE: mediation.controller.ts =====
+
+import {
+  Controller,
+  Post,
+  Patch,
+  Get,
+  Param,
+  Body,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
+import { MediationService } from './mediation.service';
+import { RolesGuard, RequirePermission, JwtAuthGuard } from '../auth/guards';
+import { Action } from '../auth/permissions';
+import { FeedbackBundleState } from '@prisma/client';
+import type { AuthenticatedRequest } from '../auth/guards';
+
+@Controller('mediation')
+@UseGuards(JwtAuthGuard, RolesGuard)
+export class MediationController {
+  constructor(private readonly mediationService: MediationService) {}
+
+  @Post('transaction/:id/feedback')
+  @RequirePermission(
+    Action.SUBMIT_CUSTOMER_FEEDBACK,
+    Action.SUBMIT_AGENT_FEEDBACK,
+  )
+  async submitFeedback(
+    @Param('id') transactionId: string,
+    @Req() req: AuthenticatedRequest,
+    @Body() body: { content: string; rating: number; categories?: string[] },
+  ) {
+    const userId = req.user.id;
+    return this.mediationService.submitFeedback(
+      transactionId,
+      userId,
+      body.content,
+      body.rating,
+      body.categories,
+    );
+  }
+
+  @Patch('bundle/:id/propose')
+  @RequirePermission(Action.PROPOSE_RESOLUTION)
+  async proposeResolution(
+    @Param('id') bundleId: string,
+    @Req() req: AuthenticatedRequest,
+    @Body() body: { proposedText: string },
+  ) {
+    const userId = req.user.id;
+    return this.mediationService.proposeResolution(
+      bundleId,
+      userId,
+      body.proposedText,
+    );
+  }
+
+  @Post('proposal/:id/finalize')
+  @RequirePermission(Action.FINALIZE_RESOLUTION)
+  async finalizeResolution(
+    @Param('id') proposalId: string,
+    @Req() req: AuthenticatedRequest,
+    @Body() body: { approved: boolean; comment?: string },
+  ) {
+    const userId = req.user.id;
+    return this.mediationService.finalizeResolution(
+      proposalId,
+      userId,
+      body.approved,
+      body.comment,
+    );
+  }
+
+  @Post('bundle/:id/finalize')
+  @RequirePermission(Action.FINALIZE_RESOLUTION)
+  async finalizeBundle(
+    @Param('id') bundleId: string,
+    @Req() req: AuthenticatedRequest,
+    @Body() body: { resolutionText: string },
+  ) {
+    const userId = req.user.id;
+    return this.mediationService.finalizeBundleDirectly(
+      bundleId,
+      userId,
+      body.resolutionText,
+    );
+  }
+
+  @Get('bundles')
+  @RequirePermission(Action.PROPOSE_RESOLUTION)
+  async getBundles(@Query('state') state?: FeedbackBundleState) {
+    return this.mediationService.getBundles(state);
+  }
+}
+
+
+===== FILE: mediation.module.ts =====
+
+import { Module } from '@nestjs/common';
+import { BullModule } from '@nestjs/bullmq';
+import { MediationService } from './mediation.service';
+import { MediationController } from './mediation.controller';
+import { MediationProcessor } from './mediation.processor';
+import { CommonModule } from '../common/common.module';
+
+@Module({
+  imports: [
+    BullModule.registerQueue({
+      name: 'mediation',
+    }),
+    CommonModule,
+  ],
+  providers: [MediationService, MediationProcessor],
+  controllers: [MediationController],
+  exports: [MediationService],
+})
+export class MediationModule {}
+
+
+===== FILE: mediation.processor.ts =====
+
+import { Processor, WorkerHost } from '@nestjs/bullmq';
+import { Job } from 'bullmq';
+import { PrismaService } from '../prisma/prisma.service';
+import { FeedbackBundleState } from '@prisma/client';
+
+@Processor('mediation')
+export class MediationProcessor extends WorkerHost {
+  constructor(private prisma: PrismaService) {
+    super();
+  }
+
+  async process(job: Job<unknown, unknown, string>): Promise<unknown> {
+    if (job.name === 'feedback-timeout') {
+      await this.handleTimeout(job);
+    }
+    return undefined;
+  }
+
+  private async handleTimeout(job: Job) {
+    const { transactionId } = job.data as { transactionId: string };
+
+    const bundle = await this.prisma.feedbackBundle.findUnique({
+      where: { transactionId },
+    });
+
+    if (!bundle) return;
+
+    // Use string comparisons for states that might not be in the stale generated types
+    const state = bundle.state as string;
+
+    if (
+      state === 'WAITING_BOTH' ||
+      state === 'WAITING_AGENT' ||
+      state === 'WAITING_CUSTOMER'
+    ) {
+      const timedOutState = 'TIMED_OUT' as unknown as FeedbackBundleState;
+
+      // Define a local type for JSON history to satisfy strict Prisma types
+      type StateHistoryEntry = {
+        from: string;
+        to: string;
+        at: string;
+        by: string;
+        reason: string;
+      };
+
+      // Avoid 'unbound-method' by using a structural interface cast for the model access
+      interface FeedbackBundleModel {
+        update: (args: {
+          where: { transactionId: string };
+          data: {
+            state: FeedbackBundleState;
+            stateHistory: { push: unknown };
+          };
+        }) => Promise<unknown>;
+      }
+
+      await (
+        this.prisma.feedbackBundle as unknown as FeedbackBundleModel
+      ).update({
+        where: { transactionId },
+        data: {
+          state: timedOutState,
+          stateHistory: {
+            push: {
+              from: state,
+              to: 'TIMED_OUT',
+              at: new Date().toISOString(),
+              by: 'SYSTEM',
+              reason: '14-day feedback window expired',
+            } as StateHistoryEntry as unknown,
+          },
+        },
+      });
+    }
+  }
+}
+
+
+===== FILE: mediation.service.ts =====
+
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { FeedbackBundleState, UserRole, RequestStatus } from '@prisma/client';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
+
+import { ConfigService } from '../common/config.service';
+
+@Injectable()
+export class MediationService {
+  constructor(
+    private prisma: PrismaService,
+    private config: ConfigService,
+    @InjectQueue('mediation') private mediationQueue: Queue,
+  ) {}
+
+  async submitFeedback(
+    transactionId: string,
+    authorId: string,
+    content: string,
+    rating: number,
+    categories: string[] = [],
+  ) {
+    // 1. Validate transaction existence
+    const transaction = await this.prisma.transaction.findUnique({
+      where: { id: transactionId },
+      include: { feedbacks: true },
+    });
+
+    if (!transaction) throw new NotFoundException('Transaction not found');
+
+    // 2. Validate author and role
+    const author = await this.prisma.profile.findUnique({
+      where: { id: authorId },
+    });
+    if (!author) throw new NotFoundException('Author not found');
+
+    if (author.role !== UserRole.customer && author.role !== UserRole.agent) {
+      throw new BadRequestException(
+        'Only Customers and Agents can submit feedback',
+      );
+    }
+
+    // 3. Prevent duplicate feedback from the same author for this transaction
+    const existingFeedback = transaction.feedbacks.find(
+      (f) => f.authorId === authorId,
+    );
+    if (existingFeedback)
+      throw new BadRequestException(
+        'Feedback already submitted for this transaction',
+      );
+
+    // 4. Create feedback
+    const feedback = await this.prisma.feedback.create({
+      data: {
+        transactionId,
+        authorId,
+        content,
+        rating,
+        categories,
+      } as any,
+    });
+
+    // 5. Schedule timeout if this is the first feedback
+    if (transaction.feedbacks.length === 0) {
+      await this.mediationQueue.add(
+        'feedback-timeout',
+        { transactionId },
+        { delay: 14 * 24 * 60 * 60 * 1000 }, // 14 days
+      );
+    }
+
+    // 6. Check for Auto-Bundling
+    await this.checkAndBundle(transactionId);
+
+    return feedback;
+  }
+
+  private async checkAndBundle(transactionId: string) {
+    const feedbacks = await this.prisma.feedback.findMany({
+      where: { transactionId },
+      include: { author: true },
+    });
+
+    const hasCustomer = feedbacks.some(
+      (f) => f.author.role === UserRole.customer,
+    );
+    const hasAgent = feedbacks.some((f) => f.author.role === UserRole.agent);
+
+    if (hasCustomer && hasAgent) {
+      // Create or Update Bundle to BUNDLED status
+      await this.prisma.feedbackBundle.upsert({
+        where: { transactionId },
+        update: {
+          state: FeedbackBundleState.BUNDLED,
+          stateHistory: {
+            push: {
+              from: FeedbackBundleState.WAITING_BOTH,
+              to: FeedbackBundleState.BUNDLED,
+              at: new Date().toISOString(),
+              by: 'SYSTEM',
+              reason: 'Automatic bundling after both parties provided feedback',
+            },
+          },
+        },
+        create: {
+          transactionId,
+          state: FeedbackBundleState.BUNDLED,
+          stateHistory: [
+            {
+              from: FeedbackBundleState.WAITING_BOTH,
+              to: FeedbackBundleState.BUNDLED,
+              at: new Date().toISOString(),
+              by: 'SYSTEM',
+              reason: 'Initial automatic bundle creation',
+            },
+          ],
+        },
+      });
+    }
+  }
+
+  async proposeResolution(
+    bundleId: string,
+    adminId: string,
+    proposedText: string,
+  ) {
+    const bundle = await this.prisma.feedbackBundle.findUnique({
+      where: { id: bundleId },
+    });
+    if (!bundle) throw new NotFoundException('Bundle not found');
+
+    const proposal = await this.prisma.resolutionProposal.create({
+      data: {
+        bundleId,
+        proposedById: adminId,
+        proposedText,
+      },
+    });
+
+    await this.prisma.feedbackBundle.update({
+      where: { id: bundleId },
+      data: {
+        state: FeedbackBundleState.PROPOSED,
+        stateHistory: {
+          push: {
+            from: bundle.state,
+            to: FeedbackBundleState.PROPOSED,
+            at: new Date().toISOString(),
+            by: adminId,
+            reason: 'Admin proposed resolution',
+          },
+        },
+      },
+    });
+
+    return proposal;
+  }
+
+  async finalizeResolution(
+    proposalId: string,
+    actorId: string,
+    approved: boolean,
+    comment?: string,
+  ) {
+    const proposal = await this.prisma.resolutionProposal.findUnique({
+      where: { id: proposalId },
+      include: {
+        bundle: true,
+      },
+    });
+
+    if (!proposal) throw new NotFoundException('Proposal not found');
+
+    const transaction = await this.prisma.transaction.findUnique({
+      where: { id: proposal.bundle.transactionId },
+      include: { match: { include: { request: true } } },
+    });
+
+    if (!transaction)
+      throw new NotFoundException('Associated transaction not found');
+
+    const actor = await this.prisma.profile.findUnique({
+      where: { id: actorId },
+    });
+    if (!actor) throw new NotFoundException('Actor not found');
+
+    const isEscalated = transaction.match.request.status === RequestStatus.disputed;
+    const budget = transaction.match.request.budgetMax
+      ? Number(transaction.match.request.budgetMax)
+      : 0;
+    const riskThreshold = this.config.get<number>(
+      'high_risk_threshold_etb',
+      ConfigService.DEFAULT_RISK_THRESHOLD,
+    );
+    const isHighRisk = budget > riskThreshold;
+
+    if ((isEscalated || isHighRisk) && actor.role !== UserRole.super_admin) {
+      throw new BadRequestException(
+        'This case is escalated/high-risk and requires Super Admin finalization',
+      );
+    }
+
+    const final = await this.prisma.finalResolution.create({
+      data: {
+        proposalId,
+        approved,
+        comment,
+        finalizedById: actorId,
+      },
+    });
+
+    await this.prisma.feedbackBundle.update({
+      where: { id: proposal.bundleId },
+      data: {
+        state: approved
+          ? FeedbackBundleState.RESOLVED
+          : FeedbackBundleState.REJECTED,
+        stateHistory: {
+          push: {
+            from: proposal.bundle.state,
+            to: approved
+              ? FeedbackBundleState.RESOLVED
+              : FeedbackBundleState.REJECTED,
+            at: new Date().toISOString(),
+            by: actorId,
+            reason: comment || 'Final decision recorded',
+          },
+        },
+      },
+    });
+
+    return final;
+  }
+
+  async escalateToSuperAdmin(
+    bundleId: string,
+    adminId: string,
+    reason: string,
+  ) {
+    const bundle = await this.prisma.feedbackBundle.findUnique({
+      where: { id: bundleId },
+    });
+    if (!bundle) throw new NotFoundException('Bundle not found');
+
+    const transaction = await this.prisma.transaction.findUnique({
+      where: { id: bundle.transactionId },
+      include: { match: true },
+    });
+    if (!transaction) throw new NotFoundException('Transaction not found');
+
+
+
+    await this.prisma.feedbackBundle.update({
+      where: { id: bundleId },
+      data: {
+        stateHistory: {
+          push: {
+            from: bundle.state,
+            to: bundle.state,
+            at: new Date().toISOString(),
+            by: adminId,
+            reason: `Escalated to Super Admin: ${reason}`,
+          },
+        },
+      },
+    });
+
+    return { escalated: true };
+  }
+
+  async overrideResolution(
+    resolutionId: string,
+    superAdminId: string,
+    newApproved: boolean,
+    comment: string,
+  ) {
+    const resolution = await this.prisma.finalResolution.findUnique({
+      where: { id: resolutionId },
+      include: { proposal: { include: { bundle: true } } },
+    });
+
+    if (!resolution) throw new NotFoundException('Resolution not found');
+
+    const updated = await this.prisma.finalResolution.update({
+      where: { id: resolutionId },
+      data: {
+        approved: newApproved,
+        comment: `OVERRIDDEN by Super Admin: ${comment}`,
+        finalizedById: superAdminId,
+      },
+    });
+
+    if (newApproved !== resolution.approved) {
+      await this.prisma.feedbackBundle.update({
+        where: { id: resolution.proposal.bundleId },
+        data: {
+          state: newApproved
+            ? FeedbackBundleState.RESOLVED
+            : FeedbackBundleState.REJECTED,
+          stateHistory: {
+            push: {
+              from: resolution.proposal.bundle.state,
+              to: newApproved
+                ? FeedbackBundleState.RESOLVED
+                : FeedbackBundleState.REJECTED,
+              at: new Date().toISOString(),
+              by: superAdminId,
+              reason: `Resolution OVERRIDDEN: ${comment}`,
+            },
+          },
+        },
+      });
+    }
+
+    return updated;
+  }
+
+  async getBundles(state?: FeedbackBundleState) {
+    return this.prisma.feedbackBundle.findMany({
+      where: state ? { state } : {},
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      include: {
+        transaction: {
+          include: {
+            agent: true,
+            match: {
+              include: {
+                request: {
+                  include: {
+                    customer: true,
+                    zone: true,
+                  },
+                },
+              },
+            },
+            feedbacks: {
+              include: {
+                author: true,
+              },
+            },
+          },
+        },
+      } as any,
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async finalizeBundleDirectly(
+    bundleId: string,
+    actorId: string,
+    resolutionText: string,
+  ) {
+    const proposal = await this.prisma.resolutionProposal.create({
+      data: {
+        bundleId,
+        proposedById: actorId,
+        proposedText: resolutionText,
+      },
+    });
+
+    return this.finalizeResolution(
+      proposal.id,
+      actorId,
+      true,
+      'Direct Admin Resolution',
+    );
+  }
+}

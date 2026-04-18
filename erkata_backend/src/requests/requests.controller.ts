@@ -1,6 +1,7 @@
 import {
   Controller,
   Post,
+  Patch,
   Get,
   Body,
   Param,
@@ -47,6 +48,13 @@ export class RequestsController {
     return this.requestsService.findEligibleAgents();
   }
 
+  // Fetch all historical disputes (Resolved/Escalated) for Admin Audit
+  @Get('admin/dispute-history')
+  @RequirePermission(Action.VIEW_SYSTEM_STATISTICS) // This action fits global administration permissions
+  getDisputeHistory() {
+    return this.requestsService.getDisputeHistory();
+  }
+
   // Operator fetching their pushed request details
   @Get(':id')
   @RequirePermission(Action.VIEW_ASSIGNED_REQUEST_DETAILS)
@@ -66,10 +74,54 @@ export class RequestsController {
     return this.requestsService.assignAgent(id, agentId, req.user.id);
   }
 
-  // Any authenticated user can check status (response is role-scoped)
+  // Any authenticated user can check status (call logic is role-scoped)
   @Get(':id/status')
   getStatus(@Param('id') id: string, @Req() req: RequestWithUser) {
     const user = req.user;
     return this.requestsService.getRequest(id, user.id, user.role);
+  }
+
+  // Customer confirms or disputes fulfillment
+  @Post(':id/confirm-fulfillment')
+  @RequirePermission(Action.CONFIRM_FULFILLMENT)
+  confirmFulfillment(
+    @Param('id') id: string,
+    @Body('confirmed') confirmed: boolean,
+    @Req() req: RequestWithUser,
+  ) {
+    return this.requestsService.confirmFulfillment(id, req.user.id, confirmed);
+  }
+
+  // Operator resolves a dispute
+  @Patch(':id/resolve-dispute')
+  @RequirePermission(Action.RESOLVE_DISPUTE)
+  resolveDispute(
+    @Param('id') id: string,
+    @Req() req: RequestWithUser,
+    @Body('note') note?: string,
+  ) {
+    return this.requestsService.resolveDispute(id, req.user.id, note);
+  }
+
+  // Operator escalates a dispute
+  @Patch(':id/escalate-dispute')
+  @RequirePermission(Action.ESCALATE_DISPUTE)
+  escalateDispute(
+    @Param('id') id: string,
+    @Req() req: RequestWithUser,
+    @Body('note') note?: string,
+  ) {
+    return this.requestsService.escalateDispute(id, req.user.id, note);
+  }
+
+  // Operator voids a dispute (returns for redo)
+  @Patch(':id/void-dispute')
+  @RequirePermission(Action.RESOLVE_DISPUTE)
+  voidDispute(
+    @Param('id') id: string,
+    @Req() req: RequestWithUser,
+    @Body('note') note?: string,
+  ) {
+    return this.requestsService.voidDispute(id, req.user.id, note);
   }
 }

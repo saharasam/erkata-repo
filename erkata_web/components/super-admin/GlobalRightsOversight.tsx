@@ -10,7 +10,9 @@ import {
   Search,
   ArrowUpRight,
   Activity,
-  Zap
+  Zap,
+  UserCheck,
+  UserMinus
 } from 'lucide-react';
 import { useModal } from '../../contexts/ModalContext';
 import api from '../../utils/api';
@@ -21,6 +23,14 @@ interface AgentRecord {
   role: string;
   isActive: boolean;
   tier: string;
+  acceptedCount: number;
+  rejectedCount: number;
+  unfulfilledCount: number;
+  avgRating: number;
+  package?: {
+    displayName: string;
+    description?: string;
+  };
   referralLink?: {
     tier: string;
   };
@@ -112,6 +122,37 @@ const GlobalRightsOversight: React.FC = () => {
             }
         }
     };
+    
+    const toggleStatus = async (agent: AgentRecord) => {
+        const action = agent.isActive ? 'SUSPEND' : 'ACTIVATE';
+        const confirmed = await showConfirm({
+            title: `${action} AGENT PROTOCOL`,
+            message: `You are about to ${action.toLowerCase()} platform access for ${agent.fullName}. ${agent.isActive ? 'This will instantly block all dashboard access.' : 'This will restore full operational authority.'}`,
+            confirmText: `Confirm ${action}`,
+            type: agent.isActive ? 'error' : 'success'
+        });
+
+        if (confirmed) {
+            try {
+              setActionLoading(agent.id);
+              await api.patch(`/admin/users/${agent.id}/status`, { isActive: !agent.isActive });
+              showAlert({
+                  title: 'Governance Synchronized',
+                  message: `Agent ${agent.fullName} status updated to ${!agent.isActive ? 'ACTIVE' : 'SUSPENDED'}.`,
+                  type: 'success'
+              });
+              fetchAgents();
+            } catch (err) {
+              showAlert({
+                title: 'Override Rejected',
+                message: 'Internal system validation failed for status modification.',
+                type: 'error'
+              });
+            } finally {
+              setActionLoading(null);
+            }
+        }
+    };
 
     const filteredAgents = agents.filter(a => 
         a.fullName.toLowerCase().includes(searchTerm.toLowerCase())
@@ -164,6 +205,7 @@ const GlobalRightsOversight: React.FC = () => {
                                 <th className="px-8 py-5">Agent Identity</th>
                                 <th className="px-8 py-5">Geographic Zones</th>
                                 <th className="px-8 py-5">Tier Status</th>
+                                <th className="px-8 py-5">Account Status</th>
                                 <th className="px-8 py-5">Performance</th>
                                 <th className="px-8 py-5 text-right">Oversight Actions</th>
                             </tr>
@@ -177,7 +219,7 @@ const GlobalRightsOversight: React.FC = () => {
                                 ))
                             ) : filteredAgents.length > 0 ? (
                                 filteredAgents.map((agent) => (
-                                    <tr key={agent.id} className="hover:bg-slate-50/30 transition-colors group">
+                                    <tr key={agent.id} className={`hover:bg-slate-50/30 transition-colors group ${!agent.isActive ? 'opacity-60 grayscale-[0.5]' : ''}`}>
                                         <td className="px-8 py-6">
                                             <div className="flex items-center gap-4">
                                                 <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center font-black text-indigo-600 text-xs uppercase group-hover:scale-110 transition-transform">
@@ -202,8 +244,17 @@ const GlobalRightsOversight: React.FC = () => {
                                             </div>
                                         </td>
                                         <td className="px-8 py-6">
-                                            <span className={`px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest border ${TIER_CONFIG[agent.referralLink?.tier || 'FREE']?.color} ${TIER_CONFIG[agent.referralLink?.tier || 'FREE']?.border}`}>
-                                                {agent.referralLink?.tier.replace('_', ' ') || 'FREE'}
+                                            <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-tighter border ${
+                                                TIER_CONFIG[agent.tier]?.color || TIER_CONFIG.FREE.color
+                                            } ${TIER_CONFIG[agent.tier]?.border || TIER_CONFIG.FREE.border}`}>
+                                                {agent.package?.displayName || agent.tier.replace('_', ' ')}
+                                            </span>
+                                        </td>
+                                        <td className="px-8 py-6">
+                                            <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-tighter ${
+                                                agent.isActive ? 'text-emerald-600 bg-emerald-50' : 'text-red-500 bg-red-50'
+                                            }`}>
+                                                {agent.isActive ? '● active' : '○ suspended'}
                                             </span>
                                         </td>
                                         <td className="px-8 py-6">
@@ -232,6 +283,18 @@ const GlobalRightsOversight: React.FC = () => {
                                                     className="p-2.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-2xl border border-transparent hover:border-emerald-100 transition-all active:scale-90"
                                                 >
                                                     <ChevronUp className="w-4 h-4" />
+                                                </button>
+                                                <button 
+                                                    disabled={actionLoading === agent.id}
+                                                    onClick={() => toggleStatus(agent)}
+                                                    className={`p-2.5 rounded-2xl border transition-all active:scale-90 ${
+                                                        agent.isActive 
+                                                        ? 'text-slate-400 hover:text-red-600 hover:bg-red-50 hover:border-red-100' 
+                                                        : 'text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 hover:border-emerald-100'
+                                                    }`}
+                                                    title={agent.isActive ? 'Suspend Agent' : 'Activate Agent'}
+                                                >
+                                                    {agent.isActive ? <UserMinus className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
                                                 </button>
                                                 <button className="p-2.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-2xl border border-transparent hover:border-indigo-100 transition-all active:scale-90">
                                                     <ArrowUpRight className="w-4 h-4" />

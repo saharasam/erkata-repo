@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import '../../../core/models/user_role.dart';
 import '../../../core/theme/colors.dart';
 import '../../../shared/widgets/primary_button.dart';
 import '../state/auth_provider.dart';
+import '../data/models/login_request.dart';
+import '../data/models/register_request.dart';
 
 
 class AuthScreen extends HookConsumerWidget {
@@ -44,12 +45,24 @@ class AuthScreen extends HookConsumerWidget {
     });
 
 
-    void handleSubmit() {
-      // DEMO MODE: bypass authentication — navigate directly to dashboard
-      final isAgent = isLogin.value
-          ? false // login always goes to customer home for demo
-          : selectedRole.value == UserRole.agent;
-      context.go(isAgent ? '/agent' : '/home');
+    Future<void> handleSubmit() async {
+      if (isLogin.value) {
+        await ref.read(authProvider.notifier).login(
+              LoginRequest(
+                identifier: phoneController.text,
+                password: passwordController.text,
+              ),
+            );
+      } else {
+        await ref.read(authProvider.notifier).register(
+              RegisterRequest(
+                fullName: nameController.text,
+                email: phoneController.text,
+                password: passwordController.text,
+                role: selectedRole.value.name,
+              ),
+            );
+      }
     }
 
     return Scaffold(

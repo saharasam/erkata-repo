@@ -10,7 +10,8 @@ import {
   ShieldCheck,
   ShieldAlert,
   Zap,
-  Loader2
+  Loader2,
+  History as HistoryIcon
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useModal } from '../contexts/ModalContext';
@@ -19,6 +20,10 @@ import { Can } from '../components/ui/Can';
 import { Action } from '../hooks/usePermissions';
 import AgentAssignmentModal from '../components/operator/AgentAssignmentModal';
 import { useHeartbeat } from '../hooks/useHeartbeat';
+import { useSocket } from '../contexts/SocketContext';
+import { motion, AnimatePresence } from 'framer-motion';
+import DisputesBoard from '../components/operator/DisputesBoard.tsx';
+import FinancialDesk from '../components/operator/FinancialDesk';
 
 const OperatorDashboard: React.FC = () => {
     const { user } = useAuth();
@@ -29,8 +34,30 @@ const OperatorDashboard: React.FC = () => {
     const [activeTransactions, setActiveTransactions] = useState<any[]>([]);
     const [isAssignmentModalOpen, setIsAssignmentModalOpen] = useState(false);
     const [timeLeft, setTimeLeft] = useState<number>(300); // 5 minutes in seconds
+    const [currentView, setCurrentView] = useState('overview');
 
-    const { pushedRequestId, error: heartbeatError } = useHeartbeat(isOnline);
+    const { pushedRequestId, error: heartbeatError, trigger: triggerCheck } = useHeartbeat(isOnline);
+    const { socket } = useSocket();
+
+    // Listen for real-time WebSocket push notifications
+    useEffect(() => {
+        if (!socket || !isOnline) return;
+
+        const handleNotification = (notification: any) => {
+            if (notification.type === 'request.pushed') {
+                console.log('[OperatorDashboard] Real-time push received via WebSocket');
+                triggerCheck();
+            } else if (notification.type === 'request.disputed') {
+                console.log('[OperatorDashboard] Real-time dispute received');
+                setCurrentView('disputes');
+            }
+        };
+
+        socket.on('notification', handleNotification);
+        return () => {
+            socket.off('notification', handleNotification);
+        };
+    }, [socket, isOnline, triggerCheck]);
 
     // Fetch active transactions on mount
     useEffect(() => {
@@ -127,6 +154,8 @@ const OperatorDashboard: React.FC = () => {
         });
         setPushedRequest(null);
         // Transaction list will update on next fetch or manual refresh
+        // Trigger immediate check for next request
+        triggerCheck();
     };
 
     const toggleOnline = () => {
@@ -138,7 +167,7 @@ const OperatorDashboard: React.FC = () => {
 
     if (isLoading) {
         return (
-            <DashboardLayout role="operator" sidebarContent={null} currentView="overview" onViewChange={() => {}}>
+            <DashboardLayout role="operator" currentView={currentView} onViewChange={setCurrentView}>
                 <div className="flex items-center justify-center h-64">
                     <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
                 </div>
@@ -149,11 +178,19 @@ const OperatorDashboard: React.FC = () => {
     return (
         <DashboardLayout 
             role="operator" 
-            sidebarContent={null}
-            currentView="overview"
-            onViewChange={() => {}}
+            currentView={currentView}
+            onViewChange={setCurrentView}
         >
-            <div className="space-y-8">
+            <AnimatePresence mode="wait">
+                <motion.div
+                    key={currentView}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ duration: 0.3 }}
+                >
+                    {currentView === 'overview' && (
+                        <div className="space-y-8">
                 {/* Header with Online Toggle */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
                     <div>
@@ -217,6 +254,12 @@ const OperatorDashboard: React.FC = () => {
                                             <span className="text-xs font-bold text-indigo-400 uppercase tracking-widest block mb-1">
                                                 {pushedRequest.category}
                                             </span>
+                                            {pushedRequest.metadata?.declinedByAgentName && (
+                                                <div className="mb-4 p-3 bg-amber-50 border border-amber-100 rounded-xl flex items-center gap-2 text-amber-700 text-xs font-bold">
+                                                    <ShieldAlert className="w-4 h-4" />
+                                                    PREVIOUSLY DECLINED BY: {pushedRequest.metadata.declinedByAgentName.toUpperCase()}
+                                                </div>
+                                            )}
                                             <h3 className="text-3xl font-black text-slate-900">
                                                 {pushedRequest.description || pushedRequest.category}
                                             </h3>
@@ -295,7 +338,7 @@ const OperatorDashboard: React.FC = () => {
                                             <div className="flex justify-between items-start mb-2">
                                                 <div>
                                                     <p className="text-sm font-bold text-slate-800">
-                                                        {tx.match?.request?.category || 'General Service'}
+                                                        {tx.request?.category || 'General Service'}
                                                     </p>
                                                     <p className="text-[10px] font-bold text-slate-400 tracking-tight">
                                                         ID: {tx.id.split('-')[0].toUpperCase()}
@@ -343,9 +386,36 @@ const OperatorDashboard: React.FC = () => {
                                 Protocol Docs
                             </button>
                         </div>
+                        </div>
                     </div>
                 </div>
-            </div>
+            )}
+
+                    {currentView === 'disputes' && (
+                        <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm min-h-[600px]">
+                             <DisputesBoard />
+                        </div>
+                    )}
+
+                    {currentView === 'history' && (
+                        <div className="bg-white rounded-[2rem] p-12 text-center border border-slate-100 shadow-sm">
+                             <div className="w-20 h-20 bg-slate-50 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                                <HistoryIcon className="w-10 h-10 text-slate-300" />
+                             </div>
+                             <h2 className="text-xl font-bold text-slate-800 mb-2">Assignment History</h2>
+                             <p className="text-slate-500 max-w-sm mx-auto">
+                                You can view your past assignments, completion rates, and performance trends here. This view is currently being optimized.
+                             </p>
+                        </div>
+                    )}
+
+                    {currentView === 'finance' && (
+                        <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm min-h-[600px]">
+                             <FinancialDesk />
+                        </div>
+                    )}
+                </motion.div>
+            </AnimatePresence>
 
             {pushedRequest && (
                 <AgentAssignmentModal

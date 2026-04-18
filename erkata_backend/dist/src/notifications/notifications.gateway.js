@@ -15,13 +15,16 @@ const websockets_1 = require("@nestjs/websockets");
 const socket_io_1 = require("socket.io");
 const jwt_1 = require("@nestjs/jwt");
 const common_1 = require("@nestjs/common");
+const redis_presence_service_1 = require("../common/redis/redis-presence.service");
 let NotificationsGateway = NotificationsGateway_1 = class NotificationsGateway {
     jwtService;
+    presence;
     server;
     logger = new common_1.Logger(NotificationsGateway_1.name);
     userSockets = new Map();
-    constructor(jwtService) {
+    constructor(jwtService, presence) {
         this.jwtService = jwtService;
+        this.presence = presence;
     }
     async handleConnection(client) {
         const auth = client.handshake.auth;
@@ -47,6 +50,10 @@ let NotificationsGateway = NotificationsGateway_1 = class NotificationsGateway {
             const existing = this.userSockets.get(userId) || [];
             this.userSockets.set(userId, [...existing, client.id]);
             this.logger.log(`Client connected: ${client.id} (User: ${userId}, Role: ${payload.role})`);
+            if (payload.role === 'operator') {
+                this.logger.log(`[NotificationsGateway] Operator ${userId} connected via WebSocket. Syncing presence...`);
+                await this.presence.heartbeat(userId);
+            }
         }
         catch (e) {
             this.logger.error(`Connection authentication failed for client ${client.id}: ${e instanceof Error ? e.message : 'Unknown error'}`);
@@ -95,6 +102,7 @@ exports.NotificationsGateway = NotificationsGateway = NotificationsGateway_1 = _
             origin: '*',
         },
     }),
-    __metadata("design:paramtypes", [jwt_1.JwtService])
+    __metadata("design:paramtypes", [jwt_1.JwtService,
+        redis_presence_service_1.RedisPresenceService])
 ], NotificationsGateway);
 //# sourceMappingURL=notifications.gateway.js.map

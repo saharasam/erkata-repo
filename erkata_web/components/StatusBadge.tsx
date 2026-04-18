@@ -1,32 +1,24 @@
 import React from 'react';
 
 interface StatusBadgeProps {
-  status: 'assigned' | 'in-progress' | 'completed' | 'cancelled' | 'pending' | 'awaiting-feedback' | 'in-review' | 'resolved';
+  status: 'pending' | 'assigned' | 'fulfilled' | 'disputed' | 'cancelled';
 }
 
 const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
-  // Color coding based on guidelines:
-  // Blue/Green = action required
-  // Grey = completed/archived
-
   const getStatusStyle = () => {
     switch (status) {
-      case 'assigned':
-        return 'bg-blue-500/10 text-blue-600 border-blue-500/30';
       case 'pending':
         return 'bg-blue-500/10 text-blue-600 border-blue-500/30';
-      case 'in-progress':
-        return 'bg-green-500/10 text-green-600 border-green-500/30';
-      case 'in-review':
-        return 'bg-orange-500/10 text-orange-600 border-orange-500/30';
-      case 'completed':
-        return 'bg-gray-500/10 text-gray-600 border-gray-500/30';
+      case 'assigned':
+        return 'bg-indigo-500/10 text-indigo-600 border-indigo-500/30';
+      case 'fulfilled':
+        return 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30';
+      case 'disputed':
+        return 'bg-rose-500/10 text-rose-600 border-rose-500/30';
       case 'cancelled':
-        return 'bg-gray-500/10 text-gray-600 border-gray-500/30';
-      case 'resolved':
-        return 'bg-gray-500/10 text-gray-600 border-gray-500/30';
+        return 'bg-slate-500/10 text-slate-600 border-slate-500/30';
       default:
-        return 'bg-gray-500/10 text-gray-600 border-gray-500/30';
+        return 'bg-slate-500/10 text-slate-600 border-slate-500/30';
     }
   };
 

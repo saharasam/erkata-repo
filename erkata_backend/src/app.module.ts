@@ -10,8 +10,9 @@ import { BullModule } from '@nestjs/bullmq';
 import { RequestsModule } from './requests/requests.module';
 import { TransactionsModule } from './transactions/transactions.module';
 import { MediationModule } from './mediation/mediation.module';
-import { APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_INTERCEPTOR, APP_GUARD } from '@nestjs/core';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor';
+import { LockdownGuard } from './common/guards/lockdown.guard';
 import { CommonModule } from './common/common.module';
 import { AdminModule } from './admin/admin.module';
 import { AglpModule } from './aglp/aglp.module';
@@ -46,6 +47,10 @@ import { NotificationsModule } from './notifications/notifications.module';
     {
       provide: APP_INTERCEPTOR,
       useClass: AuditInterceptor,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: LockdownGuard,
     },
   ],
 })

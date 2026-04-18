@@ -13,10 +13,6 @@ export declare class AdminConfigController {
         value: boolean;
         description: string;
     } | {
-        description: string;
-        key?: undefined;
-        value?: undefined;
-    } | {
         key: string;
         value: {
             rate: number;
@@ -31,6 +27,7 @@ export declare class AdminConfigController {
     })[];
     updateConfig(req: Request & {
         user: {
+            id: string;
             role: string;
         };
     }, body: {

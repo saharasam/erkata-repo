@@ -17,15 +17,18 @@ exports.RedisPresenceService = void 0;
 const common_1 = require("@nestjs/common");
 const ioredis_1 = require("ioredis");
 const prisma_service_1 = require("../../prisma/prisma.service");
+const event_emitter_1 = require("@nestjs/event-emitter");
 let RedisPresenceService = RedisPresenceService_1 = class RedisPresenceService {
     redis;
     subscriber;
     prisma;
+    eventEmitter;
     logger = new common_1.Logger(RedisPresenceService_1.name);
-    constructor(redis, subscriber, prisma) {
+    constructor(redis, subscriber, prisma, eventEmitter) {
         this.redis = redis;
         this.subscriber = subscriber;
         this.prisma = prisma;
+        this.eventEmitter = eventEmitter;
     }
     async onModuleInit() {
         try {
@@ -44,28 +47,28 @@ let RedisPresenceService = RedisPresenceService_1 = class RedisPresenceService {
         this.startBackupSync();
     }
     startBackupSync() {
-        setInterval(async () => {
-            this.logger.log('[RedisPresenceService] Running 10-minute backup sync...');
-            try {
-                const sqlOnlineOperators = await this.prisma.profile.findMany({
-                    where: { isOnline: true },
-                    select: { id: true },
-                });
-                const redisOnlineIds = await this.getOnlineOperatorIds();
-                for (const op of sqlOnlineOperators) {
-                    if (!redisOnlineIds.includes(op.id)) {
-                        this.logger.warn(`[RedisPresenceService] Syncing: Operator ${op.id} is Offline in Redis but Online in SQL. Correcting...`);
-                        await this.prisma.profile.update({
-                            where: { id: op.id },
-                            data: { isOnline: false },
-                        });
-                    }
-                }
-            }
-            catch (err) {
+        setInterval(() => {
+            this.runBackupSync().catch((err) => {
                 this.logger.error('[RedisPresenceService] Error during backup sync', err);
-            }
+            });
         }, 10 * 60 * 1000);
+    }
+    async runBackupSync() {
+        this.logger.log('[RedisPresenceService] Running 10-minute backup sync...');
+        const sqlOnlineOperators = await this.prisma.profile.findMany({
+            where: { isOnline: true },
+            select: { id: true },
+        });
+        const redisOnlineIds = await this.getOnlineOperatorIds();
+        for (const op of sqlOnlineOperators) {
+            if (!redisOnlineIds.includes(op.id)) {
+                this.logger.warn(`[RedisPresenceService] Syncing: Operator ${op.id} is Offline in Redis but Online in SQL. Correcting...`);
+                await this.prisma.profile.update({
+                    where: { id: op.id },
+                    data: { isOnline: false },
+                });
+            }
+        }
     }
     async handleExpiredKey(message) {
         if (message.startsWith('presence:operator:')) {
@@ -93,6 +96,7 @@ let RedisPresenceService = RedisPresenceService_1 = class RedisPresenceService {
                     data: { isOnline: true, lastAssignmentAt: new Date() },
                 });
                 this.logger.log(`[RedisPresenceService] Operator ${operatorId} marked as Online in SQL.`);
+                this.eventEmitter.emit('operator.online', { operatorId });
             }
             catch (err) {
                 this.logger.error(`[RedisPresenceService] Failed to sync online status for ${operatorId}`, err);
@@ -112,6 +116,7 @@ exports.RedisPresenceService = RedisPresenceService = RedisPresenceService_1 = _
     __param(1, (0, common_1.Inject)('REDIS_SUBSCRIBER')),
     __metadata("design:paramtypes", [ioredis_1.Redis,
         ioredis_1.Redis,
-        prisma_service_1.PrismaService])
+        prisma_service_1.PrismaService,
+        event_emitter_1.EventEmitter2])
 ], RedisPresenceService);
 //# sourceMappingURL=redis-presence.service.js.map

@@ -78,7 +78,7 @@ async function main() {
 
   await prisma.request.update({
     where: { id: request.id },
-    data: { status: RequestStatus.matched },
+    data: { status: RequestStatus.pending },
   });
 
   console.log(`Match created: ${match.id}`);
@@ -95,7 +95,7 @@ async function main() {
       });
       await tx.request.update({
         where: { id: request.id },
-        data: { status: RequestStatus.in_progress },
+        data: { status: RequestStatus.assigned },
       });
       await tx.transaction.upsert({
         where: { matchId: match.id },

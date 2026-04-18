@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calendar, StickyNote, MessageCircle, X, Globe, User, LogOut, ShieldCheck, Archive, ShieldAlert, Settings2, Megaphone, BarChart4, History, TrendingUp, Users, ChevronRight, ChevronLeft, MapPin, LayoutGrid, FileText, Package, Wallet, Network } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
@@ -6,6 +6,9 @@ import { UserRole } from '../utils/constants';
 import { Action } from '../hooks/usePermissions';
 import { useNavigate } from 'react-router-dom';
 import { useModal } from '../contexts/ModalContext';
+import { useNotifications } from '../contexts/NotificationContext';
+import { playPayoutSound } from '../utils/sounds';
+import { useSocket } from '../contexts/SocketContext';
 
 interface UtilitySidebarProps {
   onSettingsClick?: () => void;
@@ -25,11 +28,29 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { notifications, payoutCount } = useNotifications();
+  const { socket } = useSocket();
+
+  // Play distinct payout sound when a new payout.requested notification arrives
+  useEffect(() => {
+    if (!socket || user?.role !== UserRole.OPERATOR) return;
+    const handleNotification = (n: any) => {
+      if (n.type === 'payout.requested') {
+        playPayoutSound();
+      }
+    };
+    socket.on('notification', handleNotification);
+    return () => { socket.off('notification', handleNotification); };
+  }, [socket, user]);
+
+  const disputeCount = notifications.filter(
+    (n) => !n.read && (n.type === 'request.disputed' || n.type === 'request.escalated')
+  ).length;
 
   const tools = [
     // { id: 'calendar', icon: Calendar, label: 'Calendar', color: 'text-blue-500' },
     // { id: 'notes', icon: StickyNote, label: 'Notes', color: 'text-yellow-500' },
-    { id: 'support', icon: MessageCircle, label: 'Support', color: 'text-purple-500' },
+    // { id: 'support', icon: MessageCircle, label: 'Support', color: 'text-purple-500' },
     { id: 'language', icon: Globe, label: 'Language', color: 'text-teal-500' },
     { id: 'profile', icon: User, label: 'Profile', color: 'text-slate-500' },
     { id: 'logout', icon: LogOut, label: 'Logout', color: 'text-red-500' },
@@ -37,7 +58,8 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
 
   const superAdminTools = [
     { id: 'analytics', icon: BarChart4, label: 'Analytics' },
-    { id: 'emergency', icon: Archive, label: 'Emergency Archive' },
+    { id: 'tiers', icon: Package, label: 'Tier Architecture' },
+    { id: 'disputes', icon: ShieldAlert, label: 'Disputes Audit', badge: disputeCount > 0 ? disputeCount : undefined },
     { id: 'admins', icon: ShieldAlert, label: 'Admin Management' },
     { id: 'config', icon: Settings2, label: 'Config Flags' },
     { id: 'notices', icon: Megaphone, label: 'Broadcasts' },
@@ -48,18 +70,20 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
 
   const adminTools = [
     { id: 'overview', icon: BarChart4, label: 'Operations Hub' },
-    { id: 'zones', icon: MapPin, label: 'Zone Coverage' },
-    { id: 'bundles', icon: ShieldAlert, label: 'Escalated Bundles' },
-    { id: 'actions', icon: Settings2, label: 'Pending Actions' },
-    { id: 'history', icon: History, label: 'My Proposals' },
-    { id: 'finance', icon: Wallet, label: 'Financial Desk' },
-    { id: 'network', icon: Network, label: 'Network Intelligence' },
+    // { id: 'zones', icon: MapPin, label: 'Zone Coverage' },
+    { id: 'disputes', icon: ShieldAlert, label: 'Disputes', badge: disputeCount > 0 ? disputeCount : undefined },
+    // { id: 'actions', icon: Settings2, label: 'Pending Actions' },
+    // { id: 'history', icon: History, label: 'My Proposals' },
+    // { id: 'finance', icon: Wallet, label: 'Financial Desk' },
+    // { id: 'network', icon: Network, label: 'Network Intelligence' },
     { id: 'agents', icon: Users, label: 'Agents' },
     { id: 'operators', icon: Users, label: 'Operators' },
   ];
 
   const operatorTools = [
     { id: 'overview', icon: LayoutGrid, label: 'Overview' },
+    { id: 'finance', icon: Wallet, label: 'Financial Desk', badge: payoutCount > 0 ? payoutCount : undefined },
+    { id: 'disputes', icon: ShieldAlert, label: 'Disputes', badge: disputeCount > 0 ? disputeCount : undefined },
     { id: 'history', icon: History, label: 'Assignment History' },
   ];
 

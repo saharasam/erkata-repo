@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, Award, MoreHorizontal, ShieldOff, ShieldCheck, UserPlus } from 'lucide-react';
+import { Search, MapPin, Award, MoreHorizontal, ShieldOff, ShieldCheck } from 'lucide-react';
 import api from '../../utils/api';
 import { Loader2 } from 'lucide-react';
 import InvitePersonnelModal from '../ui/InvitePersonnelModal';
@@ -16,6 +16,11 @@ interface Agent {
         woreda: string;
     }[];
     createdAt: string;
+    avgRating?: number;
+    acceptedCount?: number;
+    rejectedCount?: number;
+    unfulfilledRate?: number;
+    warningCount?: number;
 }
 
 const AdminAgentList: React.FC = () => {
@@ -23,7 +28,6 @@ const AdminAgentList: React.FC = () => {
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [actionMenuOpen, setActionMenuOpen] = useState<string | null>(null);
-    const [inviteModalOpen, setInviteModalOpen] = useState(false);
 
     const fetchAgents = async () => {
         setIsLoading(true);
@@ -76,13 +80,6 @@ const AdminAgentList: React.FC = () => {
                             className="pl-10 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 w-64"
                         />
                     </div>
-                    <button
-                        onClick={() => setInviteModalOpen(true)}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white text-sm font-black rounded-2xl shadow-lg shadow-slate-900/20 hover:bg-black transition-all active:scale-95"
-                    >
-                        <UserPlus className="w-4 h-4" />
-                        Invite Agent
-                    </button>
                 </div>
             </div>
 
@@ -94,6 +91,7 @@ const AdminAgentList: React.FC = () => {
                             <th className="px-6 py-4 font-semibold text-slate-600">Status</th>
                             <th className="px-6 py-4 font-semibold text-slate-600">Tier</th>
                             <th className="px-6 py-4 font-semibold text-slate-600">Zones</th>
+                            <th className="px-6 py-4 font-semibold text-slate-600">Performance</th>
                             <th className="px-6 py-4 font-semibold text-slate-600 text-right">Actions</th>
                         </tr>
                     </thead>
@@ -153,6 +151,31 @@ const AdminAgentList: React.FC = () => {
                                         )}
                                     </div>
                                 </td>
+                                <td className="px-6 py-4">
+                                    <div className="flex flex-col gap-1.5">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-xs font-bold text-slate-700" title="Average Rating">⭐ {(agent.avgRating || 0) > 0 ? (agent.avgRating || 0).toFixed(1) : 'N/A'}</span>
+                                            <span className="text-[10px] text-slate-400">|</span>
+                                            <span className="text-xs font-bold text-emerald-600" title="Accepted Matches">{agent.acceptedCount || 0}</span>
+                                            <span className="text-[10px] text-slate-400">/</span>
+                                            <span className="text-xs font-bold text-rose-500" title="Rejected Matches">{agent.rejectedCount || 0}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            {(agent.unfulfilledRate || 0) > 0 ? (
+                                              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${(agent.unfulfilledRate || 0) > 20 ? 'bg-rose-50 text-rose-600' : 'bg-slate-50 text-slate-500'}`} title="Unfulfilled Rate">
+                                                  {(agent.unfulfilledRate || 0).toFixed(0)}% fail
+                                              </span>
+                                            ) : (
+                                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600">100% OK</span>
+                                            )}
+                                            {(agent.warningCount || 0) > 0 && (
+                                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-orange-50 text-orange-600" title="Warnings Issued">
+                                                    ⚠️ {agent.warningCount}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                </td>
                                 <td className="px-6 py-4 text-right relative">
                                     <button 
                                         onClick={(e) => {
@@ -195,13 +218,6 @@ const AdminAgentList: React.FC = () => {
                 </table>
             </div>
         </div>
-
-        <InvitePersonnelModal
-            isOpen={inviteModalOpen}
-            onClose={() => { setInviteModalOpen(false); fetchAgents(); }}
-            availableRoles={['agent']}
-            defaultRole="agent"
-        />
         </>
     );
 };

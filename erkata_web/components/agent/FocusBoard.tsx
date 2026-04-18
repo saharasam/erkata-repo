@@ -10,10 +10,19 @@ interface FocusBoardProps {
   onTransfer: (id: string) => void;
   onDecline: (id: string) => void;
   hasReferrals?: boolean;
+  processingIds: Set<string>;
 }
 
-export const FocusBoard: React.FC<FocusBoardProps> = ({ requests, onAccept, onComplete, onTransfer, onDecline, hasReferrals }) => {
-  const [statusFilter, setStatusFilter] = useState<'all' | 'assigned' | 'in-progress' | 'completed'>('all');
+export const FocusBoard: React.FC<FocusBoardProps> = ({ 
+    requests, 
+    onAccept, 
+    onComplete, 
+    onTransfer, 
+    onDecline, 
+    hasReferrals,
+    processingIds
+}) => {
+  const [statusFilter, setStatusFilter] = useState<'all' | 'assigned' | 'fulfilled'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredRequests = requests.filter(req => {
@@ -25,8 +34,8 @@ export const FocusBoard: React.FC<FocusBoardProps> = ({ requests, onAccept, onCo
 
   const stats = {
     total: requests.length,
-    active: requests.filter(r => r.status === 'in-progress').length,
-    pending: requests.filter(r => r.status === 'assigned').length
+    active: requests.filter(r => r.status === 'assigned').length,
+    fulfilled: requests.filter(r => r.status === 'fulfilled').length
   };
 
   return (
@@ -44,8 +53,8 @@ export const FocusBoard: React.FC<FocusBoardProps> = ({ requests, onAccept, onCo
               <p className="text-xl font-black text-slate-800">{stats.active}</p>
            </div>
            <div className="bg-white px-5 py-3 rounded-2xl border border-slate-100 shadow-sm">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Assigned</p>
-              <p className="text-xl font-black text-slate-800">{stats.pending}</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Fulfilled</p>
+              <p className="text-xl font-black text-slate-800">{stats.fulfilled}</p>
            </div>
            <div className="bg-indigo-600 px-5 py-3 rounded-2xl border border-indigo-500 shadow-lg shadow-indigo-600/20 text-white">
               <p className="text-[10px] font-bold text-indigo-200 uppercase tracking-widest mb-1">Capacity</p>
@@ -57,7 +66,7 @@ export const FocusBoard: React.FC<FocusBoardProps> = ({ requests, onAccept, onCo
       {/* Control Bar */}
       <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white/50 backdrop-blur-md p-2 rounded-[2rem] border border-white/50 shadow-sm">
          <div className="flex p-1 bg-slate-100/50 rounded-2xl w-full md:w-auto overflow-x-auto no-scrollbar">
-            {(['all', 'assigned', 'in-progress', 'completed'] as const).map((s) => (
+            {(['all', 'assigned', 'fulfilled'] as const).map((s) => (
                <button
                   key={s}
                   onClick={() => setStatusFilter(s)}
@@ -97,6 +106,7 @@ export const FocusBoard: React.FC<FocusBoardProps> = ({ requests, onAccept, onCo
                  onTransfer={onTransfer}
                  onDecline={onDecline}
                  hasReferrals={hasReferrals}
+                 isProcessing={processingIds.has(request.id)}
               />
             ))}
           </AnimatePresence>

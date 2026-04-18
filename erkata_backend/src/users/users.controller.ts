@@ -46,12 +46,27 @@ export class UsersController {
     return this.usersService.getFinanceSummary(req.user.id);
   }
 
+  @Get('me/available-packages')
+  async getAvailablePackages() {
+    return this.usersService.getAvailablePackages();
+  }
+
   @Post('me/withdraw')
   async requestWithdrawal(
     @Req() req: AuthenticatedRequest,
-    @Body('amount') amount: number,
+    @Body()
+    body: {
+      amount: number;
+      bankName: string;
+      bankAccountNumber: string;
+      bankAccountHolder: string;
+    },
   ) {
-    return this.usersService.requestWithdrawal(req.user.id, amount);
+    return this.usersService.requestWithdrawal(req.user.id, body.amount, {
+      bankName: body.bankName,
+      bankAccountNumber: body.bankAccountNumber,
+      bankAccountHolder: body.bankAccountHolder,
+    });
   }
 
   @Post('me/referral-code')

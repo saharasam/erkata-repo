@@ -5,10 +5,10 @@ export declare class NotificationsController {
     constructor(notificationsService: NotificationsService);
     getNotifications(req: RequestWithUser): Promise<{
         id: string;
-        type: string;
         createdAt: Date;
-        message: string;
+        type: string;
         link: string | null;
+        message: string;
         userId: string;
         title: string;
         read: boolean;

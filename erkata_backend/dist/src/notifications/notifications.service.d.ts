@@ -13,4 +13,5 @@ export declare class NotificationsService {
     getForUser(userId: string): Promise<Notification[]>;
     markAsRead(id: string, userId: string): Promise<any>;
     markAllAsRead(userId: string): Promise<any>;
+    markRelatedAsRead(requestId: string, eventTypes: string[]): Promise<any>;
 }

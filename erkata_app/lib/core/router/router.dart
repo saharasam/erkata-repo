@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../features/auth/state/auth_provider.dart';
 import '../../core/models/user_role.dart';
 import '../../features/auth/screens/auth_screen.dart';
 import '../../features/customer/screens/home_screen.dart';
@@ -32,11 +33,31 @@ final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     initialLocation: '/',
     redirect: (context, state) {
-      // DEMO MODE: auth guards disabled — all routes freely accessible
-      // TODO: re-enable auth guards when demo is over
+      final authState = ref.watch(authProvider);
+
+      // Wait for hydration before making routing decisions
+      if (!authState.isHydrated) return null;
+
       final path = state.uri.toString();
+      final isLoggingIn = path.startsWith('/auth');
+      final isIntake = path.startsWith('/request/new');
       final isSplash = path == '/';
-      if (isSplash) return '/auth'; // start at auth screen for demo UX
+
+      // 1. Unauthenticated users
+      if (!authState.isAuthenticated) {
+        // Allow access to auth and intake flow
+        if (isLoggingIn || isIntake) return null;
+        // Everything else redirects to intake (Intake-First flow)
+        return '/request/new';
+      }
+
+      // 2. Authenticated users
+      // If an authenticated user tries to go to Login or Intake, send them to their dashboard
+      if (isLoggingIn || isIntake || isSplash) {
+        final role = authState.user?.role;
+        return role == 'agent' ? '/agent' : '/home';
+      }
+
       return null;
     },
     routes: [

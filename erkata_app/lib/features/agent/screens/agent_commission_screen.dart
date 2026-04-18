@@ -96,7 +96,7 @@ class AgentCommissionScreen extends HookConsumerWidget {
                               const SizedBox(height: 16),
                               RichText(
                                 text: TextSpan(
-                                  text: '${(summary.aglpAvailable + summary.aglpWithdrawn).toStringAsFixed(0)} ',
+                                  text: '${(summary.aglpBalance + summary.aglpWithdrawn).toStringAsFixed(0)} ',
                                   style: TextStyle(
                                     fontSize: 32,
                                     fontWeight: FontWeight.bold,
@@ -120,8 +120,8 @@ class AgentCommissionScreen extends HookConsumerWidget {
                               SizedBox(
                                 width: double.infinity,
                                 child: FilledButton.icon(
-                                  onPressed: summary.aglpAvailable > 0
-                                      ? () => _showWithdrawalDialog(context, ref, summary.aglpAvailable)
+                                  onPressed: summary.aglpBalance > 0
+                                      ? () => _showWithdrawalDialog(context, ref, summary.aglpBalance)
                                       : null,
                                   icon: const Icon(Icons.wallet, size: 18),
                                   label: const Text('Withdraw AGLP'),
@@ -146,7 +146,7 @@ class AgentCommissionScreen extends HookConsumerWidget {
                             Expanded(
                               child: _InfoCard(
                                 label: 'Withdrawable',
-                                value: '${summary.aglpAvailable.toStringAsFixed(0)} AGLP',
+                                value: '${summary.aglpBalance.toStringAsFixed(0)} AGLP',
                                 valueColor: Theme.of(context).colorScheme.primary,
                               ),
                             ),

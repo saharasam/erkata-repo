@@ -222,6 +222,87 @@ const ConfigFlags: React.FC = () => {
                         </div>
                     </div>
                 </div>
+
+                <div className="mt-12 space-y-8 pt-8 border-t border-slate-100">
+                    <div className="flex items-center justify-between mb-2">
+                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Economic Splits & Commission Logic</h4>
+                        <span className="text-[10px] bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full font-black uppercase italic">Revenue Architecture</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {[
+                            { key: 'COMMISSION_REAL_ESTATE_PRIMARY', label: 'R.E. Primary', icon: ShieldCheck },
+                            { key: 'COMMISSION_REAL_ESTATE_OVERRIDE', label: 'R.E. Override', icon: TrendingUp },
+                            { key: 'COMMISSION_FURNITURE_PRIMARY', label: 'Furniture Primary', icon: Zap },
+                            { key: 'AGLP_COMMISSION_PACKAGE_REFERRAL', label: 'Package Referral', icon: Clock },
+                        ].map((comm) => {
+                            const val = getConfigValue(comm.key, { value: 0.1 }).value;
+                            return (
+                                <div key={comm.key} className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+                                    <div className="flex items-center gap-2 text-slate-900 font-black text-[10px] mb-3 uppercase tracking-tight">
+                                        <comm.icon className="w-3 h-3 text-indigo-600" />
+                                        {comm.label}
+                                    </div>
+                                    <div className="relative">
+                                        <input 
+                                            type="number" 
+                                            step="0.01"
+                                            defaultValue={val}
+                                            onBlur={(e) => {
+                                                const newVal = parseFloat(e.target.value);
+                                                if (newVal !== val && !isNaN(newVal)) {
+                                                    updateConfig(comm.key, { value: newVal });
+                                                }
+                                            }}
+                                            className="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-black text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" 
+                                        />
+                                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400">% / 100</span>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                <div className="mt-12 space-y-8 pt-8 border-t border-slate-100">
+                    <div className="flex items-center justify-between mb-2">
+                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Financial Disbursement (Withdrawal Policies)</h4>
+                        <span className="text-[10px] bg-amber-50 text-amber-600 px-2 py-0.5 rounded-full font-black uppercase italic">Capital Integrity</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {[
+                            { key: 'withdrawal_min_amount', label: 'Min Withdrawal', icon: ShieldAlert, suffix: 'AGLP' },
+                            { key: 'withdrawal_max_amount_daily', label: 'Daily Cap', icon: AlertTriangle, suffix: 'AGLP' },
+                            { key: 'withdrawal_fee_percentage', label: 'Processing Fee', icon: Save, suffix: '%' },
+                        ].map((policy) => {
+                            const val = getConfigValue(policy.key, policy.key.includes('fee') ? 0.05 : 100);
+                            return (
+                                <div key={policy.key} className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
+                                    <div className="flex items-center gap-2 text-slate-900 font-black text-[10px] mb-3 uppercase tracking-tight">
+                                        <policy.icon className="w-3 h-3 text-indigo-600" />
+                                        {policy.label}
+                                    </div>
+                                    <div className="relative">
+                                        <input 
+                                            type="number" 
+                                            step={policy.key.includes('fee') ? "0.01" : "1"}
+                                            defaultValue={val}
+                                            onBlur={(e) => {
+                                                const newVal = parseFloat(e.target.value);
+                                                if (newVal !== val && !isNaN(newVal)) {
+                                                    updateConfig(policy.key, newVal);
+                                                }
+                                            }}
+                                            className="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-black text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" 
+                                        />
+                                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400">{policy.suffix}</span>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
             </div>
             
             <div className={`rounded-3xl p-8 border flex items-center justify-between group transition-all duration-500 ${emergencyLockdown ? 'bg-red-50 border-red-200' : 'bg-red-950 border-red-900/50'}`}>

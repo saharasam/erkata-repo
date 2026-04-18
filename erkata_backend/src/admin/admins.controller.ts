@@ -48,6 +48,7 @@ export class AdminsController {
         role: true,
         isActive: true,
         createdAt: true,
+        missedAssignments: true,
         _count: {
           select: {
             operatorMatches: true,
@@ -71,23 +72,19 @@ export class AdminsController {
       role: UserRole;
     },
   ) {
-    // SECURITY: Hierarchy Enforcement
-    // Admins can only invite Operators/Agents/Customers.
-    // Only Super Admins can invite Admins.
-    const callerRole = req.user.role;
-    if (callerRole === UserRole.admin) {
-      if (body.role === UserRole.admin || body.role === UserRole.super_admin) {
-        throw new ForbiddenException(
-          'Admins are not permitted to invite other administrative-level users.',
-        );
-      }
+    if (req.user.role === UserRole.admin && body.role === UserRole.agent) {
+      throw new ForbiddenException(
+        'As an Admin, you do not have the authority to invite Agents. This action is reserved for Super Admins.',
+      );
     }
+
     const invite = await this.inviteService.createInvite(
       body.email,
       body.fullName,
       body.phone,
       body.role,
       req.user.id,
+      req.user.role,
     );
 
     return {

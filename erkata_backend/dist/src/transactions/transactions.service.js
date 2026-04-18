@@ -8,9 +8,14 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TransactionsService = void 0;
 const common_1 = require("@nestjs/common");
+const bullmq_1 = require("@nestjs/bullmq");
+const bullmq_2 = require("bullmq");
 const event_emitter_1 = require("@nestjs/event-emitter");
 const prisma_service_1 = require("../prisma/prisma.service");
 const client_1 = require("@prisma/client");
@@ -21,11 +26,13 @@ let TransactionsService = class TransactionsService {
     eventEmitter;
     aglpService;
     configService;
-    constructor(prisma, eventEmitter, aglpService, configService) {
+    timeoutQueue;
+    constructor(prisma, eventEmitter, aglpService, configService, timeoutQueue) {
         this.prisma = prisma;
         this.eventEmitter = eventEmitter;
         this.aglpService = aglpService;
         this.configService = configService;
+        this.timeoutQueue = timeoutQueue;
     }
     async acceptAssignment(matchId, agentId) {
         const match = await this.prisma.match.findUnique({
@@ -49,7 +56,7 @@ let TransactionsService = class TransactionsService {
             });
             await tx.request.update({
                 where: { id: match.requestId },
-                data: { status: client_1.RequestStatus.in_progress },
+                data: { status: client_1.RequestStatus.assigned },
             });
             await tx.transaction.upsert({
                 where: { matchId: matchId },
@@ -71,6 +78,7 @@ let TransactionsService = class TransactionsService {
     async declineAssignment(matchId, agentId) {
         const match = await this.prisma.match.findUnique({
             where: { id: matchId },
+            include: { agent: true, request: true },
         });
         if (!match)
             throw new common_1.NotFoundException('Match not found');
@@ -80,6 +88,8 @@ let TransactionsService = class TransactionsService {
         if (match.status !== 'assigned') {
             throw new common_1.BadRequestException('Cannot decline a match that is already processed');
         }
+        const agentName = match.agent.fullName;
+        const currentMetadata = match.request.metadata || {};
         await this.prisma.$transaction(async (tx) => {
             await tx.match.update({
                 where: { id: matchId },
@@ -89,6 +99,12 @@ let TransactionsService = class TransactionsService {
                 where: { id: match.requestId },
                 data: {
                     status: client_1.RequestStatus.pending,
+                    metadata: {
+                        ...currentMetadata,
+                        declinedByAgentName: agentName,
+                        declinedByAgentId: agentId,
+                        declinedAt: new Date().toISOString(),
+                    },
                 },
             });
         });
@@ -184,7 +200,7 @@ let TransactionsService = class TransactionsService {
             });
             await tx.request.update({
                 where: { id: match.requestId },
-                data: { status: client_1.RequestStatus.delivered },
+                data: { status: client_1.RequestStatus.fulfilled },
             });
             const res = matchResult;
             const budget = Number(res.request?.budgetMax || res.request?.budgetMin || 0);
@@ -209,11 +225,15 @@ let TransactionsService = class TransactionsService {
             return matchResult;
         });
         this.eventEmitter.emit('match.completed', result);
+        await this.timeoutQueue.add('check-fulfillment-timeout', { requestId: result.requestId }, { delay: 72 * 60 * 60 * 1000, jobId: `confirm-timeout-${result.requestId}` });
         return result;
     }
     async getAgentJobs(agentId) {
         const matches = await this.prisma.match.findMany({
-            where: { agentId },
+            where: {
+                agentId,
+                status: { not: 'rejected' },
+            },
             include: {
                 transaction: true,
                 request: {
@@ -249,6 +269,7 @@ let TransactionsService = class TransactionsService {
                     woreda: req.woreda,
                     type: req.type,
                     status: req.status,
+                    metadata: req.metadata ?? {},
                     zone: req.zone?.name || 'Unknown',
                     customer: isAccepted
                         ? {
@@ -269,11 +290,15 @@ let TransactionsService = class TransactionsService {
         return this.prisma.match.findMany({
             where: query?.status ? { status: query.status } : {},
             include: {
+                agent: {
+                    select: { id: true, fullName: true, phone: true },
+                },
                 request: {
                     include: {
                         customer: {
-                            select: { id: true, fullName: true },
+                            select: { id: true, fullName: true, phone: true },
                         },
+                        zone: true,
                     },
                 },
             },
@@ -284,9 +309,11 @@ let TransactionsService = class TransactionsService {
 exports.TransactionsService = TransactionsService;
 exports.TransactionsService = TransactionsService = __decorate([
     (0, common_1.Injectable)(),
+    __param(4, (0, bullmq_1.InjectQueue)('assignment-timeout')),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         event_emitter_1.EventEmitter2,
         aglp_service_1.AglpService,
-        config_service_1.ConfigService])
+        config_service_1.ConfigService,
+        bullmq_2.Queue])
 ], TransactionsService);
 //# sourceMappingURL=transactions.service.js.map

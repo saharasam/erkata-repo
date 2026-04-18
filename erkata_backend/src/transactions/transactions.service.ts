@@ -4,6 +4,8 @@ import {
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
 import { MatchStatus, RequestStatus, Prisma } from '@prisma/client';
@@ -17,6 +19,7 @@ export class TransactionsService {
     private readonly eventEmitter: EventEmitter2,
     private readonly aglpService: AglpService,
     private readonly configService: ConfigService,
+    @InjectQueue('assignment-timeout') private readonly timeoutQueue: Queue,
   ) {}
 
   // ── Agent accepts the assignment ─────────────────────────────────────────
@@ -45,10 +48,10 @@ export class TransactionsService {
           },
         });
 
-        // Sync parent request status to in_progress
+        // Sync parent request status to assigned
         await tx.request.update({
           where: { id: match.requestId },
-          data: { status: RequestStatus.in_progress },
+          data: { status: RequestStatus.assigned },
         });
 
         // ── Create Transaction Record (Locked for Mediation/Feedback) ────
@@ -79,6 +82,7 @@ export class TransactionsService {
   async declineAssignment(matchId: string, agentId: string) {
     const match = await this.prisma.match.findUnique({
       where: { id: matchId },
+      include: { agent: true, request: true },
     });
 
     if (!match) throw new NotFoundException('Match not found');
@@ -91,17 +95,26 @@ export class TransactionsService {
       );
     }
 
+    const agentName = match.agent.fullName;
+    const currentMetadata = (match.request.metadata as Record<string, any>) || {};
+
     await this.prisma.$transaction(async (tx) => {
       await tx.match.update({
         where: { id: matchId },
         data: { status: 'rejected' },
       });
 
-      // Re-enter the request into pending status
+      // Re-enter the request into pending status and record decline metadata
       await tx.request.update({
         where: { id: match.requestId },
         data: {
           status: RequestStatus.pending,
+          metadata: {
+            ...currentMetadata,
+            declinedByAgentName: agentName,
+            declinedByAgentId: agentId,
+            declinedAt: new Date().toISOString(),
+          },
         },
       });
     });
@@ -229,7 +242,7 @@ export class TransactionsService {
 
       await tx.request.update({
         where: { id: match.requestId },
-        data: { status: RequestStatus.delivered },
+        data: { status: RequestStatus.fulfilled },
       });
 
       // ── Commission Splitting Logic (Phase 2) ──────────────────────────
@@ -300,13 +313,24 @@ export class TransactionsService {
       return matchResult;
     });
     this.eventEmitter.emit('match.completed', result);
+
+    // Schedule 72h auto-confirmation window
+    await this.timeoutQueue.add(
+      'check-fulfillment-timeout',
+      { requestId: result.requestId },
+      { delay: 72 * 60 * 60 * 1000, jobId: `confirm-timeout-${result.requestId}` },
+    );
+
     return result;
   }
 
   // ── Agent fetches their assigned jobs ────────────────────────────────────
   async getAgentJobs(agentId: string) {
     const matches = await this.prisma.match.findMany({
-      where: { agentId },
+      where: {
+        agentId,
+        status: { not: 'rejected' },
+      },
       include: {
         transaction: true,
         request: {
@@ -345,6 +369,7 @@ export class TransactionsService {
           woreda: req.woreda,
           type: req.type,
           status: req.status,
+          metadata: req.metadata ?? {},
           zone: req.zone?.name || 'Unknown',
           customer: isAccepted
             ? {
@@ -367,11 +392,15 @@ export class TransactionsService {
     return this.prisma.match.findMany({
       where: query?.status ? { status: query.status as MatchStatus } : {},
       include: {
+        agent: {
+          select: { id: true, fullName: true, phone: true },
+        },
         request: {
           include: {
             customer: {
-              select: { id: true, fullName: true },
+              select: { id: true, fullName: true, phone: true },
             },
+            zone: true,
           },
         },
       },

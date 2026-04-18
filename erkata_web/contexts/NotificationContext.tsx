@@ -16,8 +16,10 @@ export interface Notification {
 interface NotificationContextType {
   notifications: Notification[];
   unreadCount: number;
+  payoutCount: number;
   markAsRead: (id: string) => Promise<void>;
   markAllAsRead: () => Promise<void>;
+  refreshNotifications: () => Promise<void>;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -83,9 +85,10 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   };
 
   const unreadCount = notifications.filter(n => !n.read).length;
+  const payoutCount = notifications.filter(n => !n.read && n.type === 'payout.requested').length;
 
   return (
-    <NotificationContext.Provider value={{ notifications, unreadCount, markAsRead, markAllAsRead }}>
+    <NotificationContext.Provider value={{ notifications, unreadCount, payoutCount, markAsRead, markAllAsRead, refreshNotifications: fetchNotifications }}>
       {children}
     </NotificationContext.Provider>
   );

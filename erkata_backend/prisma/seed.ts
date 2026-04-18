@@ -108,12 +108,23 @@ async function main() {
       description: 'Commission for primary agent on furniture fulfillment.',
     },
   });
+ 
+  await prisma.systemConfig.upsert({
+    where: { key: 'alert_commission_spike_threshold' },
+    update: {},
+    create: {
+      key: 'alert_commission_spike_threshold',
+      value: { value: 10000 },
+      description:
+        'Threshold for suspicious commission earnings in a rolling 24h window.',
+    },
+  });
 
   console.log('Seeding test users...');
 
   for (const user of testUsers) {
     await prisma.profile.upsert({
-      where: { id: user.id },
+      where: { email: user.email },
       update: {
         isActive: user.isActive ?? true,
       },
@@ -131,7 +142,16 @@ async function main() {
   console.log('Seeding packages...');
   const packages = [
     {
+      name: 'FREE',
+      displayName: 'Free',
+      price: 0,
+      referralSlots: 3,
+      zoneLimit: 1,
+      description: 'Standard access for newly onboarded agents.',
+    },
+    {
       name: 'PEACE',
+      displayName: 'Peace',
       price: 2500,
       referralSlots: 7,
       zoneLimit: 2,
@@ -139,6 +159,7 @@ async function main() {
     },
     {
       name: 'LOVE',
+      displayName: 'Love',
       price: 5000,
       referralSlots: 16,
       zoneLimit: 3,
@@ -146,6 +167,7 @@ async function main() {
     },
     {
       name: 'UNITY',
+      displayName: 'Unity',
       price: 10000,
       referralSlots: 23,
       zoneLimit: 5,
@@ -153,6 +175,7 @@ async function main() {
     },
     {
       name: 'ABUNDANT_LIFE',
+      displayName: 'Abundant Life',
       price: 25000,
       referralSlots: 31,
       zoneLimit: 100,
@@ -165,6 +188,7 @@ async function main() {
       // @ts-expect-error - Tier is an enum in Prisma, string name is expected to work but type-checked strictly
       where: { name: pkg.name },
       update: {
+        displayName: pkg.displayName,
         price: pkg.price,
         referralSlots: pkg.referralSlots,
         zoneLimit: pkg.zoneLimit,
@@ -173,6 +197,7 @@ async function main() {
       create: {
         // @ts-expect-error - Tier is an enum in Prisma
         name: pkg.name,
+        displayName: pkg.displayName,
         price: pkg.price,
         referralSlots: pkg.referralSlots,
         zoneLimit: pkg.zoneLimit,

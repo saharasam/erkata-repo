@@ -28,7 +28,7 @@ class AuthRepositoryImpl implements AuthRepository {
     } on DioException catch (e) {
       throw ErrorHandler.fromDioException(e);
     } catch (e) {
-      throw UnknownException(e.toString());
+      throw UnknownException(message: e.toString());
     }
   }
 
@@ -39,7 +39,7 @@ class AuthRepositoryImpl implements AuthRepository {
     } on DioException catch (e) {
       throw ErrorHandler.fromDioException(e);
     } catch (e) {
-      throw UnknownException(e.toString());
+      throw UnknownException(message: e.toString());
     }
   }
 
@@ -60,7 +60,7 @@ class AuthRepositoryImpl implements AuthRepository {
     } on AppException {
       rethrow;
     } catch (e) {
-      throw UnknownException(e.toString());
+      throw UnknownException(message: e.toString());
     }
   }
 
@@ -71,7 +71,7 @@ class AuthRepositoryImpl implements AuthRepository {
     } on DioException catch (e) {
       throw ErrorHandler.fromDioException(e);
     } catch (e) {
-      throw UnknownException(e.toString());
+      throw UnknownException(message: e.toString());
     }
   }
 }

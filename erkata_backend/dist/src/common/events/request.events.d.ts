@@ -22,4 +22,19 @@ export declare class RequestEventListener {
         requestId: string;
         customerId: string;
     }): Promise<void>;
+    handleRequestEscalated(payload: {
+        requestId: string;
+        operatorId: string;
+        note?: string;
+    }): Promise<void>;
+    handleRequestResolved(payload: {
+        requestId: string;
+        operatorId: string;
+        note?: string;
+    }): Promise<void>;
+    handleRequestVoided(payload: {
+        requestId: string;
+        operatorId: string;
+        note?: string;
+    }): Promise<void>;
 }

@@ -12,6 +12,7 @@ interface Operator {
     zone?: {
         name: string;
     };
+    missedAssignments?: number;
     createdAt: string;
 }
 
@@ -101,11 +102,18 @@ const AdminOperatorList: React.FC = () => {
                                 <span className="text-[10px] font-mono text-slate-400">{op.id.split('-')[0].toUpperCase()}</span>
                             </div>
 
-                            <div className="flex items-center gap-2 py-3 border-t border-slate-50 mb-3">
-                                <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                                <span className="text-xs font-bold text-slate-600">
-                                    {op.zone?.name || 'Global Access'}
-                                </span>
+                            <div className="flex items-center gap-2 py-3 border-t border-slate-50 mb-3 justify-between">
+                                <div className="flex items-center gap-2">
+                                    <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                                    <span className="text-xs font-bold text-slate-600">
+                                        {op.zone?.name || 'Global Access'}
+                                    </span>
+                                </div>
+                                <div className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                    (op.missedAssignments || 0) > 0 ? 'bg-orange-50 text-orange-600' : 'bg-slate-50 text-slate-500'
+                                }`} title="Missed Backlog (Requests timed out before assignment)">
+                                    Missed: {op.missedAssignments || 0}
+                                </div>
                             </div>
 
                             <div className="mt-2 flex gap-2">

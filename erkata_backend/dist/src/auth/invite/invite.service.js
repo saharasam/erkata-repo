@@ -12,13 +12,19 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.InviteService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../prisma/prisma.service");
+const users_service_1 = require("../../users/users.service");
 const crypto_1 = require("crypto");
 let InviteService = class InviteService {
     prisma;
-    constructor(prisma) {
+    usersService;
+    constructor(prisma, usersService) {
         this.prisma = prisma;
+        this.usersService = usersService;
     }
-    async createInvite(email, fullName, phone, role, createdById) {
+    async createInvite(email, fullName, phone, role, createdById, callerRole) {
+        if (!this.usersService.canModifyUser(callerRole, role)) {
+            throw new common_1.ForbiddenException(`Your role (${callerRole}) is not authorized to invite a ${role}`);
+        }
         const token = (0, crypto_1.randomBytes)(32).toString('hex');
         const expiresAt = new Date();
         expiresAt.setHours(expiresAt.getHours() + 72);
@@ -111,6 +117,7 @@ let InviteService = class InviteService {
 exports.InviteService = InviteService;
 exports.InviteService = InviteService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        users_service_1.UsersService])
 ], InviteService);
 //# sourceMappingURL=invite.service.js.map

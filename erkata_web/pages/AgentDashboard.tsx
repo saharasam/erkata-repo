@@ -33,6 +33,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useModal } from '../contexts/ModalContext';
 import { Can } from '../components/ui/Can';
 import { Action } from '../hooks/usePermissions';
+import { useSocket } from '../contexts/SocketContext';
 
 import FeedbackForm, { FeedbackData } from '../components/FeedbackForm';
 import WalletSummary from '../components/agent/WalletSummary';
@@ -43,6 +44,7 @@ import { NetworkView } from '../components/agent/NetworkView';
 import { FocusBoard } from '../components/agent/FocusBoard';
 import { Skeleton } from '../components/ui/Skeleton';
 import TransferMatchModal from '../components/agent/TransferMatchModal';
+import PayoutRequestModal from '../components/agent/PayoutRequestModal';
 
 type DashboardView = 'focus' | 'earnings' | 'network' | 'packages' | 'profile';
 
@@ -103,9 +105,52 @@ const AgentDashboard: React.FC = () => {
     }
   };
 
+  const playNotificationSound = () => {
+    try {
+      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      const ctx = new AudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(880, ctx.currentTime); // A5
+      osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.5); // A4
+
+      gain.gain.setValueAtTime(0, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.2, ctx.currentTime + 0.1);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start();
+      osc.stop(ctx.currentTime + 0.5);
+    } catch (e) {
+      console.warn('Audio feedback failed', e);
+    }
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
+
+  const { socket } = useSocket();
+
+  useEffect(() => {
+    if (socket) {
+      const handleNewLead = (notification: any) => {
+        if (notification.type === 'match.created' || notification.type === 'request.pushed') {
+          playNotificationSound();
+          fetchData(); // Silent refresh
+        }
+      };
+
+      socket.on('notification', handleNewLead);
+      return () => {
+        socket.off('notification', handleNewLead);
+      };
+    }
+  }, [socket]);
 
 
   const mapBackendJobsToUi = (matches: any[]): any[] => {
@@ -115,12 +160,14 @@ const AgentDashboard: React.FC = () => {
       submittedDate: new Date(m.assignedAt).toLocaleDateString(),
       submittedTime: new Date(m.assignedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       requirementSummary: `${m.request.category}: ${m.request.description || 'No description provided'}`,
+      category: m.request.category,
       customerName: m.request.customer.fullName,
+      customerPhone: m.request.customer.phone,
       zone: m.request.zone?.name || 'Unknown',
       woreda: m.request.woreda || 'N/A',
-      status: m.status === 'accepted' ? 'in-progress' : 
-              m.status === 'completed' ? 'completed' : 
-              m.status === 'assigned' ? 'assigned' : 'cancelled'
+      budgetMax: m.request.budgetMax || '0',
+      metadata: m.request.metadata || {},
+      status: m.status // assigned, accepted, completed, rejected
     }));
   };
 
@@ -135,6 +182,15 @@ const AgentDashboard: React.FC = () => {
   const [requests, setRequests] = useState<any[]>([]);
   const [feedbackRequest, setFeedbackRequest] = useState<{id: string, transactionId: string, customerName: string} | null>(null);
   const [transferringJobId, setTransferringJobId] = useState<string | null>(null);
+  const [isPayoutModalOpen, setIsPayoutModalOpen] = useState(false);
+  const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
+
+  const addProcessingId = (id: string) => setProcessingIds(prev => new Set(prev).add(id));
+  const removeProcessingId = (id: string) => setProcessingIds(prev => {
+    const next = new Set(prev);
+    next.delete(id);
+    return next;
+  });
 
   const handleTransferClick = (jobId: string) => {
     setTransferringJobId(jobId);
@@ -150,22 +206,28 @@ const AgentDashboard: React.FC = () => {
 
     if (confirmed) {
       try {
+        addProcessingId(jobId);
         await api.patch(`/transactions/${jobId}/decline`);
         setRequests(prev => prev.filter(req => req.id !== jobId));
         showAlert({ title: 'Success', message: 'Assignment declined.', type: 'success' });
       } catch (error) {
         console.error('Failed to decline job:', error);
         showAlert({ title: 'Error', message: 'Failed to decline assignment.', type: 'error' });
+      } finally {
+        removeProcessingId(jobId);
       }
     }
   };
 
   const handleAccept = async (jobId: string) => {
     try {
+      addProcessingId(jobId);
       await api.patch(`/transactions/${jobId}/accept`);
-      setRequests(prev => prev.map(req => 
-        req.id === jobId ? { ...req, status: 'in-progress' } : req
-      ));
+      
+      // Perform a silent refresh of specifically the jobs to get un-redacted customer details
+      const jobsRes = await api.get('/transactions/my-jobs');
+      setRequests(mapBackendJobsToUi(jobsRes.data));
+
       showAlert({
         title: 'Assignment Accepted',
         message: 'Customer details have been unlocked. You can now start the fulfillment.',
@@ -174,38 +236,29 @@ const AgentDashboard: React.FC = () => {
     } catch (error) {
        console.error('Failed to accept job:', error);
        showAlert({ title: 'Error', message: 'Failed to accept assignment.', type: 'error' });
+    } finally {
+      removeProcessingId(jobId);
     }
   };
 
   const handlePayoutRequest = async () => {
-    const available = finance?.aglpAvailable || 0;
-    if (available <= 0) {
-      showAlert({ title: 'Insufficient Balance', message: 'You do not have any withdrawable AGLP.', type: 'error' });
-      return;
-    }
+    setIsPayoutModalOpen(true);
+  };
 
-    const confirmed = await showConfirm({
-      title: 'Request Payout',
-      message: `Withdraw your available ${available.toLocaleString()} AGLP to your linked Telebirr account?`,
-      confirmText: 'Confirm Withdrawal',
-      type: 'success'
-    });
-
-    if (confirmed) {
-      try {
-        await api.post('/users/me/withdraw', { amount: available });
-        showAlert({
-          title: 'Payout Requested',
-          message: 'Your request is being processed by the regional admin.',
-          type: 'success'
-        });
-        // Refresh finance data
-        const financeRes = await api.get('/users/me/finance');
-        setFinance(financeRes.data);
-      } catch (error) {
-        console.error('Failed to request payout:', error);
-        showAlert({ title: 'Error', message: 'Failed to submit withdrawal request.', type: 'error' });
-      }
+  const handlePayoutSubmit = async (data: { amount: number; bankName: string; bankAccountNumber: string; bankAccountHolder: string }) => {
+    try {
+      await api.post('/users/me/withdraw', data);
+      showAlert({
+        title: 'Payout Requested',
+        message: 'Your request has been sent to the operator for manual transfer.',
+        type: 'success'
+      });
+      // Refresh finance data
+      const financeRes = await api.get('/users/me/finance');
+      setFinance(financeRes.data);
+    } catch (error) {
+       console.error('Failed to request payout:', error);
+       throw error; // Re-throw to be caught by modal's error handler
     }
   };
 
@@ -228,11 +281,14 @@ const AgentDashboard: React.FC = () => {
 
     if (confirmed) {
       try {
+        addProcessingId(jobId);
         await api.patch(`/transactions/${jobId}/complete`);
         setFeedbackRequest({ id: jobId, transactionId, customerName });
       } catch (error) {
         console.error('Failed to complete job:', error);
         showAlert({ title: 'Error', message: 'Failed to mark job as complete.', type: 'error' });
+      } finally {
+        removeProcessingId(jobId);
       }
     }
   };
@@ -382,6 +438,7 @@ const AgentDashboard: React.FC = () => {
                 onTransfer={handleTransferClick}
                 onDecline={handleDecline}
                 hasReferrals={!!profile?.referrals?.length}
+                processingIds={processingIds}
              />
           )}
 
@@ -439,6 +496,13 @@ const AgentDashboard: React.FC = () => {
         matchId={transferringJobId || ''}
         referrals={profile?.referrals || []}
         onSuccess={fetchData}
+      />
+
+      <PayoutRequestModal 
+        isOpen={isPayoutModalOpen}
+        onClose={() => setIsPayoutModalOpen(false)}
+        availableBalance={parseFloat(finance?.aglpAvailable || '0')}
+        onSubmit={handlePayoutSubmit}
       />
     </DashboardLayout>
   );

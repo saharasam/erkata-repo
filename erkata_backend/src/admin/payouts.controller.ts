@@ -47,17 +47,8 @@ export class PayoutsController {
   @Post(':id/approve')
   @RequirePermission(Action.APPROVE_PAYOUT)
   async approvePayout(@Param('id') id: string) {
-    const aglpTx = await this.prisma.aglpTransaction.findUnique({
-      where: { id },
-    });
-
-    if (!aglpTx || aglpTx.status !== AglpTransactionStatus.PENDING) {
-      throw new BadRequestException('Transaction not found or not pending');
-    }
-
-    return this.prisma.aglpTransaction.update({
-      where: { id },
-      data: { status: AglpTransactionStatus.COMPLETED },
+    return this.prisma.$transaction(async (tx) => {
+      return this.aglpService.completeWithdrawal(tx, id);
     });
   }
 

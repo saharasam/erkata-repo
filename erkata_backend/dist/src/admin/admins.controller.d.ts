@@ -10,11 +10,12 @@ export declare class AdminsController {
     constructor(prisma: PrismaService, inviteService: InviteService, usersService: UsersService);
     getPersonnel(role?: string): Promise<{
         id: string;
-        createdAt: Date;
         fullName: string;
         phone: string;
         role: import(".prisma/client").$Enums.UserRole;
         isActive: boolean;
+        createdAt: Date;
+        missedAssignments: number;
         _count: {
             operatorMatches: number;
             resolutionProposals: number;
@@ -30,11 +31,11 @@ export declare class AdminsController {
         inviteUrl: string;
         invite: {
             id: string;
-            createdAt: Date;
             email: string;
             fullName: string;
             phone: string;
             role: import(".prisma/client").$Enums.UserRole;
+            createdAt: Date;
             token: string;
             expiresAt: Date;
             usedAt: Date | null;
@@ -43,11 +44,11 @@ export declare class AdminsController {
     }>;
     getInvites(req: AuthenticatedRequest): Promise<{
         id: string;
-        createdAt: Date;
         email: string;
         fullName: string;
         phone: string;
         role: import(".prisma/client").$Enums.UserRole;
+        createdAt: Date;
         token: string;
         expiresAt: Date;
         usedAt: Date | null;
@@ -60,8 +61,8 @@ export declare class AdminsController {
         isActive: boolean;
     }): Promise<{
         id: string;
-        createdAt: Date;
         email: string;
+        referralCode: string | null;
         passwordHash: string | null;
         fullName: string;
         phone: string;
@@ -70,11 +71,14 @@ export declare class AdminsController {
         isActive: boolean;
         zoneId: string | null;
         referredById: string | null;
+        createdAt: Date;
         aglpBalance: import("@prisma/client/runtime/library").Decimal;
         aglpPending: import("@prisma/client/runtime/library").Decimal;
         aglpWithdrawn: import("@prisma/client/runtime/library").Decimal;
-        referralCode: string | null;
         isOnline: boolean;
         lastAssignmentAt: Date | null;
+        missedAssignments: number;
+        warningCount: number;
+        avatarUrl: string | null;
     }>;
 }

@@ -12,12 +12,17 @@ const transactions_service_1 = require("./transactions.service");
 const transactions_controller_1 = require("./transactions.controller");
 const prisma_module_1 = require("../prisma/prisma.module");
 const aglp_module_1 = require("../aglp/aglp.module");
+const bullmq_1 = require("@nestjs/bullmq");
 let TransactionsModule = class TransactionsModule {
 };
 exports.TransactionsModule = TransactionsModule;
 exports.TransactionsModule = TransactionsModule = __decorate([
     (0, common_1.Module)({
-        imports: [prisma_module_1.PrismaModule, aglp_module_1.AglpModule],
+        imports: [
+            prisma_module_1.PrismaModule,
+            aglp_module_1.AglpModule,
+            bullmq_1.BullModule.registerQueue({ name: 'assignment-timeout' }),
+        ],
         providers: [transactions_service_1.TransactionsService],
         controllers: [transactions_controller_1.TransactionsController],
         exports: [transactions_service_1.TransactionsService],

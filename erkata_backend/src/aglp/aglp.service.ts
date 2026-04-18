@@ -129,13 +129,56 @@ export class AglpService {
     const rate = this.getConversionRate();
     const amountAglp = amountEtb * rate;
 
-    // Credit AGLP Balance
+    // 1. Check for suspicious spikes (Transactional)
+    const thresholdConfig = this.configService.get<{ value: number }>(
+      'alert_commission_spike_threshold',
+      { value: 10000 },
+    );
+    const threshold = Number(thresholdConfig.value);
+
+    const twentyFourHoursAgo = new Date();
+    twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+
+    const recentEarnings = await tx.aglpTransaction.aggregate({
+      where: {
+        profileId,
+        type: AglpTransactionType.EARN,
+        status: AglpTransactionStatus.COMPLETED,
+        createdAt: { gte: twentyFourHoursAgo },
+      },
+      _sum: {
+        etbEquivalent: true,
+      },
+    });
+
+    const totalWithCurrent =
+      Number(recentEarnings._sum.etbEquivalent || 0) + amountEtb;
+
+    if (totalWithCurrent >= threshold) {
+      await tx.auditLog.create({
+        data: {
+          actorId: profileId,
+          action: 'SUSPICIOUS_COMMISSION',
+          targetTable: 'profiles',
+          targetId: profileId,
+          metadata: {
+            referenceId,
+            currentAmount: amountEtb,
+            rolling24hTotal: totalWithCurrent,
+            threshold,
+            reason: 'Commission spike detected',
+          },
+        },
+      });
+    }
+
+    // 2. Credit AGLP Balance
     await tx.profile.update({
       where: { id: profileId },
       data: { aglpBalance: { increment: amountAglp } },
     });
 
-    // Log AGLP Earn Transaction
+    // 3. Log AGLP Earn Transaction
     await tx.aglpTransaction.create({
       data: {
         profileId,
@@ -149,7 +192,7 @@ export class AglpService {
       },
     });
 
-    // Write backwards compatible audit log
+    // 4. Write backwards compatible audit log
     await tx.auditLog.create({
       data: {
         actorId: profileId,
@@ -171,38 +214,83 @@ export class AglpService {
     tx: Prisma.TransactionClient,
     profileId: string,
     amountAglp: number,
+    bankDetails: { bankName: string; bankAccountNumber: string; bankAccountHolder: string },
   ) {
     const profile = await tx.profile.findUnique({ where: { id: profileId } });
     if (!profile || Number(profile.aglpBalance) < amountAglp) {
       throw new Error('Insufficient AGLP balance');
     }
 
-    const rate = this.getConversionRate();
-    const amountEtb = amountAglp / rate;
+    // 1. Enforce Minimum Amount
+    const minAmount = this.configService.get<number>(
+      'withdrawal_min_amount',
+      100,
+    );
+    if (amountAglp < minAmount) {
+      throw new Error(`Minimum withdrawal amount is ${minAmount} AGLP`);
+    }
 
-    // 1. Update Profile Balances
+    // 2. Enforce Daily Maximum
+    const maxDaily = this.configService.get<number>(
+      'withdrawal_max_amount_daily',
+      50000,
+    );
+    const twentyFourHoursAgo = new Date();
+    twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+
+    const recentWithdrawals = await tx.aglpTransaction.aggregate({
+      where: {
+        profileId,
+        type: AglpTransactionType.WITHDRAWAL,
+        status: { not: AglpTransactionStatus.REJECTED },
+        createdAt: { gte: twentyFourHoursAgo },
+      },
+      _sum: { amount: true },
+    });
+
+    const totalWithdrawn24h = Number(recentWithdrawals._sum.amount || 0);
+    if (totalWithdrawn24h + amountAglp > maxDaily) {
+      throw new Error(
+        `Daily withdrawal limit reached. Max: ${maxDaily} AGLP. Already withdrawn in 24h: ${totalWithdrawn24h} AGLP.`,
+      );
+    }
+
+    // 3. Apply Processing Fee
+    const feePct = this.configService.get<number>(
+      'withdrawal_fee_percentage',
+      0.05,
+    );
+    const feeAmountAglp = amountAglp * feePct;
+    const netAglp = amountAglp - feeAmountAglp;
+
+    const rate = this.getConversionRate();
+    const netEtb = netAglp / rate;
+
+    // 4. Update Profile Balances (Gross amount deducted from balance only)
     await tx.profile.update({
       where: { id: profileId },
       data: {
         aglpBalance: { decrement: amountAglp },
-        aglpWithdrawn: { increment: amountAglp },
       },
     });
 
-    // 2. Log AGLP Withdrawal Transaction
+    // 5. Log AGLP Withdrawal Transaction
     const aglpTx = await tx.aglpTransaction.create({
       data: {
         profileId,
         type: AglpTransactionType.WITHDRAWAL,
         amount: amountAglp,
-        etbEquivalent: amountEtb,
+        etbEquivalent: netEtb,
         conversionRate: rate,
-        status: AglpTransactionStatus.PENDING, // PENDING until admin approves
+        status: AglpTransactionStatus.PENDING,
         referenceType: 'PAYOUT',
+        bankName: bankDetails.bankName,
+        bankAccountNumber: bankDetails.bankAccountNumber,
+        bankAccountHolder: bankDetails.bankAccountHolder,
       },
     });
 
-    // 3. Write audit log for the request
+    // 6. Write audit log
     await tx.auditLog.create({
       data: {
         actorId: profileId,
@@ -211,7 +299,9 @@ export class AglpService {
         targetId: profileId,
         metadata: {
           amountAglp,
-          amountEtb,
+          feeAglp: feeAmountAglp,
+          netAglp,
+          amountEtb: netEtb,
           aglpTxId: aglpTx.id,
         },
       },
@@ -220,6 +310,7 @@ export class AglpService {
     return aglpTx;
   }
 
+  // Handle AGLP withdrawal rejection (Refund)
   // Handle AGLP withdrawal rejection (Refund)
   async rejectWithdrawal(
     tx: Prisma.TransactionClient,
@@ -235,18 +326,11 @@ export class AglpService {
       throw new Error('Withdrawal transaction not found');
     }
 
-    if (aglpTx.status !== AglpTransactionStatus.PENDING) {
-      // In my previous implementation I set it to COMPLETED by default,
-      // but for administrative flow PENDING is better.
-      // I will adjust the withdrawAglp method to set status to PENDING.
-    }
-
-    // 1. Refund the AGLP
+    // 1. Refund the AGLP to balance only (since it was never in aglpWithdrawn)
     await tx.profile.update({
       where: { id: aglpTx.profileId },
       data: {
         aglpBalance: { increment: aglpTx.amount },
-        aglpWithdrawn: { decrement: aglpTx.amount },
       },
     });
 
@@ -267,6 +351,48 @@ export class AglpService {
           aglpTxId,
           amountAglp: aglpTx.amount,
           reason,
+        },
+      },
+    });
+  }
+
+  // Finalize AGLP withdrawal (Mark as received)
+  async completeWithdrawal(
+    tx: Prisma.TransactionClient,
+    aglpTxId: string,
+  ) {
+    const aglpTx = await tx.aglpTransaction.findUnique({
+      where: { id: aglpTxId },
+    });
+
+    if (!aglpTx || aglpTx.type !== AglpTransactionType.WITHDRAWAL || aglpTx.status !== AglpTransactionStatus.PENDING) {
+      throw new Error('Valid pending withdrawal transaction not found');
+    }
+
+    // 1. Update Profile: Mark money as officially withdrawn
+    await tx.profile.update({
+      where: { id: aglpTx.profileId },
+      data: {
+        aglpWithdrawn: { increment: aglpTx.amount },
+      },
+    });
+
+    // 2. Update Transaction Status
+    await tx.aglpTransaction.update({
+      where: { id: aglpTxId },
+      data: { status: AglpTransactionStatus.COMPLETED },
+    });
+
+    // 3. Log Audit Log
+    await tx.auditLog.create({
+      data: {
+        actorId: aglpTx.profileId,
+        action: 'PAYOUT_COMPLETED',
+        targetTable: 'profiles',
+        targetId: aglpTx.profileId,
+        metadata: {
+          aglpTxId,
+          amountAglp: aglpTx.amount,
         },
       },
     });
