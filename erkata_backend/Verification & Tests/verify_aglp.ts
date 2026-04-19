@@ -1,4 +1,8 @@
-import { PrismaClient, AglpTransactionType, AglpTransactionStatus } from '@prisma/client';
+import {
+  PrismaClient,
+  AglpTransactionType,
+  AglpTransactionStatus,
+} from '@prisma/client';
 
 async function verifyAglp() {
   const prisma = new PrismaClient();
@@ -8,7 +12,9 @@ async function verifyAglp() {
 
   try {
     // 1. Initial State
-    const initialProfile = await prisma.profile.findUnique({ where: { id: testUserId } });
+    const initialProfile = await prisma.profile.findUnique({
+      where: { id: testUserId },
+    });
     console.log(`Initial AGLP Balance: ${initialProfile?.aglpBalance}`);
 
     // 2. Test Deposit
@@ -34,7 +40,9 @@ async function verifyAglp() {
       });
     });
 
-    const afterDeposit = await prisma.profile.findUnique({ where: { id: testUserId } });
+    const afterDeposit = await prisma.profile.findUnique({
+      where: { id: testUserId },
+    });
     console.log(`Balance after deposit: ${afterDeposit?.aglpBalance}`);
 
     // 3. Test Withdrawal Request
@@ -64,35 +72,44 @@ async function verifyAglp() {
       withdrawalTxId = aglpTx.id;
     });
 
-    const afterWithdrawal = await prisma.profile.findUnique({ where: { id: testUserId } });
-    console.log(`Balance after withdrawal request: ${afterWithdrawal?.aglpBalance}`);
-    console.log(`Withdrawn (Pending) amount: ${afterWithdrawal?.aglpWithdrawn}`);
+    const afterWithdrawal = await prisma.profile.findUnique({
+      where: { id: testUserId },
+    });
+    console.log(
+      `Balance after withdrawal request: ${afterWithdrawal?.aglpBalance}`,
+    );
+    console.log(
+      `Withdrawn (Pending) amount: ${afterWithdrawal?.aglpWithdrawn}`,
+    );
 
     // 4. Test Rejection (Refund)
     console.log(`\nTesting Rejection (Refund) for Tx ${withdrawalTxId}...`);
     await prisma.$transaction(async (tx) => {
-        const aglpTx = await tx.aglpTransaction.findUnique({ where: { id: withdrawalTxId } });
-        if (!aglpTx) throw new Error('Tx not found');
+      const aglpTx = await tx.aglpTransaction.findUnique({
+        where: { id: withdrawalTxId },
+      });
+      if (!aglpTx) throw new Error('Tx not found');
 
-        await tx.profile.update({
-            where: { id: testUserId },
-            data: {
-                aglpBalance: { increment: aglpTx.amount },
-                aglpWithdrawn: { decrement: aglpTx.amount },
-            },
-        });
-        await tx.aglpTransaction.update({
-            where: { id: withdrawalTxId },
-            data: { status: AglpTransactionStatus.REJECTED },
-        });
+      await tx.profile.update({
+        where: { id: testUserId },
+        data: {
+          aglpBalance: { increment: aglpTx.amount },
+          aglpWithdrawn: { decrement: aglpTx.amount },
+        },
+      });
+      await tx.aglpTransaction.update({
+        where: { id: withdrawalTxId },
+        data: { status: AglpTransactionStatus.REJECTED },
+      });
     });
 
-    const finalProfile = await prisma.profile.findUnique({ where: { id: testUserId } });
+    const finalProfile = await prisma.profile.findUnique({
+      where: { id: testUserId },
+    });
     console.log(`Final Balance after rejection: ${finalProfile?.aglpBalance}`);
     console.log(`Final Withdrawn amount: ${finalProfile?.aglpWithdrawn}`);
 
     console.log('\n--- Verification Successful ---');
-
   } catch (error) {
     console.error('Verification failed:', error);
   } finally {

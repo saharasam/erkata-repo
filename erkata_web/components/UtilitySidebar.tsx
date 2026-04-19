@@ -60,7 +60,7 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
     { id: 'analytics', icon: BarChart4, label: 'Analytics' },
     { id: 'tiers', icon: Package, label: 'Tier Architecture' },
     { id: 'disputes', icon: ShieldAlert, label: 'Disputes Audit', badge: disputeCount > 0 ? disputeCount : undefined },
-    { id: 'admins', icon: ShieldAlert, label: 'Admin Management' },
+    { id: 'admins', icon: User, label: 'Admin Management' },
     { id: 'config', icon: Settings2, label: 'Config Flags' },
     { id: 'notices', icon: Megaphone, label: 'Broadcasts' },
     { id: 'audit', icon: History, label: 'Audit Logs' },
@@ -78,6 +78,7 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
     // { id: 'network', icon: Network, label: 'Network Intelligence' },
     { id: 'agents', icon: Users, label: 'Agents' },
     { id: 'operators', icon: Users, label: 'Operators' },
+    { id: 'notices', icon: Megaphone, label: 'Broadcasts' },
   ];
 
   const operatorTools = [
@@ -85,6 +86,7 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
     { id: 'finance', icon: Wallet, label: 'Financial Desk', badge: payoutCount > 0 ? payoutCount : undefined },
     { id: 'disputes', icon: ShieldAlert, label: 'Disputes', badge: disputeCount > 0 ? disputeCount : undefined },
     { id: 'history', icon: History, label: 'Assignment History' },
+    { id: 'notices', icon: Megaphone, label: 'Broadcasts' },
   ];
 
   const agentTools = [
@@ -93,6 +95,7 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
     { id: 'network', icon: Users, label: 'My Network' },
     { id: 'packages', icon: Package, label: 'Packages' },
     { id: 'profile', icon: User, label: 'Profile' },
+    { id: 'notices', icon: Megaphone, label: 'Broadcasts' },
   ];
 
   const customerTools = [

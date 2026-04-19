@@ -96,7 +96,8 @@ export class TransactionsService {
     }
 
     const agentName = match.agent.fullName;
-    const currentMetadata = (match.request.metadata as Record<string, any>) || {};
+    const currentMetadata =
+      (match.request.metadata as Record<string, any>) || {};
 
     await this.prisma.$transaction(async (tx) => {
       await tx.match.update({
@@ -224,101 +225,107 @@ export class TransactionsService {
       );
     }
 
-    const result = await this.prisma.$transaction(async (tx) => {
-      const matchResult = await tx.match.update({
-        where: { id: matchId },
-        data: {
-          status: 'completed',
-        },
-        include: {
-          agent: {
-            include: {
-              referredBy: true,
-            },
+    const result = await this.prisma.$transaction(
+      async (tx) => {
+        const matchResult = await tx.match.update({
+          where: { id: matchId },
+          data: {
+            status: 'completed',
           },
-          request: true,
-        },
-      });
+          include: {
+            agent: {
+              include: {
+                referredBy: true,
+              },
+            },
+            request: true,
+          },
+        });
 
-      await tx.request.update({
-        where: { id: match.requestId },
-        data: { status: RequestStatus.fulfilled },
-      });
+        await tx.request.update({
+          where: { id: match.requestId },
+          data: { status: RequestStatus.fulfilled },
+        });
 
-      // ── Commission Splitting Logic (Phase 2) ──────────────────────────
-      interface MatchWithRelations {
-        agent?: {
-          fullName: string;
-          referredById?: string;
-        };
-        request?: {
-          type: string;
-          category: string;
-          budgetMax?: number;
-          budgetMin?: number;
-        };
-      }
+        // ── Commission Splitting Logic (Phase 2) ──────────────────────────
+        interface MatchWithRelations {
+          agent?: {
+            fullName: string;
+            referredById?: string;
+          };
+          request?: {
+            type: string;
+            category: string;
+            budgetMax?: number;
+            budgetMin?: number;
+          };
+        }
 
-      const res = matchResult as unknown as MatchWithRelations;
-      const budget = Number(
-        res.request?.budgetMax || res.request?.budgetMin || 0,
-      );
-
-      if (budget > 0) {
-        const type = res.request?.type || 'real_estate';
-        const category = res.request?.category || 'General';
-        const isRealEstate = type === 'real_estate';
-
-        // 1. Primary Agent Commission (Dynamic Rate)
-        const configKey = isRealEstate
-          ? 'COMMISSION_REAL_ESTATE_PRIMARY'
-          : 'COMMISSION_FURNITURE_PRIMARY';
-
-        const primaryCommissionConfig = this.configService.get<{
-          value: number;
-        }>(configKey, { value: 0.1 });
-        const primaryCommissionRate = primaryCommissionConfig.value || 0.1;
-        const primaryCommissionEtb = budget * primaryCommissionRate;
-
-        // ESCROW: Lock commission for sales
-        await this.aglpService.lockCommission(
-          tx,
-          agentId,
-          primaryCommissionEtb,
-          matchId,
-          `Primary commission for ${type} fulfillment: ${category}`,
+        const res = matchResult as unknown as MatchWithRelations;
+        const budget = Number(
+          res.request?.budgetMax || res.request?.budgetMin || 0,
         );
 
-        // 2. Referral Override - Real Estate Only
-        if (isRealEstate && res.agent?.referredById) {
-          const overrideConfig = this.configService.get<{
-            value: number;
-          }>('COMMISSION_REAL_ESTATE_OVERRIDE', { value: 0.05 });
-          const referralCommissionRate = overrideConfig.value || 0.05;
-          const referralCommissionEtb = budget * referralCommissionRate;
+        if (budget > 0) {
+          const type = res.request?.type || 'real_estate';
+          const category = res.request?.category || 'General';
+          const isRealEstate = type === 'real_estate';
 
-          // ESCROW: Lock referral override too (since it is sale-based)
+          // 1. Primary Agent Commission (Dynamic Rate)
+          const configKey = isRealEstate
+            ? 'COMMISSION_REAL_ESTATE_PRIMARY'
+            : 'COMMISSION_FURNITURE_PRIMARY';
+
+          const primaryCommissionConfig = this.configService.get<{
+            value: number;
+          }>(configKey, { value: 0.1 });
+          const primaryCommissionRate = primaryCommissionConfig.value || 0.1;
+          const primaryCommissionEtb = budget * primaryCommissionRate;
+
+          // ESCROW: Lock commission for sales
           await this.aglpService.lockCommission(
             tx,
-            res.agent.referredById,
-            referralCommissionEtb,
+            agentId,
+            primaryCommissionEtb,
             matchId,
-            `Referral override commission from agent ${
-              res.agent.fullName || 'Unknown'
-            }`,
+            `Primary commission for ${type} fulfillment: ${category}`,
           );
-        }
-      }
 
-      return matchResult;
-    });
+          // 2. Referral Override - Real Estate Only
+          if (isRealEstate && res.agent?.referredById) {
+            const overrideConfig = this.configService.get<{
+              value: number;
+            }>('COMMISSION_REAL_ESTATE_OVERRIDE', { value: 0.05 });
+            const referralCommissionRate = overrideConfig.value || 0.05;
+            const referralCommissionEtb = budget * referralCommissionRate;
+
+            // ESCROW: Lock referral override too (since it is sale-based)
+            await this.aglpService.lockCommission(
+              tx,
+              res.agent.referredById,
+              referralCommissionEtb,
+              matchId,
+              `Referral override commission from agent ${
+                res.agent.fullName || 'Unknown'
+              }`,
+            );
+          }
+        }
+
+        return matchResult;
+      },
+      { timeout: 15000 },
+    );
     this.eventEmitter.emit('match.completed', result);
 
     // Schedule 72h auto-confirmation window
     await this.timeoutQueue.add(
       'check-fulfillment-timeout',
       { requestId: result.requestId },
-      { delay: 72 * 60 * 60 * 1000, jobId: `confirm-timeout-${result.requestId}` },
+      {
+        delay: 72 * 60 * 60 * 1000,
+        jobId: `confirm-timeout-${result.requestId}`,
+      },
     );
 
     return result;

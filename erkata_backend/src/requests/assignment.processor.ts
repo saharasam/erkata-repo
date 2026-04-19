@@ -95,7 +95,7 @@ export class AssignmentProcessor extends WorkerHost {
     if (job.name === 'check-agent-timeout') {
       const { requestId, matchId, agentId } = job.data;
       this.logger.log(
-        `[AssignmentProcessor] Checking agent timeout for match ${matchId} (Request: ${requestId})`
+        `[AssignmentProcessor] Checking agent timeout for match ${matchId} (Request: ${requestId})`,
       );
 
       const match = await this.prisma.match.findUnique({
@@ -105,7 +105,7 @@ export class AssignmentProcessor extends WorkerHost {
       // If the match is still in 'assigned' status, the agent ghosted it.
       if (match && match.status === 'assigned') {
         this.logger.warn(
-          `[AssignmentProcessor] Agent ${agentId} timed out on match ${matchId}. Returning request to operator.`
+          `[AssignmentProcessor] Agent ${agentId} timed out on match ${matchId}. Returning request to operator.`,
         );
 
         await this.prisma.$transaction(async (tx) => {
@@ -115,7 +115,9 @@ export class AssignmentProcessor extends WorkerHost {
             data: { status: 'rejected' },
           });
 
-          const currentRequest = await tx.request.findUnique({ where: { id: requestId } });
+          const currentRequest = await tx.request.findUnique({
+            where: { id: requestId },
+          });
 
           // 2. Reset request status to pending so operator sees it again
           await tx.request.update({
@@ -123,7 +125,9 @@ export class AssignmentProcessor extends WorkerHost {
             data: {
               status: RequestStatus.pending,
               metadata: {
-                ...(typeof currentRequest?.metadata === 'object' ? (currentRequest.metadata as any) : {}),
+                ...(typeof currentRequest?.metadata === 'object'
+                  ? (currentRequest.metadata as any)
+                  : {}),
                 agentTimeoutAt: new Date().toISOString(),
                 lastTimedOutAgentId: agentId,
               },
@@ -139,7 +143,7 @@ export class AssignmentProcessor extends WorkerHost {
     if (job.name === 'check-fulfillment-timeout') {
       const { requestId } = job.data;
       this.logger.log(
-        `[AssignmentProcessor] Checking fulfillment auto-confirm for request ${requestId}`
+        `[AssignmentProcessor] Checking fulfillment auto-confirm for request ${requestId}`,
       );
 
       const request = await this.prisma.request.findUnique({
@@ -152,7 +156,7 @@ export class AssignmentProcessor extends WorkerHost {
         !request.completedAt
       ) {
         this.logger.log(
-          `[AssignmentProcessor] Auto-confirming request ${requestId} after 72h window.`
+          `[AssignmentProcessor] Auto-confirming request ${requestId} after 72h window.`,
         );
 
         await this.prisma.request.update({

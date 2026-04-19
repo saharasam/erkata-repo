@@ -3,6 +3,20 @@ import { OnEvent } from '@nestjs/event-emitter';
 import { NotificationsService } from '../../notifications/notifications.service';
 import { NotificationsGateway } from '../../notifications/notifications.gateway';
 import { PrismaService } from '../../prisma/prisma.service';
+import { Match, Request } from '@prisma/client';
+
+interface RequestCreatedPayload {
+  id: string;
+}
+
+interface MatchCreatedPayload {
+  match: Partial<Match>;
+  agentId: string;
+}
+
+interface RequestIdPayload {
+  requestId: string;
+}
 
 @Injectable()
 export class RequestEventListener {
@@ -15,7 +29,7 @@ export class RequestEventListener {
   ) {}
 
   @OnEvent('request.created')
-  async handleRequestCreated(payload: any) {
+  handleRequestCreated(payload: RequestCreatedPayload) {
     this.logger.log(`[EVENT] request.created → id=${payload.id}`);
     // Initially, notify all super admins for monitoring?
     // In our system, the push logic handles operator assignment.
@@ -42,7 +56,7 @@ export class RequestEventListener {
   }
 
   @OnEvent('match.created')
-  async handleMatchCreated(payload: { match: any; agentId: string }) {
+  async handleMatchCreated(payload: MatchCreatedPayload) {
     this.logger.log(`[EVENT] match.created → agentId=${payload.agentId}`);
 
     const notification = await this.notifications.create({
@@ -58,7 +72,7 @@ export class RequestEventListener {
   }
 
   @OnEvent('match.accepted')
-  async handleMatchAccepted(payload: any) {
+  async handleMatchAccepted(payload: RequestIdPayload) {
     this.logger.log(`[EVENT] match.accepted → requestId=${payload.requestId}`);
 
     // Notify Customer
@@ -82,7 +96,7 @@ export class RequestEventListener {
   }
 
   @OnEvent('match.completed')
-  async handleMatchCompleted(payload: any) {
+  async handleMatchCompleted(payload: RequestIdPayload) {
     this.logger.log(`[EVENT] match.completed → requestId=${payload.requestId}`);
 
     // Notify Customer
@@ -149,9 +163,11 @@ export class RequestEventListener {
     this.logger.log(
       `[EVENT] request.escalated → requestId=${payload.requestId}`,
     );
-    
+
     // Clear the active disputed notification since it's now escalated
-    await this.notifications.markRelatedAsRead(payload.requestId, ['request.disputed']);
+    await this.notifications.markRelatedAsRead(payload.requestId, [
+      'request.disputed',
+    ]);
 
     const admins = await this.prisma.profile.findMany({
       where: { role: 'admin' },
@@ -180,7 +196,10 @@ export class RequestEventListener {
     );
 
     // Clear any active dispute or escalation notifications
-    await this.notifications.markRelatedAsRead(payload.requestId, ['request.disputed', 'request.escalated']);
+    await this.notifications.markRelatedAsRead(payload.requestId, [
+      'request.disputed',
+      'request.escalated',
+    ]);
 
     const request = await this.prisma.request.findUnique({
       where: { id: payload.requestId },

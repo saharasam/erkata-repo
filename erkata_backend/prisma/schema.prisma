@@ -8,243 +8,44 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-model Zone {
-  id         String      @id @default(uuid())
-  name       String
-  city       String?     @default("Addis Ababa")
-  isActive   Boolean     @default(true) @map("is_active")
-  agentZones AgentZone[]
-  profiles   Profile[]
-  requests   Request[]
-
-  @@map("zones")
-}
-
-model Package {
-  id               String   @id @default(uuid())
-  name             Tier     @unique
-  price            Decimal  @db.Decimal(12, 2)
-  referralSlots    Int      @map("referral_slots")
-  zoneLimit        Int      @map("zone_limit")
-  description      String?
-  requiresApproval Boolean  @default(true) @map("requires_approval")
-  createdAt        DateTime @default(now()) @map("created_at")
-  updatedAt        DateTime @updatedAt @map("updated_at")
-  displayName      String   @default("") @map("display_name")
-  profiles         Profile[]
-  referralLinks    ReferralLink[]
-
-  @@map("packages")
-}
-
-model Profile {
-  id                  String               @id @default(uuid()) @db.Uuid
-  email               String               @unique
-  passwordHash        String?              @map("password_hash")
-  fullName            String               @map("full_name")
-  phone               String
-  role                UserRole             @default(customer)
-  tier                Tier                 @default(FREE)
-  isActive            Boolean              @default(true) @map("is_active")
-  zoneId              String?              @map("zone_id")
-  referredById        String?              @map("referred_by_id") @db.Uuid
-  createdAt           DateTime             @default(now()) @map("created_at")
-  aglpBalance         Decimal              @default(0) @map("aglp_balance") @db.Decimal(12, 2)
-  aglpPending         Decimal              @default(0) @map("aglp_pending") @db.Decimal(12, 2)
-  aglpWithdrawn       Decimal              @default(0) @map("aglp_withdrawn") @db.Decimal(12, 2)
-  referralCode        String?              @unique @map("referral_code")
-  isOnline            Boolean              @default(false) @map("is_online")
-  lastAssignmentAt    DateTime?            @map("last_assignment_at")
-  missedAssignments   Int                  @default(0) @map("missed_assignments")
-  warningCount        Int                  @default(0) @map("warning_count")
-  avatarUrl           String?              @map("avatar_url")
-  agentZones          AgentZone[]
-  aglpTransactions    AglpTransaction[]    @relation("AglpTransactions")
-  auditLogs           AuditLog[]
-  feedbacks           Feedback[]
-  finalResolutions    FinalResolution[]
-  createdInvites      Invite[]             @relation("CreatedInvites")
-  agentMatches        Match[]              @relation("AgentMatches")
-  operatorMatches     Match[]              @relation("OperatorMatches")
-  notifications       Notification[]
-  referredBy          Profile?             @relation("Referrals", fields: [referredById], references: [id])
-  referrals           Profile[]            @relation("Referrals")
-  zone                Zone?                @relation(fields: [zoneId], references: [id])
-  referralLink        ReferralLink?
-  assignedRequests    Request[]            @relation("AssignedOperator")
-  customerRequests    Request[]            @relation("CustomerRequests")
-  resolutionProposals ResolutionProposal[]
-  package             Package?             @relation(fields: [tier], references: [name])
-
-  @@map("profiles")
-}
-
 model AgentZone {
-  id          String   @id @default(uuid())
-  agentId     String   @map("agent_id") @db.Uuid
-  zoneId      String?  @map("zone_id")
-  kifleKetema String   @map("kifle_ketema")
-  woreda      String   @map("woreda")
-  createdAt   DateTime @default(now()) @map("created_at")
-  agent       Profile  @relation(fields: [agentId], references: [id])
-  zone        Zone?    @relation(fields: [zoneId], references: [id])
+  id           String   @id @default(cuid())
+  agentId      String   @map("agent_id") @db.Uuid
+  zoneId       String?  @map("zone_id")
+  kifleKetema  String   @map("kifle_ketema")
+  woreda       String
+  createdAt    DateTime @default(now()) @map("created_at")
+  profile      Profile  @relation(fields: [agentId], references: [id])
+  zone         Zone?    @relation(fields: [zoneId], references: [id])
 
   @@unique([agentId, zoneId, woreda])
   @@map("agent_zones")
 }
 
-model ReferralLink {
-  id         String   @id @default(uuid())
-  referrerId String   @unique @map("referrer_id") @db.Uuid
-  code       String   @unique
-  tier       Tier     @default(FREE)
-  createdAt  DateTime @default(now()) @map("created_at")
-  referrer   Profile  @relation(fields: [referrerId], references: [id])
-  package    Package? @relation(fields: [tier], references: [name])
-
-  @@map("referral_links")
-}
-
-model Request {
-  id                 String        @id @default(uuid())
-  customerId         String        @map("customer_id") @db.Uuid
-  type               RequestType   @default(real_estate)
-  category           String
-  description        String?
-  budgetMin          Decimal?      @map("budget_min") @db.Decimal(12, 2)
-  budgetMax          Decimal?      @map("budget_max") @db.Decimal(12, 2)
-  zoneId             String        @map("zone_id")
-  woreda             String?
-  status             RequestStatus @default(pending)
-  createdAt          DateTime      @default(now()) @map("created_at")
-  assignedOperatorId String?       @map("assigned_operator_id") @db.Uuid
-  assignmentPushedAt DateTime?     @map("assignment_pushed_at")
-  completedAt        DateTime?     @map("completed_at")
-  metadata           Json?         @default("{}")
-  isEscalated        Boolean       @default(false) @map("is_escalated")
-  matches            Match[]
-  assignedOperator   Profile?      @relation("AssignedOperator", fields: [assignedOperatorId], references: [id])
-  customer           Profile       @relation("CustomerRequests", fields: [customerId], references: [id])
-  zone               Zone          @relation(fields: [zoneId], references: [id])
-
-  @@index([customerId])
-  @@index([zoneId, status])
-  @@map("requests")
-}
-
-model Match {
-  id          String       @id @default(uuid())
-  requestId   String       @map("request_id")
-  agentId     String       @map("agent_id") @db.Uuid
-  operatorId  String       @map("operator_id") @db.Uuid
-  status      MatchStatus  @default(assigned)
-  assignedAt  DateTime     @default(now()) @map("assigned_at")
-  agent       Profile      @relation("AgentMatches", fields: [agentId], references: [id])
-  operator    Profile      @relation("OperatorMatches", fields: [operatorId], references: [id])
-  request     Request      @relation(fields: [requestId], references: [id])
-  transaction Transaction?
-
-  @@unique([requestId, agentId])
-  @@index([agentId, status])
-  @@index([requestId])
-  @@map("matches")
-}
-
-model Transaction {
-  id               String            @id @default(uuid())
-  matchId          String            @unique @map("match_id")
-  amount           Decimal           @db.Decimal(12, 2)
-  currency         String            @default("ETB")
-  commissionRate   Decimal           @default(0.05) @map("commission_rate") @db.Decimal(12, 2)
-  commissionAmount Decimal?          @map("commission_amount") @db.Decimal(12, 2)
-  status           TransactionStatus @default(pending)
-  paymentProofUrl  String?           @map("payment_proof_url")
-  createdAt        DateTime          @default(now()) @map("created_at")
-  feedbackBundle   FeedbackBundle?
-  feedbacks        Feedback[]
-  match            Match             @relation(fields: [matchId], references: [id])
-
-  @@index([matchId])
-  @@index([status])
-  @@map("transactions")
-}
-
 model AglpTransaction {
-  id             String                @id @default(uuid())
-  profileId      String                @map("profile_id") @db.Uuid
-  type           AglpTransactionType
-  amount         Decimal               @db.Decimal(12, 2)
-  etbEquivalent  Decimal?              @map("etb_equivalent") @db.Decimal(12, 2)
-  conversionRate Decimal?              @map("conversion_rate") @db.Decimal(12, 2)
-  status         AglpTransactionStatus @default(PENDING)
-  referenceId    String?               @map("reference_id")
-  referenceType  String?               @map("reference_type")
-  bankName       String?               @map("bank_name")
-  bankAccountNumber String?            @map("bank_account_number")
-  bankAccountHolder String?            @map("bank_account_holder")
-  createdAt      DateTime              @default(now()) @map("created_at")
-  updatedAt      DateTime              @updatedAt @map("updated_at")
-  profile        Profile               @relation("AglpTransactions", fields: [profileId], references: [id])
+  id                String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  profileId         String                @map("profile_id") @db.Uuid
+  type              AglpTransactionType
+  amount            Decimal               @db.Decimal(12, 2)
+  etbEquivalent     Decimal?              @map("etb_equivalent") @db.Decimal(12, 2)
+  conversionRate    Decimal?              @map("conversion_rate") @db.Decimal(12, 2)
+  status            AglpTransactionStatus @default(PENDING)
+  referenceId       String?               @map("reference_id")
+  referenceType     String?               @map("reference_type")
+  createdAt         DateTime              @default(now()) @map("created_at")
+  updatedAt         DateTime              @updatedAt @map("updated_at")
+  bankAccountHolder String?               @map("bank_account_holder")
+  bankAccountNumber String?               @map("bank_account_number")
+  bankName          String?               @map("bank_name")
+  profile           Profile               @relation(fields: [profileId], references: [id])
 
-  @@index([profileId])
   @@index([createdAt, profileId, type])
+  @@index([profileId])
   @@map("aglp_transactions")
 }
 
-model Feedback {
-  id            String      @id @default(uuid())
-  transactionId String      @map("transaction_id")
-  authorId      String      @map("author_id") @db.Uuid
-  content       String
-  rating        Int
-  createdAt     DateTime    @default(now()) @map("created_at")
-  categories    String[]    @default([])
-  author        Profile     @relation(fields: [authorId], references: [id])
-  transaction   Transaction @relation(fields: [transactionId], references: [id])
-
-  @@map("feedbacks")
-}
-
-model FeedbackBundle {
-  id            String               @id @default(uuid())
-  transactionId String               @unique @map("transaction_id")
-  state         FeedbackBundleState  @default(WAITING_BOTH)
-  stateHistory  Json?                @map("state_history")
-  createdAt     DateTime             @default(now()) @map("created_at")
-  transaction   Transaction          @relation(fields: [transactionId], references: [id])
-  proposals     ResolutionProposal[]
-
-  @@map("feedback_bundles")
-}
-
-model ResolutionProposal {
-  id              String           @id @default(uuid())
-  bundleId        String           @map("bundle_id")
-  proposedById    String           @map("proposed_by_id") @db.Uuid
-  proposedText    String           @map("proposed_text")
-  createdAt       DateTime         @default(now()) @map("created_at")
-  finalResolution FinalResolution?
-  bundle          FeedbackBundle   @relation(fields: [bundleId], references: [id])
-  proposedBy      Profile          @relation(fields: [proposedById], references: [id])
-
-  @@map("resolution_proposals")
-}
-
-model FinalResolution {
-  id            String             @id @default(uuid())
-  proposalId    String             @unique @map("proposal_id")
-  approved      Boolean
-  comment       String?
-  finalizedById String             @map("finalized_by_id") @db.Uuid
-  createdAt     DateTime           @default(now()) @map("created_at")
-  finalizedBy   Profile            @relation(fields: [finalizedById], references: [id])
-  proposal      ResolutionProposal @relation(fields: [proposalId], references: [id])
-
-  @@map("final_resolutions")
-}
-
 model AuditLog {
-  id            String   @id @default(uuid())
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   actorId       String?  @map("actor_id") @db.Uuid
   action        String
   targetTable   String?  @map("target_table")
@@ -252,9 +53,212 @@ model AuditLog {
   transactionId String?  @map("transaction_id")
   metadata      Json?
   createdAt     DateTime @default(now()) @map("created_at")
-  actor         Profile? @relation(fields: [actorId], references: [id])
+  actor         Profile? @relation("Actor", fields: [actorId], references: [id])
 
   @@map("audit_logs")
+}
+
+model Feedback {
+  id            String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  transactionId String      @unique @map("transaction_id")
+  authorId      String      @map("author_id") @db.Uuid
+  rating        Int
+  comment       String?
+  createdAt     DateTime    @default(now()) @map("created_at")
+  author        Profile     @relation(fields: [authorId], references: [id])
+  transaction   Transaction @relation(fields: [transactionId], references: [id])
+  categories    String[]    @default([])
+  content       String
+
+  @@map("feedbacks")
+}
+
+model FeedbackBundle {
+  id                  String               @id @default(cuid())
+  transactionId       String               @unique @map("transaction_id")
+  state               FeedbackBundleState  @default(WAITING_BOTH)
+  stateHistory        Json?                @map("state_history")
+  createdAt           DateTime             @default(now()) @map("created_at")
+  transaction         Transaction          @relation(fields: [transactionId], references: [id])
+  resolutionProposals ResolutionProposal[]
+
+  @@map("feedback_bundles")
+}
+
+model FinalResolution {
+  id                 String             @id @default(cuid())
+  proposalId         String             @unique @map("proposal_id")
+  finalizedById        String             @map("finalized_by_id") @db.Uuid
+  approved             Boolean
+  comment              String?
+  finalDecision        String?            @map("final_decision")
+  description          String?
+  createdAt            DateTime           @default(now()) @map("created_at")
+  finalizer            Profile            @relation(fields: [finalizedById], references: [id])
+  proposal   ResolutionProposal @relation(fields: [proposalId], references: [id])
+
+  @@map("final_resolutions")
+}
+
+model Invite {
+  id           String    @id @default(cuid())
+  email        String
+  fullName     String    @map("full_name")
+  phone        String
+  role         UserRole
+  token        String    @unique
+  expiresAt    DateTime  @map("expires_at")
+  usedAt       DateTime? @map("used_at")
+  createdById  String    @map("created_by_id") @db.Uuid
+  createdAt    DateTime  @default(now()) @map("created_at")
+  creator      Profile   @relation(fields: [createdById], references: [id])
+
+  @@map("invites")
+}
+
+model Match {
+  id                 String              @id @default(cuid())
+  requestId          String              @map("request_id")
+  agentId            String              @map("agent_id") @db.Uuid
+  operatorId         String?             @map("operator_id") @db.Uuid
+  status             String              @default("assigned") // assigned, accepted, rejected, completed
+  assignedAt         DateTime            @default(now()) @map("created_at")
+  agent              Profile             @relation("AgentMatches", fields: [agentId], references: [id])
+  operator           Profile?            @relation("OperatorMatches", fields: [operatorId], references: [id])
+  request            Request             @relation(fields: [requestId], references: [id])
+  resolutionProposal ResolutionProposal?
+  transaction        Transaction?
+
+  @@unique([requestId, agentId])
+  @@index([agentId, status])
+  @@index([requestId])
+  @@map("matches")
+}
+
+model Notification {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  title     String
+  message   String
+  type      String
+  read      Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now()) @map("created_at")
+  profile   Profile  @relation(fields: [userId], references: [id])
+
+  @@map("notifications")
+}
+
+model Package {
+  id            String         @id
+  name          Tier           @unique
+  price         Decimal        @db.Decimal(12, 2)
+  referralSlots Int            @map("referral_slots")
+  zoneLimit     Int            @map("zone_limit")
+  displayName   String         @map("display_name")
+  profiles      Profile[]
+  referralLinks ReferralLink[]
+
+  @@map("packages")
+}
+
+model Profile {
+  id                String            @id @db.Uuid
+  email             String            @unique
+  passwordHash      String?           @map("password_hash")
+  fullName          String            @map("full_name")
+  phone             String
+  role              UserRole          @default(customer)
+  tier              Tier              @default(FREE)
+  isActive          Boolean           @default(true) @map("is_active")
+  zoneId            String?           @map("zone_id")
+  referredById      String?           @map("referred_by_id") @db.Uuid
+  createdAt         DateTime          @default(now()) @map("created_at")
+  aglpBalance       Decimal           @default(0) @map("aglp_balance") @db.Decimal(12, 2)
+  aglpPending       Decimal           @default(0) @map("aglp_pending") @db.Decimal(12, 2)
+  aglpWithdrawn     Decimal           @default(0) @map("aglp_withdrawn") @db.Decimal(12, 2)
+  referralCode      String?           @unique @map("referral_code")
+  isOnline          Boolean           @default(false) @map("is_online")
+  lastAssignmentAt  DateTime?         @map("last_assignment_at")
+  missedAssignments Int               @default(0) @map("missed_assignments")
+  warningCount      Int               @default(0) @map("warning_count")
+  avatarUrl         String?           @map("avatar_url")
+  agentZones        AgentZone[]
+  aglpTransactions  AglpTransaction[]
+  auditLogsActor    AuditLog[]        @relation("Actor")
+  feedbacks         Feedback[]
+  finalResolutions  FinalResolution[]
+  invites           Invite[]
+  agentMatches      Match[]           @relation("AgentMatches")
+  operatorMatches   Match[]           @relation("OperatorMatches")
+  notifications     Notification[]
+  referredBy        Profile?          @relation("ProfileReferrals", fields: [referredById], references: [id])
+  referrals         Profile[]         @relation("ProfileReferrals")
+  package           Package           @relation(fields: [tier], references: [name])
+  zone              Zone?             @relation(fields: [zoneId], references: [id])
+  referralLink      ReferralLink?
+  operatorRequests  Request[]         @relation("OperatorRequests")
+  customerRequests  Request[]         @relation("CustomerRequests")
+  proposals         ResolutionProposal[]
+
+  @@map("profiles")
+}
+
+model ReferralLink {
+  id         String   @id @default(cuid())
+  referrerId String   @unique @map("referrer_id") @db.Uuid
+  code       String   @unique
+  tier       Tier     @default(FREE)
+  createdAt  DateTime @default(now()) @map("created_at")
+  profile    Profile  @relation(fields: [referrerId], references: [id])
+  package    Package  @relation(fields: [tier], references: [name])
+
+  @@map("referral_links")
+}
+
+model Request {
+  id                 String              @id @default(cuid())
+  customerId         String              @map("customer_id") @db.Uuid
+  category           String
+  type               String              @default("real_estate")
+  description        String
+  budgetMin          Decimal?            @map("budget_min") @db.Decimal(12, 2)
+  budgetMax          Decimal?            @map("budget_max") @db.Decimal(12, 2)
+  metadata           Json                @default("{}")
+  zoneId             String              @map("zone_id")
+  woreda             String
+  status             RequestStatus       @default(pending)
+  assignedOperatorId String?             @map("assigned_operator_id") @db.Uuid
+  assignmentPushedAt DateTime?           @map("assignment_pushed_at")
+  completedAt        DateTime?           @map("completed_at")
+  isEscalated        Boolean             @default(false) @map("is_escalated")
+  createdAt          DateTime            @default(now()) @map("created_at")
+  matches            Match[]
+  assignedOperator   Profile?            @relation("OperatorRequests", fields: [assignedOperatorId], references: [id])
+  customer           Profile             @relation("CustomerRequests", fields: [customerId], references: [id])
+  zone               Zone                @relation(fields: [zoneId], references: [id])
+
+  @@index([customerId])
+  @@index([zoneId, status])
+  @@map("requests")
+}
+
+model ResolutionProposal {
+  id              String           @id @default(cuid())
+  bundleId        String           @map("bundle_id")
+  proposedById    String           @map("proposed_by_id") @db.Uuid
+  proposedText    String           @map("proposed_text")
+  status          String           @default("pending") // pending, accepted, rejected, escalated
+  createdAt       DateTime         @default(now()) @map("created_at")
+  finalResolution FinalResolution?
+  bundle          FeedbackBundle   @relation(fields: [bundleId], references: [id])
+  proposer        Profile          @relation(fields: [proposedById], references: [id])
+
+  // Retained matchId for legacy compatibility if needed, but primary link is bundle
+  matchId         String?          @unique @map("match_id")
+  match           Match?           @relation(fields: [matchId], references: [id])
+
+  @@map("resolution_proposals")
 }
 
 model SystemConfig {
@@ -266,76 +270,48 @@ model SystemConfig {
   @@map("system_configs")
 }
 
-model Invite {
-  id          String    @id @default(uuid())
-  email       String
-  role        UserRole
-  token       String    @unique
-  expiresAt   DateTime  @map("expires_at")
-  usedAt      DateTime? @map("used_at")
-  createdById String    @map("created_by_id") @db.Uuid
-  createdAt   DateTime  @default(now()) @map("created_at")
-  fullName    String    @map("full_name")
-  phone       String
-  createdBy   Profile   @relation("CreatedInvites", fields: [createdById], references: [id])
-
-  @@index([token])
-  @@map("invites")
-}
-
-model Notification {
-  id        String   @id @default(uuid()) @db.Uuid
-  userId    String   @map("user_id") @db.Uuid
+model SystemBroadcast {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   title     String
-  message   String
-  type      String
-  read      Boolean  @default(false)
-  link      String?
+  content   String?
+  target    String // EVERYONE, AGENT, OPERATOR, ADMIN
   createdAt DateTime @default(now()) @map("created_at")
-  user      Profile  @relation(fields: [userId], references: [id])
 
-  @@map("notifications")
+  @@map("system_broadcasts")
 }
 
-enum UserRole {
-  super_admin
-  admin
-  operator
-  agent
-  customer
+model Transaction {
+  id               String   @id @default(cuid())
+  matchId          String   @unique @map("match_id")
+  amount           Decimal  @db.Decimal(12, 2)
+  currency         String   @default("ETB")
+  commissionRate   Decimal  @default(0.05) @map("commission_rate") @db.Decimal(12, 2)
+  commissionAmount Decimal? @map("commission_amount") @db.Decimal(12, 2)
+  platformFee      Decimal? @map("platform_fee") @db.Decimal(12, 2)
+  agentEarnings    Decimal? @map("agent_earnings") @db.Decimal(12, 2)
+  status           String   @default("pending") // pending, completed, cancelled
+  paymentProofUrl  String?  @map("payment_proof_url")
+  metadata         Json?
+  createdAt        DateTime @default(now()) @map("created_at")
+  feedbacks        Feedback[]
+  feedbackBundle   FeedbackBundle?
+  match            Match    @relation(fields: [matchId], references: [id])
+
+  @@index([matchId])
+  @@map("transactions")
 }
 
-enum RequestType {
-  real_estate
-  furniture
-}
+model Zone {
+  id         String       @id
+  name       String       @unique
+  type       String       @default("city")
+  metadata   Json?
+  createdAt  DateTime     @default(now()) @map("created_at")
+  agentZones AgentZone[]
+  profiles   Profile[]
+  requests   Request[]
 
-enum RequestStatus {
-  pending
-  assigned
-  fulfilled
-  disputed
-  cancelled
-}
-
-enum MatchStatus {
-  assigned
-  accepted
-  rejected
-  completed
-}
-
-enum TransactionStatus {
-  pending
-  paid
-  failed
-}
-
-enum AglpTransactionType {
-  DEPOSIT
-  SPEND_PACKAGE
-  EARN
-  WITHDRAWAL
+  @@map("zones")
 }
 
 enum AglpTransactionStatus {
@@ -344,12 +320,11 @@ enum AglpTransactionStatus {
   REJECTED
 }
 
-enum Tier {
-  FREE
-  PEACE
-  LOVE
-  UNITY
-  ABUNDANT_LIFE
+enum AglpTransactionType {
+  DEPOSIT
+  SPEND_PACKAGE
+  EARN
+  WITHDRAWAL
 }
 
 enum FeedbackBundleState {
@@ -361,4 +336,46 @@ enum FeedbackBundleState {
   RESOLVED
   REJECTED
   TIMED_OUT
+}
+
+enum MatchStatus {
+  assigned
+  accepted
+  rejected
+  completed
+}
+
+enum RequestStatus {
+  pending
+  assigned
+  fulfilled
+  disputed
+  cancelled
+}
+
+enum RequestType {
+  real_estate
+  furniture
+}
+
+enum Tier {
+  FREE
+  PEACE
+  LOVE
+  UNITY
+  ABUNDANT_LIFE
+}
+
+enum TransactionStatus {
+  pending
+  paid
+  failed
+}
+
+enum UserRole {
+  super_admin
+  admin
+  operator
+  agent
+  customer
 }

@@ -48,6 +48,7 @@ const jwt_1 = require("@nestjs/jwt");
 const prisma_service_1 = require("../prisma/prisma.service");
 const invite_service_1 = require("./invite/invite.service");
 const bcrypt = __importStar(require("bcrypt"));
+const crypto_1 = require("crypto");
 let AuthService = class AuthService {
     prisma;
     jwtService;
@@ -198,6 +199,7 @@ let AuthService = class AuthService {
         }
         const newProfile = await this.prisma.profile.create({
             data: {
+                id: (0, crypto_1.randomUUID)(),
                 email: data.email,
                 passwordHash,
                 fullName: data.fullName,

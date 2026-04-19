@@ -46,15 +46,8 @@ let PayoutsController = class PayoutsController {
         });
     }
     async approvePayout(id) {
-        const aglpTx = await this.prisma.aglpTransaction.findUnique({
-            where: { id },
-        });
-        if (!aglpTx || aglpTx.status !== client_1.AglpTransactionStatus.PENDING) {
-            throw new common_1.BadRequestException('Transaction not found or not pending');
-        }
-        return this.prisma.aglpTransaction.update({
-            where: { id },
-            data: { status: client_1.AglpTransactionStatus.COMPLETED },
+        return this.prisma.$transaction(async (tx) => {
+            return this.aglpService.completeWithdrawal(tx, id);
         });
     }
     async rejectPayout(id, reason) {

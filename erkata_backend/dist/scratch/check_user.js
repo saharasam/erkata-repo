@@ -5,7 +5,7 @@ async function checkUser() {
     const prisma = new client_1.PrismaClient();
     try {
         const user = await prisma.profile.findFirst({
-            where: { role: 'agent' }
+            where: { role: 'agent' },
         });
         console.log('Agent User:', JSON.stringify(user));
     }

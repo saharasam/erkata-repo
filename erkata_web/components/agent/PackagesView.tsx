@@ -45,7 +45,7 @@ export const PackagesView: React.FC<PackagesViewProps> = ({ finance, profile, on
 
   const handleCopy = async () => {
     if (!referralData) return;
-    await navigator.clipboard.writeText(referralData.link);
+    await navigator.clipboard.writeText(referralData.code);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
   };
@@ -163,13 +163,13 @@ export const PackagesView: React.FC<PackagesViewProps> = ({ finance, profile, on
                      className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 active:scale-95 transition-all disabled:opacity-50"
                   >
                      <LinkIcon className="w-4 h-4" />
-                     {isGenerating ? 'Generating...' : 'Generate My Referral Link'}
+                     {isGenerating ? 'Generating...' : 'Generate My Referral Code'}
                   </button>
                ) : (
                   <div className="space-y-2">
-                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Your Referral Link</p>
+                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Your Referral Code</p>
                      <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                        <span className="text-xs font-mono text-slate-600 flex-1 truncate">{referralData.link}</span>
+                        <span className="text-xs font-mono text-indigo-600 font-bold flex-1">{referralData.code}</span>
                         <button
                            onClick={handleCopy}
                            className="flex-shrink-0 p-2 rounded-xl bg-white border border-slate-200 hover:border-indigo-400 transition-colors"
@@ -177,7 +177,7 @@ export const PackagesView: React.FC<PackagesViewProps> = ({ finance, profile, on
                            {copied ? <CheckCheck className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4 text-slate-500" />}
                         </button>
                      </div>
-                     {copied && <p className="text-xs text-green-600 font-medium text-center">Link copied!</p>}
+                     {copied && <p className="text-xs text-green-600 font-medium text-center">Code copied!</p>}
                   </div>
                )}
 

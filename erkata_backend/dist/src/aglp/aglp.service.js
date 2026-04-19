@@ -197,7 +197,6 @@ let AglpService = class AglpService {
             where: { id: profileId },
             data: {
                 aglpBalance: { decrement: amountAglp },
-                aglpWithdrawn: { increment: amountAglp },
             },
         });
         const aglpTx = await tx.aglpTransaction.create({
@@ -239,13 +238,10 @@ let AglpService = class AglpService {
         if (!aglpTx || aglpTx.type !== client_1.AglpTransactionType.WITHDRAWAL) {
             throw new Error('Withdrawal transaction not found');
         }
-        if (aglpTx.status !== client_1.AglpTransactionStatus.PENDING) {
-        }
         await tx.profile.update({
             where: { id: aglpTx.profileId },
             data: {
                 aglpBalance: { increment: aglpTx.amount },
-                aglpWithdrawn: { decrement: aglpTx.amount },
             },
         });
         await tx.aglpTransaction.update({
@@ -262,6 +258,38 @@ let AglpService = class AglpService {
                     aglpTxId,
                     amountAglp: aglpTx.amount,
                     reason,
+                },
+            },
+        });
+    }
+    async completeWithdrawal(tx, aglpTxId) {
+        const aglpTx = await tx.aglpTransaction.findUnique({
+            where: { id: aglpTxId },
+        });
+        if (!aglpTx ||
+            aglpTx.type !== client_1.AglpTransactionType.WITHDRAWAL ||
+            aglpTx.status !== client_1.AglpTransactionStatus.PENDING) {
+            throw new Error('Valid pending withdrawal transaction not found');
+        }
+        await tx.profile.update({
+            where: { id: aglpTx.profileId },
+            data: {
+                aglpWithdrawn: { increment: aglpTx.amount },
+            },
+        });
+        await tx.aglpTransaction.update({
+            where: { id: aglpTxId },
+            data: { status: client_1.AglpTransactionStatus.COMPLETED },
+        });
+        await tx.auditLog.create({
+            data: {
+                actorId: aglpTx.profileId,
+                action: 'PAYOUT_COMPLETED',
+                targetTable: 'profiles',
+                targetId: aglpTx.profileId,
+                metadata: {
+                    aglpTxId,
+                    amountAglp: aglpTx.amount,
                 },
             },
         });

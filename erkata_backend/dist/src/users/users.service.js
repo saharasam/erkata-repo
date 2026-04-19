@@ -108,27 +108,98 @@ let UsersService = class UsersService {
             take: 20,
         });
         const formattedHistory = history.map((log) => {
-            const metadata = log.metadata;
+            const metadata = log.metadata || {};
             const type = log.action.includes('REFERRAL')
                 ? 'Referral'
                 : log.action.includes('PACKAGE')
                     ? 'Package'
-                    : 'Commission';
-            const rawAmount = metadata?.amount ?? metadata?.amountAglp ?? '0';
+                    : log.action.includes('PAYOUT')
+                        ? 'Withdrawal'
+                        : 'Commission';
             return {
                 id: log.id,
                 action: log.action,
-                amount: rawAmount.toString(),
+                amount: metadata.amount || metadata.amountAglp || 0,
                 type,
-                date: log.createdAt,
-                description: metadata?.reason || log.action,
+                createdAt: log.createdAt,
+                metadata: {
+                    ...metadata,
+                    transactionId: metadata.transactionId || metadata.aglpTxId || log.id,
+                },
             };
         });
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        const fourteenDaysAgo = new Date();
+        fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+        const currentWeekLogs = await this.prisma.auditLog.findMany({
+            where: {
+                targetId: userId,
+                action: { contains: 'EARNED' },
+                createdAt: { gte: sevenDaysAgo },
+            },
+        });
+        const previousWeekLogs = await this.prisma.auditLog.findMany({
+            where: {
+                targetId: userId,
+                action: { contains: 'EARNED' },
+                createdAt: { gte: fourteenDaysAgo, lt: sevenDaysAgo },
+            },
+        });
+        const sumLogs = (logs) => logs.reduce((acc, log) => {
+            const metadata = log.metadata || {};
+            const amount = Number(metadata.amount || metadata.amountAglp || 0);
+            return acc + amount;
+        }, 0);
+        const currentTotal = sumLogs(currentWeekLogs);
+        const previousTotal = sumLogs(previousWeekLogs);
+        let weeklyGrowth = 0;
+        if (previousTotal > 0) {
+            weeklyGrowth = ((currentTotal - previousTotal) / previousTotal) * 100;
+        }
+        else if (currentTotal > 0) {
+            weeklyGrowth = 100;
+        }
+        const chartData = Array.from({ length: 7 }, (_, i) => {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const dayStart = new Date(d.setHours(0, 0, 0, 0));
+            const dayEnd = new Date(d.setHours(23, 59, 59, 999));
+            const dayLogs = currentWeekLogs.filter((l) => l.createdAt >= dayStart && l.createdAt <= dayEnd);
+            return sumLogs(dayLogs);
+        }).reverse();
+        const pendingWithdrawalsSum = await this.prisma.aglpTransaction.aggregate({
+            where: {
+                profileId: userId,
+                type: 'WITHDRAWAL',
+                status: 'PENDING',
+            },
+            _sum: { amount: true },
+        });
+        const pendingCommissionsSum = await this.prisma.aglpTransaction.aggregate({
+            where: {
+                profileId: userId,
+                type: 'EARN',
+                status: 'PENDING',
+            },
+            _sum: { amount: true },
+        });
+        const completedWithdrawalsSum = await this.prisma.aglpTransaction.aggregate({
+            where: {
+                profileId: userId,
+                type: 'WITHDRAWAL',
+                status: 'COMPLETED',
+            },
+            _sum: { amount: true },
+        });
+        const dynamicPending = (pendingCommissionsSum._sum.amount?.toNumber() || 0) +
+            (pendingWithdrawalsSum._sum.amount?.toNumber() || 0);
+        const dynamicWithdrawn = completedWithdrawalsSum._sum.amount?.toNumber() || 0;
         return {
-            balance: profile.aglpBalance.toString(),
-            aglpAvailable: profile.aglpBalance.toString(),
-            aglpPending: profile.aglpPending.toString(),
-            aglpWithdrawn: profile.aglpWithdrawn.toString(),
+            balance: profile.aglpBalance.toNumber(),
+            aglpAvailable: profile.aglpBalance.toNumber(),
+            aglpPending: dynamicPending,
+            aglpWithdrawn: dynamicWithdrawn,
             usedSlots,
             totalSlots,
             usedZones,
@@ -137,6 +208,11 @@ let UsersService = class UsersService {
             tier,
             packageDisplayName: profile.package?.displayName,
             nextTier,
+            weeklyGrowth: {
+                percentage: weeklyGrowth.toFixed(1),
+                amount: currentTotal - previousTotal,
+                chart: chartData,
+            },
             history: formattedHistory,
         };
     }

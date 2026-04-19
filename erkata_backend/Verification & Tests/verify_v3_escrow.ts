@@ -51,7 +51,9 @@ async function verifyEscrowFlow() {
   });
 
   console.log('Dynamic Config Keys Seeded:');
-  configs.forEach((c) => console.log(` - ${c.key}: ${JSON.stringify(c.value)}`));
+  configs.forEach((c) =>
+    console.log(` - ${c.key}: ${JSON.stringify(c.value)}`),
+  );
 
   if (configs.length < 3) {
     console.error('CRITICAL: Commission configuration keys are missing!');

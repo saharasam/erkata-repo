@@ -13,15 +13,18 @@ export declare class MediationController {
         createdAt: Date;
         transactionId: string;
         authorId: string;
-        content: string;
         rating: number;
+        comment: string | null;
         categories: string[];
+        content: string;
     }>;
     proposeResolution(bundleId: string, req: AuthenticatedRequest, body: {
         proposedText: string;
     }): Promise<{
         id: string;
         createdAt: Date;
+        status: string;
+        matchId: string | null;
         proposedText: string;
         bundleId: string;
         proposedById: string;
@@ -32,8 +35,10 @@ export declare class MediationController {
     }): Promise<{
         id: string;
         createdAt: Date;
-        approved: boolean;
+        description: string | null;
         comment: string | null;
+        approved: boolean;
+        finalDecision: string | null;
         proposalId: string;
         finalizedById: string;
     }>;
@@ -42,8 +47,10 @@ export declare class MediationController {
     }): Promise<{
         id: string;
         createdAt: Date;
-        approved: boolean;
+        description: string | null;
         comment: string | null;
+        approved: boolean;
+        finalDecision: string | null;
         proposalId: string;
         finalizedById: string;
     }>;
@@ -51,18 +58,24 @@ export declare class MediationController {
         [x: string]: ({
             id: string;
             createdAt: Date;
+            status: string;
+            matchId: string | null;
             proposedText: string;
             bundleId: string;
             proposedById: string;
         } | {
             id: string;
             createdAt: Date;
+            status: string;
+            matchId: string | null;
             proposedText: string;
             bundleId: string;
             proposedById: string;
         })[] | {
             id: string;
             createdAt: Date;
+            status: string;
+            matchId: string | null;
             proposedText: string;
             bundleId: string;
             proposedById: string;

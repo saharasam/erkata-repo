@@ -26,7 +26,7 @@ let RequestEventListener = RequestEventListener_1 = class RequestEventListener {
         this.gateway = gateway;
         this.prisma = prisma;
     }
-    async handleRequestCreated(payload) {
+    handleRequestCreated(payload) {
         this.logger.log(`[EVENT] request.created → id=${payload.id}`);
     }
     async handleRequestPushed(payload) {
@@ -111,7 +111,9 @@ let RequestEventListener = RequestEventListener_1 = class RequestEventListener {
     }
     async handleRequestEscalated(payload) {
         this.logger.log(`[EVENT] request.escalated → requestId=${payload.requestId}`);
-        await this.notifications.markRelatedAsRead(payload.requestId, ['request.disputed']);
+        await this.notifications.markRelatedAsRead(payload.requestId, [
+            'request.disputed',
+        ]);
         const admins = await this.prisma.profile.findMany({
             where: { role: 'admin' },
             select: { id: true },
@@ -129,7 +131,10 @@ let RequestEventListener = RequestEventListener_1 = class RequestEventListener {
     }
     async handleRequestResolved(payload) {
         this.logger.log(`[EVENT] request.resolved → requestId=${payload.requestId}`);
-        await this.notifications.markRelatedAsRead(payload.requestId, ['request.disputed', 'request.escalated']);
+        await this.notifications.markRelatedAsRead(payload.requestId, [
+            'request.disputed',
+            'request.escalated',
+        ]);
         const request = await this.prisma.request.findUnique({
             where: { id: payload.requestId },
         });
@@ -170,7 +175,7 @@ __decorate([
     (0, event_emitter_1.OnEvent)('request.created'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
-    __metadata("design:returntype", Promise)
+    __metadata("design:returntype", void 0)
 ], RequestEventListener.prototype, "handleRequestCreated", null);
 __decorate([
     (0, event_emitter_1.OnEvent)('request.pushed'),

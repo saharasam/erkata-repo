@@ -471,7 +471,10 @@ export class RequestsService implements OnModuleInit {
         data: { status: RequestStatus.disputed },
       });
 
-      await this.eventEmitter.emitAsync('request.disputed', { requestId, customerId });
+      await this.eventEmitter.emitAsync('request.disputed', {
+        requestId,
+        customerId,
+      });
     }
 
     return { success: true, status: confirmed ? 'fulfilled' : 'disputed' };
@@ -506,7 +509,11 @@ export class RequestsService implements OnModuleInit {
       include: { customer: true, matches: { include: { agent: true } } },
     });
 
-    await this.eventEmitter.emitAsync('request.resolved', { requestId, operatorId, note });
+    await this.eventEmitter.emitAsync('request.resolved', {
+      requestId,
+      operatorId,
+      note,
+    });
     return updated;
   }
 
@@ -557,20 +564,35 @@ export class RequestsService implements OnModuleInit {
 
     const currentMetadata = (request.metadata as Record<string, any>) || {};
 
-    const updated = await this.prisma.request.update({
-      where: { id: requestId },
-      data: {
-        status: RequestStatus.assigned,
-        isEscalated: false,
-        metadata: {
-          ...currentMetadata,
-          needsRedo: true,
-          voidNote: note || 'Fulfillment voided. Redo required.',
-          voidAt: new Date().toISOString(),
-          voidBy: operatorId,
-          resolvedAt: new Date().toISOString(),
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const req = await tx.request.update({
+        where: { id: requestId },
+        data: {
+          status: RequestStatus.assigned,
+          isEscalated: false,
+          metadata: {
+            ...currentMetadata,
+            needsRedo: true,
+            voidNote: note || 'Fulfillment voided. Redo required.',
+            voidAt: new Date().toISOString(),
+            voidBy: operatorId,
+            resolvedAt: new Date().toISOString(),
+          },
         },
-      },
+      });
+
+      // Reset the active match back to 'accepted' so the agent can resubmit
+      await tx.match.updateMany({
+        where: {
+          requestId,
+          status: 'completed',
+        },
+        data: {
+          status: 'accepted',
+        },
+      });
+
+      return req;
     });
 
     await this.eventEmitter.emitAsync('request.voided', {

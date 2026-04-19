@@ -347,7 +347,10 @@ let RequestsService = class RequestsService {
                 where: { id: requestId },
                 data: { status: client_1.RequestStatus.disputed },
             });
-            await this.eventEmitter.emitAsync('request.disputed', { requestId, customerId });
+            await this.eventEmitter.emitAsync('request.disputed', {
+                requestId,
+                customerId,
+            });
         }
         return { success: true, status: confirmed ? 'fulfilled' : 'disputed' };
     }
@@ -376,7 +379,11 @@ let RequestsService = class RequestsService {
             },
             include: { customer: true, matches: { include: { agent: true } } },
         });
-        await this.eventEmitter.emitAsync('request.resolved', { requestId, operatorId, note });
+        await this.eventEmitter.emitAsync('request.resolved', {
+            requestId,
+            operatorId,
+            note,
+        });
         return updated;
     }
     async escalateDispute(requestId, operatorId, note) {
@@ -418,20 +425,32 @@ let RequestsService = class RequestsService {
             throw new common_1.BadRequestException('Request is not in a disputed state');
         }
         const currentMetadata = request.metadata || {};
-        const updated = await this.prisma.request.update({
-            where: { id: requestId },
-            data: {
-                status: client_1.RequestStatus.assigned,
-                isEscalated: false,
-                metadata: {
-                    ...currentMetadata,
-                    needsRedo: true,
-                    voidNote: note || 'Fulfillment voided. Redo required.',
-                    voidAt: new Date().toISOString(),
-                    voidBy: operatorId,
-                    resolvedAt: new Date().toISOString(),
+        const updated = await this.prisma.$transaction(async (tx) => {
+            const req = await tx.request.update({
+                where: { id: requestId },
+                data: {
+                    status: client_1.RequestStatus.assigned,
+                    isEscalated: false,
+                    metadata: {
+                        ...currentMetadata,
+                        needsRedo: true,
+                        voidNote: note || 'Fulfillment voided. Redo required.',
+                        voidAt: new Date().toISOString(),
+                        voidBy: operatorId,
+                        resolvedAt: new Date().toISOString(),
+                    },
                 },
-            },
+            });
+            await tx.match.updateMany({
+                where: {
+                    requestId,
+                    status: 'completed',
+                },
+                data: {
+                    status: 'accepted',
+                },
+            });
+            return req;
         });
         await this.eventEmitter.emitAsync('request.voided', {
             requestId,

@@ -1,4 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
-console.log('Available models:', Object.keys(prisma).filter(k => !k.startsWith('$')));
+console.log(
+  'Available models:',
+  Object.keys(prisma).filter((k) => !k.startsWith('$')),
+);
 process.exit(0);

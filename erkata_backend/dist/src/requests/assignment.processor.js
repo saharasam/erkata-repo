@@ -85,13 +85,17 @@ let AssignmentProcessor = AssignmentProcessor_1 = class AssignmentProcessor exte
                         where: { id: matchId },
                         data: { status: 'rejected' },
                     });
-                    const currentRequest = await tx.request.findUnique({ where: { id: requestId } });
+                    const currentRequest = await tx.request.findUnique({
+                        where: { id: requestId },
+                    });
                     await tx.request.update({
                         where: { id: requestId },
                         data: {
                             status: client_1.RequestStatus.pending,
                             metadata: {
-                                ...(typeof currentRequest?.metadata === 'object' ? currentRequest.metadata : {}),
+                                ...(typeof currentRequest?.metadata === 'object'
+                                    ? currentRequest.metadata
+                                    : {}),
                                 agentTimeoutAt: new Date().toISOString(),
                                 lastTimedOutAgentId: agentId,
                             },

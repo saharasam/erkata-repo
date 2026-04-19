@@ -22,28 +22,13 @@ export declare class PayoutsController {
         conversionRate: import("@prisma/client/runtime/library").Decimal | null;
         referenceId: string | null;
         referenceType: string | null;
-        bankName: string | null;
-        bankAccountNumber: string | null;
-        bankAccountHolder: string | null;
         updatedAt: Date;
+        bankAccountHolder: string | null;
+        bankAccountNumber: string | null;
+        bankName: string | null;
         profileId: string;
     })[]>;
-    approvePayout(id: string): Promise<{
-        id: string;
-        createdAt: Date;
-        status: import(".prisma/client").$Enums.AglpTransactionStatus;
-        type: import(".prisma/client").$Enums.AglpTransactionType;
-        amount: import("@prisma/client/runtime/library").Decimal;
-        etbEquivalent: import("@prisma/client/runtime/library").Decimal | null;
-        conversionRate: import("@prisma/client/runtime/library").Decimal | null;
-        referenceId: string | null;
-        referenceType: string | null;
-        bankName: string | null;
-        bankAccountNumber: string | null;
-        bankAccountHolder: string | null;
-        updatedAt: Date;
-        profileId: string;
-    }>;
+    approvePayout(id: string): Promise<void>;
     rejectPayout(id: string, reason: string): Promise<void>;
     getPendingEscrow(): Promise<({
         profile: {
@@ -62,10 +47,10 @@ export declare class PayoutsController {
         conversionRate: import("@prisma/client/runtime/library").Decimal | null;
         referenceId: string | null;
         referenceType: string | null;
-        bankName: string | null;
-        bankAccountNumber: string | null;
-        bankAccountHolder: string | null;
         updatedAt: Date;
+        bankAccountHolder: string | null;
+        bankAccountNumber: string | null;
+        bankName: string | null;
         profileId: string;
     })[]>;
     releaseEscrow(id: string): Promise<void>;
@@ -85,10 +70,10 @@ export declare class PayoutsController {
         conversionRate: import("@prisma/client/runtime/library").Decimal | null;
         referenceId: string | null;
         referenceType: string | null;
-        bankName: string | null;
-        bankAccountNumber: string | null;
-        bankAccountHolder: string | null;
         updatedAt: Date;
+        bankAccountHolder: string | null;
+        bankAccountNumber: string | null;
+        bankName: string | null;
         profileId: string;
     })[]>;
 }

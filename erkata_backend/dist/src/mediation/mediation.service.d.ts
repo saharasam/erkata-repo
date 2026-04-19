@@ -12,14 +12,17 @@ export declare class MediationService {
         createdAt: Date;
         transactionId: string;
         authorId: string;
-        content: string;
         rating: number;
+        comment: string | null;
         categories: string[];
+        content: string;
     }>;
     private checkAndBundle;
     proposeResolution(bundleId: string, adminId: string, proposedText: string): Promise<{
         id: string;
         createdAt: Date;
+        status: string;
+        matchId: string | null;
         proposedText: string;
         bundleId: string;
         proposedById: string;
@@ -27,8 +30,10 @@ export declare class MediationService {
     finalizeResolution(proposalId: string, actorId: string, approved: boolean, comment?: string): Promise<{
         id: string;
         createdAt: Date;
-        approved: boolean;
+        description: string | null;
         comment: string | null;
+        approved: boolean;
+        finalDecision: string | null;
         proposalId: string;
         finalizedById: string;
     }>;
@@ -38,8 +43,10 @@ export declare class MediationService {
     overrideResolution(resolutionId: string, superAdminId: string, newApproved: boolean, comment: string): Promise<{
         id: string;
         createdAt: Date;
-        approved: boolean;
+        description: string | null;
         comment: string | null;
+        approved: boolean;
+        finalDecision: string | null;
         proposalId: string;
         finalizedById: string;
     }>;
@@ -47,18 +54,24 @@ export declare class MediationService {
         [x: string]: ({
             id: string;
             createdAt: Date;
+            status: string;
+            matchId: string | null;
             proposedText: string;
             bundleId: string;
             proposedById: string;
         } | {
             id: string;
             createdAt: Date;
+            status: string;
+            matchId: string | null;
             proposedText: string;
             bundleId: string;
             proposedById: string;
         })[] | {
             id: string;
             createdAt: Date;
+            status: string;
+            matchId: string | null;
             proposedText: string;
             bundleId: string;
             proposedById: string;
@@ -75,8 +88,10 @@ export declare class MediationService {
     finalizeBundleDirectly(bundleId: string, actorId: string, resolutionText: string): Promise<{
         id: string;
         createdAt: Date;
-        approved: boolean;
+        description: string | null;
         comment: string | null;
+        approved: boolean;
+        finalDecision: string | null;
         proposalId: string;
         finalizedById: string;
     }>;

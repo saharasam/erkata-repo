@@ -45,8 +45,9 @@ import { FocusBoard } from '../components/agent/FocusBoard';
 import { Skeleton } from '../components/ui/Skeleton';
 import TransferMatchModal from '../components/agent/TransferMatchModal';
 import PayoutRequestModal from '../components/agent/PayoutRequestModal';
+import BroadcastInbox from '../components/shared/BroadcastInbox';
 
-type DashboardView = 'focus' | 'earnings' | 'network' | 'packages' | 'profile';
+type DashboardView = 'focus' | 'earnings' | 'network' | 'packages' | 'profile' | 'notices';
 
 const DashboardSkeleton: React.FC = () => (
   <div className="max-w-6xl mx-auto space-y-8 animate-pulse pt-4">
@@ -464,6 +465,10 @@ const AgentDashboard: React.FC = () => {
                 finance={finance} 
                 onNavigateToPackages={() => setView('packages')} 
              />
+          )}
+
+          {view === 'notices' && (
+             <BroadcastInbox />
           )}
         </motion.div>
       </AnimatePresence>

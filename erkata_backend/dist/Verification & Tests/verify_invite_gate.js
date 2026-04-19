@@ -16,8 +16,8 @@ async function verify() {
                 email: email1,
                 fullName: 'Test Operator 1',
                 password: 'password123',
-                role: 'operator'
-            })
+                role: 'operator',
+            }),
         });
         if (res.ok) {
             const data = await res.json();
@@ -38,7 +38,7 @@ async function verify() {
     const email2 = `${baseEmail}_2@example.com`;
     console.log(`\n[Case 2] Creating valid invite for operator (${email2})...`);
     const superAdmin = await prisma.profile.findFirst({
-        where: { role: 'super_admin' }
+        where: { role: 'super_admin' },
     });
     if (!superAdmin) {
         console.error('No Super Admin found in DB to create invite.');
@@ -51,8 +51,8 @@ async function verify() {
             role: 'operator',
             token: inviteToken,
             expiresAt: new Date(Date.now() + 3600000),
-            createdById: superAdmin.id
-        }
+            createdById: superAdmin.id,
+        },
     });
     console.log(`Invite created for ${email2} with token: ${inviteToken}`);
     console.log('\n[Case 3] Registering as operator WITH valid token...');
@@ -65,8 +65,8 @@ async function verify() {
                 fullName: 'Test Operator 2',
                 password: 'password123',
                 role: 'operator',
-                inviteToken: invite.token
-            })
+                inviteToken: invite.token,
+            }),
         });
         if (res.ok) {
             const data = await res.json();
@@ -86,7 +86,7 @@ async function verify() {
         console.log(`❌ FAIL: Request failed: ${err.message}`);
     }
     const updatedInvite = await prisma.invite.findUnique({
-        where: { token: inviteToken }
+        where: { token: inviteToken },
     });
     if (updatedInvite && updatedInvite.usedAt) {
         console.log('✅ PASS: Invite marked as used.');
@@ -97,6 +97,6 @@ async function verify() {
     console.log('\n--- VERIFICATION COMPLETE ---');
 }
 verify()
-    .catch(err => console.error(err))
+    .catch((err) => console.error(err))
     .finally(() => prisma.$disconnect());
 //# sourceMappingURL=verify_invite_gate.js.map

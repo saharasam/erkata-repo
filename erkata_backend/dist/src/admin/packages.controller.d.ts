@@ -5,26 +5,18 @@ export declare class AdminPackagesController {
     constructor(prisma: PrismaService);
     getAllPackages(): Promise<{
         id: string;
-        createdAt: Date;
         name: import(".prisma/client").$Enums.Tier;
-        description: string | null;
-        updatedAt: Date;
         price: Prisma.Decimal;
         referralSlots: number;
         zoneLimit: number;
-        requiresApproval: boolean;
         displayName: string;
     }[]>;
     getPackage(id: string): Promise<{
         id: string;
-        createdAt: Date;
         name: import(".prisma/client").$Enums.Tier;
-        description: string | null;
-        updatedAt: Date;
         price: Prisma.Decimal;
         referralSlots: number;
         zoneLimit: number;
-        requiresApproval: boolean;
         displayName: string;
     }>;
     updatePackage(id: string, data: {
@@ -32,18 +24,12 @@ export declare class AdminPackagesController {
         price?: number;
         referralSlots?: number;
         zoneLimit?: number;
-        description?: string;
-        requiresApproval?: boolean;
     }): Promise<{
         id: string;
-        createdAt: Date;
         name: import(".prisma/client").$Enums.Tier;
-        description: string | null;
-        updatedAt: Date;
         price: Prisma.Decimal;
         referralSlots: number;
         zoneLimit: number;
-        requiresApproval: boolean;
         displayName: string;
     }>;
 }

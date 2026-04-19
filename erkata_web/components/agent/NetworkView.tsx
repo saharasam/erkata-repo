@@ -165,7 +165,7 @@ export const NetworkView: React.FC<NetworkViewProps> = ({ profile, finance, onNa
               {filteredReferrals.length === 0 && (
                 <tr>
                   <td colSpan={4} className="px-6 py-12 text-center text-slate-400 italic text-sm">
-                    {searchQuery ? 'No referrals match your search.' : 'No referrals yet. Share your network link to grow your network!'}
+                    {searchQuery ? 'No referrals match your search.' : 'No referrals yet. Share your referral code to grow your network!'}
                   </td>
                 </tr>
               )}

@@ -50,10 +50,6 @@ let AdminPackagesController = class AdminPackagesController {
             updateData.referralSlots = data.referralSlots;
         if (data.zoneLimit !== undefined)
             updateData.zoneLimit = data.zoneLimit;
-        if (data.description !== undefined)
-            updateData.description = data.description;
-        if (data.requiresApproval !== undefined)
-            updateData.requiresApproval = data.requiresApproval;
         return this.prisma.package.update({
             where: { id },
             data: updateData,

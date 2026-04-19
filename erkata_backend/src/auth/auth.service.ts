@@ -10,6 +10,7 @@ import { Response } from 'express';
 import { InviteService } from './invite/invite.service';
 import * as bcrypt from 'bcrypt';
 import { UserRole, Tier } from '@prisma/client';
+import { randomUUID } from 'crypto';
 
 interface JwtPayload {
   sub: string;
@@ -238,6 +239,7 @@ export class AuthService {
 
     const newProfile = await this.prisma.profile.create({
       data: {
+        id: randomUUID(),
         email: data.email,
         passwordHash,
         fullName: data.fullName,

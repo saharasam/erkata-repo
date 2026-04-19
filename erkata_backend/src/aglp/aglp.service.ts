@@ -214,7 +214,11 @@ export class AglpService {
     tx: Prisma.TransactionClient,
     profileId: string,
     amountAglp: number,
-    bankDetails: { bankName: string; bankAccountNumber: string; bankAccountHolder: string },
+    bankDetails: {
+      bankName: string;
+      bankAccountNumber: string;
+      bankAccountHolder: string;
+    },
   ) {
     const profile = await tx.profile.findUnique({ where: { id: profileId } });
     if (!profile || Number(profile.aglpBalance) < amountAglp) {
@@ -357,15 +361,16 @@ export class AglpService {
   }
 
   // Finalize AGLP withdrawal (Mark as received)
-  async completeWithdrawal(
-    tx: Prisma.TransactionClient,
-    aglpTxId: string,
-  ) {
+  async completeWithdrawal(tx: Prisma.TransactionClient, aglpTxId: string) {
     const aglpTx = await tx.aglpTransaction.findUnique({
       where: { id: aglpTxId },
     });
 
-    if (!aglpTx || aglpTx.type !== AglpTransactionType.WITHDRAWAL || aglpTx.status !== AglpTransactionStatus.PENDING) {
+    if (
+      !aglpTx ||
+      aglpTx.type !== AglpTransactionType.WITHDRAWAL ||
+      aglpTx.status !== AglpTransactionStatus.PENDING
+    ) {
       throw new Error('Valid pending withdrawal transaction not found');
     }
 

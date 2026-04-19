@@ -7,10 +7,12 @@ async function verify() {
   console.log('--- STARTING IMPROVED VERIFICATION OF INVITE GATE ---');
 
   const baseEmail = `test_gate_${Date.now()}`;
-  
+
   // 1. Attempt to register as operator WITHOUT token
   const email1 = `${baseEmail}_1@example.com`;
-  console.log(`\n[Case 1] Registering as operator WITHOUT token (${email1})...`);
+  console.log(
+    `\n[Case 1] Registering as operator WITHOUT token (${email1})...`,
+  );
   try {
     const res = await fetch(`${API_URL}/auth/register`, {
       method: 'POST',
@@ -19,14 +21,16 @@ async function verify() {
         email: email1,
         fullName: 'Test Operator 1',
         password: 'password123',
-        role: 'operator'
-      })
+        role: 'operator',
+      }),
     });
-    
+
     if (res.ok) {
       const data: any = await res.json();
       if (data.debugRole === 'customer') {
-        console.log(`✅ PASS: Operator registration WITHOUT token was demoted to "customer" role.`);
+        console.log(
+          `✅ PASS: Operator registration WITHOUT token was demoted to "customer" role.`,
+        );
       } else {
         console.log(`❌ FAIL: Registered as ${data.debugRole} WITHOUT token!`);
       }
@@ -41,7 +45,7 @@ async function verify() {
   const email2 = `${baseEmail}_2@example.com`;
   console.log(`\n[Case 2] Creating valid invite for operator (${email2})...`);
   const superAdmin = await prisma.profile.findFirst({
-    where: { role: 'super_admin' }
+    where: { role: 'super_admin' },
   });
 
   if (!superAdmin) {
@@ -56,8 +60,8 @@ async function verify() {
       role: 'operator',
       token: inviteToken,
       expiresAt: new Date(Date.now() + 3600000), // 1 hour
-      createdById: superAdmin.id
-    }
+      createdById: superAdmin.id,
+    },
   });
   console.log(`Invite created for ${email2} with token: ${inviteToken}`);
 
@@ -72,20 +76,26 @@ async function verify() {
         fullName: 'Test Operator 2',
         password: 'password123',
         role: 'operator',
-        inviteToken: invite.token
-      })
+        inviteToken: invite.token,
+      }),
     });
-    
+
     if (res.ok) {
       const data: any = await res.json();
       if (data.debugRole === 'operator') {
-        console.log(`✅ PASS: Operator registered successfully with "operator" role.`);
+        console.log(
+          `✅ PASS: Operator registered successfully with "operator" role.`,
+        );
       } else {
-        console.log(`❌ FAIL: Registered as ${data.debugRole} despite valid token!`);
+        console.log(
+          `❌ FAIL: Registered as ${data.debugRole} despite valid token!`,
+        );
       }
     } else {
       const errorData = await res.json();
-      console.log(`❌ FAIL: Registration failed with valid token: ${res.status} - ${JSON.stringify(errorData)}`);
+      console.log(
+        `❌ FAIL: Registration failed with valid token: ${res.status} - ${JSON.stringify(errorData)}`,
+      );
     }
   } catch (err: any) {
     console.log(`❌ FAIL: Request failed: ${err.message}`);
@@ -93,7 +103,7 @@ async function verify() {
 
   // 4. Verify token is used
   const updatedInvite = await (prisma as any).invite.findUnique({
-    where: { token: inviteToken }
+    where: { token: inviteToken },
   });
   if (updatedInvite && updatedInvite.usedAt) {
     console.log('✅ PASS: Invite marked as used.');
@@ -105,5 +115,5 @@ async function verify() {
 }
 
 verify()
-  .catch(err => console.error(err))
+  .catch((err) => console.error(err))
   .finally(() => prisma.$disconnect());

@@ -23,6 +23,17 @@ interface AgentRatingStats {
   avg_rating: number | string;
 }
 
+interface AuditLogMetadata {
+  amount?: number;
+  amountAglp?: number;
+  amountEtb?: number;
+  aglpTxId?: string;
+  transactionId?: string;
+  referenceId?: string;
+  reason?: string;
+  [key: string]: any;
+}
+
 export const TierPriority: Record<string, number> = {
   ABUNDANT_LIFE: 5,
   UNITY: 4,
@@ -126,8 +137,8 @@ export class UsersService {
 
     // Format history for the UI
     const formattedHistory = history.map((log) => {
-      const metadata = (log.metadata as any) || {};
-      
+      const metadata = (log.metadata as AuditLogMetadata) || {};
+
       const type = log.action.includes('REFERRAL')
         ? 'Referral'
         : log.action.includes('PACKAGE')
@@ -144,7 +155,7 @@ export class UsersService {
         createdAt: log.createdAt,
         metadata: {
           ...metadata,
-          transactionId: log.transactionId || metadata.aglpTxId || log.id,
+          transactionId: metadata.transactionId || metadata.aglpTxId || log.id,
         },
       };
     });
@@ -171,9 +182,9 @@ export class UsersService {
       },
     });
 
-    const sumLogs = (logs: any[]) =>
-      logs.reduce((acc, log) => {
-        const metadata = (log.metadata as any) || {};
+    const sumLogs = (logs: { metadata: Prisma.JsonValue }[]): number =>
+      logs.reduce((acc: number, log) => {
+        const metadata = (log.metadata as unknown as AuditLogMetadata) || {};
         const amount = Number(metadata.amount || metadata.amountAglp || 0);
         return acc + amount;
       }, 0);
@@ -194,9 +205,9 @@ export class UsersService {
       d.setDate(d.getDate() - i);
       const dayStart = new Date(d.setHours(0, 0, 0, 0));
       const dayEnd = new Date(d.setHours(23, 59, 59, 999));
-      
+
       const dayLogs = currentWeekLogs.filter(
-        (l) => l.createdAt >= dayStart && l.createdAt <= dayEnd
+        (l) => l.createdAt >= dayStart && l.createdAt <= dayEnd,
       );
       return sumLogs(dayLogs);
     }).reverse();
@@ -220,17 +231,22 @@ export class UsersService {
       _sum: { amount: true },
     });
 
-    const completedWithdrawalsSum = await this.prisma.aglpTransaction.aggregate({
-      where: {
-        profileId: userId,
-        type: 'WITHDRAWAL',
-        status: 'COMPLETED',
+    const completedWithdrawalsSum = await this.prisma.aglpTransaction.aggregate(
+      {
+        where: {
+          profileId: userId,
+          type: 'WITHDRAWAL',
+          status: 'COMPLETED',
+        },
+        _sum: { amount: true },
       },
-      _sum: { amount: true },
-    });
+    );
 
-    const dynamicPending = (pendingCommissionsSum._sum.amount?.toNumber() || 0) + (pendingWithdrawalsSum._sum.amount?.toNumber() || 0);
-    const dynamicWithdrawn = completedWithdrawalsSum._sum.amount?.toNumber() || 0;
+    const dynamicPending =
+      (pendingCommissionsSum._sum.amount?.toNumber() || 0) +
+      (pendingWithdrawalsSum._sum.amount?.toNumber() || 0);
+    const dynamicWithdrawn =
+      completedWithdrawalsSum._sum.amount?.toNumber() || 0;
 
     return {
       balance: profile.aglpBalance.toNumber(),
@@ -624,7 +640,11 @@ export class UsersService {
   async requestWithdrawal(
     userId: string,
     amountAglp: number,
-    bankDetails: { bankName: string; bankAccountNumber: string; bankAccountHolder: string },
+    bankDetails: {
+      bankName: string;
+      bankAccountNumber: string;
+      bankAccountHolder: string;
+    },
   ) {
     if (amountAglp <= 0) {
       throw new BadRequestException('Amount must be positive');

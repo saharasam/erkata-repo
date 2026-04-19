@@ -175,7 +175,34 @@ const BroadcastNotices: React.FC = () => {
                                         }`}>
                                             {b.target}
                                         </span>
-                                        <button className="p-1.5 opacity-0 group-hover:opacity-100 transition-opacity text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg">
+                                        <button 
+                                            onClick={async () => {
+                                                const confirmed = await showConfirm({
+                                                    title: 'Terminate Broadcast Archive',
+                                                    message: 'This operation will permanently erase this transmission from the global system history. This action cannot be rescinded.',
+                                                    confirmText: 'Execute Deletion',
+                                                    type: 'danger'
+                                                });
+                                                if (confirmed) {
+                                                    try {
+                                                        await api.delete(`/admin/broadcasts/${b.id}`);
+                                                        showAlert({
+                                                            title: 'Archive Updated',
+                                                            message: 'Transmission successfully expunged from system records.',
+                                                            type: 'success'
+                                                        });
+                                                        fetchHistory();
+                                                    } catch (err) {
+                                                        showAlert({
+                                                            title: 'Deletion Failure',
+                                                            message: 'Failed to purge record from the database layer.',
+                                                            type: 'error'
+                                                        });
+                                                    }
+                                                }
+                                            }}
+                                            className="p-1.5 opacity-0 group-hover:opacity-100 transition-opacity text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg"
+                                        >
                                             <Trash2 className="w-4 h-4" />
                                         </button>
                                     </div>

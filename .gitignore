@@ -10,3 +10,5 @@
 .agent/
 .stoa/
 .gemini/
+# auto generated files
+.dist/

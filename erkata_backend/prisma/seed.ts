@@ -53,6 +53,7 @@ async function main() {
       create: {
         id: zone.id,
         name: zone.name,
+        type: 'city',
       },
     });
   }
@@ -108,7 +109,7 @@ async function main() {
       description: 'Commission for primary agent on furniture fulfillment.',
     },
   });
- 
+
   await prisma.systemConfig.upsert({
     where: { key: 'alert_commission_spike_threshold' },
     update: {},
@@ -119,6 +120,69 @@ async function main() {
         'Threshold for suspicious commission earnings in a rolling 24h window.',
     },
   });
+
+
+
+  console.log('Seeding packages...');
+  const packages = [
+    {
+      name: 'FREE',
+      displayName: 'Free',
+      price: 0,
+      referralSlots: 3,
+      zoneLimit: 1,
+    },
+    {
+      name: 'PEACE',
+      displayName: 'Peace',
+      price: 2500,
+      referralSlots: 7,
+      zoneLimit: 2,
+    },
+    {
+      name: 'LOVE',
+      displayName: 'Love',
+      price: 5000,
+      referralSlots: 16,
+      zoneLimit: 3,
+    },
+    {
+      name: 'UNITY',
+      displayName: 'Unity',
+      price: 10000,
+      referralSlots: 23,
+      zoneLimit: 5,
+    },
+    {
+      name: 'ABUNDANT_LIFE',
+      displayName: 'Abundant Life',
+      price: 25000,
+      referralSlots: 31,
+      zoneLimit: 100,
+    },
+  ];
+
+  for (const pkg of packages) {
+    await prisma.package.upsert({
+      // @ts-expect-error - Tier is an enum in Prisma, string name is expected to work but type-checked strictly
+      where: { name: pkg.name },
+      update: {
+        displayName: pkg.displayName,
+        price: pkg.price,
+        referralSlots: pkg.referralSlots,
+        zoneLimit: pkg.zoneLimit,
+      },
+      create: {
+        id: pkg.name,
+        // @ts-expect-error - Tier is an enum in Prisma
+        name: pkg.name,
+        displayName: pkg.displayName,
+        price: pkg.price,
+        referralSlots: pkg.referralSlots,
+        zoneLimit: pkg.zoneLimit,
+      },
+    });
+  }
 
   console.log('Seeding test users...');
 
@@ -135,73 +199,6 @@ async function main() {
         role: user.role,
         phone: '0911000000',
         isActive: user.isActive ?? true,
-      },
-    });
-  }
-
-  console.log('Seeding packages...');
-  const packages = [
-    {
-      name: 'FREE',
-      displayName: 'Free',
-      price: 0,
-      referralSlots: 3,
-      zoneLimit: 1,
-      description: 'Standard access for newly onboarded agents.',
-    },
-    {
-      name: 'PEACE',
-      displayName: 'Peace',
-      price: 2500,
-      referralSlots: 7,
-      zoneLimit: 2,
-      description: 'For agents building their first local footprint.',
-    },
-    {
-      name: 'LOVE',
-      displayName: 'Love',
-      price: 5000,
-      referralSlots: 16,
-      zoneLimit: 3,
-      description: 'Grow your network and reach more lucrative territories.',
-    },
-    {
-      name: 'UNITY',
-      displayName: 'Unity',
-      price: 10000,
-      referralSlots: 23,
-      zoneLimit: 5,
-      description: 'For professionals managing active regional pipelines.',
-    },
-    {
-      name: 'ABUNDANT_LIFE',
-      displayName: 'Abundant Life',
-      price: 25000,
-      referralSlots: 31,
-      zoneLimit: 100,
-      description: 'Unrestricted reach and maximum team growth potential.',
-    },
-  ];
-
-  for (const pkg of packages) {
-    await prisma.package.upsert({
-      // @ts-expect-error - Tier is an enum in Prisma, string name is expected to work but type-checked strictly
-      where: { name: pkg.name },
-      update: {
-        displayName: pkg.displayName,
-        price: pkg.price,
-        referralSlots: pkg.referralSlots,
-        zoneLimit: pkg.zoneLimit,
-        description: pkg.description,
-      },
-      create: {
-        // @ts-expect-error - Tier is an enum in Prisma
-        name: pkg.name,
-        displayName: pkg.displayName,
-        price: pkg.price,
-        referralSlots: pkg.referralSlots,
-        zoneLimit: pkg.zoneLimit,
-        description: pkg.description,
       },
     });
   }

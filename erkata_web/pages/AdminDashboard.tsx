@@ -13,6 +13,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import OperationsHub from '../components/admin/OperationsHub';
 import FinancialDesk from '../components/admin/FinancialDesk';
 import NetworkIntelligence from '../components/admin/NetworkIntelligence';
+import BroadcastInbox from '../components/shared/BroadcastInbox';
 
 const AdminDashboard: React.FC = () => {
     const [currentView, setCurrentView] = useState('overview');
@@ -46,6 +47,7 @@ const AdminDashboard: React.FC = () => {
                         {currentView === 'overview' && <OperationsHub />}
                         {currentView === 'finance' && <FinancialDesk />}
                         {currentView === 'network' && <NetworkIntelligence />}
+                        {currentView === 'notices' && <BroadcastInbox />}
 
                         {/* Existing Views */}
                         {currentView === 'zones' && <ZoneCoverage />}

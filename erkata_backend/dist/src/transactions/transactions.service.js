@@ -223,9 +223,12 @@ let TransactionsService = class TransactionsService {
                 }
             }
             return matchResult;
-        });
+        }, { timeout: 15000 });
         this.eventEmitter.emit('match.completed', result);
-        await this.timeoutQueue.add('check-fulfillment-timeout', { requestId: result.requestId }, { delay: 72 * 60 * 60 * 1000, jobId: `confirm-timeout-${result.requestId}` });
+        await this.timeoutQueue.add('check-fulfillment-timeout', { requestId: result.requestId }, {
+            delay: 72 * 60 * 60 * 1000,
+            jobId: `confirm-timeout-${result.requestId}`,
+        });
         return result;
     }
     async getAgentJobs(agentId) {

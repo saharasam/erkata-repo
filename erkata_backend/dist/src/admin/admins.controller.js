@@ -48,7 +48,7 @@ let AdminsController = class AdminsController {
                 _count: {
                     select: {
                         operatorMatches: true,
-                        resolutionProposals: true,
+                        proposals: true,
                     },
                 },
             },

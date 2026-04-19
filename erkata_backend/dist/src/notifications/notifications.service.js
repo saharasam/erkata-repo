@@ -46,7 +46,7 @@ let NotificationsService = class NotificationsService {
             where: {
                 type: { in: eventTypes },
                 link: { contains: requestId },
-                read: false
+                read: false,
             },
             data: { read: true },
         });

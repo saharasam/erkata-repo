@@ -5,7 +5,7 @@ async function checkConfig() {
   try {
     const configs = await prisma.systemConfig.findMany();
     console.log('Current System Configs:');
-    configs.forEach(c => {
+    configs.forEach((c) => {
       console.log(`${c.key}: ${JSON.stringify(c.value)}`);
     });
   } catch (e) {

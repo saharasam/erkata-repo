@@ -27,7 +27,7 @@ async function main() {
                 missedAssignments: 0,
                 lastAssignmentAt: null,
                 isOnline: false,
-            }
+            },
         });
         console.log('✨ Database cleanup complete. You have a clean slate for testing.');
     }

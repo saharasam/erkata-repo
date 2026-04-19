@@ -71,6 +71,7 @@ export enum Action {
   CONFIRM_FULFILLMENT = 'CONFIRM_FULFILLMENT',
   RESOLVE_DISPUTE = 'RESOLVE_DISPUTE',
   ESCALATE_DISPUTE = 'ESCALATE_DISPUTE',
+  VIEW_BROADCASTS = 'VIEW_BROADCASTS',
 }
 
 export const PermissionMatrix: Record<string, Action[]> = {
@@ -103,6 +104,7 @@ export const PermissionMatrix: Record<string, Action[]> = {
     Action.VIEW_COMMISSION_EARNINGS,
     Action.REQUEST_PAYOUT,
     Action.VIEW_PAYOUT_HISTORY,
+    Action.VIEW_BROADCASTS,
   ],
   operator: [
     Action.VIEW_QUEUE,
@@ -116,6 +118,7 @@ export const PermissionMatrix: Record<string, Action[]> = {
     Action.ESCALATE_DISPUTE,
     Action.APPROVE_PAYOUT,
     Action.VIEW_FINANCIAL_REPORTS,
+    Action.VIEW_BROADCASTS,
   ],
   admin: [
     Action.PROPOSE_RESOLUTION,
@@ -137,6 +140,7 @@ export const PermissionMatrix: Record<string, Action[]> = {
     Action.VIEW_ASSIGNED_REQUEST_DETAILS,
     Action.VIEW_SYSTEM_STATISTICS,
     Action.RESOLVE_DISPUTE,
+    Action.VIEW_BROADCASTS,
   ],
   super_admin: [
     Action.EMERGENCY_ARCHIVE,
@@ -172,5 +176,6 @@ export const PermissionMatrix: Record<string, Action[]> = {
     Action.OVERRIDE_FINANCIAL_STATE,
     Action.EXPORT_FINANCIAL_AUDIT,
     Action.VIEW_ASSIGNED_REQUEST_DETAILS,
+    Action.VIEW_BROADCASTS,
   ],
 };

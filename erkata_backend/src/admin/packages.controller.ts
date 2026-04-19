@@ -10,7 +10,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard, RolesGuard, RequirePermission } from '../auth/guards';
 import { Action } from '../auth/permissions';
-import { Tier, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 
 @Controller('admin/packages')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -45,8 +45,6 @@ export class AdminPackagesController {
       price?: number;
       referralSlots?: number;
       zoneLimit?: number;
-      description?: string;
-      requiresApproval?: boolean;
     },
   ) {
     const pkg = await this.prisma.package.findUnique({
@@ -61,10 +59,6 @@ export class AdminPackagesController {
     if (data.referralSlots !== undefined)
       updateData.referralSlots = data.referralSlots;
     if (data.zoneLimit !== undefined) updateData.zoneLimit = data.zoneLimit;
-    if (data.description !== undefined)
-      updateData.description = data.description;
-    if (data.requiresApproval !== undefined)
-      updateData.requiresApproval = data.requiresApproval;
 
     return this.prisma.package.update({
       where: { id },

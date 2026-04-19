@@ -18,7 +18,7 @@ export declare class AdminsController {
         missedAssignments: number;
         _count: {
             operatorMatches: number;
-            resolutionProposals: number;
+            proposals: number;
         };
     }[]>;
     createInvite(req: AuthenticatedRequest, body: {
@@ -62,7 +62,6 @@ export declare class AdminsController {
     }): Promise<{
         id: string;
         email: string;
-        referralCode: string | null;
         passwordHash: string | null;
         fullName: string;
         phone: string;
@@ -75,6 +74,7 @@ export declare class AdminsController {
         aglpBalance: import("@prisma/client/runtime/library").Decimal;
         aglpPending: import("@prisma/client/runtime/library").Decimal;
         aglpWithdrawn: import("@prisma/client/runtime/library").Decimal;
+        referralCode: string | null;
         isOnline: boolean;
         lastAssignmentAt: Date | null;
         missedAssignments: number;
