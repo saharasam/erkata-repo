@@ -215,6 +215,14 @@ class _StatusBadge extends StatelessWidget {
             ? Colors.red.withValues(alpha: 0.1)
             : Colors.red[50]!;
         break;
+      case RequestStatus.completed:
+        color = Theme.of(context).brightness == Brightness.dark
+            ? Colors.greenAccent
+            : Colors.green[700]!;
+        bgColor = Theme.of(context).brightness == Brightness.dark
+            ? Colors.green.withValues(alpha: 0.1)
+            : Colors.green[50]!;
+        break;
     }
 
     return Container(

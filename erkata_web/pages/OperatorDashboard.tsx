@@ -356,9 +356,33 @@ const OperatorDashboard: React.FC = () => {
                                                     <div className="w-7 h-7 rounded-full bg-slate-100 border-2 border-white flex items-center justify-center text-[10px] font-black text-slate-500">C</div>
                                                     <div className="w-7 h-7 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center text-[10px] font-black text-slate-600">A</div>
                                                 </div>
-                                                <button className="text-[11px] font-bold text-indigo-600 hover:text-indigo-700 transition-colors">
-                                                    Details →
-                                                </button>
+                                                <div className="flex gap-2">
+                                                    {tx.request?.status === 'fulfilled' && (
+                                                        <button 
+                                                            onClick={async (e) => {
+                                                                e.stopPropagation();
+                                                                if (window.confirm('Force completion of this request? This will release the agent commission.')) {
+                                                                    try {
+                                                                        await api.post(`/requests/${tx.requestId}/force-complete`);
+                                                                        showAlert({ title: 'Success', message: 'Request force completed.', type: 'success' });
+                                                                        // Refresh transactions
+                                                                        const res = await api.get('/transactions');
+                                                                        setActiveTransactions(res.data);
+                                                                    } catch (err) {
+                                                                        console.error(err);
+                                                                        showAlert({ title: 'Error', message: 'Failed to force complete.', type: 'error' });
+                                                                    }
+                                                                }
+                                                            }}
+                                                            className="text-[11px] font-black px-3 py-1 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all shadow-sm shadow-emerald-200"
+                                                        >
+                                                            FORCE COMPLETE
+                                                        </button>
+                                                    )}
+                                                    <button className="text-[11px] font-bold text-indigo-600 hover:text-indigo-700 transition-colors">
+                                                        Details →
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     ))

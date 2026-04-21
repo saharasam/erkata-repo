@@ -494,10 +494,28 @@ export class AglpService {
         metadata: {
           aglpTxId,
           amount: aglpTx.amount,
-          reason: 'Escrow released by Admin',
+          reason: 'Escrow released by system (Terminal State reached)',
         },
       },
     });
+  }
+
+  // Release commission for a specific match
+  async releaseCommissionByMatchId(
+    tx: Prisma.TransactionClient,
+    matchId: string,
+  ) {
+    const aglpTxs = await tx.aglpTransaction.findMany({
+      where: {
+        referenceId: matchId,
+        type: AglpTransactionType.EARN,
+        status: AglpTransactionStatus.PENDING,
+      },
+    });
+
+    for (const aglpTx of aglpTxs) {
+      await this.releaseEscrow(tx, aglpTx.id);
+    }
   }
 
   // Allow agent to cancel their own PENDING withdrawal

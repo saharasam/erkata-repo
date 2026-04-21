@@ -6,7 +6,7 @@ import '../../features/auth/screens/auth_screen.dart';
 import '../../features/customer/screens/home_screen.dart';
 import '../../features/customer/screens/request_intake_screen.dart';
 import '../../features/customer/screens/request_status_screen.dart';
-import '../../features/customer/screens/payment_screen.dart';
+
 import '../../features/customer/screens/profile_screen.dart';
 import '../../features/agent/screens/agent_dashboard_screen.dart';
 import '../../features/agent/screens/agent_subscription_screen.dart';
@@ -52,8 +52,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       // 2. Authenticated users
-      // If an authenticated user tries to go to Login or Intake, send them to their dashboard
-      if (isLoggingIn || isIntake || isSplash) {
+      // If an authenticated user tries to go to Login or Splash, send them to their dashboard
+      // Note: We allow them to go to /request/new intentionally.
+      if (isLoggingIn || isSplash) {
         final role = authState.user?.role;
         return role == 'agent' ? '/agent' : '/home';
       }
@@ -151,10 +152,6 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/request/status',
             builder: (context, state) => const RequestStatusScreen(),
-          ),
-          GoRoute(
-            path: '/payment',
-            builder: (context, state) => const PaymentScreen(),
           ),
           GoRoute(
             path: '/profile',

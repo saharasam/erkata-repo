@@ -563,4 +563,76 @@ export declare class RequestsController {
         completedAt: Date | null;
         isEscalated: boolean;
     }>;
+    forceComplete(id: string, req: RequestWithUser, note?: string): Promise<{
+        customer: {
+            id: string;
+            email: string;
+            passwordHash: string | null;
+            fullName: string;
+            phone: string;
+            role: import(".prisma/client").$Enums.UserRole;
+            tier: import(".prisma/client").$Enums.Tier;
+            isActive: boolean;
+            zoneId: string | null;
+            referredById: string | null;
+            createdAt: Date;
+            aglpBalance: import("@prisma/client/runtime/library").Decimal;
+            aglpPending: import("@prisma/client/runtime/library").Decimal;
+            aglpWithdrawn: import("@prisma/client/runtime/library").Decimal;
+            referralCode: string | null;
+            isOnline: boolean;
+            lastAssignmentAt: Date | null;
+            missedAssignments: number;
+            warningCount: number;
+            avatarUrl: string | null;
+        };
+        matches: ({
+            agent: {
+                id: string;
+                email: string;
+                passwordHash: string | null;
+                fullName: string;
+                phone: string;
+                role: import(".prisma/client").$Enums.UserRole;
+                tier: import(".prisma/client").$Enums.Tier;
+                isActive: boolean;
+                zoneId: string | null;
+                referredById: string | null;
+                createdAt: Date;
+                aglpBalance: import("@prisma/client/runtime/library").Decimal;
+                aglpPending: import("@prisma/client/runtime/library").Decimal;
+                aglpWithdrawn: import("@prisma/client/runtime/library").Decimal;
+                referralCode: string | null;
+                isOnline: boolean;
+                lastAssignmentAt: Date | null;
+                missedAssignments: number;
+                warningCount: number;
+                avatarUrl: string | null;
+            };
+        } & {
+            id: string;
+            requestId: string;
+            agentId: string;
+            operatorId: string | null;
+            status: string;
+            assignedAt: Date;
+        })[];
+    } & {
+        id: string;
+        zoneId: string;
+        createdAt: Date;
+        status: import(".prisma/client").$Enums.RequestStatus;
+        customerId: string;
+        category: string;
+        type: string;
+        description: string;
+        budgetMin: import("@prisma/client/runtime/library").Decimal | null;
+        budgetMax: import("@prisma/client/runtime/library").Decimal | null;
+        metadata: import("@prisma/client/runtime/library").JsonValue;
+        woreda: string;
+        assignedOperatorId: string | null;
+        assignmentPushedAt: Date | null;
+        completedAt: Date | null;
+        isEscalated: boolean;
+    }>;
 }

@@ -31,10 +31,17 @@ let MediationService = class MediationService {
     async submitFeedback(transactionId, authorId, content, rating, categories = []) {
         const transaction = await this.prisma.transaction.findUnique({
             where: { id: transactionId },
-            include: { feedbacks: true },
+            include: {
+                feedbacks: true,
+                match: { include: { request: true } }
+            },
         });
         if (!transaction)
             throw new common_1.NotFoundException('Transaction not found');
+        const request = transaction.match?.request;
+        if (!request || request.status !== client_1.RequestStatus.completed) {
+            throw new common_1.BadRequestException('Feedback can only be submitted for completed transactions');
+        }
         const author = await this.prisma.profile.findUnique({
             where: { id: authorId },
         });

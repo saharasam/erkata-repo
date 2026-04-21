@@ -17,8 +17,8 @@ interface UtilitySidebarProps {
   onViewChange?: (view: string) => void;
 }
 
-const UtilitySidebar: React.FC<UtilitySidebarProps> = ({ 
-  onSettingsClick, 
+const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
+  onSettingsClick,
   onNotificationsClick,
   currentView,
   onViewChange
@@ -94,7 +94,7 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
     { id: 'earnings', icon: TrendingUp, label: 'Earnings' },
     { id: 'network', icon: Users, label: 'My Network' },
     { id: 'packages', icon: Package, label: 'Packages' },
-    { id: 'profile', icon: User, label: 'Profile' },
+    // { id: 'profile', icon: User, label: 'Profile' },
     { id: 'notices', icon: Megaphone, label: 'Broadcasts' },
   ];
 
@@ -114,7 +114,7 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
 
   const toggleTool = (toolId: string) => {
     console.log('Toggling tool:', toolId);
-    
+
     // Check if it's a role-specific navigation item
     const isRoleNavItem = currentRoleTools.some(t => t.id === toolId);
     if (isRoleNavItem && onViewChange) {
@@ -143,7 +143,7 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
   return (
     <div className="flex h-full relative z-40">
       {/* Persistence Strip */}
-      <motion.div 
+      <motion.div
         animate={{ width: isExpanded ? 240 : 64 }}
         transition={{ type: 'spring', stiffness: 300, damping: 30 }}
         className="bg-white/60 backdrop-blur-xl border-r border-white/50 h-full flex flex-col items-center py-6 shadow-sm relative z-50 overflow-y-auto no-scrollbar overflow-x-hidden"
@@ -164,15 +164,14 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
               <button
                 key={tool.id}
                 onClick={() => toggleTool(tool.id)}
-                className={`w-full h-10 rounded-xl flex items-center transition-all duration-200 group relative ${
-                  currentView === tool.id 
+                className={`w-full h-10 rounded-xl flex items-center transition-all duration-200 group relative ${currentView === tool.id
                     ? user?.role === UserRole.SUPER_ADMIN || user?.role === UserRole.ADMIN ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'bg-erkata-primary text-white shadow-lg shadow-erkata-primary/30'
                     : `text-slate-400 hover:bg-white ${user?.role === UserRole.SUPER_ADMIN || user?.role === UserRole.ADMIN ? 'hover:text-indigo-600' : 'hover:text-erkata-primary'} hover:shadow-md`
-                } ${isExpanded ? 'px-3 justify-start gap-3' : 'justify-center'}`}
+                  } ${isExpanded ? 'px-3 justify-start gap-3' : 'justify-center'}`}
                 title={isExpanded ? "" : tool.label}
               >
                 <tool.icon className="w-5 h-5 shrink-0" />
-                
+
                 {isExpanded && (
                   <span className="text-sm font-bold tracking-tight truncate">
                     {tool.label}
@@ -212,15 +211,14 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
             <button
               key={tool.id}
               onClick={() => toggleTool(tool.id)}
-              className={`w-full h-10 rounded-xl flex items-center transition-all duration-200 group relative ${
-                activeTool === tool.id 
-                  ? 'bg-slate-800 text-white shadow-lg shadow-slate-200' 
+              className={`w-full h-10 rounded-xl flex items-center transition-all duration-200 group relative ${activeTool === tool.id
+                  ? 'bg-slate-800 text-white shadow-lg shadow-slate-200'
                   : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'
-              } ${isExpanded ? 'px-3 justify-start gap-3' : 'justify-center'}`}
+                } ${isExpanded ? 'px-3 justify-start gap-3' : 'justify-center'}`}
               title={isExpanded ? "" : tool.label}
             >
               <tool.icon className={`w-5 h-5 shrink-0 ${activeTool === tool.id ? 'text-white' : ''} transition-colors`} />
-              
+
               {isExpanded && (
                 <span className="text-sm font-medium truncate">
                   {tool.label}
@@ -238,37 +236,36 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
 
         {/* Bottom Section (Profile & Logout) */}
         <div className="w-full flex flex-col items-center mt-auto space-y-2 shrink-0 pb-2 px-3 pt-6 border-t border-slate-50">
-           <button
-             onClick={() => toggleTool('profile')}
-             className={`w-full h-10 rounded-xl flex items-center transition-all duration-200 group relative ${
-               activeTool === 'profile' 
-                 ? 'bg-slate-800 text-white shadow-lg' 
-                 : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'
-             } ${isExpanded ? 'px-3 justify-start gap-3' : 'justify-center'}`}
-             title={isExpanded ? "" : "Profile"}
-           >
-             <User className="w-5 h-5 shrink-0" />
-             {isExpanded && <span className="text-sm font-medium">Profile</span>}
-             {!isExpanded && (
-               <span className="absolute left-full ml-3 bg-slate-800 text-white text-[10px] font-bold px-2 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-all translate-x-1 group-hover:translate-x-0 whitespace-nowrap shadow-xl z-50">
-                 Profile
-               </span>
-             )}
-           </button>
+          <button
+            onClick={() => toggleTool('profile')}
+            className={`w-full h-10 rounded-xl flex items-center transition-all duration-200 group relative ${activeTool === 'profile'
+                ? 'bg-slate-800 text-white shadow-lg'
+                : 'text-slate-400 hover:bg-slate-50 hover:text-slate-600'
+              } ${isExpanded ? 'px-3 justify-start gap-3' : 'justify-center'}`}
+            title={isExpanded ? "" : "Profile"}
+          >
+            <User className="w-5 h-5 shrink-0" />
+            {isExpanded && <span className="text-sm font-medium">Profile</span>}
+            {!isExpanded && (
+              <span className="absolute left-full ml-3 bg-slate-800 text-white text-[10px] font-bold px-2 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-all translate-x-1 group-hover:translate-x-0 whitespace-nowrap shadow-xl z-50">
+                Profile
+              </span>
+            )}
+          </button>
 
-           <button
-             onClick={() => toggleTool('logout')}
-             className={`w-full h-10 rounded-xl flex items-center transition-all duration-200 group relative text-slate-400 hover:bg-red-50 hover:text-red-500 ${isExpanded ? 'px-3 justify-start gap-3' : 'justify-center'}`}
-             title={isExpanded ? "" : "Logout"}
-           >
-             <LogOut className="w-5 h-5 shrink-0" />
-             {isExpanded && <span className="text-sm font-medium">Logout</span>}
-             {!isExpanded && (
-               <span className="absolute left-full ml-3 bg-red-600 text-white text-[10px] font-bold px-2 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-all translate-x-1 group-hover:translate-x-0 whitespace-nowrap shadow-xl z-50">
-                 Logout
-               </span>
-             )}
-           </button>
+          <button
+            onClick={() => toggleTool('logout')}
+            className={`w-full h-10 rounded-xl flex items-center transition-all duration-200 group relative text-slate-400 hover:bg-red-50 hover:text-red-500 ${isExpanded ? 'px-3 justify-start gap-3' : 'justify-center'}`}
+            title={isExpanded ? "" : "Logout"}
+          >
+            <LogOut className="w-5 h-5 shrink-0" />
+            {isExpanded && <span className="text-sm font-medium">Logout</span>}
+            {!isExpanded && (
+              <span className="absolute left-full ml-3 bg-red-600 text-white text-[10px] font-bold px-2 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 pointer-events-none transition-all translate-x-1 group-hover:translate-x-0 whitespace-nowrap shadow-xl z-50">
+                Logout
+              </span>
+            )}
+          </button>
         </div>
       </motion.div>
 
@@ -284,7 +281,7 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
           >
             <div className="flex items-center justify-between p-4 border-b border-white/50 min-w-[320px]">
               <h3 className="font-bold text-slate-800 capitalize flex items-center">
-                {tools.find(t => t.id === activeTool)?.icon && 
+                {tools.find(t => t.id === activeTool)?.icon &&
                   React.createElement(tools.find(t => t.id === activeTool)!.icon, { className: "w-5 h-5 mr-2 text-slate-500" })}
                 {activeTool}
               </h3>
@@ -292,100 +289,100 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
                 <X className="w-5 h-5 text-slate-400" />
               </button>
             </div>
-            
+
             <div className="flex-1 p-4 overflow-y-auto min-w-[320px]">
-               {activeTool === 'calendar' && (
-                 <div className="space-y-4">
-                    <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
-                       <h4 className="font-bold text-slate-700 mb-2">February 2026</h4>
-                       <div className="grid grid-cols-7 gap-1 text-center text-xs">
-                          {['S','M','T','W','T','F','S'].map(d => <div key={d} className="font-bold text-slate-400 py-1">{d}</div>)}
-                          {Array.from({length: 28}, (_, i) => (
-                             <div key={i} className={`p-2 rounded-lg cursor-pointer hover:bg-slate-50 ${i === 13 ? 'bg-erkata-primary text-white hover:bg-erkata-primary' : 'text-slate-600'}`}>
-                                {i + 1}
-                             </div>
-                          ))}
-                       </div>
+              {activeTool === 'calendar' && (
+                <div className="space-y-4">
+                  <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                    <h4 className="font-bold text-slate-700 mb-2">February 2026</h4>
+                    <div className="grid grid-cols-7 gap-1 text-center text-xs">
+                      {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(d => <div key={d} className="font-bold text-slate-400 py-1">{d}</div>)}
+                      {Array.from({ length: 28 }, (_, i) => (
+                        <div key={i} className={`p-2 rounded-lg cursor-pointer hover:bg-slate-50 ${i === 13 ? 'bg-erkata-primary text-white hover:bg-erkata-primary' : 'text-slate-600'}`}>
+                          {i + 1}
+                        </div>
+                      ))}
                     </div>
-                 </div>
-               )}
+                  </div>
+                </div>
+              )}
 
-               {activeTool === 'notes' && (
-                  <div className="space-y-3">
-                     <textarea 
-                        className="w-full h-40 p-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400/50 resize-none bg-yellow-50/50 placeholder-yellow-700/50 text-slate-700"
-                        placeholder="Type a quick note..."
-                     ></textarea>
-                     <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
-                        <p className="text-xs font-bold text-slate-500 mb-2 uppercase">Saved Notes</p>
-                        <div className="space-y-2">
-                           <div className="p-2 bg-slate-50 rounded-lg text-xs text-slate-600 border border-slate-100 hover:border-slate-300 cursor-pointer">
-                              REQ-2024-001: Customer needs callback after 5pm
-                           </div>
-                        </div>
-                     </div>
+              {activeTool === 'notes' && (
+                <div className="space-y-3">
+                  <textarea
+                    className="w-full h-40 p-3 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400/50 resize-none bg-yellow-50/50 placeholder-yellow-700/50 text-slate-700"
+                    placeholder="Type a quick note..."
+                  ></textarea>
+                  <div className="bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+                    <p className="text-xs font-bold text-slate-500 mb-2 uppercase">Saved Notes</p>
+                    <div className="space-y-2">
+                      <div className="p-2 bg-slate-50 rounded-lg text-xs text-slate-600 border border-slate-100 hover:border-slate-300 cursor-pointer">
+                        REQ-2024-001: Customer needs callback after 5pm
+                      </div>
+                    </div>
                   </div>
-               )}
-               
-               {activeTool === 'support' && (
-                  <div className="flex flex-col h-full items-center justify-center text-center space-y-4">
-                     <div className="w-16 h-16 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center mb-2">
-                        <MessageCircle className="w-8 h-8" />
-                     </div>
-                     <h4 className="font-bold text-slate-800">Support Online</h4>
-                     <p className="text-sm text-slate-500 max-w-[200px]">
-                        Start a chat for immediate assistance.
-                     </p>
-                     <button className="bg-purple-600 text-white px-6 py-3 rounded-xl font-bold text-sm hover:bg-purple-700 transition-colors shadow-lg shadow-purple-600/20">
-                        Start Chat
-                     </button>
-                  </div>
-               )}
+                </div>
+              )}
 
-               {activeTool === 'language' && (
-                  <div className="space-y-3">
-                    <p className="text-xs font-bold text-slate-400 uppercase">Select Language</p>
-                    {['English', 'Amharic', 'Oromo', 'Tigrinya'].map(lang => (
-                      <button key={lang} className="w-full flex items-center justify-between p-3 bg-white border border-slate-100 rounded-xl hover:border-teal-500 hover:shadow-md transition-all group">
-                        <span className="font-medium text-slate-700 group-hover:text-teal-700">{lang}</span>
-                        {lang === 'English' && <div className="w-2 h-2 bg-teal-500 rounded-full" />}
-                      </button>
-                    ))}
+              {activeTool === 'support' && (
+                <div className="flex flex-col h-full items-center justify-center text-center space-y-4">
+                  <div className="w-16 h-16 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center mb-2">
+                    <MessageCircle className="w-8 h-8" />
                   </div>
-               )}
+                  <h4 className="font-bold text-slate-800">Support Online</h4>
+                  <p className="text-sm text-slate-500 max-w-[200px]">
+                    Start a chat for immediate assistance.
+                  </p>
+                  <button className="bg-purple-600 text-white px-6 py-3 rounded-xl font-bold text-sm hover:bg-purple-700 transition-colors shadow-lg shadow-purple-600/20">
+                    Start Chat
+                  </button>
+                </div>
+              )}
 
-               {activeTool === 'profile' && (
-                  <div className="space-y-6">
-                     <div className="text-center">
-                        <div className="w-20 h-20 bg-slate-200 rounded-full mx-auto mb-3 flex items-center justify-center text-2xl font-bold text-slate-500">
-                          {user?.fullName?.charAt(0)}
-                        </div>
-                        <h4 className="font-bold text-slate-800">{user?.fullName}</h4>
-                        <p className="text-sm text-slate-500">{user?.email}</p>
-                        <span className="inline-block mt-2 px-3 py-1 bg-erkata-primary/10 text-erkata-primary text-xs font-bold rounded-full capitalize">
-                          {user?.role}
-                        </span>
-                     </div>
-                     
-                     <div className="space-y-2">
-                        <button 
-                            onClick={onSettingsClick}
-                            className="w-full text-left p-3 hover:bg-slate-50 rounded-lg text-sm font-medium text-slate-600 transition-colors"
-                        >
-                           Account Settings
-                        </button>
-                        <button 
-                            onClick={onNotificationsClick}
-                            className="w-full text-left p-3 hover:bg-slate-50 rounded-lg text-sm font-medium text-slate-600 transition-colors"
-                        >
-                           Notifications
-                        </button>
-                        <button className="w-full text-left p-3 hover:bg-slate-50 rounded-lg text-sm font-medium text-slate-600 transition-colors">
-                           Security
-                        </button>
-                     </div>
+              {activeTool === 'language' && (
+                <div className="space-y-3">
+                  <p className="text-xs font-bold text-slate-400 uppercase">Select Language</p>
+                  {['English', 'Amharic', 'Oromo', 'Tigrinya'].map(lang => (
+                    <button key={lang} className="w-full flex items-center justify-between p-3 bg-white border border-slate-100 rounded-xl hover:border-teal-500 hover:shadow-md transition-all group">
+                      <span className="font-medium text-slate-700 group-hover:text-teal-700">{lang}</span>
+                      {lang === 'English' && <div className="w-2 h-2 bg-teal-500 rounded-full" />}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {activeTool === 'profile' && (
+                <div className="space-y-6">
+                  <div className="text-center">
+                    <div className="w-20 h-20 bg-slate-200 rounded-full mx-auto mb-3 flex items-center justify-center text-2xl font-bold text-slate-500">
+                      {user?.fullName?.charAt(0)}
+                    </div>
+                    <h4 className="font-bold text-slate-800">{user?.fullName}</h4>
+                    <p className="text-sm text-slate-500">{user?.email}</p>
+                    <span className="inline-block mt-2 px-3 py-1 bg-erkata-primary/10 text-erkata-primary text-xs font-bold rounded-full capitalize">
+                      {user?.role}
+                    </span>
                   </div>
-               )}
+
+                  <div className="space-y-2">
+                    <button
+                      onClick={onSettingsClick}
+                      className="w-full text-left p-3 hover:bg-slate-50 rounded-lg text-sm font-medium text-slate-600 transition-colors"
+                    >
+                      Account Settings
+                    </button>
+                    <button
+                      onClick={onNotificationsClick}
+                      className="w-full text-left p-3 hover:bg-slate-50 rounded-lg text-sm font-medium text-slate-600 transition-colors"
+                    >
+                      Notifications
+                    </button>
+                    <button className="w-full text-left p-3 hover:bg-slate-50 rounded-lg text-sm font-medium text-slate-600 transition-colors">
+                      Security
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </motion.div>
         )}

@@ -72,6 +72,13 @@ class ErkataStatusBadge extends StatelessWidget {
               : AppColors.errorRedLight,
           isDark ? AppColors.errorRedLight : AppColors.errorRed,
         );
+      case RequestStatus.completed:
+        return (
+          isDark
+              ? AppColors.successGreen.withValues(alpha: 0.2)
+              : AppColors.successGreenLight,
+          isDark ? AppColors.successGreenLight : AppColors.successGreen,
+        );
     }
   }
 }

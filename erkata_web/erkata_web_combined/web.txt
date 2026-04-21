@@ -4319,7 +4319,7 @@ export const NetworkView: React.FC<NetworkViewProps> = ({ profile, finance, onNa
               {filteredReferrals.length === 0 && (
                 <tr>
                   <td colSpan={4} className="px-6 py-12 text-center text-slate-400 italic text-sm">
-                    {searchQuery ? 'No referrals match your search.' : 'No referrals yet. Share your network link to grow your network!'}
+                    {searchQuery ? 'No referrals match your search.' : 'No referrals yet. Share your referral code to grow your network!'}
                   </td>
                 </tr>
               )}
@@ -4773,7 +4773,7 @@ export const PackagesView: React.FC<PackagesViewProps> = ({ finance, profile, on
 
   const handleCopy = async () => {
     if (!referralData) return;
-    await navigator.clipboard.writeText(referralData.link);
+    await navigator.clipboard.writeText(referralData.code);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
   };
@@ -4891,13 +4891,13 @@ export const PackagesView: React.FC<PackagesViewProps> = ({ finance, profile, on
                      className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-indigo-600 text-white font-bold text-sm hover:bg-indigo-700 active:scale-95 transition-all disabled:opacity-50"
                   >
                      <LinkIcon className="w-4 h-4" />
-                     {isGenerating ? 'Generating...' : 'Generate My Referral Link'}
+                     {isGenerating ? 'Generating...' : 'Generate My Referral Code'}
                   </button>
                ) : (
                   <div className="space-y-2">
-                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Your Referral Link</p>
+                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Your Referral Code</p>
                      <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-2xl border border-slate-100">
-                        <span className="text-xs font-mono text-slate-600 flex-1 truncate">{referralData.link}</span>
+                        <span className="text-xs font-mono text-indigo-600 font-bold flex-1">{referralData.code}</span>
                         <button
                            onClick={handleCopy}
                            className="flex-shrink-0 p-2 rounded-xl bg-white border border-slate-200 hover:border-indigo-400 transition-colors"
@@ -4905,7 +4905,7 @@ export const PackagesView: React.FC<PackagesViewProps> = ({ finance, profile, on
                            {copied ? <CheckCheck className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4 text-slate-500" />}
                         </button>
                      </div>
-                     {copied && <p className="text-xs text-green-600 font-medium text-center">Link copied!</p>}
+                     {copied && <p className="text-xs text-green-600 font-medium text-center">Code copied!</p>}
                   </div>
                )}
 
@@ -5306,7 +5306,7 @@ export const RequestCard = React.forwardRef<HTMLDivElement, RequestCardProps>(
         case 'assigned':  return 'bg-indigo-500';
         case 'accepted':  return 'bg-amber-500';
         case 'fulfilled': return 'bg-emerald-500';
-        case 'completed': return 'bg-emerald-500 text-white';
+        case 'completed': return 'bg-emerald-600';
         case 'rejected':  return 'bg-slate-300';
         case 'disputed':  return 'bg-rose-500';
         case 'pending':   return 'bg-blue-500';
@@ -5516,8 +5516,14 @@ export const RequestCard = React.forwardRef<HTMLDivElement, RequestCardProps>(
             )}
             {request.status === 'fulfilled' && (
               <div className="w-full py-2 bg-green-50 text-green-600 text-xs font-bold rounded-xl flex items-center justify-center gap-2 border border-green-100">
+                <Clock className="w-3.5 h-3.5" />
+                Awaiting Customer Confirmation
+              </div>
+            )}
+            {request.status === 'completed' && (
+              <div className="w-full py-2 bg-emerald-600 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-2 shadow-sm shadow-emerald-200">
                 <CheckCircle className="w-3.5 h-3.5" />
-                Service Fulfilled
+                Transaction Completed
               </div>
             )}
           </div>
@@ -8607,6 +8613,169 @@ const SettingsView: React.FC<SettingsViewProps> = ({ role }) => {
 export default SettingsView;
 
 
+===== FILE: components\shared\BroadcastInbox.tsx =====
+
+import React, { useState, useEffect } from 'react';
+import { Megaphone, Calendar, History, Search, Loader2, Sparkles, Bell, Inbox } from 'lucide-react';
+import api from '../../utils/api';
+import { motion, AnimatePresence } from 'framer-motion';
+
+interface Broadcast {
+    id: string;
+    title: string;
+    content?: string;
+    target: string;
+    createdAt: string;
+}
+
+const BroadcastInbox: React.FC = () => {
+    const [history, setHistory] = useState<Broadcast[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [searchQuery, setSearchQuery] = useState('');
+
+    const fetchHistory = async () => {
+        try {
+            setIsLoading(true);
+            const response = await api.get('/admin/broadcasts');
+            setHistory(response.data);
+        } catch (err) {
+            console.error('Failed to fetch broadcast history:', err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchHistory();
+    }, []);
+
+    const filteredHistory = history.filter(b => 
+        b.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+        b.content?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    return (
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-1000">
+            {/* Header */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="w-10 h-10 bg-indigo-50 rounded-xl flex items-center justify-center border border-indigo-100">
+                            <Megaphone className="w-5 h-5 text-indigo-600" />
+                        </div>
+                        <h1 className="text-3xl font-black text-slate-800 tracking-tight">System Notices</h1>
+                    </div>
+                    <p className="text-slate-500 font-medium tracking-tight">Stay updated with the latest announcements from the platform administration.</p>
+                </div>
+
+                <div className="relative w-full md:w-80">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <input 
+                        type="text" 
+                        placeholder="Search notices..." 
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full pl-11 pr-4 py-2.5 bg-white border border-slate-100 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all font-medium text-slate-700 shadow-sm"
+                    />
+                </div>
+            </div>
+
+            {/* List */}
+            <div className="grid grid-cols-1 gap-6">
+                {isLoading ? (
+                    Array.from({ length: 3 }).map((_, i) => (
+                        <div key={i} className="h-40 bg-white rounded-[2rem] animate-pulse border border-slate-100 shadow-sm" />
+                    ))
+                ) : filteredHistory.length > 0 ? (
+                    <AnimatePresence mode='popLayout'>
+                        {filteredHistory.map((b, index) => (
+                            <motion.div 
+                                key={b.id}
+                                layout
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: index * 0.05 }}
+                                className="bg-white border border-slate-100 p-8 rounded-[2.5rem] shadow-xl shadow-slate-200/10 hover:border-indigo-500/20 transition-all group relative overflow-hidden"
+                            >
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full -mr-16 -mt-16 blur-[40px] group-hover:bg-indigo-500/10 transition-colors" />
+                                
+                                <div className="flex flex-col md:flex-row md:items-start gap-6 relative z-10">
+                                    <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center border border-slate-100 group-hover:bg-indigo-50 group-hover:border-indigo-100 transition-colors shrink-0">
+                                        <Bell className="w-6 h-6 text-slate-400 group-hover:text-indigo-600 transition-colors" />
+                                    </div>
+                                    
+                                    <div className="flex-1 space-y-3">
+                                        <div className="flex flex-wrap items-center gap-3">
+                                            <span className={`text-[10px] font-black px-2.5 py-1 rounded-lg tracking-widest uppercase border ${
+                                                b.target === 'EVERYONE' ? 'bg-indigo-50 text-indigo-600 border-indigo-100' :
+                                                b.target === 'AGENT' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
+                                                'bg-amber-50 text-amber-600 border-amber-100'
+                                            }`}>
+                                                {b.target}
+                                            </span>
+                                            <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                                <Calendar className="w-3.5 h-3.5" />
+                                                {new Date(b.createdAt).toLocaleDateString(undefined, { 
+                                                    month: 'long', 
+                                                    day: 'numeric', 
+                                                    year: 'numeric' 
+                                                })}
+                                            </div>
+                                        </div>
+                                        
+                                        <h2 className="text-xl font-black text-slate-900 group-hover:text-indigo-600 transition-colors uppercase tracking-tight">
+                                            {b.title}
+                                        </h2>
+                                        
+                                        {b.content && (
+                                            <p className="text-sm text-slate-500 font-medium leading-relaxed max-w-4xl whitespace-pre-wrap">
+                                                {b.content}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </AnimatePresence>
+                ) : (
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="flex flex-col items-center justify-center py-20 bg-white/50 rounded-[3rem] border border-white border-dashed text-center space-y-4 shadow-sm"
+                    >
+                        <div className="w-20 h-20 bg-slate-50 rounded-full flex items-center justify-center text-slate-200">
+                            <Inbox className="w-10 h-10" />
+                        </div>
+                        <div>
+                            <h3 className="text-xl font-bold text-slate-800">No active notices</h3>
+                            <p className="text-slate-500 max-w-xs text-sm font-medium">
+                                Your inbox is clean. System announcements will appear here as they are broadcasted.
+                            </p>
+                        </div>
+                    </motion.div>
+                )}
+            </div>
+
+            {/* Authority Disclaimer */}
+            <div className="bg-slate-900 rounded-[2.5rem] p-8 text-white relative overflow-hidden group shadow-2xl">
+                <div className="absolute bottom-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px]" />
+                <div className="flex items-center gap-4 relative z-10">
+                    <Sparkles className="w-8 h-8 text-indigo-400" />
+                    <div>
+                        <h5 className="text-sm font-black uppercase tracking-widest mb-1">Authenticated Delivery</h5>
+                        <p className="text-xs text-slate-400 font-medium leading-relaxed">
+                            These communications are official platform directives issued by the Super Admin authority.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default BroadcastInbox;
+
+
 ===== FILE: components\StatusBadge.tsx =====
 
 import React from 'react';
@@ -8624,6 +8793,8 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
         return 'bg-indigo-500/10 text-indigo-600 border-indigo-500/30';
       case 'fulfilled':
         return 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30';
+      case 'completed':
+        return 'bg-emerald-600 text-white border-emerald-600 shadow-sm shadow-emerald-200';
       case 'disputed':
         return 'bg-rose-500/10 text-rose-600 border-rose-500/30';
       case 'cancelled':
@@ -9306,7 +9477,34 @@ const BroadcastNotices: React.FC = () => {
                                         }`}>
                                             {b.target}
                                         </span>
-                                        <button className="p-1.5 opacity-0 group-hover:opacity-100 transition-opacity text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg">
+                                        <button 
+                                            onClick={async () => {
+                                                const confirmed = await showConfirm({
+                                                    title: 'Terminate Broadcast Archive',
+                                                    message: 'This operation will permanently erase this transmission from the global system history. This action cannot be rescinded.',
+                                                    confirmText: 'Execute Deletion',
+                                                    type: 'danger'
+                                                });
+                                                if (confirmed) {
+                                                    try {
+                                                        await api.delete(`/admin/broadcasts/${b.id}`);
+                                                        showAlert({
+                                                            title: 'Archive Updated',
+                                                            message: 'Transmission successfully expunged from system records.',
+                                                            type: 'success'
+                                                        });
+                                                        fetchHistory();
+                                                    } catch (err) {
+                                                        showAlert({
+                                                            title: 'Deletion Failure',
+                                                            message: 'Failed to purge record from the database layer.',
+                                                            type: 'error'
+                                                        });
+                                                    }
+                                                }
+                                            }}
+                                            className="p-1.5 opacity-0 group-hover:opacity-100 transition-opacity text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg"
+                                        >
                                             <Trash2 className="w-4 h-4" />
                                         </button>
                                     </div>
@@ -11987,7 +12185,7 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
     { id: 'analytics', icon: BarChart4, label: 'Analytics' },
     { id: 'tiers', icon: Package, label: 'Tier Architecture' },
     { id: 'disputes', icon: ShieldAlert, label: 'Disputes Audit', badge: disputeCount > 0 ? disputeCount : undefined },
-    { id: 'admins', icon: ShieldAlert, label: 'Admin Management' },
+    { id: 'admins', icon: User, label: 'Admin Management' },
     { id: 'config', icon: Settings2, label: 'Config Flags' },
     { id: 'notices', icon: Megaphone, label: 'Broadcasts' },
     { id: 'audit', icon: History, label: 'Audit Logs' },
@@ -12005,6 +12203,7 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
     // { id: 'network', icon: Network, label: 'Network Intelligence' },
     { id: 'agents', icon: Users, label: 'Agents' },
     { id: 'operators', icon: Users, label: 'Operators' },
+    { id: 'notices', icon: Megaphone, label: 'Broadcasts' },
   ];
 
   const operatorTools = [
@@ -12012,6 +12211,7 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
     { id: 'finance', icon: Wallet, label: 'Financial Desk', badge: payoutCount > 0 ? payoutCount : undefined },
     { id: 'disputes', icon: ShieldAlert, label: 'Disputes', badge: disputeCount > 0 ? disputeCount : undefined },
     { id: 'history', icon: History, label: 'Assignment History' },
+    { id: 'notices', icon: Megaphone, label: 'Broadcasts' },
   ];
 
   const agentTools = [
@@ -12020,6 +12220,7 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
     { id: 'network', icon: Users, label: 'My Network' },
     { id: 'packages', icon: Package, label: 'Packages' },
     { id: 'profile', icon: User, label: 'Profile' },
+    { id: 'notices', icon: Megaphone, label: 'Broadcasts' },
   ];
 
   const customerTools = [
@@ -19283,6 +19484,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import OperationsHub from '../components/admin/OperationsHub';
 import FinancialDesk from '../components/admin/FinancialDesk';
 import NetworkIntelligence from '../components/admin/NetworkIntelligence';
+import BroadcastInbox from '../components/shared/BroadcastInbox';
 
 const AdminDashboard: React.FC = () => {
     const [currentView, setCurrentView] = useState('overview');
@@ -19316,6 +19518,7 @@ const AdminDashboard: React.FC = () => {
                         {currentView === 'overview' && <OperationsHub />}
                         {currentView === 'finance' && <FinancialDesk />}
                         {currentView === 'network' && <NetworkIntelligence />}
+                        {currentView === 'notices' && <BroadcastInbox />}
 
                         {/* Existing Views */}
                         {currentView === 'zones' && <ZoneCoverage />}
@@ -19372,7 +19575,6 @@ import { Can } from '../components/ui/Can';
 import { Action } from '../hooks/usePermissions';
 import { useSocket } from '../contexts/SocketContext';
 
-import FeedbackForm, { FeedbackData } from '../components/FeedbackForm';
 import WalletSummary from '../components/agent/WalletSummary';
 import ProfileView from '../components/agent/ProfileView';
 import { PackageSelection } from '../components/agent/PackageSelection';
@@ -19382,8 +19584,9 @@ import { FocusBoard } from '../components/agent/FocusBoard';
 import { Skeleton } from '../components/ui/Skeleton';
 import TransferMatchModal from '../components/agent/TransferMatchModal';
 import PayoutRequestModal from '../components/agent/PayoutRequestModal';
+import BroadcastInbox from '../components/shared/BroadcastInbox';
 
-type DashboardView = 'focus' | 'earnings' | 'network' | 'packages' | 'profile';
+type DashboardView = 'focus' | 'earnings' | 'network' | 'packages' | 'profile' | 'notices';
 
 const DashboardSkeleton: React.FC = () => (
   <div className="max-w-6xl mx-auto space-y-8 animate-pulse pt-4">
@@ -19517,7 +19720,6 @@ const AgentDashboard: React.FC = () => {
   };
 
   const [requests, setRequests] = useState<any[]>([]);
-  const [feedbackRequest, setFeedbackRequest] = useState<{id: string, transactionId: string, customerName: string} | null>(null);
   const [transferringJobId, setTransferringJobId] = useState<string | null>(null);
   const [isPayoutModalOpen, setIsPayoutModalOpen] = useState(false);
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
@@ -19620,33 +19822,14 @@ const AgentDashboard: React.FC = () => {
       try {
         addProcessingId(jobId);
         await api.patch(`/transactions/${jobId}/complete`);
-        setFeedbackRequest({ id: jobId, transactionId, customerName });
+        await fetchData();
+        showAlert({ title: 'Success', message: 'Job marked as complete. Waiting for customer confirmation.', type: 'success' });
       } catch (error) {
         console.error('Failed to complete job:', error);
         showAlert({ title: 'Error', message: 'Failed to mark job as complete.', type: 'error' });
       } finally {
         removeProcessingId(jobId);
       }
-    }
-  };
-
-  const handleFeedbackSubmit = async (data: FeedbackData) => {
-    try {
-      if (!feedbackRequest?.transactionId) return;
-      
-      await api.post(`/mediation/transaction/${feedbackRequest.transactionId}/feedback`, {
-        content: data.comment,
-        rating: data.rating,
-        categories: data.categories
-      });
-
-      setRequests(prev => prev.map(req => 
-        req.id === feedbackRequest.id ? { ...req, status: 'completed' } : req
-      ));
-      setFeedbackRequest(null);
-    } catch (error) {
-      console.error('Failed to submit feedback:', error);
-      showAlert({ title: 'Error', message: 'Feedback submitted locally, but failed to sync with mediation server.', type: 'error' });
     }
   };
 
@@ -19802,29 +19985,11 @@ const AgentDashboard: React.FC = () => {
                 onNavigateToPackages={() => setView('packages')} 
              />
           )}
-        </motion.div>
-      </AnimatePresence>
 
-      {/* Feedback Modal Overlay */}
-      <AnimatePresence>
-        {feedbackRequest && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setFeedbackRequest(null)}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
-            />
-            <FeedbackForm
-              requestId={feedbackRequest.id}
-              recipientName={feedbackRequest.customerName}
-              role="agent"
-              onClose={() => setFeedbackRequest(null)}
-              onSubmit={handleFeedbackSubmit}
-            />
-          </div>
-        )}
+          {view === 'notices' && (
+             <BroadcastInbox />
+          )}
+        </motion.div>
       </AnimatePresence>
 
       <TransferMatchModal
@@ -19961,7 +20126,7 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Package, Clock, CheckCircle, Star, MessageSquare, Plus, X, MapPin, Calendar, ChevronRight, Info, AlertTriangle } from 'lucide-react';
+import { Package, Clock, CheckCircle, Star, MessageSquare, Plus, X, MapPin, Calendar, ChevronRight, Info, AlertTriangle, Filter, History } from 'lucide-react';
 import FeedbackForm, { FeedbackData } from '../components/FeedbackForm';
 import RequestIntakeFlow from '../components/RequestIntakeFlow';
 import { agentRequests } from '../utils/mockData';
@@ -19981,6 +20146,7 @@ const CustomerDashboard: React.FC = () => {
   const { showAlert } = useModal();
   const showSuccess = location.state?.requestSubmitted;
   const [confirmationRequest, setConfirmationRequest] = useState<any | null>(null);
+  const [statusFilter, setStatusFilter] = useState<'active' | 'history'>('active');
 
   const fetchRequests = async () => {
     setIsLoading(true);
@@ -20103,18 +20269,62 @@ const CustomerDashboard: React.FC = () => {
             <h1 className="text-3xl font-extrabold text-slate-900">My Requests</h1>
             <p className="text-slate-500 mt-2">Track your property and furniture requests here.</p>
           </div>
-          <button
-            onClick={() => setIsRequestModalOpen(true)}
-            className="bg-erkata-primary text-white font-bold px-6 py-3 rounded-xl hover:bg-erkata-secondary transition-all flex items-center gap-2 shadow-lg shadow-erkata-primary/20"
-          >
-            <Plus className="w-5 h-5" />
-            Submit New Request
-          </button>
+          <div className="flex items-center gap-3">
+            {/* Status Filter Toggle */}
+            <div className="bg-white p-1 rounded-2xl border border-slate-200 shadow-sm flex items-center">
+              <button
+                onClick={() => setStatusFilter('active')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+                  statusFilter === 'active' 
+                    ? 'bg-erkata-primary text-white shadow-md shadow-erkata-primary/20' 
+                    : 'text-slate-500 hover:bg-slate-50'
+                }`}
+              >
+                <Clock className="w-4 h-4" />
+                Active
+              </button>
+              <button
+                onClick={() => setStatusFilter('history')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+                  statusFilter === 'history' 
+                    ? 'bg-slate-900 text-white shadow-md shadow-slate-900/20' 
+                    : 'text-slate-500 hover:bg-slate-50'
+                }`}
+              >
+                <History className="w-4 h-4" />
+                History
+              </button>
+            </div>
+
+            <button
+              onClick={() => setIsRequestModalOpen(true)}
+              className="bg-erkata-primary text-white font-bold px-6 py-3 rounded-xl hover:bg-erkata-secondary transition-all flex items-center gap-2 shadow-lg shadow-erkata-primary/20"
+            >
+              <Plus className="w-5 h-5" />
+              New Request
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {requests.length > 0 ? (
-            requests.map((request, index) => (
+          {requests
+            .filter(req => {
+              if (statusFilter === 'active') {
+                return ['pending', 'assigned', 'fulfilled', 'disputed'].includes(req.status);
+              } else {
+                return ['completed', 'cancelled'].includes(req.status);
+              }
+            })
+            .length > 0 ? (
+            requests
+              .filter(req => {
+                if (statusFilter === 'active') {
+                  return ['pending', 'assigned', 'fulfilled', 'disputed'].includes(req.status);
+                } else {
+                  return ['completed', 'cancelled'].includes(req.status);
+                }
+              })
+              .map((request, index) => (
               <motion.div
                 key={request.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -20158,7 +20368,8 @@ const CustomerDashboard: React.FC = () => {
                   <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                     <div
                       className={`h-full bg-erkata-primary transition-all duration-700 ${
-                        request.status === 'fulfilled' ? 'w-full' : 
+                        request.status === 'completed' ? 'w-full bg-emerald-500' :
+                        request.status === 'fulfilled' ? 'w-[90%]' : 
                         request.status === 'assigned' ? 'w-2/3' : 
                         request.status === 'disputed' ? 'w-full bg-rose-500' : 'w-1/3'
                       }`}
@@ -20166,9 +20377,13 @@ const CustomerDashboard: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Actions Footer */}
                 <div className="p-4 border-t border-slate-100 mt-auto">
-                  {request.status === 'fulfilled' ? (
+                  {request.status === 'completed' ? (
+                    <div className="w-full text-emerald-600 text-sm font-bold py-3 rounded-xl flex items-center justify-center gap-2 bg-emerald-50 border border-emerald-100">
+                      <CheckCircle className="w-4 h-4" />
+                      Transaction Closed
+                    </div>
+                  ) : request.status === 'fulfilled' ? (
                     <div className="flex flex-col gap-2">
                       <div className="w-full text-green-600 text-sm font-medium py-3 rounded-xl flex items-center justify-center gap-2 bg-green-50">
                         <CheckCircle className="w-4 h-4" />
@@ -21183,6 +21398,7 @@ import { useSocket } from '../contexts/SocketContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import DisputesBoard from '../components/operator/DisputesBoard.tsx';
 import FinancialDesk from '../components/operator/FinancialDesk';
+import BroadcastInbox from '../components/shared/BroadcastInbox';
 
 const OperatorDashboard: React.FC = () => {
     const { user } = useAuth();
@@ -21514,9 +21730,33 @@ const OperatorDashboard: React.FC = () => {
                                                     <div className="w-7 h-7 rounded-full bg-slate-100 border-2 border-white flex items-center justify-center text-[10px] font-black text-slate-500">C</div>
                                                     <div className="w-7 h-7 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center text-[10px] font-black text-slate-600">A</div>
                                                 </div>
-                                                <button className="text-[11px] font-bold text-indigo-600 hover:text-indigo-700 transition-colors">
-                                                    Details →
-                                                </button>
+                                                <div className="flex gap-2">
+                                                    {tx.request?.status === 'fulfilled' && (
+                                                        <button 
+                                                            onClick={async (e) => {
+                                                                e.stopPropagation();
+                                                                if (window.confirm('Force completion of this request? This will release the agent commission.')) {
+                                                                    try {
+                                                                        await api.post(`/requests/${tx.requestId}/force-complete`);
+                                                                        showAlert({ title: 'Success', message: 'Request force completed.', type: 'success' });
+                                                                        // Refresh transactions
+                                                                        const res = await api.get('/transactions');
+                                                                        setActiveTransactions(res.data);
+                                                                    } catch (err) {
+                                                                        console.error(err);
+                                                                        showAlert({ title: 'Error', message: 'Failed to force complete.', type: 'error' });
+                                                                    }
+                                                                }
+                                                            }}
+                                                            className="text-[11px] font-black px-3 py-1 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all shadow-sm shadow-emerald-200"
+                                                        >
+                                                            FORCE COMPLETE
+                                                        </button>
+                                                    )}
+                                                    <button className="text-[11px] font-bold text-indigo-600 hover:text-indigo-700 transition-colors">
+                                                        Details →
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     ))
@@ -21571,6 +21811,12 @@ const OperatorDashboard: React.FC = () => {
                     {currentView === 'finance' && (
                         <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm min-h-[600px]">
                              <FinancialDesk />
+                        </div>
+                    )}
+
+                    {currentView === 'notices' && (
+                        <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm min-h-[600px]">
+                             <BroadcastInbox />
                         </div>
                     )}
                 </motion.div>

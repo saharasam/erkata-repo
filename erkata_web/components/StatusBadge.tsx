@@ -13,6 +13,8 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
         return 'bg-indigo-500/10 text-indigo-600 border-indigo-500/30';
       case 'fulfilled':
         return 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30';
+      case 'completed':
+        return 'bg-emerald-600 text-white border-emerald-600 shadow-sm shadow-emerald-200';
       case 'disputed':
         return 'bg-rose-500/10 text-rose-600 border-rose-500/30';
       case 'cancelled':

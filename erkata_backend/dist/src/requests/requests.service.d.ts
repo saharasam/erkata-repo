@@ -3,6 +3,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
 import { UserRole, Prisma } from '@prisma/client';
 import { RedisPresenceService } from '../common/redis/redis-presence.service';
+import { AglpService } from '../aglp/aglp.service';
 import { Queue } from 'bullmq';
 export interface CreateRequestDto {
     category: string;
@@ -21,8 +22,9 @@ export declare class RequestsService implements OnModuleInit {
     private readonly prisma;
     private readonly eventEmitter;
     private readonly presence;
+    private readonly aglpService;
     private readonly timeoutQueue;
-    constructor(prisma: PrismaService, eventEmitter: EventEmitter2, presence: RedisPresenceService, timeoutQueue: Queue);
+    constructor(prisma: PrismaService, eventEmitter: EventEmitter2, presence: RedisPresenceService, aglpService: AglpService, timeoutQueue: Queue);
     onModuleInit(): Promise<void>;
     private redact;
     createRequest(customerId: string, dto: CreateRequestDto): Promise<{
@@ -443,5 +445,77 @@ export declare class RequestsService implements OnModuleInit {
         completedAt: Date | null;
         isEscalated: boolean;
     })[]>;
+    forceComplete(requestId: string, operatorId: string, note?: string): Promise<{
+        customer: {
+            id: string;
+            email: string;
+            passwordHash: string | null;
+            fullName: string;
+            phone: string;
+            role: import(".prisma/client").$Enums.UserRole;
+            tier: import(".prisma/client").$Enums.Tier;
+            isActive: boolean;
+            zoneId: string | null;
+            referredById: string | null;
+            createdAt: Date;
+            aglpBalance: Prisma.Decimal;
+            aglpPending: Prisma.Decimal;
+            aglpWithdrawn: Prisma.Decimal;
+            referralCode: string | null;
+            isOnline: boolean;
+            lastAssignmentAt: Date | null;
+            missedAssignments: number;
+            warningCount: number;
+            avatarUrl: string | null;
+        };
+        matches: ({
+            agent: {
+                id: string;
+                email: string;
+                passwordHash: string | null;
+                fullName: string;
+                phone: string;
+                role: import(".prisma/client").$Enums.UserRole;
+                tier: import(".prisma/client").$Enums.Tier;
+                isActive: boolean;
+                zoneId: string | null;
+                referredById: string | null;
+                createdAt: Date;
+                aglpBalance: Prisma.Decimal;
+                aglpPending: Prisma.Decimal;
+                aglpWithdrawn: Prisma.Decimal;
+                referralCode: string | null;
+                isOnline: boolean;
+                lastAssignmentAt: Date | null;
+                missedAssignments: number;
+                warningCount: number;
+                avatarUrl: string | null;
+            };
+        } & {
+            id: string;
+            requestId: string;
+            agentId: string;
+            operatorId: string | null;
+            status: string;
+            assignedAt: Date;
+        })[];
+    } & {
+        id: string;
+        zoneId: string;
+        createdAt: Date;
+        status: import(".prisma/client").$Enums.RequestStatus;
+        customerId: string;
+        category: string;
+        type: string;
+        description: string;
+        budgetMin: Prisma.Decimal | null;
+        budgetMax: Prisma.Decimal | null;
+        metadata: Prisma.JsonValue;
+        woreda: string;
+        assignedOperatorId: string | null;
+        assignmentPushedAt: Date | null;
+        completedAt: Date | null;
+        isEscalated: boolean;
+    }>;
 }
 export {};

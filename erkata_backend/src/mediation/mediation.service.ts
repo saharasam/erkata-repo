@@ -25,13 +25,24 @@ export class MediationService {
     rating: number,
     categories: string[] = [],
   ) {
-    // 1. Validate transaction existence
+    // 1. Validate transaction existence with associated request
     const transaction = await this.prisma.transaction.findUnique({
       where: { id: transactionId },
-      include: { feedbacks: true },
+      include: { 
+        feedbacks: true,
+        match: { include: { request: true } }
+      },
     });
 
     if (!transaction) throw new NotFoundException('Transaction not found');
+
+    // 1b. Ensure the request is in COMPLETED state (Proof of work/satisfaction)
+    const request = transaction.match?.request;
+    if (!request || request.status !== RequestStatus.completed) {
+      throw new BadRequestException(
+        'Feedback can only be submitted for completed transactions',
+      );
+    }
 
     // 2. Validate author and role
     const author = await this.prisma.profile.findUnique({

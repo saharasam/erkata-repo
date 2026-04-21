@@ -35,7 +35,6 @@ import { Can } from '../components/ui/Can';
 import { Action } from '../hooks/usePermissions';
 import { useSocket } from '../contexts/SocketContext';
 
-import FeedbackForm, { FeedbackData } from '../components/FeedbackForm';
 import WalletSummary from '../components/agent/WalletSummary';
 import ProfileView from '../components/agent/ProfileView';
 import { PackageSelection } from '../components/agent/PackageSelection';
@@ -181,7 +180,6 @@ const AgentDashboard: React.FC = () => {
   };
 
   const [requests, setRequests] = useState<any[]>([]);
-  const [feedbackRequest, setFeedbackRequest] = useState<{id: string, transactionId: string, customerName: string} | null>(null);
   const [transferringJobId, setTransferringJobId] = useState<string | null>(null);
   const [isPayoutModalOpen, setIsPayoutModalOpen] = useState(false);
   const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
@@ -284,33 +282,14 @@ const AgentDashboard: React.FC = () => {
       try {
         addProcessingId(jobId);
         await api.patch(`/transactions/${jobId}/complete`);
-        setFeedbackRequest({ id: jobId, transactionId, customerName });
+        await fetchData();
+        showAlert({ title: 'Success', message: 'Job marked as complete. Waiting for customer confirmation.', type: 'success' });
       } catch (error) {
         console.error('Failed to complete job:', error);
         showAlert({ title: 'Error', message: 'Failed to mark job as complete.', type: 'error' });
       } finally {
         removeProcessingId(jobId);
       }
-    }
-  };
-
-  const handleFeedbackSubmit = async (data: FeedbackData) => {
-    try {
-      if (!feedbackRequest?.transactionId) return;
-      
-      await api.post(`/mediation/transaction/${feedbackRequest.transactionId}/feedback`, {
-        content: data.comment,
-        rating: data.rating,
-        categories: data.categories
-      });
-
-      setRequests(prev => prev.map(req => 
-        req.id === feedbackRequest.id ? { ...req, status: 'completed' } : req
-      ));
-      setFeedbackRequest(null);
-    } catch (error) {
-      console.error('Failed to submit feedback:', error);
-      showAlert({ title: 'Error', message: 'Feedback submitted locally, but failed to sync with mediation server.', type: 'error' });
     }
   };
 
@@ -471,28 +450,6 @@ const AgentDashboard: React.FC = () => {
              <BroadcastInbox />
           )}
         </motion.div>
-      </AnimatePresence>
-
-      {/* Feedback Modal Overlay */}
-      <AnimatePresence>
-        {feedbackRequest && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setFeedbackRequest(null)}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
-            />
-            <FeedbackForm
-              requestId={feedbackRequest.id}
-              recipientName={feedbackRequest.customerName}
-              role="agent"
-              onClose={() => setFeedbackRequest(null)}
-              onSubmit={handleFeedbackSubmit}
-            />
-          </div>
-        )}
       </AnimatePresence>
 
       <TransferMatchModal

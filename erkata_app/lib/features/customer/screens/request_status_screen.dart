@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:erkata_app/core/constants/constants.dart';
+import 'package:erkata_app/core/models/user_role.dart';
 import 'package:erkata_app/core/models/request_status.dart';
 import 'package:erkata_app/core/models/service_request.dart';
 import 'package:erkata_app/core/models/request_type.dart';
 import 'package:erkata_app/core/theme/colors.dart';
 import 'package:erkata_app/shared/widgets/erkata_screen_header.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:intl/intl.dart';
+import '../state/customer_requests_provider.dart';
 
-class RequestStatusScreen extends HookWidget {
+class RequestStatusScreen extends HookConsumerWidget {
   const RequestStatusScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final requestsAsync = ref.watch(customerRequestsProvider);
     final selectedRequest = useState<ServiceRequest?>(null);
     final selectedFilter = useState<String>('All');
 
@@ -110,30 +114,52 @@ class RequestStatusScreen extends HookWidget {
 
             // Request List
             Expanded(
-              child: ListView.separated(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 8,
-                ),
-                itemCount: mockRequests.length,
-                separatorBuilder: (context, index) =>
-                    const SizedBox(height: 12),
-                itemBuilder: (context, index) {
-                  final req = mockRequests[index];
+              child: RefreshIndicator(
+                onRefresh: () => ref.read(customerRequestsProvider.notifier).refresh(),
+                child: requestsAsync.when(
+                  data: (requests) {
+                    final filteredRequests = requests.where((req) {
+                      if (selectedFilter.value == 'All') return true;
+                      return req.status.name.toLowerCase() == selectedFilter.value.toLowerCase();
+                    }).toList();
 
-                  // Simple filter logic for mock data
-                  if (selectedFilter.value != 'All') {
-                    if (req.status.label.toLowerCase() !=
-                        selectedFilter.value.toLowerCase()) {
-                      return const SizedBox.shrink();
+                    if (filteredRequests.isEmpty) {
+                      return ListView(
+                        children: [
+                          SizedBox(height: MediaQuery.of(context).size.height * 0.2),
+                          const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(40.0),
+                              child: Text(
+                                'No requests found for this status.',
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
                     }
-                  }
 
-                  return _RequestCard(
-                    request: req,
-                    onTap: () => selectedRequest.value = req,
-                  );
-                },
+                    return ListView.separated(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 8,
+                      ),
+                      itemCount: filteredRequests.length,
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(height: 12),
+                      itemBuilder: (context, index) {
+                        final req = filteredRequests[index];
+                        return _RequestCard(
+                          request: req,
+                          onTap: () => selectedRequest.value = req,
+                        );
+                      },
+                    );
+                  },
+                  loading: () => const Center(child: CircularProgressIndicator()),
+                  error: (err, stack) => Center(child: Text('Error: $err')),
+                ),
               ),
             ),
           ],
@@ -294,6 +320,11 @@ class _StatusBadge extends StatelessWidget {
       case RequestStatus.disputed:
         bg = AppColors.errorRedLight;
         text = AppColors.errorRed;
+        break;
+      case RequestStatus.completed:
+        bg = AppColors.successGreenLight;
+        text = AppColors.successGreen;
+        break;
     }
 
     return Container(
@@ -315,39 +346,65 @@ class _StatusBadge extends StatelessWidget {
   }
 }
 
-class _RequestDetailView extends StatelessWidget {
+class _RequestDetailView extends HookConsumerWidget {
   final ServiceRequest request;
   final VoidCallback onClose;
 
   const _RequestDetailView({required this.request, required this.onClose});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isProcessing = useState(false);
     final steps = [
       {
         'label': 'Request Submitted',
-        'date': 'Oct 24, 10:00 AM',
+        'date': formatStatusDate(request.createdAt),
         'status': 'completed',
         'desc': 'Your request has been received.',
       },
       {
-        'label': 'Agent Assigned',
-        'date': 'Oct 24, 02:30 PM',
-        'status': 'completed',
-        'desc': 'Dawit M. is handling your case.',
+        'label': 'Routing to Operator',
+        'date': request.assignedOperatorId != null
+            ? formatStatusDate(request.assignmentPushedAt)
+            : (request.status == RequestStatus.pending ? 'In Progress' : 'Completed'),
+        'status': request.assignedOperatorId != null ? 'completed' : 'current',
+        'desc': request.assignedOperatorId != null
+            ? 'An operator is coordinating your request.'
+            : 'Waiting for an available operator.',
       },
       {
-        'label': 'Searching',
-        'date': 'In Progress',
-        'status': 'current',
-        'desc': 'Agent is verifying availability.',
+        'label': 'Agent Assignment',
+        'date': request.assignedAgentName != null
+            ? 'Completed'
+            : (request.assignedOperatorId != null ? 'In Progress' : 'Pending'),
+        'status': request.assignedAgentName != null
+            ? 'completed'
+            : (request.assignedOperatorId != null ? 'current' : 'pending'),
+        'desc': request.assignedAgentName != null
+            ? '${request.assignedAgentName} is handling your case.'
+            : 'Finding the best agent for your location.',
       },
       {
-        'label': 'Fulfilled',
-        'date': 'Pending',
-        'status': 'pending',
-        'desc': 'Items delivered / Contract signed.',
+        'label': 'Fulfillment',
+        'date': request.status == RequestStatus.completed || request.status == RequestStatus.fulfilled || request.status == RequestStatus.disputed
+            ? 'Processed'
+            : (request.status == RequestStatus.assigned ? 'In Progress' : 'Pending'),
+        'status': request.status == RequestStatus.completed || request.status == RequestStatus.fulfilled || request.status == RequestStatus.disputed
+            ? 'completed'
+            : (request.status == RequestStatus.assigned ? 'current' : 'pending'),
+        'desc': request.status == RequestStatus.completed
+            ? 'Service confirmed as successful.'
+            : (request.status == RequestStatus.disputed ? 'Service reported as incomplete.' : 'Agent is fulfilling your request.'),
       },
+      if (request.status == RequestStatus.disputed || request.status == RequestStatus.completed)
+        {
+          'label': 'Resolution',
+          'date': request.status == RequestStatus.completed ? 'Settled' : 'Under Review',
+          'status': request.status == RequestStatus.completed ? 'completed' : 'current',
+          'desc': request.status == RequestStatus.completed
+              ? 'Request finalized and closed.'
+              : 'Our operator is reviewing your dispute report.',
+        },
     ];
 
     return Scaffold(
@@ -539,21 +596,144 @@ class _RequestDetailView extends StatelessWidget {
                     ),
 
                     const SizedBox(height: 24),
-                    SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: OutlinedButton.icon(
-                        onPressed: () {},
-                        icon: const Icon(Icons.message_outlined, size: 18),
-                        label: const Text('Contact Agent'),
-                        style: OutlinedButton.styleFrom(
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
+                    // Confirmation Section (Only for Fulfilled)
+                    if (request.status == RequestStatus.fulfilled) ...[
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: AppColors.brandPrimary.withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: AppColors.brandPrimary.withValues(alpha: 0.1),
                           ),
-                          foregroundColor: AppColors.brandPrimary,
-                          side: const BorderSide(color: AppColors.brandPrimary),
+                        ),
+                        child: Column(
+                          children: [
+                            const Row(
+                              children: [
+                                Icon(
+                                  Icons.verified_user_outlined,
+                                  color: AppColors.brandPrimary,
+                                  size: 24,
+                                ),
+                                SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    'Confirm Fulfillment',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: AppColors.brandPrimary,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            const Text(
+                              'Please verify that the agent has completed the service to your satisfaction. Once confirmed, payment will be released to the agent.',
+                              style: TextStyle(
+                                color: AppColors.darkGrey,
+                                fontSize: 13,
+                                height: 1.5,
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            Row(
+                              children: [
+                                // Dispute Button
+                                Expanded(
+                                  child: OutlinedButton(
+                                    onPressed: isProcessing.value ? null : () async {
+                                      isProcessing.value = true;
+                                      try {
+                                        await ref.read(customerRequestsProvider.notifier).confirmFulfillment(request.id, false);
+                                      } finally {
+                                        isProcessing.value = false;
+                                      }
+                                    },
+                                    style: OutlinedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(vertical: 12),
+                                      side: const BorderSide(color: AppColors.errorRed),
+                                      foregroundColor: AppColors.errorRed,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                    child: const Text('Dispute'),
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                // Confirm Button
+                                Expanded(
+                                  flex: 2,
+                                  child: ElevatedButton(
+                                    onPressed: isProcessing.value ? null : () async {
+                                      isProcessing.value = true;
+                                      try {
+                                        await ref.read(customerRequestsProvider.notifier).confirmFulfillment(request.id, true);
+                                      } finally {
+                                        isProcessing.value = false;
+                                      }
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.successGreen,
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(vertical: 12),
+                                      elevation: 0,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                    ),
+                                    child: isProcessing.value 
+                                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                                      : const Text('Yes, it\'s done', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
+                      const SizedBox(height: 24),
+                    ],
+                    SizedBox(
+                      width: double.infinity,
+                      height: 54,
+                      child: request.status == RequestStatus.completed 
+                        ? ElevatedButton.icon(
+                            onPressed: () {
+                              context.push(
+                                '/feedback',
+                                extra: {
+                                  'requestId': request.id,
+                                  'recipientName': request.assignedAgentName ?? 'Assigned Agent',
+                                  'role': UserRole.customer,
+                                },
+                              );
+                            },
+                            icon: const Icon(Icons.star_outline, size: 20),
+                            label: const Text('Leave Feedback', style: TextStyle(fontWeight: FontWeight.bold)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.brandPrimary,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                            ),
+                          )
+                        : OutlinedButton.icon(
+                            onPressed: () {},
+                            icon: const Icon(Icons.message_outlined, size: 18),
+                            label: const Text('Contact Agent'),
+                            style: OutlinedButton.styleFrom(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              foregroundColor: AppColors.brandPrimary,
+                              side: const BorderSide(color: AppColors.brandPrimary),
+                            ),
+                          ),
                     ),
                     const SizedBox(height: 40),
                   ],
@@ -564,5 +744,15 @@ class _RequestDetailView extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+String formatStatusDate(String? isoDate) {
+  if (isoDate == null) return 'Pending';
+  try {
+    final dt = DateTime.parse(isoDate);
+    return DateFormat('MMM d, h:mm a').format(dt);
+  } catch (_) {
+    return 'Pending';
   }
 }

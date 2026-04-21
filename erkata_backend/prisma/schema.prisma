@@ -349,6 +349,7 @@ enum RequestStatus {
   pending
   assigned
   fulfilled
+  completed
   disputed
   cancelled
 }

@@ -78,5 +78,6 @@ export declare class AglpService {
         profileId: string;
     }>;
     releaseEscrow(tx: Prisma.TransactionClient, aglpTxId: string): Promise<void>;
+    releaseCommissionByMatchId(tx: Prisma.TransactionClient, matchId: string): Promise<void>;
     cancelWithdrawal(tx: Prisma.TransactionClient, aglpTxId: string, requestedByProfileId: string): Promise<void>;
 }

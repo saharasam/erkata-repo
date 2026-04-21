@@ -62,6 +62,9 @@ let RequestsController = class RequestsController {
     voidDispute(id, req, note) {
         return this.requestsService.voidDispute(id, req.user.id, note);
     }
+    forceComplete(id, req, note) {
+        return this.requestsService.forceComplete(id, req.user.id, note);
+    }
 };
 exports.RequestsController = RequestsController;
 __decorate([
@@ -170,6 +173,16 @@ __decorate([
     __metadata("design:paramtypes", [String, Object, String]),
     __metadata("design:returntype", void 0)
 ], RequestsController.prototype, "voidDispute", null);
+__decorate([
+    (0, common_1.Post)(':id/force-complete'),
+    (0, guards_1.RequirePermission)(permissions_1.Action.RESOLVE_DISPUTE),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Req)()),
+    __param(2, (0, common_1.Body)('note')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, String]),
+    __metadata("design:returntype", void 0)
+], RequestsController.prototype, "forceComplete", null);
 exports.RequestsController = RequestsController = __decorate([
     (0, common_1.Controller)('requests'),
     (0, common_1.UseGuards)(guards_1.JwtAuthGuard, guards_1.RolesGuard),

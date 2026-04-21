@@ -200,12 +200,6 @@ class _CustomBottomNavBar extends StatelessWidget {
               label: 'Activity',
             ),
             _NavItem(
-              path: '/payment',
-              icon: Icons.credit_card_outlined,
-              activeIcon: Icons.credit_card,
-              label: 'Pay',
-            ),
-            _NavItem(
               path: '/profile',
               icon: Icons.person_outline,
               activeIcon: Icons.person,
@@ -613,7 +607,8 @@ enum RequestStatus {
   pending('Pending'),
   assigned('Assigned'),
   fulfilled('Fulfilled'),
-  disputed('Disputed');
+  disputed('Disputed'),
+  completed('Completed');
 
   final String label;
   const RequestStatus(this.label);
@@ -648,6 +643,11 @@ class ServiceRequest {
   final String? description;
   final String? customerName;
   final String? customerPhone;
+  final String? createdAt;
+  final String? assignmentPushedAt;
+  final String? completedAt;
+  final String? assignedOperatorId;
+  final String? assignedAgentName;
 
   ServiceRequest({
     required this.id,
@@ -660,24 +660,34 @@ class ServiceRequest {
     this.description,
     this.customerName,
     this.customerPhone,
+    this.createdAt,
+    this.assignmentPushedAt,
+    this.completedAt,
+    this.assignedOperatorId,
+    this.assignedAgentName,
   });
 
   factory ServiceRequest.fromJson(Map<String, dynamic> json) {
     // Handle nested customer if present
     final customer = json['customer'] as Map<String, dynamic>?;
-    
+
     // Handle nested zone if present
     final zoneName = json['zone']?['name'] as String? ?? 'Unknown Zone';
     final woreda = json['woreda'] as String? ?? '';
-    
+
     // Format budget
-    final min = json['budgetMin'] as num?;
-    final max = json['budgetMax'] as num?;
+    final rawMin = json['budgetMin'];
+    final rawMax = json['budgetMax'];
+    final min = rawMin != null ? num.tryParse(rawMin.toString()) : null;
+    final max = rawMax != null ? num.tryParse(rawMax.toString()) : null;
+    
     String budgetStr = 'Negotiable';
     if (min != null && max != null) {
       budgetStr = '${min.toInt()} - ${max.toInt()} ETB';
     } else if (min != null) {
       budgetStr = 'Min ${min.toInt()} ETB';
+    } else if (max != null) {
+      budgetStr = 'Max ${max.toInt()} ETB';
     }
 
     // Format date
@@ -689,22 +699,46 @@ class ServiceRequest {
       } catch (_) {}
     }
 
+    // Robust status parsing
+    RequestStatus status = RequestStatus.pending;
+    final statusStr = json['status'] as String?;
+    if (statusStr != null) {
+      try {
+        status = RequestStatus.values.firstWhere(
+          (s) => s.name.toLowerCase() == statusStr.toLowerCase(),
+          orElse: () => RequestStatus.pending,
+        );
+      } catch (_) {
+        status = RequestStatus.pending;
+      }
+    }
+
+    // Extract assigned agent name if available
+    String? assignedAgent;
+    final matches = json['matches'] as List?;
+    if (matches != null && matches.isNotEmpty) {
+      final agent = matches[0]['agent'] as Map<String, dynamic>?;
+      assignedAgent = agent?['fullName'] as String?;
+    }
+
     return ServiceRequest(
-      id: json['id'] as String,
-      type: json['type'] == 'furniture' 
-          ? RequestType.furniture 
+      id: json['id'] as String? ?? '',
+      type: json['type'] == 'furniture'
+          ? RequestType.furniture
           : RequestType.realEstate,
       title: json['category'] as String? ?? 'Request',
       date: formattedDate,
-      status: RequestStatus.values.firstWhere(
-        (s) => s.name == (json['status'] as String),
-        orElse: () => RequestStatus.pending,
-      ),
+      status: status,
       location: '$zoneName${woreda.isNotEmpty ? ", Woreda $woreda" : ""}',
       budget: budgetStr,
       description: json['description'] as String?,
       customerName: customer?['fullName'] as String?,
       customerPhone: customer?['phone'] as String?,
+      createdAt: json['createdAt'] as String?,
+      assignmentPushedAt: json['assignmentPushedAt'] as String?,
+      completedAt: json['completedAt'] as String?,
+      assignedOperatorId: json['assignedOperatorId'] as String?,
+      assignedAgentName: assignedAgent,
     );
   }
 
@@ -925,6 +959,109 @@ class AuthInterceptor extends QueuedInterceptorsWrapper {
 }
 
 
+===== FILE: core\network\socket_service.dart =====
+
+import 'dart:async';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:socket_io_client/socket_io_client.dart' as socket_io;
+
+import '../config/env_config.dart';
+import '../storage/token_storage.dart';
+import '../../features/auth/state/auth_provider.dart';
+
+class SocketService {
+  final TokenStorage _tokenStorage;
+  socket_io.Socket? _socket;
+  final _notificationController = StreamController<Map<String, dynamic>>.broadcast();
+
+  SocketService(this._tokenStorage);
+
+  Stream<Map<String, dynamic>> get notifications => _notificationController.stream;
+
+  bool get isConnected => _socket?.connected ?? false;
+
+  Future<void> connect() async {
+    if (_socket != null && _socket!.connected) return;
+
+    final token = await _tokenStorage.getAccessToken();
+    if (token == null) {
+      debugPrint('[SocketService] No token found, skipping connection');
+      return;
+    }
+
+    debugPrint('[SocketService] Connecting to ${EnvConfig.baseUrl}...');
+    
+    _socket = socket_io.io(EnvConfig.baseUrl, 
+      socket_io.OptionBuilder()
+        .setTransports(['websocket'])
+        .setAuth({'token': 'Bearer $token'})
+        .enableAutoConnect()
+        .enableReconnection()
+        .build()
+    );
+
+    _socket!.onConnect((_) {
+      debugPrint('[SocketService] Connected to gateway');
+    });
+
+    _socket!.onDisconnect((_) {
+      debugPrint('[SocketService] Disconnected from gateway');
+    });
+
+    _socket!.onConnectError((err) {
+      debugPrint('[SocketService] Connection error: $err');
+    });
+
+    _socket!.on('notification', (data) {
+      debugPrint('[SocketService] Notification received: $data');
+      if (data is Map<String, dynamic>) {
+        _notificationController.add(data);
+      }
+    });
+
+    _socket!.connect();
+  }
+
+  void disconnect() {
+    debugPrint('[SocketService] Manually disconnecting...');
+    _socket?.disconnect();
+    _socket = null;
+  }
+  
+  void dispose() {
+    _notificationController.close();
+    disconnect();
+  }
+}
+
+final socketServiceProvider = Provider<SocketService>((ref) {
+  final storage = ref.watch(tokenStorageProvider);
+  final service = SocketService(storage);
+  
+  // Watch auth state to connect/disconnect reactively
+  ref.listen(authProvider, (previous, next) {
+    if (next.isAuthenticated) {
+      service.connect();
+    } else {
+      service.disconnect();
+    }
+  });
+
+  // Handle initial authenticated state (e.g. after hydration)
+  final authState = ref.read(authProvider);
+  if (authState.isAuthenticated) {
+    service.connect();
+  }
+
+  ref.onDispose(() {
+    service.dispose();
+  });
+
+  return service;
+});
+
+
 ===== FILE: core\router\router.dart =====
 
 import 'package:go_router/go_router.dart';
@@ -935,7 +1072,7 @@ import '../../features/auth/screens/auth_screen.dart';
 import '../../features/customer/screens/home_screen.dart';
 import '../../features/customer/screens/request_intake_screen.dart';
 import '../../features/customer/screens/request_status_screen.dart';
-import '../../features/customer/screens/payment_screen.dart';
+
 import '../../features/customer/screens/profile_screen.dart';
 import '../../features/agent/screens/agent_dashboard_screen.dart';
 import '../../features/agent/screens/agent_subscription_screen.dart';
@@ -981,8 +1118,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       // 2. Authenticated users
-      // If an authenticated user tries to go to Login or Intake, send them to their dashboard
-      if (isLoggingIn || isIntake || isSplash) {
+      // If an authenticated user tries to go to Login or Splash, send them to their dashboard
+      // Note: We allow them to go to /request/new intentionally.
+      if (isLoggingIn || isSplash) {
         final role = authState.user?.role;
         return role == 'agent' ? '/agent' : '/home';
       }
@@ -1080,10 +1218,6 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/request/status',
             builder: (context, state) => const RequestStatusScreen(),
-          ),
-          GoRoute(
-            path: '/payment',
-            builder: (context, state) => const PaymentScreen(),
           ),
           GoRoute(
             path: '/profile',
@@ -3835,6 +3969,14 @@ class _StatusBadge extends StatelessWidget {
         bgColor = Theme.of(context).brightness == Brightness.dark
             ? Colors.red.withValues(alpha: 0.1)
             : Colors.red[50]!;
+        break;
+      case RequestStatus.completed:
+        color = Theme.of(context).brightness == Brightness.dark
+            ? Colors.greenAccent
+            : Colors.green[700]!;
+        bgColor = Theme.of(context).brightness == Brightness.dark
+            ? Colors.green.withValues(alpha: 0.1)
+            : Colors.green[50]!;
         break;
     }
 
@@ -6986,6 +7128,7 @@ import 'package:erkata_app/core/models/request_status.dart';
 import 'package:erkata_app/core/models/user_role.dart';
 import 'package:erkata_app/core/theme/colors.dart';
 import 'package:erkata_app/shared/widgets/erkata_screen_header.dart';
+import '../../auth/state/auth_provider.dart';
 import '../state/customer_requests_provider.dart';
 
 class HomeScreen extends HookConsumerWidget {
@@ -6994,6 +7137,8 @@ class HomeScreen extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final requestsAsync = ref.watch(customerRequestsProvider);
+    final authState = ref.watch(authProvider);
+    final userName = authState.user?.fullName?.split(' ').first ?? 'User';
 
     return Scaffold(
       floatingActionButton: const Padding(
@@ -7005,7 +7150,7 @@ class HomeScreen extends HookConsumerWidget {
           child: Column(
             children: [
               ErkataScreenHeader(
-                title: 'Selam, Abebe ',
+                title: 'Selam, $userName',
                 subtitle: 'Find your perfect home or furniture.',
                 actionIcon: Icons.person,
                 onActionTap: () => context.push('/profile'),
@@ -7315,6 +7460,10 @@ class HomeScreen extends HookConsumerWidget {
         return isDark
             ? Colors.red.withValues(alpha: 0.1)
             : Colors.red.shade50;
+      case RequestStatus.completed:
+        return isDark
+            ? AppColors.successGreen.withValues(alpha: 0.2)
+            : AppColors.successGreenLight;
     }
   }
 
@@ -7331,6 +7480,8 @@ class HomeScreen extends HookConsumerWidget {
             : const Color.fromARGB(255, 189, 228, 191);
       case RequestStatus.disputed:
         return isDark ? Colors.red[300]! : Colors.red;
+      case RequestStatus.completed:
+        return isDark ? Colors.greenAccent : AppColors.successGreen;
     }
   }
 }
@@ -7622,477 +7773,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                         );
                       },
                     ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-
-===== FILE: features\customer\screens\payment_screen.dart =====
-
-import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:go_router/go_router.dart';
-import '../../../core/theme/colors.dart';
-import '../../../shared/widgets/erkata_screen_header.dart';
-import '../../../shared/widgets/primary_button.dart';
-
-class PaymentScreen extends HookWidget {
-  const PaymentScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final method = useState('telebirr');
-
-    return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            // Custom Header
-            ErkataScreenHeader(
-              title: 'Secure Payment',
-              subtitle: 'Review and confirm your payment',
-              onActionTap: () => context.pop(),
-            ),
-
-            // Scrollable body
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.only(
-                  left: 20,
-                  right: 20,
-                  top: 4,
-                  bottom: 120,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // Amount Card
-                    Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        gradient: AppColors.primaryGradient,
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.brandPrimary.withValues(
-                              alpha: 0.3,
-                            ),
-                            spreadRadius: 2,
-                            blurRadius: 20,
-                            offset: const Offset(0, 10),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Total Amount Due',
-                            style: TextStyle(
-                              color: AppColors.pureWhite.withValues(alpha: 0.7),
-                              fontSize: 14,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          RichText(
-                            text: const TextSpan(
-                              text: '1,500.00 ',
-                              style: TextStyle(
-                                fontSize: 32,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.pureWhite,
-                              ),
-                              children: [
-                                TextSpan(
-                                  text: 'ETB',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.normal,
-                                    color: Colors.white70,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          Divider(
-                            color: AppColors.pureWhite.withValues(alpha: 0.15),
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Service Fee (10%)',
-                                style: TextStyle(
-                                  color: AppColors.pureWhite.withValues(
-                                    alpha: 0.6,
-                                  ),
-                                  fontSize: 13,
-                                ),
-                              ),
-                              const Text(
-                                '150.00 ETB',
-                                style: TextStyle(
-                                  color: AppColors.pureWhite,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Method Selection
-                    Text(
-                      'SELECT METHOD',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    _MethodButton(
-                      id: 'telebirr',
-                      label: 'Telebirr',
-                      subLabel: 'Mobile Wallet',
-                      icon: Icons.smartphone,
-                      color: AppColors.brandPrimary,
-                      isSelected: method.value == 'telebirr',
-                      onTap: () => method.value = 'telebirr',
-                    ),
-                    const SizedBox(height: 12),
-                    _MethodButton(
-                      id: 'chapa',
-                      label: 'Chapa',
-                      subLabel: 'Local Cards / Bank Transfer',
-                      icon: Icons.shield,
-                      color: AppColors.successGreen,
-                      isSelected: method.value == 'chapa',
-                      onTap: () => method.value = 'chapa',
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Dynamic Content
-                    AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 300),
-                      child: Container(
-                        key: ValueKey(method.value),
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: Theme.of(context).colorScheme.outlineVariant,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.shadow.withValues(alpha: 0.05),
-                              blurRadius: 8,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: method.value == 'telebirr'
-                            ? Column(
-                                children: [
-                                  Icon(
-                                    Icons.qr_code_2,
-                                    size: 100,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurface,
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    'Scan to Pay',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onSurface,
-                                    ),
-                                  ),
-                                  Text(
-                                    'Use your Telebirr SuperApp',
-                                    style: TextStyle(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onSurfaceVariant,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                ],
-                              )
-                            : Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'CARD NUMBER',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onSurfaceVariant,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  TextField(
-                                    decoration: InputDecoration(
-                                      hintText: '0000 0000 0000 0000',
-                                      filled: true,
-                                      fillColor: Theme.of(
-                                        context,
-                                      ).colorScheme.surface,
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                        borderSide: BorderSide.none,
-                                      ),
-                                      prefixIcon: const Icon(
-                                        Icons.credit_card,
-                                        size: 20,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              'EXPIRY',
-                                              style: TextStyle(
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.bold,
-                                                color: Theme.of(
-                                                  context,
-                                                ).colorScheme.onSurfaceVariant,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 8),
-                                            TextField(
-                                              decoration: InputDecoration(
-                                                hintText: 'MM/YY',
-                                                filled: true,
-                                                fillColor: Theme.of(
-                                                  context,
-                                                ).colorScheme.surface,
-                                                border: OutlineInputBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(12),
-                                                  borderSide: BorderSide.none,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      const SizedBox(width: 16),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              'CVV',
-                                              style: TextStyle(
-                                                fontSize: 11,
-                                                fontWeight: FontWeight.bold,
-                                                color: Theme.of(
-                                                  context,
-                                                ).colorScheme.onSurfaceVariant,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 8),
-                                            TextField(
-                                              decoration: InputDecoration(
-                                                hintText: '123',
-                                                filled: true,
-                                                fillColor: Theme.of(
-                                                  context,
-                                                ).colorScheme.surface,
-                                                border: OutlineInputBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(12),
-                                                  borderSide: BorderSide.none,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-
-                    // Pay Button
-                    PrimaryButton(
-                      text: 'Pay 1,500.00 ETB',
-                      icon: Icons.lock,
-                      onPressed: () {},
-                    ),
-                    const SizedBox(height: 16),
-                    Center(
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.verified_user,
-                            size: 14,
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurfaceVariant,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            'ENCRYPTED & SECURE',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _MethodButton extends StatelessWidget {
-  final String id;
-  final String label;
-  final String subLabel;
-  final IconData icon;
-  final Color color;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _MethodButton({
-    required this.id,
-    required this.label,
-    required this.subLabel,
-    required this.icon,
-    required this.color,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? color.withValues(alpha: 0.05)
-              : Theme.of(context).colorScheme.surface,
-          border: Border.all(
-            color: isSelected
-                ? color
-                : Theme.of(context).colorScheme.outlineVariant,
-            width: 2,
-          ),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Theme.of(
-                context,
-              ).colorScheme.shadow.withValues(alpha: 0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: color, size: 20),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                  Text(
-                    subLabel,
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Container(
-              width: 20,
-              height: 20,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: isSelected
-                      ? color
-                      : Theme.of(context).colorScheme.outline,
-                  width: 2,
-                ),
-              ),
-              child: isSelected
-                  ? Center(
-                      child: Container(
-                        width: 10,
-                        height: 10,
-                        decoration: BoxDecoration(
-                          color: color,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    )
-                  : null,
             ),
           ],
         ),
@@ -8470,6 +8150,8 @@ import '../../../shared/widgets/erkata_dropdown.dart';
 import '../../auth/state/auth_provider.dart';
 import '../data/repositories/request_repository.dart';
 import '../state/customer_requests_provider.dart';
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // Form Data Model
 class RequestFormData {
@@ -8546,6 +8228,56 @@ class RequestFormData {
       attachments: attachments ?? this.attachments,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'type': type?.name,
+      'furnitureContext': furnitureContext,
+      'furnitureCategories': furnitureCategories,
+      'quantity': quantity,
+      'condition': condition,
+      'propertyType': propertyType,
+      'bedrooms': bedrooms,
+      'kifleKetema': kifleKetema,
+      'wereda': wereda,
+      'address': address,
+      'budgetMin': budgetMin,
+      'budgetMax': budgetMax,
+      'urgency': urgency,
+      'deliveryDate': deliveryDate,
+      'notes': notes,
+      'attachments': attachments,
+    };
+  }
+
+  factory RequestFormData.fromJson(Map<String, dynamic> json) {
+    RequestType? parsedType;
+    if (json['type'] != null) {
+      parsedType = RequestType.values.firstWhere(
+        (e) => e.name == json['type'],
+        orElse: () => RequestType.furniture,
+      );
+    }
+    
+    return RequestFormData(
+      type: parsedType,
+      furnitureContext: json['furnitureContext'] ?? 'Home',
+      furnitureCategories: List<String>.from(json['furnitureCategories'] ?? []),
+      quantity: json['quantity'] ?? 1,
+      condition: json['condition'] ?? 'New',
+      propertyType: json['propertyType'] ?? 'Apartment',
+      bedrooms: json['bedrooms'] ?? 1,
+      kifleKetema: json['kifleKetema'] ?? '',
+      wereda: json['wereda'] ?? '',
+      address: json['address'] ?? '',
+      budgetMin: json['budgetMin'] ?? 5000,
+      budgetMax: json['budgetMax'] ?? 50000,
+      urgency: json['urgency'] ?? 'Standard',
+      deliveryDate: json['deliveryDate'] ?? '',
+      notes: json['notes'] ?? '',
+      attachments: json['attachments'] ?? 0,
+    );
+  }
 }
 
 class RequestIntakeScreen extends HookConsumerWidget {
@@ -8560,6 +8292,59 @@ class RequestIntakeScreen extends HookConsumerWidget {
     // Page Controller for transitions
     final pageController = usePageController();
     final isLoading = useState(false);
+    final isInitialized = useState(false);
+
+    // Draft handling
+    Future<void> saveDraft(RequestFormData data, int currentStep) async {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final jsonData = jsonEncode(data.toJson());
+        await prefs.setString('erkata_pending_request', jsonData);
+        await prefs.setInt('erkata_pending_request_step', currentStep);
+      } catch (e) {
+        debugPrint('Failed to save draft: $e');
+      }
+    }
+
+    Future<void> loadDraft() async {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final savedData = prefs.getString('erkata_pending_request');
+        final savedStep = prefs.getInt('erkata_pending_request_step');
+        
+        if (savedData != null) {
+          final decoded = jsonDecode(savedData);
+          formData.value = RequestFormData.fromJson(decoded);
+          if (savedStep != null && savedStep > 1 && savedStep <= totalSteps) {
+            step.value = savedStep;
+          }
+        }
+      } catch (e) {
+        debugPrint('Failed to load draft: $e');
+      } finally {
+        isInitialized.value = true;
+      }
+    }
+
+    Future<void> clearDraft() async {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('erkata_pending_request');
+      await prefs.remove('erkata_pending_request_step');
+    }
+
+    // Load initial draft
+    useEffect(() {
+      loadDraft();
+      return null;
+    }, []);
+
+    // Save draft on change
+    useEffect(() {
+      if (isInitialized.value) {
+        saveDraft(formData.value, step.value);
+      }
+      return null;
+    }, [formData.value, step.value]);
 
     // Sync PageController with step state
     useEffect(() {
@@ -8585,6 +8370,10 @@ class RequestIntakeScreen extends HookConsumerWidget {
         final data = formData.value;
         
         // Map form to Backend DTO
+        final zoneLabel = kKifleKetemas
+            .firstWhere((k) => k.value == data.kifleKetema, orElse: () => kKifleKetemas.first)
+            .label;
+
         final payload = {
           'category': data.type == RequestType.realEstate 
               ? data.propertyType 
@@ -8600,7 +8389,7 @@ class RequestIntakeScreen extends HookConsumerWidget {
             'furnitureCategories': data.furnitureCategories,
           },
           'locationZone': {
-            'kifleKetema': data.kifleKetema,
+            'kifleKetema': zoneLabel,
             'woreda': data.wereda,
           },
         };
@@ -8610,6 +8399,8 @@ class RequestIntakeScreen extends HookConsumerWidget {
         // Refresh the customer history
         ref.read(customerRequestsProvider.notifier).refresh();
         
+        await clearDraft();
+
         if (context.mounted) {
           context.go('/request/status');
         }
@@ -9804,19 +9595,22 @@ class _AnimatedChip extends HookWidget {
 
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:erkata_app/core/constants/constants.dart';
 import 'package:erkata_app/core/models/request_status.dart';
 import 'package:erkata_app/core/models/service_request.dart';
 import 'package:erkata_app/core/models/request_type.dart';
 import 'package:erkata_app/core/theme/colors.dart';
 import 'package:erkata_app/shared/widgets/erkata_screen_header.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:intl/intl.dart';
+import '../state/customer_requests_provider.dart';
 
-class RequestStatusScreen extends HookWidget {
+class RequestStatusScreen extends HookConsumerWidget {
   const RequestStatusScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final requestsAsync = ref.watch(customerRequestsProvider);
     final selectedRequest = useState<ServiceRequest?>(null);
     final selectedFilter = useState<String>('All');
 
@@ -9914,30 +9708,52 @@ class RequestStatusScreen extends HookWidget {
 
             // Request List
             Expanded(
-              child: ListView.separated(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 8,
-                ),
-                itemCount: mockRequests.length,
-                separatorBuilder: (context, index) =>
-                    const SizedBox(height: 12),
-                itemBuilder: (context, index) {
-                  final req = mockRequests[index];
+              child: RefreshIndicator(
+                onRefresh: () => ref.read(customerRequestsProvider.notifier).refresh(),
+                child: requestsAsync.when(
+                  data: (requests) {
+                    final filteredRequests = requests.where((req) {
+                      if (selectedFilter.value == 'All') return true;
+                      return req.status.name.toLowerCase() == selectedFilter.value.toLowerCase();
+                    }).toList();
 
-                  // Simple filter logic for mock data
-                  if (selectedFilter.value != 'All') {
-                    if (req.status.label.toLowerCase() !=
-                        selectedFilter.value.toLowerCase()) {
-                      return const SizedBox.shrink();
+                    if (filteredRequests.isEmpty) {
+                      return ListView(
+                        children: [
+                          SizedBox(height: MediaQuery.of(context).size.height * 0.2),
+                          const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(40.0),
+                              child: Text(
+                                'No requests found for this status.',
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
                     }
-                  }
 
-                  return _RequestCard(
-                    request: req,
-                    onTap: () => selectedRequest.value = req,
-                  );
-                },
+                    return ListView.separated(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 8,
+                      ),
+                      itemCount: filteredRequests.length,
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(height: 12),
+                      itemBuilder: (context, index) {
+                        final req = filteredRequests[index];
+                        return _RequestCard(
+                          request: req,
+                          onTap: () => selectedRequest.value = req,
+                        );
+                      },
+                    );
+                  },
+                  loading: () => const Center(child: CircularProgressIndicator()),
+                  error: (err, stack) => Center(child: Text('Error: $err')),
+                ),
               ),
             ),
           ],
@@ -10098,6 +9914,11 @@ class _StatusBadge extends StatelessWidget {
       case RequestStatus.disputed:
         bg = AppColors.errorRedLight;
         text = AppColors.errorRed;
+        break;
+      case RequestStatus.completed:
+        bg = AppColors.successGreenLight;
+        text = AppColors.successGreen;
+        break;
     }
 
     return Container(
@@ -10130,27 +9951,44 @@ class _RequestDetailView extends StatelessWidget {
     final steps = [
       {
         'label': 'Request Submitted',
-        'date': 'Oct 24, 10:00 AM',
+        'date': formatStatusDate(request.createdAt),
         'status': 'completed',
         'desc': 'Your request has been received.',
       },
       {
-        'label': 'Agent Assigned',
-        'date': 'Oct 24, 02:30 PM',
-        'status': 'completed',
-        'desc': 'Dawit M. is handling your case.',
+        'label': 'Routing to Operator',
+        'date': request.assignedOperatorId != null
+            ? formatStatusDate(request.assignmentPushedAt)
+            : (request.status == RequestStatus.pending ? 'In Progress' : 'Completed'),
+        'status': request.assignedOperatorId != null ? 'completed' : 'current',
+        'desc': request.assignedOperatorId != null
+            ? 'An operator is coordinating your request.'
+            : 'Waiting for an available operator.',
       },
       {
-        'label': 'Searching',
-        'date': 'In Progress',
-        'status': 'current',
-        'desc': 'Agent is verifying availability.',
+        'label': 'Agent Assignment',
+        'date': request.assignedAgentName != null
+            ? 'Completed'
+            : (request.assignedOperatorId != null ? 'In Progress' : 'Pending'),
+        'status': request.assignedAgentName != null
+            ? 'completed'
+            : (request.assignedOperatorId != null ? 'current' : 'pending'),
+        'desc': request.assignedAgentName != null
+            ? '${request.assignedAgentName} is handling your case.'
+            : 'Finding the best agent for your location.',
       },
       {
-        'label': 'Fulfilled',
-        'date': 'Pending',
-        'status': 'pending',
-        'desc': 'Items delivered / Contract signed.',
+        'label': 'Fulfillment',
+        'date': request.completedAt != null
+            ? formatStatusDate(request.completedAt)
+            : (request.status == RequestStatus.completed ? 'Completed' : 'Pending'),
+        'status': request.status == RequestStatus.completed ||
+                request.status == RequestStatus.fulfilled
+            ? 'completed'
+            : (request.status == RequestStatus.assigned ? 'current' : 'pending'),
+        'desc': request.status == RequestStatus.completed
+            ? 'Transaction completed successfully.'
+            : 'Agent is fulfilling your request.',
       },
     ];
 
@@ -10368,6 +10206,16 @@ class _RequestDetailView extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+String formatStatusDate(String? isoDate) {
+  if (isoDate == null) return 'Pending';
+  try {
+    final dt = DateTime.parse(isoDate);
+    return DateFormat('MMM d, h:mm a').format(dt);
+  } catch (_) {
+    return 'Pending';
   }
 }
 
@@ -10788,23 +10636,50 @@ class _ToggleTile extends StatelessWidget {
 
 ===== FILE: features\customer\state\customer_requests_provider.dart =====
 
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/repositories/request_repository.dart';
 import '../../../../core/models/service_request.dart';
+import '../../../../core/network/socket_service.dart';
 
 class CustomerRequestsNotifier extends AsyncNotifier<List<ServiceRequest>> {
+  StreamSubscription? _socketSub;
+
   @override
   Future<List<ServiceRequest>> build() async {
+    // Watch socket service to ensure it's initialized
+    final socketService = ref.watch(socketServiceProvider);
+    
+    // Cleanup old subscription if any (though build() should only run once unless watched deps change)
+    _socketSub?.cancel();
+    
+    _socketSub = socketService.notifications.listen((notification) {
+      final type = notification['type'] as String?;
+      if (type != null && 
+          (type.startsWith('match.') || 
+           type.startsWith('request.') || 
+           type == 'notification')) {
+        // Trigger a background refresh when a relevant event occurs
+        refresh();
+      }
+    });
+
+    ref.onDispose(() {
+      _socketSub?.cancel();
+    });
+
     return ref.watch(requestRepositoryProvider).getMyRequests();
   }
 
   Future<void> refresh() async {
-    state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() => ref.read(requestRepositoryProvider).getMyRequests());
+    // Use guard to handle errors gracefully without breaking the stream
+    final result = await AsyncValue.guard(
+      () => ref.read(requestRepositoryProvider).getMyRequests()
+    );
+    state = result;
   }
 
   Future<void> confirmFulfillment(String id, bool confirmed) async {
-    // Optimistic UI or just standard reload
     await ref.read(requestRepositoryProvider).confirmFulfillment(id, confirmed);
     await refresh();
   }
@@ -12728,6 +12603,13 @@ class ErkataStatusBadge extends StatelessWidget {
               ? AppColors.errorRed.withValues(alpha: 0.2)
               : AppColors.errorRedLight,
           isDark ? AppColors.errorRedLight : AppColors.errorRed,
+        );
+      case RequestStatus.completed:
+        return (
+          isDark
+              ? AppColors.successGreen.withValues(alpha: 0.2)
+              : AppColors.successGreenLight,
+          isDark ? AppColors.successGreenLight : AppColors.successGreen,
         );
     }
   }

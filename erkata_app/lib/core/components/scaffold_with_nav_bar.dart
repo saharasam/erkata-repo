@@ -66,12 +66,6 @@ class _CustomBottomNavBar extends StatelessWidget {
               label: 'Activity',
             ),
             _NavItem(
-              path: '/payment',
-              icon: Icons.credit_card_outlined,
-              activeIcon: Icons.credit_card,
-              label: 'Pay',
-            ),
-            _NavItem(
               path: '/profile',
               icon: Icons.person_outline,
               activeIcon: Icons.person,

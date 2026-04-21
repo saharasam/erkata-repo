@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:erkata_app/core/models/request_status.dart';
-import 'package:erkata_app/core/models/user_role.dart';
 import 'package:erkata_app/core/theme/colors.dart';
 import 'package:erkata_app/shared/widgets/erkata_screen_header.dart';
+import '../../auth/state/auth_provider.dart';
 import '../state/customer_requests_provider.dart';
 
 class HomeScreen extends HookConsumerWidget {
@@ -13,6 +13,8 @@ class HomeScreen extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final requestsAsync = ref.watch(customerRequestsProvider);
+    final authState = ref.watch(authProvider);
+    final userName = authState.user?.fullName?.split(' ').first ?? 'User';
 
     return Scaffold(
       floatingActionButton: const Padding(
@@ -24,7 +26,7 @@ class HomeScreen extends HookConsumerWidget {
           child: Column(
             children: [
               ErkataScreenHeader(
-                title: 'Selam, Abebe ',
+                title: 'Selam, $userName',
                 subtitle: 'Find your perfect home or furniture.',
                 actionIcon: Icons.person,
                 onActionTap: () => context.push('/profile'),
@@ -152,20 +154,7 @@ class HomeScreen extends HookConsumerWidget {
                               return Material(
                                 color: Colors.transparent,
                                 child: InkWell(
-                                  onTap: () {
-                                    if (request.status == RequestStatus.fulfilled) {
-                                      context.push(
-                                        '/feedback',
-                                        extra: {
-                                          'requestId': request.id,
-                                          'recipientName': 'Assigned Agent',
-                                          'role': UserRole.customer,
-                                        },
-                                      );
-                                    } else {
-                                      context.push('/request/status');
-                                    }
-                                  },
+                                  onTap: () => context.push('/request/status'),
                                   borderRadius: BorderRadius.circular(16),
                                   child: Container(
                                     padding: const EdgeInsets.all(16),
@@ -334,6 +323,10 @@ class HomeScreen extends HookConsumerWidget {
         return isDark
             ? Colors.red.withValues(alpha: 0.1)
             : Colors.red.shade50;
+      case RequestStatus.completed:
+        return isDark
+            ? AppColors.successGreen.withValues(alpha: 0.2)
+            : AppColors.successGreenLight;
     }
   }
 
@@ -350,6 +343,8 @@ class HomeScreen extends HookConsumerWidget {
             : const Color.fromARGB(255, 189, 228, 191);
       case RequestStatus.disputed:
         return isDark ? Colors.red[300]! : Colors.red;
+      case RequestStatus.completed:
+        return isDark ? Colors.greenAccent : AppColors.successGreen;
     }
   }
 }

@@ -64,7 +64,7 @@ export const RequestCard = React.forwardRef<HTMLDivElement, RequestCardProps>(
         case 'assigned':  return 'bg-indigo-500';
         case 'accepted':  return 'bg-amber-500';
         case 'fulfilled': return 'bg-emerald-500';
-        case 'completed': return 'bg-emerald-500 text-white';
+        case 'completed': return 'bg-emerald-600';
         case 'rejected':  return 'bg-slate-300';
         case 'disputed':  return 'bg-rose-500';
         case 'pending':   return 'bg-blue-500';
@@ -274,8 +274,14 @@ export const RequestCard = React.forwardRef<HTMLDivElement, RequestCardProps>(
             )}
             {request.status === 'fulfilled' && (
               <div className="w-full py-2 bg-green-50 text-green-600 text-xs font-bold rounded-xl flex items-center justify-center gap-2 border border-green-100">
+                <Clock className="w-3.5 h-3.5" />
+                Awaiting Customer Confirmation
+              </div>
+            )}
+            {request.status === 'completed' && (
+              <div className="w-full py-2 bg-emerald-600 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-2 shadow-sm shadow-emerald-200">
                 <CheckCircle className="w-3.5 h-3.5" />
-                Service Fulfilled
+                Transaction Completed
               </div>
             )}
           </div>

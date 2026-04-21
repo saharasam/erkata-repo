@@ -11,6 +11,8 @@ import '../../../shared/widgets/erkata_dropdown.dart';
 import '../../auth/state/auth_provider.dart';
 import '../data/repositories/request_repository.dart';
 import '../state/customer_requests_provider.dart';
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // Form Data Model
 class RequestFormData {
@@ -87,6 +89,56 @@ class RequestFormData {
       attachments: attachments ?? this.attachments,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'type': type?.name,
+      'furnitureContext': furnitureContext,
+      'furnitureCategories': furnitureCategories,
+      'quantity': quantity,
+      'condition': condition,
+      'propertyType': propertyType,
+      'bedrooms': bedrooms,
+      'kifleKetema': kifleKetema,
+      'wereda': wereda,
+      'address': address,
+      'budgetMin': budgetMin,
+      'budgetMax': budgetMax,
+      'urgency': urgency,
+      'deliveryDate': deliveryDate,
+      'notes': notes,
+      'attachments': attachments,
+    };
+  }
+
+  factory RequestFormData.fromJson(Map<String, dynamic> json) {
+    RequestType? parsedType;
+    if (json['type'] != null) {
+      parsedType = RequestType.values.firstWhere(
+        (e) => e.name == json['type'],
+        orElse: () => RequestType.furniture,
+      );
+    }
+    
+    return RequestFormData(
+      type: parsedType,
+      furnitureContext: json['furnitureContext'] ?? 'Home',
+      furnitureCategories: List<String>.from(json['furnitureCategories'] ?? []),
+      quantity: json['quantity'] ?? 1,
+      condition: json['condition'] ?? 'New',
+      propertyType: json['propertyType'] ?? 'Apartment',
+      bedrooms: json['bedrooms'] ?? 1,
+      kifleKetema: json['kifleKetema'] ?? '',
+      wereda: json['wereda'] ?? '',
+      address: json['address'] ?? '',
+      budgetMin: json['budgetMin'] ?? 5000,
+      budgetMax: json['budgetMax'] ?? 50000,
+      urgency: json['urgency'] ?? 'Standard',
+      deliveryDate: json['deliveryDate'] ?? '',
+      notes: json['notes'] ?? '',
+      attachments: json['attachments'] ?? 0,
+    );
+  }
 }
 
 class RequestIntakeScreen extends HookConsumerWidget {
@@ -101,6 +153,59 @@ class RequestIntakeScreen extends HookConsumerWidget {
     // Page Controller for transitions
     final pageController = usePageController();
     final isLoading = useState(false);
+    final isInitialized = useState(false);
+
+    // Draft handling
+    Future<void> saveDraft(RequestFormData data, int currentStep) async {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final jsonData = jsonEncode(data.toJson());
+        await prefs.setString('erkata_pending_request', jsonData);
+        await prefs.setInt('erkata_pending_request_step', currentStep);
+      } catch (e) {
+        debugPrint('Failed to save draft: $e');
+      }
+    }
+
+    Future<void> loadDraft() async {
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        final savedData = prefs.getString('erkata_pending_request');
+        final savedStep = prefs.getInt('erkata_pending_request_step');
+        
+        if (savedData != null) {
+          final decoded = jsonDecode(savedData);
+          formData.value = RequestFormData.fromJson(decoded);
+          if (savedStep != null && savedStep > 1 && savedStep <= totalSteps) {
+            step.value = savedStep;
+          }
+        }
+      } catch (e) {
+        debugPrint('Failed to load draft: $e');
+      } finally {
+        isInitialized.value = true;
+      }
+    }
+
+    Future<void> clearDraft() async {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('erkata_pending_request');
+      await prefs.remove('erkata_pending_request_step');
+    }
+
+    // Load initial draft
+    useEffect(() {
+      loadDraft();
+      return null;
+    }, []);
+
+    // Save draft on change
+    useEffect(() {
+      if (isInitialized.value) {
+        saveDraft(formData.value, step.value);
+      }
+      return null;
+    }, [formData.value, step.value]);
 
     // Sync PageController with step state
     useEffect(() {
@@ -126,6 +231,10 @@ class RequestIntakeScreen extends HookConsumerWidget {
         final data = formData.value;
         
         // Map form to Backend DTO
+        final zoneLabel = kKifleKetemas
+            .firstWhere((k) => k.value == data.kifleKetema, orElse: () => kKifleKetemas.first)
+            .label;
+
         final payload = {
           'category': data.type == RequestType.realEstate 
               ? data.propertyType 
@@ -141,7 +250,7 @@ class RequestIntakeScreen extends HookConsumerWidget {
             'furnitureCategories': data.furnitureCategories,
           },
           'locationZone': {
-            'kifleKetema': data.kifleKetema,
+            'kifleKetema': zoneLabel,
             'woreda': data.wereda,
           },
         };
@@ -151,6 +260,8 @@ class RequestIntakeScreen extends HookConsumerWidget {
         // Refresh the customer history
         ref.read(customerRequestsProvider.notifier).refresh();
         
+        await clearDraft();
+
         if (context.mounted) {
           context.go('/request/status');
         }

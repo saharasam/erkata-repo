@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Package, Clock, CheckCircle, Star, MessageSquare, Plus, X, MapPin, Calendar, ChevronRight, Info, AlertTriangle } from 'lucide-react';
+import { Package, Clock, CheckCircle, Star, MessageSquare, Plus, X, MapPin, Calendar, ChevronRight, Info, AlertTriangle, Filter, History } from 'lucide-react';
 import FeedbackForm, { FeedbackData } from '../components/FeedbackForm';
 import RequestIntakeFlow from '../components/RequestIntakeFlow';
 import { agentRequests } from '../utils/mockData';
@@ -22,6 +22,7 @@ const CustomerDashboard: React.FC = () => {
   const { showAlert } = useModal();
   const showSuccess = location.state?.requestSubmitted;
   const [confirmationRequest, setConfirmationRequest] = useState<any | null>(null);
+  const [statusFilter, setStatusFilter] = useState<'active' | 'history'>('active');
 
   const fetchRequests = async () => {
     setIsLoading(true);
@@ -144,18 +145,62 @@ const CustomerDashboard: React.FC = () => {
             <h1 className="text-3xl font-extrabold text-slate-900">My Requests</h1>
             <p className="text-slate-500 mt-2">Track your property and furniture requests here.</p>
           </div>
-          <button
-            onClick={() => setIsRequestModalOpen(true)}
-            className="bg-erkata-primary text-white font-bold px-6 py-3 rounded-xl hover:bg-erkata-secondary transition-all flex items-center gap-2 shadow-lg shadow-erkata-primary/20"
-          >
-            <Plus className="w-5 h-5" />
-            Submit New Request
-          </button>
+          <div className="flex items-center gap-3">
+            {/* Status Filter Toggle */}
+            <div className="bg-white p-1 rounded-2xl border border-slate-200 shadow-sm flex items-center">
+              <button
+                onClick={() => setStatusFilter('active')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+                  statusFilter === 'active' 
+                    ? 'bg-erkata-primary text-white shadow-md shadow-erkata-primary/20' 
+                    : 'text-slate-500 hover:bg-slate-50'
+                }`}
+              >
+                <Clock className="w-4 h-4" />
+                Active
+              </button>
+              <button
+                onClick={() => setStatusFilter('history')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+                  statusFilter === 'history' 
+                    ? 'bg-slate-900 text-white shadow-md shadow-slate-900/20' 
+                    : 'text-slate-500 hover:bg-slate-50'
+                }`}
+              >
+                <History className="w-4 h-4" />
+                History
+              </button>
+            </div>
+
+            <button
+              onClick={() => setIsRequestModalOpen(true)}
+              className="bg-erkata-primary text-white font-bold px-6 py-3 rounded-xl hover:bg-erkata-secondary transition-all flex items-center gap-2 shadow-lg shadow-erkata-primary/20"
+            >
+              <Plus className="w-5 h-5" />
+              New Request
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {requests.length > 0 ? (
-            requests.map((request, index) => (
+          {requests
+            .filter(req => {
+              if (statusFilter === 'active') {
+                return ['pending', 'assigned', 'fulfilled', 'disputed'].includes(req.status);
+              } else {
+                return ['completed', 'cancelled'].includes(req.status);
+              }
+            })
+            .length > 0 ? (
+            requests
+              .filter(req => {
+                if (statusFilter === 'active') {
+                  return ['pending', 'assigned', 'fulfilled', 'disputed'].includes(req.status);
+                } else {
+                  return ['completed', 'cancelled'].includes(req.status);
+                }
+              })
+              .map((request, index) => (
               <motion.div
                 key={request.id}
                 initial={{ opacity: 0, y: 20 }}
@@ -199,7 +244,8 @@ const CustomerDashboard: React.FC = () => {
                   <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
                     <div
                       className={`h-full bg-erkata-primary transition-all duration-700 ${
-                        request.status === 'fulfilled' ? 'w-full' : 
+                        request.status === 'completed' ? 'w-full bg-emerald-500' :
+                        request.status === 'fulfilled' ? 'w-[90%]' : 
                         request.status === 'assigned' ? 'w-2/3' : 
                         request.status === 'disputed' ? 'w-full bg-rose-500' : 'w-1/3'
                       }`}
@@ -207,9 +253,13 @@ const CustomerDashboard: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Actions Footer */}
                 <div className="p-4 border-t border-slate-100 mt-auto">
-                  {request.status === 'fulfilled' ? (
+                  {request.status === 'completed' ? (
+                    <div className="w-full text-emerald-600 text-sm font-bold py-3 rounded-xl flex items-center justify-center gap-2 bg-emerald-50 border border-emerald-100">
+                      <CheckCircle className="w-4 h-4" />
+                      Transaction Closed
+                    </div>
+                  ) : request.status === 'fulfilled' ? (
                     <div className="flex flex-col gap-2">
                       <div className="w-full text-green-600 text-sm font-medium py-3 rounded-xl flex items-center justify-center gap-2 bg-green-50">
                         <CheckCircle className="w-4 h-4" />

@@ -13,6 +13,11 @@ class ServiceRequest {
   final String? description;
   final String? customerName;
   final String? customerPhone;
+  final String? createdAt;
+  final String? assignmentPushedAt;
+  final String? completedAt;
+  final String? assignedOperatorId;
+  final String? assignedAgentName;
 
   ServiceRequest({
     required this.id,
@@ -25,24 +30,34 @@ class ServiceRequest {
     this.description,
     this.customerName,
     this.customerPhone,
+    this.createdAt,
+    this.assignmentPushedAt,
+    this.completedAt,
+    this.assignedOperatorId,
+    this.assignedAgentName,
   });
 
   factory ServiceRequest.fromJson(Map<String, dynamic> json) {
     // Handle nested customer if present
     final customer = json['customer'] as Map<String, dynamic>?;
-    
+
     // Handle nested zone if present
     final zoneName = json['zone']?['name'] as String? ?? 'Unknown Zone';
     final woreda = json['woreda'] as String? ?? '';
-    
+
     // Format budget
-    final min = json['budgetMin'] as num?;
-    final max = json['budgetMax'] as num?;
+    final rawMin = json['budgetMin'];
+    final rawMax = json['budgetMax'];
+    final min = rawMin != null ? num.tryParse(rawMin.toString()) : null;
+    final max = rawMax != null ? num.tryParse(rawMax.toString()) : null;
+    
     String budgetStr = 'Negotiable';
     if (min != null && max != null) {
       budgetStr = '${min.toInt()} - ${max.toInt()} ETB';
     } else if (min != null) {
       budgetStr = 'Min ${min.toInt()} ETB';
+    } else if (max != null) {
+      budgetStr = 'Max ${max.toInt()} ETB';
     }
 
     // Format date
@@ -54,22 +69,46 @@ class ServiceRequest {
       } catch (_) {}
     }
 
+    // Robust status parsing
+    RequestStatus status = RequestStatus.pending;
+    final statusStr = json['status'] as String?;
+    if (statusStr != null) {
+      try {
+        status = RequestStatus.values.firstWhere(
+          (s) => s.name.toLowerCase() == statusStr.toLowerCase(),
+          orElse: () => RequestStatus.pending,
+        );
+      } catch (_) {
+        status = RequestStatus.pending;
+      }
+    }
+
+    // Extract assigned agent name if available
+    String? assignedAgent;
+    final matches = json['matches'] as List?;
+    if (matches != null && matches.isNotEmpty) {
+      final agent = matches[0]['agent'] as Map<String, dynamic>?;
+      assignedAgent = agent?['fullName'] as String?;
+    }
+
     return ServiceRequest(
-      id: json['id'] as String,
-      type: json['type'] == 'furniture' 
-          ? RequestType.furniture 
+      id: json['id'] as String? ?? '',
+      type: json['type'] == 'furniture'
+          ? RequestType.furniture
           : RequestType.realEstate,
       title: json['category'] as String? ?? 'Request',
       date: formattedDate,
-      status: RequestStatus.values.firstWhere(
-        (s) => s.name == (json['status'] as String),
-        orElse: () => RequestStatus.pending,
-      ),
+      status: status,
       location: '$zoneName${woreda.isNotEmpty ? ", Woreda $woreda" : ""}',
       budget: budgetStr,
       description: json['description'] as String?,
       customerName: customer?['fullName'] as String?,
       customerPhone: customer?['phone'] as String?,
+      createdAt: json['createdAt'] as String?,
+      assignmentPushedAt: json['assignmentPushedAt'] as String?,
+      completedAt: json['completedAt'] as String?,
+      assignedOperatorId: json['assignedOperatorId'] as String?,
+      assignedAgentName: assignedAgent,
     );
   }
 

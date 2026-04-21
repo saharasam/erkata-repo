@@ -18,17 +18,20 @@ const event_emitter_1 = require("@nestjs/event-emitter");
 const prisma_service_1 = require("../prisma/prisma.service");
 const client_1 = require("@prisma/client");
 const redis_presence_service_1 = require("../common/redis/redis-presence.service");
+const aglp_service_1 = require("../aglp/aglp.service");
 const bullmq_1 = require("@nestjs/bullmq");
 const bullmq_2 = require("bullmq");
 let RequestsService = class RequestsService {
     prisma;
     eventEmitter;
     presence;
+    aglpService;
     timeoutQueue;
-    constructor(prisma, eventEmitter, presence, timeoutQueue) {
+    constructor(prisma, eventEmitter, presence, aglpService, timeoutQueue) {
         this.prisma = prisma;
         this.eventEmitter = eventEmitter;
         this.presence = presence;
+        this.aglpService = aglpService;
         this.timeoutQueue = timeoutQueue;
     }
     async onModuleInit() {
@@ -334,12 +337,20 @@ let RequestsService = class RequestsService {
             throw new common_1.BadRequestException('Request is not in a confirmable state');
         }
         if (confirmed) {
-            await this.prisma.request.update({
-                where: { id: requestId },
-                data: {
-                    status: client_1.RequestStatus.fulfilled,
-                    completedAt: new Date(),
-                },
+            await this.prisma.$transaction(async (tx) => {
+                await tx.request.update({
+                    where: { id: requestId },
+                    data: {
+                        status: client_1.RequestStatus.completed,
+                        completedAt: new Date(),
+                    },
+                });
+                const matches = await tx.match.findMany({
+                    where: { requestId },
+                });
+                for (const match of matches) {
+                    await this.aglpService.releaseCommissionByMatchId(tx, match.id);
+                }
             });
         }
         else {
@@ -352,7 +363,7 @@ let RequestsService = class RequestsService {
                 customerId,
             });
         }
-        return { success: true, status: confirmed ? 'fulfilled' : 'disputed' };
+        return { success: true, status: confirmed ? 'completed' : 'disputed' };
     }
     async resolveDispute(requestId, operatorId, note) {
         const request = await this.prisma.request.findUnique({
@@ -364,20 +375,29 @@ let RequestsService = class RequestsService {
             throw new common_1.BadRequestException('Request is not in a disputed state');
         }
         const currentMetadata = request.metadata || {};
-        const updated = await this.prisma.request.update({
-            where: { id: requestId },
-            data: {
-                status: client_1.RequestStatus.fulfilled,
-                completedAt: new Date(),
-                isEscalated: false,
-                metadata: {
-                    ...currentMetadata,
-                    resolutionNote: note || 'Resolved by operator.',
-                    resolvedAt: new Date().toISOString(),
-                    resolvedBy: operatorId,
+        const updated = await this.prisma.$transaction(async (tx) => {
+            const req = await tx.request.update({
+                where: { id: requestId },
+                data: {
+                    status: client_1.RequestStatus.completed,
+                    completedAt: new Date(),
+                    isEscalated: false,
+                    metadata: {
+                        ...currentMetadata,
+                        resolutionNote: note || 'Resolved by operator.',
+                        resolvedAt: new Date().toISOString(),
+                        resolvedBy: operatorId,
+                    },
                 },
-            },
-            include: { customer: true, matches: { include: { agent: true } } },
+                include: { customer: true, matches: { include: { agent: true } } },
+            });
+            const matches = await tx.match.findMany({
+                where: { requestId },
+            });
+            for (const match of matches) {
+                await this.aglpService.releaseCommissionByMatchId(tx, match.id);
+            }
+            return req;
         });
         await this.eventEmitter.emitAsync('request.resolved', {
             requestId,
@@ -489,6 +509,46 @@ let RequestsService = class RequestsService {
             orderBy: { createdAt: 'desc' },
         });
     }
+    async forceComplete(requestId, operatorId, note) {
+        const request = await this.prisma.request.findUnique({
+            where: { id: requestId },
+        });
+        if (!request)
+            throw new common_1.NotFoundException('Request not found');
+        if (request.status !== client_1.RequestStatus.fulfilled) {
+            throw new common_1.BadRequestException('Request must be fulfilled before force completion');
+        }
+        const currentMetadata = request.metadata || {};
+        const updated = await this.prisma.$transaction(async (tx) => {
+            const req = await tx.request.update({
+                where: { id: requestId },
+                data: {
+                    status: client_1.RequestStatus.completed,
+                    completedAt: new Date(),
+                    metadata: {
+                        ...currentMetadata,
+                        forceCompletedAt: new Date().toISOString(),
+                        forceCompletedBy: operatorId,
+                        forceCompletionNote: note || 'Manually confirmed by operator.',
+                    },
+                },
+                include: { customer: true, matches: { include: { agent: true } } },
+            });
+            const matches = await tx.match.findMany({
+                where: { requestId },
+            });
+            for (const match of matches) {
+                await this.aglpService.releaseCommissionByMatchId(tx, match.id);
+            }
+            return req;
+        });
+        await this.eventEmitter.emitAsync('request.completed', {
+            requestId,
+            operatorId,
+            forced: true,
+        });
+        return updated;
+    }
 };
 exports.RequestsService = RequestsService;
 __decorate([
@@ -505,10 +565,11 @@ __decorate([
 ], RequestsService.prototype, "handleOperatorOnlineEvent", null);
 exports.RequestsService = RequestsService = __decorate([
     (0, common_1.Injectable)(),
-    __param(3, (0, bullmq_1.InjectQueue)('assignment-timeout')),
+    __param(4, (0, bullmq_1.InjectQueue)('assignment-timeout')),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         event_emitter_1.EventEmitter2,
         redis_presence_service_1.RedisPresenceService,
+        aglp_service_1.AglpService,
         bullmq_2.Queue])
 ], RequestsService);
 //# sourceMappingURL=requests.service.js.map

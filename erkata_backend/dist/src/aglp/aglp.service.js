@@ -360,10 +360,22 @@ let AglpService = class AglpService {
                 metadata: {
                     aglpTxId,
                     amount: aglpTx.amount,
-                    reason: 'Escrow released by Admin',
+                    reason: 'Escrow released by system (Terminal State reached)',
                 },
             },
         });
+    }
+    async releaseCommissionByMatchId(tx, matchId) {
+        const aglpTxs = await tx.aglpTransaction.findMany({
+            where: {
+                referenceId: matchId,
+                type: client_1.AglpTransactionType.EARN,
+                status: client_1.AglpTransactionStatus.PENDING,
+            },
+        });
+        for (const aglpTx of aglpTxs) {
+            await this.releaseEscrow(tx, aglpTx.id);
+        }
     }
     async cancelWithdrawal(tx, aglpTxId, requestedByProfileId) {
         const aglpTx = await tx.aglpTransaction.findUnique({

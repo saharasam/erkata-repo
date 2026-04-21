@@ -9,6 +9,7 @@ import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
 import { RequestStatus, UserRole, Prisma } from '@prisma/client';
 import { RedisPresenceService } from '../common/redis/redis-presence.service';
+import { AglpService } from '../aglp/aglp.service';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 
@@ -37,6 +38,7 @@ export class RequestsService implements OnModuleInit {
     private readonly prisma: PrismaService,
     private readonly eventEmitter: EventEmitter2,
     private readonly presence: RedisPresenceService,
+    private readonly aglpService: AglpService,
     @InjectQueue('assignment-timeout') private readonly timeoutQueue: Queue,
   ) {}
 
@@ -458,12 +460,23 @@ export class RequestsService implements OnModuleInit {
     }
 
     if (confirmed) {
-      await this.prisma.request.update({
-        where: { id: requestId },
-        data: {
-          status: RequestStatus.fulfilled,
-          completedAt: new Date(),
-        },
+      await this.prisma.$transaction(async (tx) => {
+        await tx.request.update({
+          where: { id: requestId },
+          data: {
+            status: RequestStatus.completed,
+            completedAt: new Date(),
+          },
+        });
+
+        // Release commissions for all matches of this request
+        const matches = await tx.match.findMany({
+          where: { requestId },
+        });
+
+        for (const match of matches) {
+          await this.aglpService.releaseCommissionByMatchId(tx, match.id);
+        }
       });
     } else {
       await this.prisma.request.update({
@@ -477,7 +490,7 @@ export class RequestsService implements OnModuleInit {
       });
     }
 
-    return { success: true, status: confirmed ? 'fulfilled' : 'disputed' };
+    return { success: true, status: confirmed ? 'completed' : 'disputed' };
   }
 
   // Operator resolves a dispute by marking it fulfilled
@@ -493,20 +506,33 @@ export class RequestsService implements OnModuleInit {
 
     const currentMetadata = (request.metadata as Record<string, any>) || {};
 
-    const updated = await this.prisma.request.update({
-      where: { id: requestId },
-      data: {
-        status: RequestStatus.fulfilled,
-        completedAt: new Date(),
-        isEscalated: false,
-        metadata: {
-          ...currentMetadata,
-          resolutionNote: note || 'Resolved by operator.',
-          resolvedAt: new Date().toISOString(),
-          resolvedBy: operatorId,
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const req = await tx.request.update({
+        where: { id: requestId },
+        data: {
+          status: RequestStatus.completed,
+          completedAt: new Date(),
+          isEscalated: false,
+          metadata: {
+            ...currentMetadata,
+            resolutionNote: note || 'Resolved by operator.',
+            resolvedAt: new Date().toISOString(),
+            resolvedBy: operatorId,
+          },
         },
-      },
-      include: { customer: true, matches: { include: { agent: true } } },
+        include: { customer: true, matches: { include: { agent: true } } },
+      });
+
+      // Release commissions for all matches of this request
+      const matches = await tx.match.findMany({
+        where: { requestId },
+      });
+
+      for (const match of matches) {
+        await this.aglpService.releaseCommissionByMatchId(tx, match.id);
+      }
+
+      return req;
     });
 
     await this.eventEmitter.emitAsync('request.resolved', {
@@ -634,5 +660,57 @@ export class RequestsService implements OnModuleInit {
       },
       orderBy: { createdAt: 'desc' },
     });
+  }
+
+  // Operator forces a request to complete (bypass customer)
+  async forceComplete(requestId: string, operatorId: string, note?: string) {
+    const request = await this.prisma.request.findUnique({
+      where: { id: requestId },
+    });
+
+    if (!request) throw new NotFoundException('Request not found');
+    if (request.status !== RequestStatus.fulfilled) {
+      throw new BadRequestException(
+        'Request must be fulfilled before force completion',
+      );
+    }
+
+    const currentMetadata = (request.metadata as Record<string, any>) || {};
+
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const req = await tx.request.update({
+        where: { id: requestId },
+        data: {
+          status: RequestStatus.completed,
+          completedAt: new Date(),
+          metadata: {
+            ...currentMetadata,
+            forceCompletedAt: new Date().toISOString(),
+            forceCompletedBy: operatorId,
+            forceCompletionNote: note || 'Manually confirmed by operator.',
+          },
+        },
+        include: { customer: true, matches: { include: { agent: true } } },
+      });
+
+      // Release commissions for all matches of this request
+      const matches = await tx.match.findMany({
+        where: { requestId },
+      });
+
+      for (const match of matches) {
+        await this.aglpService.releaseCommissionByMatchId(tx, match.id);
+      }
+
+      return req;
+    });
+
+    await this.eventEmitter.emitAsync('request.completed', {
+      requestId,
+      operatorId,
+      forced: true,
+    });
+
+    return updated;
   }
 }

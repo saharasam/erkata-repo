@@ -121,8 +121,6 @@ async function main() {
     },
   });
 
-
-
   console.log('Seeding packages...');
   const packages = [
     {

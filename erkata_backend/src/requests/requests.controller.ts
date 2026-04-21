@@ -124,4 +124,15 @@ export class RequestsController {
   ) {
     return this.requestsService.voidDispute(id, req.user.id, note);
   }
+
+  // Operator forces a request to complete (bypass customer)
+  @Post(':id/force-complete')
+  @RequirePermission(Action.RESOLVE_DISPUTE) // Same permission level as resolving disputes
+  forceComplete(
+    @Param('id') id: string,
+    @Req() req: RequestWithUser,
+    @Body('note') note?: string,
+  ) {
+    return this.requestsService.forceComplete(id, req.user.id, note);
+  }
 }
