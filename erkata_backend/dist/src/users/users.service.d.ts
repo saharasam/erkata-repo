@@ -61,6 +61,9 @@ export declare class UsersService {
         missedAssignments: number;
         warningCount: number;
         avatarUrl: string | null;
+        tinNumber: string | null;
+        tradeLicenseNumber: string | null;
+        isVerified: boolean;
     }>;
     getFinanceSummary(userId: string): Promise<{
         balance: number;
@@ -155,6 +158,9 @@ export declare class UsersService {
         missedAssignments: number;
         warningCount: number;
         avatarUrl: string | null;
+        tinNumber: string | null;
+        tradeLicenseNumber: string | null;
+        isVerified: boolean;
     })[]>;
     getAvailablePackages(): Promise<{
         id: string;
@@ -211,6 +217,9 @@ export declare class UsersService {
         missedAssignments: number;
         warningCount: number;
         avatarUrl: string | null;
+        tinNumber: string | null;
+        tradeLicenseNumber: string | null;
+        isVerified: boolean;
     }>;
     requestWithdrawal(userId: string, amountAglp: number, bankDetails: {
         bankName: string;
@@ -253,23 +262,18 @@ export declare class UsersService {
         missedAssignments: number;
         warningCount: number;
         avatarUrl: string | null;
+        tinNumber: string | null;
+        tradeLicenseNumber: string | null;
+        isVerified: boolean;
     }>;
     generateReferralCode(userId: string): Promise<{
         code: string;
         link: string;
     }>;
-    findByReferralCode(code: string): Promise<{
-        referrals: {
-            id: string;
-        }[];
-        referralLink: {
-            id: string;
-            tier: import(".prisma/client").$Enums.Tier;
-            createdAt: Date;
-            referrerId: string;
-            code: string;
-        } | null;
-    } & {
+    updateBusinessProfile(userId: string, data: {
+        tinNumber: string;
+        tradeLicenseNumber: string;
+    }): Promise<{
         id: string;
         email: string;
         passwordHash: string | null;
@@ -290,5 +294,8 @@ export declare class UsersService {
         missedAssignments: number;
         warningCount: number;
         avatarUrl: string | null;
+        tinNumber: string | null;
+        tradeLicenseNumber: string | null;
+        isVerified: boolean;
     }>;
 }

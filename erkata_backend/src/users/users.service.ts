@@ -749,12 +749,30 @@ export class UsersService {
    * Looks up a referrer by their referral code.
    * Used during registration to attribute new users.
    */
-  async findByReferralCode(code: string) {
-    const referrer = await this.prisma.profile.findUnique({
-      where: { referralCode: code },
-      include: { referralLink: true, referrals: { select: { id: true } } },
+  /**
+   * Updates the agent's business verification details.
+   */
+  async updateBusinessProfile(
+    userId: string,
+    data: { tinNumber: string; tradeLicenseNumber: string },
+  ) {
+    const profile = await this.prisma.profile.findUnique({
+      where: { id: userId },
     });
-    if (!referrer) throw new BadRequestException('Invalid referral code');
-    return referrer;
+
+    if (!profile) throw new NotFoundException('Profile not found');
+    if (profile.role !== UserRole.agent) {
+      throw new ForbiddenException(
+        'Only agents can update business verification details',
+      );
+    }
+
+    return this.prisma.profile.update({
+      where: { id: userId },
+      data: {
+        tinNumber: data.tinNumber,
+        tradeLicenseNumber: data.tradeLicenseNumber,
+      },
+    });
   }
 }

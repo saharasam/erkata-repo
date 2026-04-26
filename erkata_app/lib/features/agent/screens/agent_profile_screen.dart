@@ -9,6 +9,11 @@ class AgentProfileScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authProvider);
+    final user = authState.user;
+
+    final initials = user?.fullName?.split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join('') ?? 'A';
+
     final menuItems = [
       {
         'icon': Icons.history,
@@ -97,7 +102,7 @@ class AgentProfileScreen extends ConsumerWidget {
                         ),
                         child: Center(
                           child: Text(
-                            'AG',
+                            initials,
                             style: TextStyle(
                               fontSize: 36,
                               fontWeight: FontWeight.bold,
@@ -130,7 +135,7 @@ class AgentProfileScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Agent Dawit',
+                    user?.fullName ?? 'Agent Name',
                     style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -138,7 +143,7 @@ class AgentProfileScreen extends ConsumerWidget {
                     ),
                   ),
                   Text(
-                    'dawit@addishome.com',
+                    user?.email ?? 'email@example.com',
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                       fontSize: 14,
@@ -149,6 +154,12 @@ class AgentProfileScreen extends ConsumerWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       _Badge(
+                        text: user?.tier ?? 'FREE',
+                        color: Theme.of(context).colorScheme.primary,
+                        bgColor: Theme.of(context).colorScheme.primaryContainer,
+                      ),
+                      const SizedBox(width: 12),
+                      _Badge(
                         text: 'Verified Agent',
                         color: Theme.of(context).brightness == Brightness.dark
                             ? Colors.greenAccent
@@ -156,16 +167,6 @@ class AgentProfileScreen extends ConsumerWidget {
                         bgColor: Theme.of(context).brightness == Brightness.dark
                             ? AppColors.successGreenLight.withValues(alpha: 0.1)
                             : AppColors.successGreenLight,
-                      ),
-                      const SizedBox(width: 12),
-                      _Badge(
-                        text: 'Top Rated',
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? Colors.orangeAccent
-                            : AppColors.warningOrange,
-                        bgColor: Theme.of(context).brightness == Brightness.dark
-                            ? AppColors.warningOrange.withValues(alpha: 0.1)
-                            : AppColors.peachBg,
                       ),
                     ],
                   ),

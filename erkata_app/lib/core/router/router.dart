@@ -6,12 +6,13 @@ import '../../features/auth/screens/auth_screen.dart';
 import '../../features/customer/screens/home_screen.dart';
 import '../../features/customer/screens/request_intake_screen.dart';
 import '../../features/customer/screens/request_status_screen.dart';
+import '../../features/customer/screens/activity_screen.dart';
 
 import '../../features/customer/screens/profile_screen.dart';
 import '../../features/agent/screens/agent_dashboard_screen.dart';
 import '../../features/agent/screens/agent_subscription_screen.dart';
 import '../../features/agent/screens/agent_commission_screen.dart';
-import '../../features/agent/screens/agent_communication_screen.dart';
+import '../../features/agent/screens/agent_referrals_screen.dart';
 import '../../features/agent/screens/agent_profile_screen.dart';
 import '../../features/agent/screens/agent_history_screen.dart';
 import '../../features/agent/screens/agent_request_detail_screen.dart';
@@ -114,8 +115,8 @@ final routerProvider = Provider<GoRouter>((ref) {
                 builder: (context, state) => const AgentCommissionScreen(),
               ),
               GoRoute(
-                path: 'communication',
-                builder: (context, state) => const AgentCommunicationScreen(),
+                path: 'referrals',
+                builder: (context, state) => const AgentReferralsScreen(),
               ),
               GoRoute(
                 path: 'profile',
@@ -150,8 +151,15 @@ final routerProvider = Provider<GoRouter>((ref) {
             ],
           ),
           GoRoute(
+            path: '/activity',
+            builder: (context, state) => const ActivityScreen(),
+          ),
+          GoRoute(
             path: '/request/status',
-            builder: (context, state) => const RequestStatusScreen(),
+            builder: (context, state) {
+              final req = state.extra as ServiceRequest;
+              return RequestStatusScreen(request: req);
+            },
           ),
           GoRoute(
             path: '/profile',

@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:go_router/go_router.dart';
 
 import '../models/user_role.dart';
 import '../../features/auth/state/auth_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class ScaffoldWithNavBar extends ConsumerWidget {
+class ScaffoldWithNavBar extends ConsumerStatefulWidget {
   final Widget child;
   final String location;
 
@@ -16,7 +17,14 @@ class ScaffoldWithNavBar extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ScaffoldWithNavBar> createState() => _ScaffoldWithNavBarState();
+}
+
+class _ScaffoldWithNavBarState extends ConsumerState<ScaffoldWithNavBar> {
+  bool _isVisible = true;
+
+  @override
+  Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     final roleStr = authState.user?.role;
     final UserRole role = switch (roleStr) {
@@ -25,16 +33,28 @@ class ScaffoldWithNavBar extends ConsumerWidget {
     };
 
     return Scaffold(
-      body: Stack(
-        children: [
-          child,
-          Positioned(
-            left: 24,
-            right: 24,
-            bottom: 24,
-            child: _CustomBottomNavBar(role: role, currentLocation: location),
-          ),
-        ],
+      body: NotificationListener<UserScrollNotification>(
+        onNotification: (notification) {
+          if (notification.direction == ScrollDirection.reverse) {
+            if (_isVisible) setState(() => _isVisible = false);
+          } else if (notification.direction == ScrollDirection.forward) {
+            if (!_isVisible) setState(() => _isVisible = true);
+          }
+          return false;
+        },
+        child: Stack(
+          children: [
+            widget.child,
+            AnimatedPositioned(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+              left: 24,
+              right: 24,
+              bottom: _isVisible ? 24 : -100, // Move offscreen when hidden
+              child: _CustomBottomNavBar(role: role, currentLocation: widget.location),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -60,7 +80,7 @@ class _CustomBottomNavBar extends StatelessWidget {
               label: 'Home',
             ),
             _NavItem(
-              path: '/request/status',
+              path: '/activity',
               icon: Icons.bar_chart_outlined, // Activity
               activeIcon: Icons.bar_chart,
               label: 'Activity',
@@ -92,10 +112,10 @@ class _CustomBottomNavBar extends StatelessWidget {
               label: 'Plan',
             ),
             _NavItem(
-              path: '/agent/communication',
-              icon: Icons.phone_outlined,
-              activeIcon: Icons.phone,
-              label: 'Contact',
+              path: '/agent/referrals',
+              icon: Icons.group_outlined,
+              activeIcon: Icons.group,
+              label: 'Referrals',
             ),
           ];
 

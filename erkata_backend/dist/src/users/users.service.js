@@ -548,14 +548,22 @@ let UsersService = class UsersService {
         const link = `${process.env.APP_URL || 'https://erkata.app'}/register?ref=${code}`;
         return { code, link };
     }
-    async findByReferralCode(code) {
-        const referrer = await this.prisma.profile.findUnique({
-            where: { referralCode: code },
-            include: { referralLink: true, referrals: { select: { id: true } } },
+    async updateBusinessProfile(userId, data) {
+        const profile = await this.prisma.profile.findUnique({
+            where: { id: userId },
         });
-        if (!referrer)
-            throw new common_1.BadRequestException('Invalid referral code');
-        return referrer;
+        if (!profile)
+            throw new common_1.NotFoundException('Profile not found');
+        if (profile.role !== client_1.UserRole.agent) {
+            throw new common_1.ForbiddenException('Only agents can update business verification details');
+        }
+        return this.prisma.profile.update({
+            where: { id: userId },
+            data: {
+                tinNumber: data.tinNumber,
+                tradeLicenseNumber: data.tradeLicenseNumber,
+            },
+        });
     }
 };
 exports.UsersService = UsersService;

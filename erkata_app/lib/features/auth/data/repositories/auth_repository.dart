@@ -5,6 +5,7 @@ import '../../../../core/errors/error_handler.dart';
 import '../models/auth_response.dart';
 import '../models/login_request.dart';
 import '../models/register_request.dart';
+import '../models/user_profile.dart';
 
 /// Contract for auth operations against the Erkata backend.
 abstract class AuthRepository {
@@ -12,6 +13,7 @@ abstract class AuthRepository {
   Future<void> register(RegisterRequest request);
   Future<String> refreshToken();
   Future<void> logout();
+  Future<UserProfile> getProfile();
 }
 
 /// Concrete implementation hitting the NestJS backend.
@@ -68,6 +70,18 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<void> logout() async {
     try {
       await _dio.post('/auth/logout');
+    } on DioException catch (e) {
+      throw ErrorHandler.fromDioException(e);
+    } catch (e) {
+      throw UnknownException(message: e.toString());
+    }
+  }
+
+  @override
+  Future<UserProfile> getProfile() async {
+    try {
+      final response = await _dio.get('/users/me');
+      return UserProfile.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
       throw ErrorHandler.fromDioException(e);
     } catch (e) {

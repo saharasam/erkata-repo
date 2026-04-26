@@ -183,6 +183,9 @@ model Profile {
   missedAssignments Int               @default(0) @map("missed_assignments")
   warningCount      Int               @default(0) @map("warning_count")
   avatarUrl         String?           @map("avatar_url")
+  tinNumber         String?           @map("tin_number")
+  tradeLicenseNumber String?          @map("trade_license_number")
+  isVerified        Boolean           @default(false) @map("is_verified")
   agentZones        AgentZone[]
   aglpTransactions  AglpTransaction[]
   auditLogsActor    AuditLog[]        @relation("Actor")

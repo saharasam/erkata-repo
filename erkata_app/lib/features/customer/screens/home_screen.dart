@@ -17,12 +17,10 @@ class HomeScreen extends HookConsumerWidget {
     final userName = authState.user?.fullName?.split(' ').first ?? 'User';
 
     return Scaffold(
-      floatingActionButton: const Padding(
-        padding: EdgeInsets.only(bottom: 90),
-      ),
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: () => ref.read(customerRequestsProvider.notifier).refresh(),
+          onRefresh: () =>
+              ref.read(customerRequestsProvider.notifier).refresh(),
           child: Column(
             children: [
               ErkataScreenHeader(
@@ -34,13 +32,17 @@ class HomeScreen extends HookConsumerWidget {
               Expanded(
                 child: SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.only(left: 20, right: 20, bottom: 24),
+                  padding: const EdgeInsets.only(
+                    left: 20,
+                    right: 20,
+                    bottom: 24,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 32),
 
-                      // Banner
+                      // Hero Banner
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(24),
@@ -59,26 +61,26 @@ class HomeScreen extends HookConsumerWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
-                              'New Listings in Bole',
+                              'Looking for your perfect property?',
                               style: TextStyle(
                                 color: AppColors.pureWhite,
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                height: 1.2,
                               ),
                             ),
-                            const SizedBox(height: 6),
-                            const Text(
-                              'Explore premium apartments available now.',
+                            const SizedBox(height: 8),
+                            Text(
+                              'Submit a request and let our network of top agents find it for you.',
                               style: TextStyle(
-                                color: AppColors.brandGoldLight,
+                                color: AppColors.pureWhite.withAlpha(200),
                                 fontSize: 14,
+                                height: 1.4,
                               ),
                             ),
-                            const SizedBox(height: 6),
+                            const SizedBox(height: 20),
                             ElevatedButton(
-                              onPressed: () {
-                                context.push('/request/new');
-                              },
+                              onPressed: () => context.push('/request/new'),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppColors.brandGold,
                                 foregroundColor: AppColors.brandPrimary,
@@ -87,13 +89,23 @@ class HomeScreen extends HookConsumerWidget {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 12,
+                                  horizontal: 20,
+                                  vertical: 14,
                                 ),
                               ),
-                              child: const Text(
-                                'Start Request',
-                                style: TextStyle(fontWeight: FontWeight.bold),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.add_home_work_rounded, size: 20),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    'Start Request',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
                           ],
@@ -115,7 +127,7 @@ class HomeScreen extends HookConsumerWidget {
                           ),
                           TextButton(
                             onPressed: () {
-                              context.go('/request/status');
+                              context.go('/activity');
                             },
                             style: TextButton.styleFrom(
                               foregroundColor: AppColors.brandPrimary,
@@ -139,7 +151,9 @@ class HomeScreen extends HookConsumerWidget {
                             return const Center(
                               child: Padding(
                                 padding: EdgeInsets.all(40.0),
-                                child: Text('No requests yet. Start your first one above!'),
+                                child: Text(
+                                  'No requests yet. Start your first one above!',
+                                ),
                               ),
                             );
                           }
@@ -154,50 +168,56 @@ class HomeScreen extends HookConsumerWidget {
                               return Material(
                                 color: Colors.transparent,
                                 child: InkWell(
-                                  onTap: () => context.push('/request/status'),
-                                  borderRadius: BorderRadius.circular(16),
+                                  onTap: () => context.push('/request/status', extra: request),
+                                  borderRadius: BorderRadius.circular(20),
                                   child: Container(
-                                    padding: const EdgeInsets.all(16),
+                                    padding: const EdgeInsets.all(20),
                                     decoration: BoxDecoration(
-                                      color: Theme.of(context).colorScheme.surface,
-                                      borderRadius: BorderRadius.circular(16),
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.surface,
+                                      borderRadius: BorderRadius.circular(20),
                                       border: Border.all(
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.outlineVariant,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .outlineVariant
+                                            .withAlpha(100),
                                       ),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: Theme.of(context).colorScheme.shadow
-                                              .withValues(alpha: 0.05),
-                                          blurRadius: 5,
-                                          offset: const Offset(0, 2),
+                                          color: AppColors.brandPrimary
+                                              .withAlpha(12),
+                                          blurRadius: 15,
+                                          offset: const Offset(0, 4),
                                         ),
                                       ],
                                     ),
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Row(
                                           mainAxisAlignment:
                                               MainAxisAlignment.spaceBetween,
                                           children: [
                                             Container(
-                                              padding: const EdgeInsets.symmetric(
-                                                horizontal: 8,
-                                                vertical: 4,
-                                              ),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 8,
+                                                    vertical: 4,
+                                                  ),
                                               decoration: BoxDecoration(
-                                                color: _getStatusBackgroundColor(
-                                                  context,
-                                                  request.status,
-                                                ),
-                                                borderRadius: BorderRadius.circular(
-                                                  8,
-                                                ),
+                                                color:
+                                                    _getStatusBackgroundColor(
+                                                      context,
+                                                      request.status,
+                                                    ),
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
                                               ),
                                               child: Text(
-                                                request.status.label.toUpperCase(),
+                                                request.status.label
+                                                    .toUpperCase(),
                                                 style: TextStyle(
                                                   color: _getStatusTextColor(
                                                     context,
@@ -235,8 +255,8 @@ class HomeScreen extends HookConsumerWidget {
                                         Row(
                                           children: [
                                             Icon(
-                                              Icons.location_on,
-                                              size: 14,
+                                              Icons.location_on_outlined,
+                                              size: 16,
                                               color: Theme.of(
                                                 context,
                                               ).colorScheme.onSurfaceVariant,
@@ -245,7 +265,7 @@ class HomeScreen extends HookConsumerWidget {
                                             Text(
                                               request.location,
                                               style: TextStyle(
-                                                fontSize: 12,
+                                                fontSize: 13,
                                                 color: Theme.of(
                                                   context,
                                                 ).colorScheme.onSurfaceVariant,
@@ -253,22 +273,23 @@ class HomeScreen extends HookConsumerWidget {
                                             ),
                                             const Spacer(),
                                             Container(
-                                              padding: const EdgeInsets.symmetric(
-                                                horizontal: 8,
-                                                vertical: 2,
-                                              ),
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 10,
+                                                    vertical: 4,
+                                                  ),
                                               decoration: BoxDecoration(
-                                                color: Colors.blue[50],
-                                                borderRadius: BorderRadius.circular(
-                                                  6,
-                                                ),
+                                                color: AppColors.brandPrimary
+                                                    .withAlpha(15),
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
                                               ),
                                               child: Text(
                                                 request.budget,
                                                 style: const TextStyle(
                                                   color: AppColors.brandPrimary,
-                                                  fontSize: 12,
-                                                  fontWeight: FontWeight.w500,
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w600,
                                                 ),
                                               ),
                                             ),
@@ -288,11 +309,9 @@ class HomeScreen extends HookConsumerWidget {
                             child: CircularProgressIndicator(),
                           ),
                         ),
-                        error: (err, stack) => Center(
-                          child: Text('Error: $err'),
-                        ),
+                        error: (err, stack) =>
+                            Center(child: Text('Error: $err')),
                       ),
-                      const SizedBox(height: 120), // Fab spacing
                     ],
                   ),
                 ),
@@ -320,9 +339,7 @@ class HomeScreen extends HookConsumerWidget {
             ? AppColors.successGreen.withValues(alpha: 0.2)
             : AppColors.successGreen;
       case RequestStatus.disputed:
-        return isDark
-            ? Colors.red.withValues(alpha: 0.1)
-            : Colors.red.shade50;
+        return isDark ? Colors.red.withValues(alpha: 0.1) : Colors.red.shade50;
       case RequestStatus.completed:
         return isDark
             ? AppColors.successGreen.withValues(alpha: 0.2)

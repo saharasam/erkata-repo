@@ -184,6 +184,26 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = const AuthState(isHydrated: true);
   }
 
+  /// Refetches the current user profile from the backend.
+  Future<void> refreshProfile() async {
+    try {
+      final profile = await _repo.getProfile();
+      
+      // Update storage too so it's consistent on restart
+      await _tokenStorage.saveUserProfile(
+        userId: profile.id,
+        role: profile.role ?? 'customer',
+        tier: profile.tier,
+        fullName: profile.fullName,
+        email: profile.email,
+      );
+
+      state = state.copyWith(user: profile);
+    } catch (e) {
+      // If refresh fails, we keep the old data for now
+    }
+  }
+
   /// Clears the current error message (e.g., after banner dismissed).
   void clearError() {
     state = state.copyWith(clearError: true);

@@ -314,6 +314,9 @@ export declare class RequestsService implements OnModuleInit {
             missedAssignments: number;
             warningCount: number;
             avatarUrl: string | null;
+            tinNumber: string | null;
+            tradeLicenseNumber: string | null;
+            isVerified: boolean;
         };
         matches: ({
             agent: {
@@ -337,6 +340,9 @@ export declare class RequestsService implements OnModuleInit {
                 missedAssignments: number;
                 warningCount: number;
                 avatarUrl: string | null;
+                tinNumber: string | null;
+                tradeLicenseNumber: string | null;
+                isVerified: boolean;
             };
         } & {
             id: string;
@@ -467,6 +473,9 @@ export declare class RequestsService implements OnModuleInit {
             missedAssignments: number;
             warningCount: number;
             avatarUrl: string | null;
+            tinNumber: string | null;
+            tradeLicenseNumber: string | null;
+            isVerified: boolean;
         };
         matches: ({
             agent: {
@@ -490,6 +499,9 @@ export declare class RequestsService implements OnModuleInit {
                 missedAssignments: number;
                 warningCount: number;
                 avatarUrl: string | null;
+                tinNumber: string | null;
+                tradeLicenseNumber: string | null;
+                isVerified: boolean;
             };
         } & {
             id: string;

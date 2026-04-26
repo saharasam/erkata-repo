@@ -57,6 +57,9 @@ export declare class UsersController {
         missedAssignments: number;
         warningCount: number;
         avatarUrl: string | null;
+        tinNumber: string | null;
+        tradeLicenseNumber: string | null;
+        isVerified: boolean;
     })[]>;
     getMe(req: AuthenticatedRequest): Promise<{
         agentZones: {
@@ -109,6 +112,9 @@ export declare class UsersController {
         missedAssignments: number;
         warningCount: number;
         avatarUrl: string | null;
+        tinNumber: string | null;
+        tradeLicenseNumber: string | null;
+        isVerified: boolean;
     }>;
     getFinance(req: AuthenticatedRequest): Promise<{
         balance: number;
@@ -229,6 +235,9 @@ export declare class UsersController {
         missedAssignments: number;
         warningCount: number;
         avatarUrl: string | null;
+        tinNumber: string | null;
+        tradeLicenseNumber: string | null;
+        isVerified: boolean;
     }>;
     activateUser(req: AuthenticatedRequest, userId: string): Promise<{
         id: string;
@@ -251,5 +260,36 @@ export declare class UsersController {
         missedAssignments: number;
         warningCount: number;
         avatarUrl: string | null;
+        tinNumber: string | null;
+        tradeLicenseNumber: string | null;
+        isVerified: boolean;
+    }>;
+    updateBusinessProfile(req: AuthenticatedRequest, body: {
+        tinNumber: string;
+        tradeLicenseNumber: string;
+    }): Promise<{
+        id: string;
+        email: string;
+        passwordHash: string | null;
+        fullName: string;
+        phone: string;
+        role: import(".prisma/client").$Enums.UserRole;
+        tier: import(".prisma/client").$Enums.Tier;
+        isActive: boolean;
+        zoneId: string | null;
+        referredById: string | null;
+        createdAt: Date;
+        aglpBalance: import("@prisma/client/runtime/library").Decimal;
+        aglpPending: import("@prisma/client/runtime/library").Decimal;
+        aglpWithdrawn: import("@prisma/client/runtime/library").Decimal;
+        referralCode: string | null;
+        isOnline: boolean;
+        lastAssignmentAt: Date | null;
+        missedAssignments: number;
+        warningCount: number;
+        avatarUrl: string | null;
+        tinNumber: string | null;
+        tradeLicenseNumber: string | null;
+        isVerified: boolean;
     }>;
 }

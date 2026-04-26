@@ -90,9 +90,57 @@ class AgentRepository {
     }
   }
 
-  Future<void> completeJob(String id) async {
+  Future<void> completeJob(String id, {String? outcome}) async {
     try {
-      await _dio.patch('/transactions/$id/complete');
+      await _dio.patch('/transactions/$id/complete', data: {
+        'outcome': outcome,
+      });
+    } on DioException catch (e) {
+      throw ErrorHandler.fromDioException(e);
+    } catch (e) {
+      throw Exception(e.toString());
+    }
+  }
+
+  Future<void> transferJob(String id, String toAgentId) async {
+    try {
+      await _dio.patch('/transactions/$id/transfer', data: {
+        'toAgentId': toAgentId,
+      });
+    } on DioException catch (e) {
+      throw ErrorHandler.fromDioException(e);
+    } catch (e) {
+      throw Exception(e.toString());
+    }
+  }
+
+  Future<void> updateBusinessProfile(String tinNumber, String tradeLicenseNumber) async {
+    try {
+      await _dio.patch('/users/me/business', data: {
+        'tinNumber': tinNumber,
+        'tradeLicenseNumber': tradeLicenseNumber,
+      });
+    } on DioException catch (e) {
+      throw ErrorHandler.fromDioException(e);
+    } catch (e) {
+      throw Exception(e.toString());
+    }
+  }
+
+  Future<List<dynamic>> getAvailablePackages() async {
+    try {
+      final response = await _dio.get('/users/me/available-packages');
+      return response.data as List<dynamic>;
+    } on DioException catch (e) {
+      throw ErrorHandler.fromDioException(e);
+    } catch (e) {
+      throw Exception(e.toString());
+    }
+  }
+
+  Future<void> purchasePackage(String tier) async {
+    try {
+      await _dio.post('/users/me/package', data: {'tier': tier});
     } on DioException catch (e) {
       throw ErrorHandler.fromDioException(e);
     } catch (e) {

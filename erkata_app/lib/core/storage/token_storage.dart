@@ -41,6 +41,23 @@ class TokenStorage {
     ]);
   }
 
+  Future<void> saveUserProfile({
+    required String userId,
+    required String role,
+    String? tier,
+    String? fullName,
+    String? email,
+  }) async {
+    await Future.wait([
+      _storage.write(key: _keyUserId, value: userId),
+      _storage.write(key: _keyUserRole, value: role),
+      if (tier != null) _storage.write(key: _keyUserTier, value: tier),
+      if (fullName != null)
+        _storage.write(key: _keyUserFullName, value: fullName),
+      if (email != null) _storage.write(key: _keyUserEmail, value: email),
+    ]);
+  }
+
   Future<void> saveAccessToken(String token) =>
       _storage.write(key: _keyAccessToken, value: token);
 

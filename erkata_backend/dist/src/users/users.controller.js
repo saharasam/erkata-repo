@@ -67,6 +67,9 @@ let UsersController = class UsersController {
         const callerRole = req.user.role;
         return this.usersService.activateUser(callerRole, userId);
     }
+    async updateBusinessProfile(req, body) {
+        return this.usersService.updateBusinessProfile(req.user.id, body);
+    }
 };
 exports.UsersController = UsersController;
 __decorate([
@@ -161,6 +164,14 @@ __decorate([
     __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "activateUser", null);
+__decorate([
+    (0, common_1.Patch)('me/business'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "updateBusinessProfile", null);
 exports.UsersController = UsersController = __decorate([
     (0, common_1.Controller)('users'),
     (0, common_1.UseGuards)(guards_1.JwtAuthGuard, guards_1.RolesGuard),

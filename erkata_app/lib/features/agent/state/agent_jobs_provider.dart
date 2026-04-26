@@ -23,8 +23,13 @@ class AgentJobsNotifier extends AsyncNotifier<List<ServiceRequest>> {
     await refresh();
   }
 
-  Future<void> completeJob(String id) async {
-    await ref.read(agentRepositoryProvider).completeJob(id);
+  Future<void> completeJob(String id, {String? outcome}) async {
+    await ref.read(agentRepositoryProvider).completeJob(id, outcome: outcome);
+    await refresh();
+  }
+
+  Future<void> transferJob(String id, String toAgentId) async {
+    await ref.read(agentRepositoryProvider).transferJob(id, toAgentId);
     await refresh();
   }
 }

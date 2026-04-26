@@ -1,22 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/constants/constants.dart';
-import '../../../core/models/request_status.dart';
 import '../../../core/models/service_request.dart';
 import '../../../core/theme/colors.dart';
 import '../../../shared/widgets/erkata_screen_header.dart';
 
-class AgentHistoryScreen extends StatelessWidget {
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../state/agent_history_provider.dart';
+import '../state/agent_jobs_provider.dart';
+
+class AgentHistoryScreen extends ConsumerWidget {
   const AgentHistoryScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // Filter for completed/cancelled requests
-    final historyRequests = mockRequests
-        .where(
-          (r) => r.status == RequestStatus.fulfilled,
-        ) // Add cancelled if exists
-        .toList();
+  Widget build(BuildContext context, WidgetRef ref) {
+    final historyAsync = ref.watch(agentHistoryProvider);
 
     return Scaffold(
       body: SafeArea(
@@ -28,14 +25,29 @@ class AgentHistoryScreen extends StatelessWidget {
               onActionTap: () => context.pop(),
             ),
             Expanded(
-              child: ListView.separated(
-                padding: const EdgeInsets.all(20),
-                itemCount: historyRequests.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 16),
-                itemBuilder: (context, index) {
-                  final req = historyRequests[index];
-                  return _HistoryTile(req: req);
-                },
+              child: RefreshIndicator(
+                onRefresh: () => ref.read(agentJobsProvider.notifier).refresh(),
+                child: historyAsync.when(
+                  loading: () => const Center(child: CircularProgressIndicator()),
+                  error: (err, stack) => Center(child: Text('Error: $err')),
+                  data: (historyRequests) {
+                    if (historyRequests.isEmpty) {
+                      return const Center(
+                        child: Text('No history found.'),
+                      );
+                    }
+
+                    return ListView.separated(
+                      padding: const EdgeInsets.all(20),
+                      itemCount: historyRequests.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 16),
+                      itemBuilder: (context, index) {
+                        final req = historyRequests[index];
+                        return _HistoryTile(req: req);
+                      },
+                    );
+                  },
+                ),
               ),
             ),
           ],

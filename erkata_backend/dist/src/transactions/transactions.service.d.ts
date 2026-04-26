@@ -53,6 +53,9 @@ export declare class TransactionsService {
                 missedAssignments: number;
                 warningCount: number;
                 avatarUrl: string | null;
+                tinNumber: string | null;
+                tradeLicenseNumber: string | null;
+                isVerified: boolean;
             } | null;
         } & {
             id: string;
@@ -75,6 +78,9 @@ export declare class TransactionsService {
             missedAssignments: number;
             warningCount: number;
             avatarUrl: string | null;
+            tinNumber: string | null;
+            tradeLicenseNumber: string | null;
+            isVerified: boolean;
         };
         request: {
             id: string;

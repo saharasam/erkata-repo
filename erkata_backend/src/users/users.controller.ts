@@ -133,4 +133,12 @@ export class UsersController {
     const callerRole = req.user.role;
     return this.usersService.activateUser(callerRole, userId);
   }
+
+  @Patch('me/business')
+  async updateBusinessProfile(
+    @Req() req: AuthenticatedRequest,
+    @Body() body: { tinNumber: string; tradeLicenseNumber: string },
+  ) {
+    return this.usersService.updateBusinessProfile(req.user.id, body);
+  }
 }

@@ -7,9 +7,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../../../../core/theme/colors.dart';
 import '../../../../shared/widgets/erkata_screen_header.dart';
 import '../data/repositories/agent_repository.dart';
-
 import '../state/finance_provider.dart';
-
 
 class AgentCommissionScreen extends HookConsumerWidget {
   const AgentCommissionScreen({super.key});
@@ -19,180 +17,94 @@ class AgentCommissionScreen extends HookConsumerWidget {
     final financeAsync = ref.watch(financeSummaryProvider);
 
     return Scaffold(
+      backgroundColor: AppColors.background,
       body: SafeArea(
         child: Column(
           children: [
             ErkataScreenHeader(
               title: 'Earnings',
-              subtitle: 'Your revenue and payouts',
+              subtitle: 'Manage your revenue and referrals',
               onActionTap: () => context.pop(),
             ),
             Expanded(
               child: financeAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
-                error: (err, stack) => Center(child: Text('Error: $err')),
+                error: (err, stack) => Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.error_outline, size: 48, color: AppColors.errorRed),
+                      const SizedBox(height: 16),
+                      Text('Error: $err'),
+                      TextButton(
+                        onPressed: () => ref.refresh(financeSummaryProvider),
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                ),
                 data: (summary) => RefreshIndicator(
                   onRefresh: () => ref.refresh(financeSummaryProvider.future),
                   child: SingleChildScrollView(
                     physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.only(
-                      left: 20,
-                      right: 20,
-                      top: 20,
-                      bottom: 120,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Total Earned Card
-                        Container(
-                          padding: const EdgeInsets.all(24),
-                          decoration: BoxDecoration(
-                            color: Theme.of(context).colorScheme.surface,
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(
-                              color: Theme.of(context).colorScheme.outlineVariant,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Theme.of(
-                                  context,
-                                ).shadowColor.withValues(alpha: 0.04),
-                                blurRadius: 10,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.successGreen.withValues(
-                                        alpha: 0.1,
-                                      ),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: const Icon(
-                                      Icons.trending_up,
-                                      color: AppColors.successGreen,
-                                      size: 20,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Text(
-                                    'Total Revenue',
-                                    style: TextStyle(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.onSurfaceVariant,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 16),
-                              RichText(
-                                text: TextSpan(
-                                  text: '${(summary.aglpBalance + summary.aglpWithdrawn).toStringAsFixed(0)} ',
-                                  style: TextStyle(
-                                    fontSize: 32,
-                                    fontWeight: FontWeight.bold,
-                                    color: Theme.of(context).colorScheme.onSurface,
-                                  ),
-                                  children: [
-                                    TextSpan(
-                                      text: 'AGLP',
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.normal,
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.onSurfaceVariant,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              const SizedBox(height: 16),
-                              SizedBox(
-                                width: double.infinity,
-                                child: FilledButton.icon(
-                                  onPressed: summary.aglpBalance > 0
-                                      ? () => _showWithdrawalDialog(context, ref, summary.aglpBalance)
-                                      : null,
-                                  icon: const Icon(Icons.wallet, size: 18),
-                                  label: const Text('Withdraw AGLP'),
-                                ),
-                              ),
-                            ],
-                          ),
+                        const SizedBox(height: 16),
+                        // Premium Integrated Hero Card
+                        _BalanceHero(
+                          balance: summary.aglpBalance,
+                          pending: summary.aglpPending,
+                          withdrawn: summary.aglpWithdrawn,
+                          totalEarned: summary.aglpBalance + summary.aglpWithdrawn,
+                          onWithdraw: () => _showWithdrawalDialog(context, ref, summary.aglpBalance),
                         ),
                         const SizedBox(height: 24),
 
-                        // Breakdown Grid
+                        // Referral Section
+                        const _ReferralCard(),
+                        const SizedBox(height: 32),
+
+                        // Transaction History Header
                         Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Expanded(
-                              child: _InfoCard(
-                                label: 'Pending',
-                                value: '${summary.aglpPending.toStringAsFixed(0)} AGLP',
-                                valueColor: Colors.orange,
+                            const Text(
+                              'TRANSACTION HISTORY',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                                color: AppColors.slate,
+                                letterSpacing: 1.5,
                               ),
                             ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: _InfoCard(
-                                label: 'Withdrawable',
-                                value: '${summary.aglpBalance.toStringAsFixed(0)} AGLP',
-                                valueColor: Theme.of(context).colorScheme.primary,
+                            if (summary.history.isNotEmpty)
+                              Text(
+                                '${summary.history.length} items',
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.textSecondary,
+                                ),
                               ),
-                            ),
                           ],
                         ),
-                        const SizedBox(height: 24),
-
-                        // Referral Card
-                        const _ReferralCard(),
-                        const SizedBox(height: 24),
-
-                        // Recent Transactions
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: Text(
-                            'RECENT TRANSACTIONS',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                              letterSpacing: 1.2,
-                            ),
-                          ),
-                        ),
                         const SizedBox(height: 12),
+
                         if (summary.history.isEmpty)
-                          const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 24),
-                            child: Text('No transactions yet'),
-                          )
+                          _EmptyHistory()
                         else
                           ListView.separated(
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
                             itemCount: summary.history.length,
-                            separatorBuilder: (context, index) => const SizedBox(height: 12),
+                            separatorBuilder: (_, _) => const SizedBox(height: 12),
                             itemBuilder: (context, index) {
                               final tx = summary.history[index];
-                              return _TransactionItem(
-                                desc: tx['metadata']?['reason'] ?? tx['action'] ?? 'AGLP Transaction',
-                                amount: '${tx['action']?.contains('SPEND') || tx['action']?.contains('PAYOUT') ? '-' : '+'} ${tx['metadata']?['amountAglp'] ?? '0'} AGLP',
-                                date: tx['createdAt'] ?? 'Recently',
-                                isCredit: !(tx['action']?.contains('SPEND') || tx['action']?.contains('PAYOUT')),
-                              );
+                              return _TransactionCard(tx: tx);
                             },
                           ),
+                        const SizedBox(height: 100),
                       ],
                     ),
                   ),
@@ -210,25 +122,32 @@ class AgentCommissionScreen extends HookConsumerWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: const Text('Withdraw AGLP'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Max available: ${max.toStringAsFixed(0)} AGLP'),
+            Text(
+              'Available: ${max.toStringAsFixed(0)} AGLP',
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 16),
             TextField(
               controller: controller,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
                 labelText: 'Amount',
-                hintText: 'Enter AGLP amount',
+                hintText: '0.00',
+                suffixText: 'AGLP',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
           ],
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
           ),
           FilledButton(
@@ -236,30 +155,33 @@ class AgentCommissionScreen extends HookConsumerWidget {
               final amount = double.tryParse(controller.text);
               if (amount == null || amount <= 0 || amount > max) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Invalid amount')),
+                  const SnackBar(content: Text('Please enter a valid amount')),
                 );
                 return;
               }
               
-              Navigator.of(context).pop();
+              Navigator.pop(context);
               try {
                 final repo = ref.read(agentRepositoryProvider);
                 await repo.requestWithdrawal(amount);
                 ref.invalidate(financeSummaryProvider);
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Withdrawal request submitted')),
+                    const SnackBar(
+                      content: Text('Withdrawal request submitted successfully!'),
+                      backgroundColor: AppColors.successGreen,
+                    ),
                   );
                 }
               } catch (e) {
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error: $e')),
+                    SnackBar(content: Text('Error: $e'), backgroundColor: AppColors.errorRed),
                   );
                 }
               }
             },
-            child: const Text('Request Withdrawal'),
+            child: const Text('Confirm'),
           ),
         ],
       ),
@@ -267,103 +189,269 @@ class AgentCommissionScreen extends HookConsumerWidget {
   }
 }
 
-class _InfoCard extends StatelessWidget {
+class _BalanceHero extends StatelessWidget {
+  final double balance;
+  final double pending;
+  final double withdrawn;
+  final double totalEarned;
+  final VoidCallback onWithdraw;
+
+  const _BalanceHero({
+    required this.balance,
+    required this.pending,
+    required this.withdrawn,
+    required this.totalEarned,
+    required this.onWithdraw,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: AppColors.primaryGradient,
+        borderRadius: BorderRadius.circular(32),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.brandPrimary.withValues(alpha: 0.3),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          // Background Decorative Icon
+          Positioned(
+            right: -20,
+            top: -20,
+            child: Icon(
+              Icons.account_balance_wallet,
+              size: 160,
+              color: Colors.white.withValues(alpha: 0.05),
+            ),
+          ),
+          
+          Padding(
+            padding: const EdgeInsets.all(28),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'AVAILABLE BALANCE',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.6),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.5,
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.trending_up, color: AppColors.successGreen.withValues(alpha: 0.8), size: 14),
+                          const SizedBox(width: 4),
+                          const Text(
+                            'LIVE',
+                            style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text(
+                      balance.toStringAsFixed(0),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 48,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -1,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'AGLP',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 28),
+                
+                // Integrated Sub-stats Row
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  decoration: BoxDecoration(
+                    border: Border(
+                      top: BorderSide(color: Colors.white.withValues(alpha: 0.1), width: 1),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: _CardSubStat(
+                          label: 'PENDING',
+                          value: '${pending.toStringAsFixed(0)} AGLP',
+                          color: AppColors.warningOrange,
+                        ),
+                      ),
+                      Container(
+                        width: 1,
+                        height: 30,
+                        color: Colors.white.withValues(alpha: 0.1),
+                      ),
+                      Expanded(
+                        child: _CardSubStat(
+                          label: 'WITHDRAWN',
+                          value: '${withdrawn.toStringAsFixed(0)} AGLP',
+                          color: Colors.white70,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                const SizedBox(height: 8),
+                
+                // Action Row
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'TOTAL REVENUE',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.4),
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          Text(
+                            '${totalEarned.toStringAsFixed(0)} AGLP',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: balance > 0 ? onWithdraw : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.brandGold,
+                        foregroundColor: AppColors.brandPrimary,
+                        elevation: 4,
+                        shadowColor: AppColors.brandGold.withValues(alpha: 0.4),
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                      ),
+                      child: const Text(
+                        'Withdraw',
+                        style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CardSubStat extends StatelessWidget {
   final String label;
   final String value;
-  final Color valueColor;
+  final Color color;
 
-  const _InfoCard({
-    required this.label,
-    required this.value,
-    required this.valueColor,
-  });
+  const _CardSubStat({required this.label, required this.value, required this.color});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).shadowColor.withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.5),
+            fontSize: 10,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 1,
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: TextStyle(
+            color: color,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
           ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: valueColor,
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
 
-class _TransactionItem extends StatelessWidget {
-  final String desc;
-  final String amount;
-  final String date;
-  final bool isCredit;
+class _TransactionCard extends StatelessWidget {
+  final Map<String, dynamic> tx;
 
-  // ignore: unused_element
-  const _TransactionItem({
-    required this.desc,
-    required this.amount,
-    required this.date,
-    required this.isCredit,
-  });
+  const _TransactionCard({required this.tx});
 
   @override
   Widget build(BuildContext context) {
+    final action = tx['action']?.toString() ?? '';
+    final isCredit = !(action.contains('SPEND') || action.contains('PAYOUT'));
+    final amount = tx['metadata']?['amountAglp']?.toString() ?? '0';
+    final reason = tx['metadata']?['reason'] ?? action;
+    final date = tx['createdAt']?.toString() ?? 'Recently';
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).shadowColor.withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(color: AppColors.borderColor),
       ),
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(8),
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
-              color: isCredit
-                  ? AppColors.successGreen.withValues(alpha: 0.1)
-                  : Theme.of(context).colorScheme.surfaceContainerHighest,
+              color: isCredit ? AppColors.successGreen.withValues(alpha: 0.1) : AppColors.peachBg,
               shape: BoxShape.circle,
             ),
             child: Icon(
-              isCredit ? Icons.check_circle_outline : Icons.arrow_downward,
-              color: isCredit
-                  ? AppColors.successGreen
-                  : Theme.of(context).colorScheme.onSurfaceVariant,
+              isCredit ? Icons.arrow_upward : Icons.arrow_downward,
+              color: isCredit ? AppColors.successGreen : AppColors.secondaryBrown,
               size: 20,
             ),
           ),
@@ -373,29 +461,28 @@ class _TransactionItem extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  desc,
-                  style: TextStyle(
+                  reason,
+                  style: const TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.onSurface,
+                    color: AppColors.charcoal,
+                    fontSize: 14,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 Text(
                   date,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                  style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
                 ),
               ],
             ),
           ),
           Text(
-            amount,
+            '${isCredit ? '+' : '-'} $amount AGLP',
             style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: isCredit
-                  ? AppColors.successGreen
-                  : Theme.of(context).colorScheme.onSurface,
+              fontWeight: FontWeight.w800,
+              color: isCredit ? AppColors.successGreen : AppColors.charcoal,
+              fontSize: 15,
             ),
           ),
         ],
@@ -403,8 +490,6 @@ class _TransactionItem extends StatelessWidget {
     );
   }
 }
-
-// Removed unused _RevenueChart and _ChartPainter classes as per instruction.
 
 class _ReferralCard extends HookConsumerWidget {
   const _ReferralCard();
@@ -443,16 +528,8 @@ class _ReferralCard extends HookConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
-        boxShadow: [
-          BoxShadow(
-            color: Theme.of(context).shadowColor.withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: AppColors.brandPrimary,
+        borderRadius: BorderRadius.circular(28),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -462,120 +539,126 @@ class _ReferralCard extends HookConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(8),
+                  color: Colors.white.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(
-                  Icons.share,
-                  color: Theme.of(context).colorScheme.onPrimaryContainer,
-                  size: 20,
-                ),
+                child: const Icon(Icons.people_outline, color: AppColors.brandGold, size: 24),
               ),
-              const SizedBox(width: 12),
-              Text(
-                'Share Referral Link',
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w600,
+              const SizedBox(width: 16),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Refer & Earn',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      'Invite agents and get commissions',
+                      style: TextStyle(color: Colors.white60, fontSize: 12),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          if (error.value != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Text(
-                error.value!,
-                style: const TextStyle(color: Colors.red, fontSize: 12),
-              ),
-            ),
+          const SizedBox(height: 24),
           if (referralData.value == null)
             SizedBox(
               width: double.infinity,
-              child: FilledButton.icon(
+              child: FilledButton(
                 onPressed: isLoading.value ? null : handleGenerate,
-                icon: isLoading.value
-                    ? const SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.link),
-                label: Text(
-                  isLoading.value ? 'Generating...' : 'Generate Referral Link',
+                style: FilledButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: AppColors.brandPrimary,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
+                child: isLoading.value
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.brandPrimary),
+                      )
+                    : const Text('Generate Referral Link', style: TextStyle(fontWeight: FontWeight.bold)),
               ),
             )
           else
             Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'YOUR REFERRAL LINK',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.outline,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-                const SizedBox(height: 8),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: isCopied.value
-                          ? AppColors.successGreen
-                          : Theme.of(context).colorScheme.outlineVariant,
-                    ),
+                    color: Colors.white.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white12),
                   ),
                   child: Row(
                     children: [
                       Expanded(
                         child: Text(
                           referralData.value!.link,
-                          style: TextStyle(
-                            fontSize: 12,
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 13,
                             fontFamily: 'monospace',
-                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      IconButton(
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                        icon: Icon(
+                      const SizedBox(width: 12),
+                      GestureDetector(
+                        onTap: handleCopy,
+                        child: Icon(
                           isCopied.value ? Icons.check_circle : Icons.copy,
-                          color: isCopied.value
-                              ? AppColors.successGreen
-                              : Theme.of(context).colorScheme.onSurfaceVariant,
-                          size: 18,
+                          color: isCopied.value ? AppColors.successGreen : AppColors.brandGold,
+                          size: 20,
                         ),
-                        onPressed: handleCopy,
                       ),
                     ],
                   ),
                 ),
                 if (isCopied.value)
                   const Padding(
-                    padding: EdgeInsets.only(top: 8, left: 4),
+                    padding: EdgeInsets.only(top: 8),
                     child: Text(
-                      'Link copied!',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: AppColors.successGreen,
-                        fontWeight: FontWeight.bold,
-                      ),
+                      'Link copied to clipboard!',
+                      style: TextStyle(color: AppColors.successGreen, fontSize: 12, fontWeight: FontWeight.bold),
                     ),
                   ),
               ],
             ),
         ],
+      ),
+    );
+  }
+}
+
+class _EmptyHistory extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Padding(
+        padding: EdgeInsets.symmetric(vertical: 48),
+        child: Column(
+          children: [
+            Icon(Icons.history_toggle_off, size: 64, color: AppColors.softGrey),
+            SizedBox(height: 16),
+            Text(
+              'No transactions found',
+              style: TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+            ),
+            Text(
+              'Your earnings history will appear here',
+              style: TextStyle(color: AppColors.mediumGrey, fontSize: 12),
+            ),
+          ],
+        ),
       ),
     );
   }

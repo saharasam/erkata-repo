@@ -477,6 +477,9 @@ export declare class RequestsController {
             missedAssignments: number;
             warningCount: number;
             avatarUrl: string | null;
+            tinNumber: string | null;
+            tradeLicenseNumber: string | null;
+            isVerified: boolean;
         };
         matches: ({
             agent: {
@@ -500,6 +503,9 @@ export declare class RequestsController {
                 missedAssignments: number;
                 warningCount: number;
                 avatarUrl: string | null;
+                tinNumber: string | null;
+                tradeLicenseNumber: string | null;
+                isVerified: boolean;
             };
         } & {
             id: string;
@@ -585,6 +591,9 @@ export declare class RequestsController {
             missedAssignments: number;
             warningCount: number;
             avatarUrl: string | null;
+            tinNumber: string | null;
+            tradeLicenseNumber: string | null;
+            isVerified: boolean;
         };
         matches: ({
             agent: {
@@ -608,6 +617,9 @@ export declare class RequestsController {
                 missedAssignments: number;
                 warningCount: number;
                 avatarUrl: string | null;
+                tinNumber: string | null;
+                tradeLicenseNumber: string | null;
+                isVerified: boolean;
             };
         } & {
             id: string;

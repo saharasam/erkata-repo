@@ -80,5 +80,8 @@ export declare class AdminsController {
         missedAssignments: number;
         warningCount: number;
         avatarUrl: string | null;
+        tinNumber: string | null;
+        tradeLicenseNumber: string | null;
+        isVerified: boolean;
     }>;
 }

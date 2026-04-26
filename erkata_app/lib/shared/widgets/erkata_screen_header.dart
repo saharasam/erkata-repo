@@ -1,34 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:erkata_app/core/theme/colors.dart';
 
-/// A standardized screen header matching the HomeScreen & AgentDashboard design.
-///
-/// Features a bold 24px navy title, a grey subtitle, and a navy circle
-/// action button (typically a back button or a profile avatar) on the right.
-///
-/// Usage:
-/// ```dart
-/// ErkataScreenHeader(
-///   title: 'My Requests',
-///   subtitle: 'Track your service requests',
-///   onActionTap: () => context.pop(),
-/// )
-/// ```
 class ErkataScreenHeader extends StatelessWidget {
-  /// Primary title displayed in bold navy.
   final String title;
-
-  /// Secondary subtitle displayed in grey below the title.
   final String subtitle;
-
-  /// Icon shown inside the circle action button. Defaults to [Icons.arrow_back].
   final IconData actionIcon;
-
-  /// Callback when the circle action button is tapped.
   final VoidCallback? onActionTap;
-
-  /// Optional widget to replace the default circle action button entirely.
-  /// If provided, [actionIcon] and [onActionTap] are ignored.
   final Widget? customAction;
 
   const ErkataScreenHeader({
@@ -42,58 +18,53 @@ class ErkataScreenHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+    return Container(
+      // Reduced margin and padding for a compact look
+      margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+      decoration: BoxDecoration(
+        color: Theme.of(
+          context,
+        ).colorScheme.primaryContainer.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Title block
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.onSurface,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  // Changed to titleLarge for smaller, balanced text
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                 ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                subtitle,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontSize: 14,
-                ),
-              ),
-            ],
+                const SizedBox(height: 3), // Tighter gap
+                Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
+              ],
+            ),
           ),
-
-          // Action button
+          const SizedBox(width: 12),
           customAction ??
-              GestureDetector(
-                onTap: onActionTap,
-                child: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.charcoal.withValues(alpha: 0.12),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+              Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: IconButton(
+                  // Set smaller constraints to shrink the button footprint
+                  constraints: const BoxConstraints(
+                    maxHeight: 36,
+                    maxWidth: 36,
                   ),
-                  child: Center(
-                    child: Icon(
-                      actionIcon,
-                      color: Theme.of(context).colorScheme.onPrimary,
-                      size: 20,
-                    ),
+                  padding: EdgeInsets.zero,
+                  onPressed: onActionTap,
+                  icon: Icon(
+                    actionIcon,
+                    size: 20,
+                    color: Theme.of(context).colorScheme.onPrimary,
                   ),
                 ),
               ),

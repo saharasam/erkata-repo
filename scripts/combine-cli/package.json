@@ -1,0 +1,10 @@
+{
+  "name": "file-combiner",
+  "version": "1.0.0",
+  "description": "CLI tool to combine files in a directory",
+  "main": "combine.cjs",
+  "bin": {
+    "combine-files": "./combine.cjs"
+  },
+  "license": "MIT"
+}
