@@ -67,6 +67,8 @@ var Action;
     Action["RESOLVE_DISPUTE"] = "RESOLVE_DISPUTE";
     Action["ESCALATE_DISPUTE"] = "ESCALATE_DISPUTE";
     Action["VIEW_BROADCASTS"] = "VIEW_BROADCASTS";
+    Action["VERIFY_UPGRADE"] = "VERIFY_UPGRADE";
+    Action["APPROVE_UPGRADE"] = "APPROVE_UPGRADE";
 })(Action || (exports.Action = Action = {}));
 exports.PermissionMatrix = {
     customer: [
@@ -114,6 +116,7 @@ exports.PermissionMatrix = {
         Action.VIEW_FINANCIAL_REPORTS,
         Action.VIEW_BROADCASTS,
     ],
+    financial_operator: [Action.VERIFY_UPGRADE, Action.VIEW_BROADCASTS],
     admin: [
         Action.PROPOSE_RESOLUTION,
         Action.FINALIZE_RESOLUTION,
@@ -171,6 +174,7 @@ exports.PermissionMatrix = {
         Action.EXPORT_FINANCIAL_AUDIT,
         Action.VIEW_ASSIGNED_REQUEST_DETAILS,
         Action.VIEW_BROADCASTS,
+        Action.APPROVE_UPGRADE,
     ],
 };
 //# sourceMappingURL=permissions.js.map

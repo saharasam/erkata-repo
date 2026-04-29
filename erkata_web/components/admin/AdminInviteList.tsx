@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import api from '../../utils/api';
 import { useModal } from '../../contexts/ModalContext';
+import { useSocket } from '../../contexts/SocketContext';
 
 interface Invite {
   id: string;
@@ -30,6 +31,22 @@ const AdminInviteList: React.FC<AdminInviteListProps> = ({ onInviteCancelled, re
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const { showConfirm, showAlert } = useModal();
+  const { socket } = useSocket();
+
+  useEffect(() => {
+    if (socket) {
+      const handleInviteClaimed = (data: any) => {
+        if (data.type === 'invite.claimed') {
+          setInvites(prev => prev.filter(i => i.id !== data.inviteId));
+        }
+      };
+
+      socket.on('notification', handleInviteClaimed);
+      return () => {
+        socket.off('notification', handleInviteClaimed);
+      };
+    }
+  }, [socket]);
 
   const fetchInvites = useCallback(async () => {
     try {

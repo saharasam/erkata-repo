@@ -35,7 +35,11 @@ let AdminsController = class AdminsController {
             where: normalizedRole
                 ? { role: normalizedRole }
                 : {
-                    OR: [{ role: client_1.UserRole.admin }, { role: client_1.UserRole.operator }],
+                    OR: [
+                        { role: client_1.UserRole.admin },
+                        { role: client_1.UserRole.operator },
+                        { role: client_1.UserRole.financial_operator },
+                    ],
                 },
             select: {
                 id: true,

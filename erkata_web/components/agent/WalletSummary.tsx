@@ -13,10 +13,11 @@ import { motion } from 'framer-motion';
 
 interface WalletSummaryProps {
   finance: {
-    balance: string;
-    aglpAvailable?: string;
-    aglpPending?: string;
-    aglpWithdrawn?: string;
+    balance: number;
+    aglpAvailable?: number;
+    aglpPendingCommissions?: number;
+    aglpPendingWithdrawals?: number;
+    aglpWithdrawn?: number;
     weeklyGrowth?: {
       percentage: string;
       amount: number;
@@ -46,18 +47,22 @@ const WalletSummary: React.FC<WalletSummaryProps> = ({ finance, onPayoutRequest 
           <div className="relative z-10">
             <p className="text-slate-400 text-sm font-bold uppercase tracking-widest mb-2">Available Balance</p>
             <div className="flex items-baseline gap-2 mb-6">
-              <span className="text-5xl font-black tracking-tighter">{parseFloat(finance.aglpAvailable || finance.balance || '0').toLocaleString()}</span>
+              <span className="text-5xl font-black tracking-tighter">{(finance.aglpAvailable ?? finance.balance ?? 0).toLocaleString()}</span>
               <span className="text-xl font-bold text-slate-500">AGLP</span>
             </div>
             
             <div className="flex gap-8 mb-8 pb-6 border-b border-white/10">
                <div>
-                  <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-1">Pending</p>
-                  <p className="text-lg font-bold text-emerald-400">{parseFloat(finance.aglpPending || '0').toLocaleString()} AGLP</p>
+                  <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-1">Pending Commissions</p>
+                  <p className="text-lg font-bold text-emerald-400">{(finance.aglpPendingCommissions ?? 0).toLocaleString()} AGLP</p>
+               </div>
+               <div>
+                  <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-1">Pending Withdrawal</p>
+                  <p className="text-lg font-bold text-amber-400">{(finance.aglpPendingWithdrawals ?? 0).toLocaleString()} AGLP</p>
                </div>
                <div>
                   <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-1">Withdrawn</p>
-                  <p className="text-lg font-bold text-slate-300">{parseFloat(finance.aglpWithdrawn || '0').toLocaleString()} AGLP</p>
+                  <p className="text-lg font-bold text-slate-300">{(finance.aglpWithdrawn ?? 0).toLocaleString()} AGLP</p>
                </div>
             </div>
             
@@ -67,10 +72,7 @@ const WalletSummary: React.FC<WalletSummaryProps> = ({ finance, onPayoutRequest 
                 className="bg-erkata-primary hover:bg-erkata-secondary text-white px-6 py-3 rounded-2xl font-bold flex items-center gap-2 transition-all active:scale-95 shadow-lg shadow-erkata-primary/20"
               >
                 <CreditCard className="w-5 h-5" />
-                Withdraw to Telebirr
-              </button>
-              <button className="bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-2xl font-bold transition-all">
-                View Reports
+                Withdraw 
               </button>
             </div>
           </div>
@@ -129,7 +131,6 @@ const WalletSummary: React.FC<WalletSummaryProps> = ({ finance, onPayoutRequest 
              <History className="w-5 h-5 text-indigo-600" />
              Transaction History
            </h3>
-           <button className="text-xs font-bold text-indigo-600 hover:text-indigo-700">View All</button>
         </div>
         
         <div className="overflow-x-auto">
@@ -169,10 +170,27 @@ const WalletSummary: React.FC<WalletSummaryProps> = ({ finance, onPayoutRequest 
                        </span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                       <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
-                         <CheckCircle2 className="w-3 h-3" />
-                         Completed
-                       </span>
+                       {(() => {
+                         const s = log.status || 'COMPLETED';
+                         if (s === 'PENDING') return (
+                           <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-100">
+                             <Clock className="w-3 h-3" />
+                             Pending
+                           </span>
+                         );
+                         if (s === 'FAILED' || s === 'REJECTED') return (
+                           <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-rose-600 bg-rose-50 px-2.5 py-1 rounded-full border border-rose-100">
+                             <ArrowDownRight className="w-3 h-3" />
+                             Failed
+                           </span>
+                         );
+                         return (
+                           <span className="inline-flex items-center gap-1.5 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-100">
+                             <CheckCircle2 className="w-3 h-3" />
+                             Completed
+                           </span>
+                         );
+                       })()}
                     </td>
                   </tr>
                 );

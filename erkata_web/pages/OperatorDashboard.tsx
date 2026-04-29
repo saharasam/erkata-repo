@@ -11,7 +11,10 @@ import {
   ShieldAlert,
   Zap,
   Loader2,
-  History as HistoryIcon
+  History as HistoryIcon,
+  AlertTriangle,
+  ChevronDown,
+  X
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useModal } from '../contexts/ModalContext';
@@ -36,6 +39,15 @@ const OperatorDashboard: React.FC = () => {
     const [isAssignmentModalOpen, setIsAssignmentModalOpen] = useState(false);
     const [timeLeft, setTimeLeft] = useState<number>(300); // 5 minutes in seconds
     const [currentView, setCurrentView] = useState('overview');
+
+    // Active Tracker
+    const [trackerFilter, setTrackerFilter] = useState<'active' | 'disputed'>('active');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [visibleCount, setVisibleCount] = useState(5);
+    // Force Complete modal
+    const [forceCompleteModal, setForceCompleteModal] = useState<{ txId: string; requestId: string } | null>(null);
+    const [forceCompleteReason, setForceCompleteReason] = useState('');
+    const [isForceCompleting, setIsForceCompleting] = useState(false);
 
     const { pushedRequestId, error: heartbeatError, trigger: triggerCheck } = useHeartbeat(isOnline);
     const { socket } = useSocket();
@@ -74,6 +86,46 @@ const OperatorDashboard: React.FC = () => {
         };
         fetchTransactions();
     }, []);
+
+    // Reset pagination when filter/search changes
+    useEffect(() => { setVisibleCount(5); }, [trackerFilter, searchQuery]);
+
+    // Filtered transactions (client-side)
+    const filteredTransactions = useMemo(() => {
+        let list = [...activeTransactions];
+        if (trackerFilter === 'disputed') {
+            list = list.filter(tx => tx.request?.status === 'disputed');
+        } else {
+            list = list.filter(tx => tx.request?.status !== 'disputed');
+        }
+        if (searchQuery.trim()) {
+            const q = searchQuery.toLowerCase();
+            list = list.filter(tx =>
+                tx.request?.category?.toLowerCase().includes(q) ||
+                tx.id?.toLowerCase().includes(q) ||
+                tx.request?.description?.toLowerCase().includes(q)
+            );
+        }
+        return list;
+    }, [activeTransactions, trackerFilter, searchQuery]);
+
+    const handleForceComplete = async () => {
+        if (!forceCompleteModal || forceCompleteReason.trim().length < 10) return;
+        setIsForceCompleting(true);
+        try {
+            await api.post(`/requests/${forceCompleteModal.requestId}/force-complete`, { note: forceCompleteReason.trim() });
+            showAlert({ title: 'Success', message: 'Request force completed successfully.', type: 'success' });
+            setForceCompleteModal(null);
+            setForceCompleteReason('');
+            const res = await api.get('/transactions');
+            setActiveTransactions(res.data);
+        } catch (err) {
+            console.error(err);
+            showAlert({ title: 'Error', message: 'Failed to force complete the request.', type: 'error' });
+        } finally {
+            setIsForceCompleting(false);
+        }
+    };
 
     // Fetch pushed request details when ID changes
     useEffect(() => {
@@ -318,14 +370,59 @@ const OperatorDashboard: React.FC = () => {
 
                     {/* Right Column: Transactions & History */}
                     <div className="space-y-6">
-                        <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2 px-2">
-                            <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                            Active Tracker
-                        </h2>
+                        <div className="flex items-center justify-between px-2">
+                            <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+                                Active Tracker
+                            </h2>
+                        </div>
+
+                        {/* Filter & Search */}
+                        <div className="space-y-4">
+                            <div className="flex p-1 bg-slate-100 rounded-2xl">
+                                <button 
+                                    onClick={() => setTrackerFilter('active')}
+                                    className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${
+                                        trackerFilter === 'active' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                                    }`}
+                                >
+                                    Active
+                                </button>
+                                <button 
+                                    onClick={() => setTrackerFilter('disputed')}
+                                    className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${
+                                        trackerFilter === 'disputed' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                                    }`}
+                                >
+                                    Disputed
+                                </button>
+                            </div>
+
+                            <div className="relative">
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                                <input 
+                                    type="text"
+                                    placeholder="Search transactions..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="w-full pl-11 pr-4 py-3 bg-white border border-slate-100 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                                />
+                                {searchQuery && (
+                                    <button 
+                                        onClick={() => setSearchQuery('')}
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 p-1 hover:bg-slate-100 rounded-full transition-colors"
+                                    >
+                                        <X className="w-3 h-3 text-slate-400" />
+                                    </button>
+                                )}
+                            </div>
+                        </div>
 
                         <div className="bg-white border border-slate-100 rounded-3xl shadow-sm overflow-hidden">
                             <div className="p-5 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
-                                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Live Updates</span>
+                                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                                    {trackerFilter === 'active' ? 'Live Updates' : 'Disputed Tasks'}
+                                </span>
                                 <div className="flex items-center gap-1.5 px-2 py-1 bg-emerald-50 rounded-full">
                                     <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
                                     <span className="text-[10px] font-black text-emerald-600 uppercase">Live</span>
@@ -333,9 +430,9 @@ const OperatorDashboard: React.FC = () => {
                             </div>
                             
                             <div className="divide-y divide-slate-50">
-                                {activeTransactions.length > 0 ? (
-                                    activeTransactions.slice(0, 5).map((tx) => (
-                                        <div key={tx.id} className="p-5 hover:bg-slate-50/80 transition-colors pointer-cursor">
+                                {filteredTransactions.length > 0 ? (
+                                    filteredTransactions.slice(0, visibleCount).map((tx) => (
+                                        <div key={tx.id} className="p-5 hover:bg-slate-50/80 transition-colors">
                                             <div className="flex justify-between items-start mb-2">
                                                 <div>
                                                     <p className="text-sm font-bold text-slate-800">
@@ -346,58 +443,56 @@ const OperatorDashboard: React.FC = () => {
                                                     </p>
                                                 </div>
                                                 <span className={`text-[10px] font-black px-2 py-0.5 rounded-full uppercase ${
+                                                    tx.request?.status === 'disputed' ? 'bg-rose-50 text-rose-600' :
                                                     tx.status === 'completed' ? 'bg-emerald-50 text-emerald-600' : 'bg-indigo-50 text-indigo-600'
                                                 }`}>
-                                                    {tx.status}
+                                                    {tx.request?.status === 'disputed' ? 'disputed' : tx.status}
                                                 </span>
                                             </div>
                                             <div className="flex justify-between items-center pt-2">
                                                 <div className="flex -space-x-2">
-                                                    <div className="w-7 h-7 rounded-full bg-slate-100 border-2 border-white flex items-center justify-center text-[10px] font-black text-slate-500">C</div>
-                                                    <div className="w-7 h-7 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center text-[10px] font-black text-slate-600">A</div>
+                                                    <div title={`Customer: ${tx.request?.customer?.fullName}`} className="w-7 h-7 rounded-full bg-slate-100 border-2 border-white flex items-center justify-center text-[10px] font-black text-slate-500 cursor-help">
+                                                        {tx.request?.customer?.fullName?.[0] || 'C'}
+                                                    </div>
+                                                    <div title={`Agent: ${tx.agent?.fullName}`} className="w-7 h-7 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center text-[10px] font-black text-slate-600 cursor-help">
+                                                        {tx.agent?.fullName?.[0] || 'A'}
+                                                    </div>
                                                 </div>
                                                 <div className="flex gap-2">
-                                                    {tx.request?.status === 'fulfilled' && (
+                                                    {(tx.request?.status === 'fulfilled' || tx.request?.status === 'disputed') && (
                                                         <button 
-                                                            onClick={async (e) => {
+                                                            onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                if (window.confirm('Force completion of this request? This will release the agent commission.')) {
-                                                                    try {
-                                                                        await api.post(`/requests/${tx.requestId}/force-complete`);
-                                                                        showAlert({ title: 'Success', message: 'Request force completed.', type: 'success' });
-                                                                        // Refresh transactions
-                                                                        const res = await api.get('/transactions');
-                                                                        setActiveTransactions(res.data);
-                                                                    } catch (err) {
-                                                                        console.error(err);
-                                                                        showAlert({ title: 'Error', message: 'Failed to force complete.', type: 'error' });
-                                                                    }
-                                                                }
+                                                                setForceCompleteModal({ txId: tx.id, requestId: tx.requestId });
                                                             }}
-                                                            className="text-[11px] font-black px-3 py-1 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-all shadow-sm shadow-emerald-200"
+                                                            className="text-[11px] font-black px-3 py-1.5 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition-all shadow-sm shadow-rose-200 flex items-center gap-1.5"
                                                         >
+                                                            <AlertTriangle className="w-3 h-3" />
                                                             FORCE COMPLETE
                                                         </button>
                                                     )}
-                                                    <button className="text-[11px] font-bold text-indigo-600 hover:text-indigo-700 transition-colors">
-                                                        Details →
-                                                    </button>
                                                 </div>
                                             </div>
                                         </div>
                                     ))
                                 ) : (
                                     <div className="p-12 text-center">
-                                        <p className="text-sm text-slate-300 font-bold italic">No moving parts currently</p>
+                                        <p className="text-sm text-slate-300 font-bold italic">No {trackerFilter} transactions found</p>
                                     </div>
                                 )}
                             </div>
                             
-                            <div className="p-5 bg-slate-50 text-center border-t border-slate-100">
-                                <button className="text-xs font-bold text-slate-500 hover:text-slate-700 transition-colors">
-                                    Full Transaction History
-                                </button>
-                            </div>
+                            {filteredTransactions.length > visibleCount && (
+                                <div className="p-5 bg-slate-50 text-center border-t border-slate-100">
+                                    <button 
+                                        onClick={() => setVisibleCount(prev => prev + 5)}
+                                        className="flex items-center gap-2 mx-auto text-xs font-bold text-slate-500 hover:text-slate-700 transition-colors"
+                                    >
+                                        <ChevronDown className="w-4 h-4" />
+                                        Load More
+                                    </button>
+                                </div>
+                            )}
                         </div>
 
                         {/* Guidelines Card */}
@@ -411,10 +506,10 @@ const OperatorDashboard: React.FC = () => {
                                 Protocol Docs
                             </button>
                         </div>
-                        </div>
                     </div>
                 </div>
-            )}
+            </div>
+        )}
 
                     {currentView === 'disputes' && (
                         <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm min-h-[600px]">
@@ -456,6 +551,67 @@ const OperatorDashboard: React.FC = () => {
                     onAssigned={onAssignmentComplete}
                 />
             )}
+
+            {/* Force Complete Modal */}
+            <AnimatePresence>
+                {forceCompleteModal && (
+                    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="bg-white rounded-[2.5rem] p-8 max-w-md w-full shadow-2xl border border-slate-100"
+                        >
+                            <div className="w-16 h-16 bg-rose-50 rounded-2xl flex items-center justify-center mb-6">
+                                <AlertTriangle className="w-8 h-8 text-rose-600" />
+                            </div>
+                            
+                            <h3 className="text-2xl font-black text-slate-900 mb-2">Force Completion</h3>
+                            <p className="text-slate-500 text-sm mb-6 leading-relaxed">
+                                You are about to bypass the customer confirmation. This will immediately release the commission to the agent. <span className="font-bold text-rose-600 underline">A reason is required.</span>
+                            </p>
+
+                            <div className="space-y-4 mb-8">
+                                <div>
+                                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2 px-1">Reason for intervention</label>
+                                    <textarea 
+                                        value={forceCompleteReason}
+                                        onChange={(e) => setForceCompleteReason(e.target.value)}
+                                        placeholder="Explain why this request must be force completed (min 10 characters)..."
+                                        className="w-full p-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm min-h-[120px] focus:outline-none focus:ring-2 focus:ring-rose-500/20 transition-all resize-none"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="flex gap-3">
+                                <button 
+                                    onClick={() => {
+                                        setForceCompleteModal(null);
+                                        setForceCompleteReason('');
+                                    }}
+                                    className="flex-1 py-4 text-slate-600 font-bold hover:bg-slate-50 rounded-2xl transition-all"
+                                >
+                                    Cancel
+                                </button>
+                                <button 
+                                    disabled={forceCompleteReason.trim().length < 10 || isForceCompleting}
+                                    onClick={handleForceComplete}
+                                    className="flex-[2] py-4 bg-rose-600 text-white font-black rounded-2xl hover:bg-rose-700 active:scale-95 transition-all shadow-lg shadow-rose-200 disabled:opacity-50 disabled:active:scale-100 flex items-center justify-center gap-2"
+                                >
+                                    {isForceCompleting ? (
+                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                    ) : (
+                                        <>
+                                            Confirm Force Complete
+                                            <CheckCircle2 className="w-5 h-5" />
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </DashboardLayout>
     );
 };

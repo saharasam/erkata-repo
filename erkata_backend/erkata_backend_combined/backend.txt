@@ -6,8 +6,13 @@
 # Please add `import "dotenv/config";` to your `prisma.config.ts` file, or use the Prisma CLI with Bun
 # to load environment variables from .env files: https://pris.ly/prisma-config-env-vars.
 
-DATABASE_URL="postgresql://neondb_owner:npg_BSjQO59pbMcx@ep-royal-leaf-anh0op8c.c-6.us-east-1.aws.neon.tech/neondb?sslmode=require&connect_timeout=30"
-DIRECT_URL="postgresql://neondb_owner:npg_BSjQO59pbMcx@ep-royal-leaf-anh0op8c.c-6.us-east-1.aws.neon.tech/neondb?sslmode=require&connect_timeout=30"
+# DATABASE_URL="postgresql://neondb_owner:npg_BSjQO59pbMcx@ep-royal-leaf-anh0op8c.c-6.us-east-1.aws.neon.tech/neondb?sslmode=require&connect_timeout=30"
+# DIRECT_URL="postgresql://neondb_owner:npg_BSjQO59pbMcx@ep-royal-leaf-anh0op8c.c-6.us-east-1.aws.neon.tech/neondb?sslmode=require&connect_timeout=30"
+
+
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/neondb"
+DIRECT_URL="postgresql://postgres:postgres@localhost:5432/neondb"
+
 
 JWT_SECRET="E2N8cq8Hvk2CYFvq0jlxAdutt1h85yz4rlx9JbUQX7/6Y5LqlrDO9j7vYvkKO5HKnG5p2hcxOUR6Xy7eNyHfTw=="
 
@@ -12132,6 +12137,9 @@ model Profile {
   missedAssignments Int               @default(0) @map("missed_assignments")
   warningCount      Int               @default(0) @map("warning_count")
   avatarUrl         String?           @map("avatar_url")
+  tinNumber         String?           @map("tin_number")
+  tradeLicenseNumber String?          @map("trade_license_number")
+  isVerified        Boolean           @default(false) @map("is_verified")
   agentZones        AgentZone[]
   aglpTransactions  AglpTransaction[]
   auditLogsActor    AuditLog[]        @relation("Actor")
@@ -12702,6 +12710,70 @@ async function checkUser() {
 checkUser();
 
 
+===== FILE: scratch\list_agents.ts =====
+
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
+async function main() {
+  const agents = await prisma.profile.findMany({
+    where: { role: 'agent' },
+    include: {
+      package: true,
+      referredBy: {
+        select: {
+          fullName: true
+        }
+      }
+    },
+    orderBy: { createdAt: 'desc' }
+  });
+
+  console.log(`Total Agents: ${agents.length}\n`);
+  console.log('| Name | Phone | Tier | Referred By | Joined At |');
+  console.log('|------|-------|------|-------------|-----------|');
+  agents.forEach(a => {
+    console.log(`| ${a.fullName} | ${a.phone} | ${a.package?.displayName || a.tier} | ${a.referredBy?.fullName || '-'} | ${a.createdAt.toISOString().split('T')[0]} |`);
+  });
+}
+
+main()
+  .catch(e => console.error(e))
+  .finally(async () => await prisma.$disconnect());
+
+
+===== FILE: scratch\list_operators.js =====
+
+
+const { PrismaClient } = require('@prisma/client');
+const prisma = new PrismaClient();
+
+async function main() {
+  const operators = await prisma.profile.findMany({
+    where: {
+      role: 'operator',
+    },
+    select: {
+      fullName: true,
+      email: true,
+    },
+  });
+
+  console.log('Registered Operators:');
+  console.table(operators);
+}
+
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
+
+
 ===== FILE: scratch\test-db.js =====
 
 
@@ -12729,6 +12801,30 @@ async function testConnection() {
 }
 
 testConnection();
+
+
+===== FILE: scratch\test-db.ts =====
+
+import { PrismaClient } from '@prisma/client';
+
+async function main() {
+  const prisma = new PrismaClient({
+    log: ['query', 'info', 'warn', 'error'],
+  });
+  console.log('Connecting to database...');
+  try {
+    await prisma.$connect();
+    console.log('Connected successfully!');
+    const result = await prisma.$queryRaw`SELECT 1`;
+    console.log('Query result:', result);
+  } catch (error) {
+    console.error('Connection failed:', error);
+  } finally {
+    await prisma.$disconnect();
+  }
+}
+
+main();
 
 
 ===== FILE: scripts\flush-requests.ts =====
@@ -19617,6 +19713,9 @@ export class RequestsService implements OnModuleInit {
         customer: {
           select: { id: true, fullName: true, phone: true },
         },
+        assignedOperator: {
+          select: { id: true, fullName: true, role: true },
+        },
         matches: {
           include: {
             agent: {
@@ -20346,6 +20445,26 @@ export class UsersController {
     const callerRole = req.user.role;
     return this.usersService.activateUser(callerRole, userId);
   }
+
+  @Patch('me/business')
+  async updateBusinessProfile(
+    @Req() req: AuthenticatedRequest,
+    @Body() body: { tinNumber: string; tradeLicenseNumber: string },
+  ) {
+    return this.usersService.updateBusinessProfile(req.user.id, body);
+  }
+
+  @Get(':id/profile')
+  @RequirePermission(Action.VIEW_USER_DETAILS_ANY_ROLE)
+  async getUserProfile(@Param('id') userId: string) {
+    return this.usersService.getCurrentProfile(userId);
+  }
+
+  @Get(':id/finance')
+  @RequirePermission(Action.VIEW_USER_DETAILS_ANY_ROLE)
+  async getUserFinance(@Param('id') userId: string) {
+    return this.usersService.getFinanceSummary(userId);
+  }
 }
 
 
@@ -20433,6 +20552,12 @@ export class UsersService {
             fullName: true,
             createdAt: true,
             role: true,
+            tier: true,
+            package: {
+              select: {
+                displayName: true,
+              },
+            },
           },
         },
       },
@@ -20504,6 +20629,23 @@ export class UsersService {
       take: 20,
     });
 
+    // Gather AGLP transaction IDs from audit log metadata to fetch real statuses
+    const aglpTxIds = history
+      .map((log) => {
+        const meta = (log.metadata as AuditLogMetadata) || {};
+        return meta.aglpTxId || meta.transactionId;
+      })
+      .filter((id): id is string => !!id);
+
+    let txStatusMap = new Map<string, string>();
+    if (aglpTxIds.length > 0) {
+      const txStatuses = await this.prisma.aglpTransaction.findMany({
+        where: { id: { in: aglpTxIds } },
+        select: { id: true, status: true },
+      });
+      txStatusMap = new Map(txStatuses.map((t) => [t.id, t.status]));
+    }
+
     // Format history for the UI
     const formattedHistory = history.map((log) => {
       const metadata = (log.metadata as AuditLogMetadata) || {};
@@ -20516,15 +20658,19 @@ export class UsersService {
             ? 'Withdrawal'
             : 'Commission';
 
+      const txId = metadata.aglpTxId || metadata.transactionId;
+      const txStatus = txStatusMap.get(txId) || 'COMPLETED';
+
       return {
         id: log.id,
         action: log.action,
         amount: metadata.amount || metadata.amountAglp || 0,
         type,
+        status: txStatus,
         createdAt: log.createdAt,
         metadata: {
           ...metadata,
-          transactionId: metadata.transactionId || metadata.aglpTxId || log.id,
+          transactionId: txId || log.id,
         },
       };
     });
@@ -20611,16 +20757,33 @@ export class UsersService {
       },
     );
 
-    const dynamicPending =
-      (pendingCommissionsSum._sum.amount?.toNumber() || 0) +
-      (pendingWithdrawalsSum._sum.amount?.toNumber() || 0);
+    const pendingWithdrawalAmount =
+      pendingWithdrawalsSum._sum.amount?.toNumber() || 0;
+    const pendingCommissionAmount =
+      pendingCommissionsSum._sum.amount?.toNumber() || 0;
     const dynamicWithdrawn =
       completedWithdrawalsSum._sum.amount?.toNumber() || 0;
 
+    // True available = ledger balance minus any in-flight withdrawal requests
+    const aglpAvailable =
+      profile.aglpBalance.toNumber() - pendingWithdrawalAmount;
+
+    // Total lifetime earnings: sum of all completed EARN transactions
+    const totalEarningsResult = await this.prisma.aglpTransaction.aggregate({
+      where: {
+        profileId: userId,
+        type: 'EARN',
+        status: 'COMPLETED',
+      },
+      _sum: { amount: true },
+    });
+    const totalEarnings = totalEarningsResult._sum.amount?.toNumber() || 0;
+
     return {
-      balance: profile.aglpBalance.toNumber(),
-      aglpAvailable: profile.aglpBalance.toNumber(),
-      aglpPending: dynamicPending,
+      balance: aglpAvailable,
+      aglpAvailable,
+      aglpPendingCommissions: pendingCommissionAmount,
+      aglpPendingWithdrawals: pendingWithdrawalAmount,
       aglpWithdrawn: dynamicWithdrawn,
       usedSlots,
       totalSlots,
@@ -20635,6 +20798,7 @@ export class UsersService {
         amount: currentTotal - previousTotal,
         chart: chartData,
       },
+      totalEarnings,
       history: formattedHistory,
     };
   }
@@ -21118,13 +21282,31 @@ export class UsersService {
    * Looks up a referrer by their referral code.
    * Used during registration to attribute new users.
    */
-  async findByReferralCode(code: string) {
-    const referrer = await this.prisma.profile.findUnique({
-      where: { referralCode: code },
-      include: { referralLink: true, referrals: { select: { id: true } } },
+  /**
+   * Updates the agent's business verification details.
+   */
+  async updateBusinessProfile(
+    userId: string,
+    data: { tinNumber: string; tradeLicenseNumber: string },
+  ) {
+    const profile = await this.prisma.profile.findUnique({
+      where: { id: userId },
     });
-    if (!referrer) throw new BadRequestException('Invalid referral code');
-    return referrer;
+
+    if (!profile) throw new NotFoundException('Profile not found');
+    if (profile.role !== UserRole.agent) {
+      throw new ForbiddenException(
+        'Only agents can update business verification details',
+      );
+    }
+
+    return this.prisma.profile.update({
+      where: { id: userId },
+      data: {
+        tinNumber: data.tinNumber,
+        tradeLicenseNumber: data.tradeLicenseNumber,
+      },
+    });
   }
 }
 

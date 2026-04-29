@@ -26,6 +26,7 @@ const admin_module_1 = require("./admin/admin.module");
 const aglp_module_1 = require("./aglp/aglp.module");
 const redis_module_1 = require("./common/redis/redis.module");
 const notifications_module_1 = require("./notifications/notifications.module");
+const upgrades_module_1 = require("./upgrades/upgrades.module");
 let AppModule = class AppModule {
     configure(consumer) {
         consumer
@@ -59,6 +60,7 @@ exports.AppModule = AppModule = __decorate([
             admin_module_1.AdminModule,
             aglp_module_1.AglpModule,
             redis_module_1.RedisModule,
+            upgrades_module_1.UpgradesModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [

@@ -649,6 +649,9 @@ export class RequestsService implements OnModuleInit {
         customer: {
           select: { id: true, fullName: true, phone: true },
         },
+        assignedOperator: {
+          select: { id: true, fullName: true, role: true },
+        },
         matches: {
           include: {
             agent: {

@@ -12,11 +12,11 @@ export declare class MediationController {
         id: string;
         createdAt: Date;
         transactionId: string;
-        authorId: string;
         rating: number;
         comment: string | null;
         categories: string[];
         content: string;
+        authorId: string;
     }>;
     proposeResolution(bundleId: string, req: AuthenticatedRequest, body: {
         proposedText: string;

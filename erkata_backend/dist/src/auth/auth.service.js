@@ -49,14 +49,17 @@ const prisma_service_1 = require("../prisma/prisma.service");
 const invite_service_1 = require("./invite/invite.service");
 const bcrypt = __importStar(require("bcrypt"));
 const crypto_1 = require("crypto");
+const notifications_gateway_1 = require("../notifications/notifications.gateway");
 let AuthService = class AuthService {
     prisma;
     jwtService;
     inviteService;
-    constructor(prisma, jwtService, inviteService) {
+    notificationsGateway;
+    constructor(prisma, jwtService, inviteService, notificationsGateway) {
         this.prisma = prisma;
         this.jwtService = jwtService;
         this.inviteService = inviteService;
+        this.notificationsGateway = notificationsGateway;
     }
     sanitizePhone(phone) {
         if (!phone)
@@ -209,9 +212,15 @@ let AuthService = class AuthService {
                 ...(referredById ? { referredById } : {}),
             },
         });
-        if (data.inviteToken &&
-            (finalRole === 'admin' || finalRole === 'operator')) {
-            await this.inviteService.markInviteAsUsed(data.inviteToken);
+        if (data.inviteToken) {
+            const invite = await this.inviteService.markInviteAsUsed(data.inviteToken);
+            if (invite && invite.createdById) {
+                this.notificationsGateway.sendToUser(invite.createdById, 'notification', {
+                    type: 'invite.claimed',
+                    inviteId: invite.id,
+                    message: `The invitation for ${invite.email} has been claimed.`,
+                });
+            }
         }
         console.log(`[AuthService] User created successfully: ${newProfile.id}`);
         const payload = {
@@ -249,6 +258,7 @@ exports.AuthService = AuthService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         jwt_1.JwtService,
-        invite_service_1.InviteService])
+        invite_service_1.InviteService,
+        notifications_gateway_1.NotificationsGateway])
 ], AuthService);
 //# sourceMappingURL=auth.service.js.map

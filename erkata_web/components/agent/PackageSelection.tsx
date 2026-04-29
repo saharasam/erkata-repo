@@ -5,13 +5,16 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Import icons from lucide-react used to visually represent each tier and UI elements
-import { Shield, Sparkles, CheckCircle, MapPin, Users, Heart, Star, ArrowRight, Loader2, Zap } from 'lucide-react';
+import { Shield, Sparkles, CheckCircle, MapPin, Users, Heart, Star, ArrowRight, Loader2, Zap, Clock } from 'lucide-react';
 
 // Import the pre-configured axios API client for making authenticated HTTP requests
 import api from '../../utils/api';
 
 // Import the global modal helper to trigger confirmation and alert dialogs
 import { useModal } from '../../contexts/ModalContext';
+
+// Import custom upgrade flow modals for manual ETB verification
+import { UpgradeFlowModals } from './UpgradeFlowModals';
 
 // Define the props interface for the PackageSelection component
 export interface PackageSelectionProps {
@@ -93,20 +96,29 @@ export const PackageSelection: React.FC<PackageSelectionProps> = ({ currentTier,
   const [isSubmitting, setIsSubmitting] = useState(false);           // True while the API purchase request is in-flight
   const [dynamicPackages, setDynamicPackages] = useState<any[]>([]);
   const [loadingPackages, setLoadingPackages] = useState(true);
+  
+  // State for the manual upgrade flow modal
+  const [upgradeModal, setUpgradeModal] = useState<{ isOpen: boolean; targetTier: string; price: string } | null>(null);
+  const [activeRequest, setActiveRequest] = useState<any>(null);
+
+  const fetchData = async () => {
+    try {
+      setLoadingPackages(true);
+      const [tiersRes, activeRes] = await Promise.all([
+        api.get('/users/me/available-packages'),
+        api.get('/upgrades/active')
+      ]);
+      setDynamicPackages(tiersRes.data);
+      setActiveRequest(activeRes.data);
+    } catch (error) {
+      console.error('Failed to fetch package data:', error);
+    } finally {
+      setLoadingPackages(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchTiers = async () => {
-      try {
-        setLoadingPackages(true);
-        const response = await api.get('/users/me/available-packages');
-        setDynamicPackages(response.data);
-      } catch (error) {
-        console.error('Failed to fetch tiers:', error);
-      } finally {
-        setLoadingPackages(false);
-      }
-    };
-    fetchTiers();
+    fetchData();
   }, []);
 
   // Merge dynamic data with static UI metadata
@@ -128,43 +140,50 @@ export const PackageSelection: React.FC<PackageSelectionProps> = ({ currentTier,
 
   // Handles the user clicking "Get Started" on a specific package card
   const handleSelect = async (pkgId: string, paymentMethod: 'ETB' | 'AGLP' = 'ETB') => {
-    setSelectedId(pkgId); // Mark this card as the active/selected card
-    const pkg = displayPackages.find(p => p.id === pkgId); // Look up the full package metadata by ID
+    const pkg = displayPackages.find(p => p.id === pkgId);
 
-    const message = paymentMethod === 'ETB'
-      ? `You are about to subscribe to the ${pkg?.name} package for ${pkg?.price} ETB. You will receive an equivalent amount of AGLP as a reward. This will unlock ${pkg?.limit} and ${pkg?.slots}. Proceed?`
-      : `You are about to subscribe to the ${pkg?.name} package using your AGLP balance. This will unlock ${pkg?.limit} and ${pkg?.slots}. Proceed?`;
+    // If it's an ETB payment, trigger the manual multi-step flow
+    if (paymentMethod === 'ETB') {
+      setUpgradeModal({
+        isOpen: true,
+        targetTier: pkgId,
+        price: pkg?.price || '0'
+      });
+      return;
+    }
 
-    // Show a confirmation modal before charging the agent
+    // AGLP payment still uses the automatic flow
+    setSelectedId(pkgId);
     const confirmed = await showConfirm({
-      title: `Subscribe to ${pkg?.name}`,                                                                                 // Modal title showing chosen tier
-      message, // Warning with price and perks
-      confirmText: 'Confirm & Pay',                                                                                       // Label for the confirm button
-      type: 'success',                                                                                                    // Visual style for the modal
+      title: `Upgrade to ${pkg?.name}`,
+      message: `You are about to subscribe to the ${pkg?.name} package using your AGLP balance. This will unlock ${pkg?.limit} and ${pkg?.slots}. Proceed?`,
+      confirmText: 'Confirm & Upgrade',
+      type: 'success',
     });
 
     if (confirmed) {
-      setIsSubmitting(true); // Show loading spinner on the selected card's button
+      setIsSubmitting(true);
       try {
-        await api.post('/users/me/package', { tier: pkgId, paymentMethod }); // Submit the selected tier to the backend
+        await api.post('/users/me/package', { tier: pkgId, paymentMethod });
         showAlert({
-          title: 'Package Activated!',                                                 // Success message title
-          message: `Welcome to the ${pkg?.name} tier. Your account has been upgraded successfully.`, // Confirmation to the user
-          type: 'success',                                                             // Render as a green success alert
+          title: 'Package Activated!',
+          message: `Welcome to the ${pkg?.name} tier. Your account has been upgraded successfully.`,
+          type: 'success',
         });
-        onComplete(); // Trigger the parent's callback (e.g., refresh dashboard data)
+        onComplete();
       } catch (error: any) {
-        console.error('Package purchase failed:', error); // Log the full error for debugging
+        console.error('Package purchase failed:', error);
         showAlert({
-          title: 'Transaction Failed',                                                                         // Error message title
-          message: error.response?.data?.message || 'Failed to activate package. Please try again.',          // Use API error message or fallback
-          type: 'error',                                                                                       // Render as a red error alert
+          title: 'Transaction Failed',
+          message: error.response?.data?.message || 'Failed to activate package. Please try again.',
+          type: 'error',
         });
       } finally {
-        setIsSubmitting(false); // Re-enable the button regardless of success or failure
+        setIsSubmitting(false);
+        setSelectedId(null);
       }
     } else {
-      setSelectedId(null); // If the user cancelled the modal, deselect the card
+      setSelectedId(null);
     }
   };
 
@@ -220,8 +239,9 @@ export const PackageSelection: React.FC<PackageSelectionProps> = ({ currentTier,
         {/* AnimatePresence allows cards to animate in/out correctly */}
         <AnimatePresence>
           {displayPackages.map((pkg, index) => {
-            const Icon = pkg.icon;            // Resolve the icon component for this specific package
+            const Icon = pkg.icon;
             const isSelected = selectedId === pkg.id; // True if this card triggered the last purchase attempt
+            const isPending = activeRequest?.targetTier === pkg.id;
 
             return (
               // Each card animates in from below with a staggered delay based on its index
@@ -236,7 +256,7 @@ export const PackageSelection: React.FC<PackageSelectionProps> = ({ currentTier,
                     ? `border-rose-400 shadow-2xl ${pkg.shadow} ring-4 ${pkg.ring} ring-opacity-30` // Popular: vibrant border + glow ring
                     : 'border-slate-100 shadow-sm hover:shadow-xl hover:border-slate-300'            // Others: subtle border, hover lift
                 }`}
-                onClick={() => !isSubmitting && handleSelect(pkg.id, 'ETB')} // Clicking anywhere on the card triggers ETB purchase
+                onClick={() => !isSubmitting && !activeRequest && handleSelect(pkg.id, 'ETB')} // Clicking anywhere on the card triggers ETB purchase
               >
                 {/* Top color bar: only shown on the popular card to draw attention */}
                 {pkg.popular && (
@@ -275,10 +295,8 @@ export const PackageSelection: React.FC<PackageSelectionProps> = ({ currentTier,
                   </p>
 
                   {/* Price display with ETB currency label */}
-                  <div className="flex items-baseline gap-1 mb-6">
                     <span className="text-3xl font-black text-slate-900">{pkg.price}</span> {/* Numeric price */}
-                    <span className="text-sm font-bold text-slate-400">ETB</span>           {/* Currency label */}
-                  </div>
+                    <span className="text-sm font-bold text-slate-400">AGLP</span>           {/* Currency label */}
 
                   {/* Features list: zone limit, referral slots, and support */}
                   <div className="space-y-3 mb-7 flex-grow"> {/* flex-grow forces CTA button to the bottom */}
@@ -310,21 +328,28 @@ export const PackageSelection: React.FC<PackageSelectionProps> = ({ currentTier,
                     {/* Call-to-action button — ETB */}
                     <button
                       onClick={(e) => { e.stopPropagation(); handleSelect(pkg.id, 'ETB'); }}
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || !!activeRequest}
                       className={`w-full py-3.5 rounded-xl font-bold text-sm tracking-wide transition-all flex items-center justify-center gap-2 ${
-                        pkg.popular
-                          ? `bg-gradient-to-r ${pkg.gradient} text-white shadow-lg ${pkg.shadow} hover:opacity-90` // Gradient CTA for popular
-                          : 'bg-slate-900 text-white hover:bg-slate-700'                                           // Dark CTA for others
-                      } ${isSubmitting && isSelected ? 'opacity-60 cursor-not-allowed' : ''}`}
+                        isPending 
+                          ? 'bg-amber-100 text-amber-700 cursor-default'
+                          : pkg.popular
+                            ? `bg-gradient-to-r ${pkg.gradient} text-white shadow-lg ${pkg.shadow} hover:opacity-90` // Gradient CTA for popular
+                            : 'bg-slate-900 text-white hover:bg-slate-700'                                           // Dark CTA for others
+                      } ${(isSubmitting && isSelected) || (activeRequest && !isPending) ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                       {isSubmitting && isSelected ? (
                         <>
                           <Loader2 className="w-4 h-4 animate-spin" />
                           Processing...
                         </>
+                      ) : isPending ? (
+                        <>
+                          <Clock className="w-4 h-4" />
+                          Waiting for Approval
+                        </>
                       ) : (
                         <>
-                          Buy with {pkg.price} ETB
+                          Buy with {pkg.price} AGLP
                           <ArrowRight className="w-4 h-4" />
                         </>
                       )}
@@ -358,6 +383,17 @@ export const PackageSelection: React.FC<PackageSelectionProps> = ({ currentTier,
             {skipText || 'Continue with Free Tier for now'} {/* Use custom label or a sensible default */}
           </button>
         </div>
+      )}
+
+      {/* Manual Upgrade Flow Modal */}
+      {upgradeModal && (
+        <UpgradeFlowModals
+          isOpen={upgradeModal.isOpen}
+          onClose={() => setUpgradeModal(null)}
+          targetTier={upgradeModal.targetTier}
+          price={upgradeModal.price}
+          onSuccess={() => onComplete()}
+        />
       )}
     </motion.div>
   );

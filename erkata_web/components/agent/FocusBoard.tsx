@@ -26,7 +26,9 @@ export const FocusBoard: React.FC<FocusBoardProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredRequests = requests.filter(req => {
-    const matchesStatus = statusFilter === 'all' || req.status === statusFilter;
+    const matchesStatus = statusFilter === 'all' || 
+                         (statusFilter === 'assigned' && (req.status === 'assigned' || req.status === 'accepted')) ||
+                         (statusFilter === 'fulfilled' && (req.status === 'fulfilled' || req.status === 'completed'));
     const matchesSearch = req.requirementSummary.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          req.customerName.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesStatus && matchesSearch;
@@ -34,8 +36,8 @@ export const FocusBoard: React.FC<FocusBoardProps> = ({
 
   const stats = {
     total: requests.length,
-    active: requests.filter(r => r.status === 'assigned').length,
-    fulfilled: requests.filter(r => r.status === 'fulfilled').length
+    active: requests.filter(r => r.status === 'assigned' || r.status === 'accepted').length,
+    fulfilled: requests.filter(r => r.status === 'fulfilled' || r.status === 'completed').length
   };
 
   return (
@@ -48,17 +50,31 @@ export const FocusBoard: React.FC<FocusBoardProps> = ({
         </div>
         
         <div className="flex flex-wrap gap-3">
-           <div className="bg-white px-5 py-3 rounded-2xl border border-slate-100 shadow-sm">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Active</p>
+           <button 
+              onClick={() => setStatusFilter('assigned')}
+              className={`bg-white px-6 py-3 rounded-2xl border transition-all hover:border-indigo-500 hover:shadow-md active:scale-95 text-left group ${
+                statusFilter === 'assigned' ? 'border-indigo-500 ring-4 ring-indigo-500/5' : 'border-slate-100 shadow-sm'
+              }`}
+           >
+              <p className={`text-[10px] font-bold uppercase tracking-widest mb-1 transition-colors ${
+                statusFilter === 'assigned' ? 'text-indigo-500' : 'text-slate-400 group-hover:text-indigo-400'
+              }`}>Active</p>
               <p className="text-xl font-black text-slate-800">{stats.active}</p>
-           </div>
-           <div className="bg-white px-5 py-3 rounded-2xl border border-slate-100 shadow-sm">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Fulfilled</p>
+           </button>
+           <button 
+              onClick={() => setStatusFilter('fulfilled')}
+              className={`bg-white px-6 py-3 rounded-2xl border transition-all hover:border-emerald-500 hover:shadow-md active:scale-95 text-left group ${
+                statusFilter === 'fulfilled' ? 'border-emerald-500 ring-4 ring-emerald-500/5' : 'border-slate-100 shadow-sm'
+              }`}
+           >
+              <p className={`text-[10px] font-bold uppercase tracking-widest mb-1 transition-colors ${
+                statusFilter === 'fulfilled' ? 'text-emerald-500' : 'text-slate-400 group-hover:text-emerald-400'
+              }`}>Fulfilled</p>
               <p className="text-xl font-black text-slate-800">{stats.fulfilled}</p>
-           </div>
-           <div className="bg-indigo-600 px-5 py-3 rounded-2xl border border-indigo-500 shadow-lg shadow-indigo-600/20 text-white">
+           </button>
+           <div className="bg-indigo-600 px-6 py-3 rounded-2xl border border-indigo-500 shadow-lg shadow-indigo-600/20 text-white min-w-[120px]">
               <p className="text-[10px] font-bold text-indigo-200 uppercase tracking-widest mb-1">Capacity</p>
-              <p className="text-xl font-black">{Math.round((stats.active / 10) * 100)}%</p>
+              <p className="text-xl font-black">{Math.min(100, Math.round((stats.active / 10) * 100))}%</p>
            </div>
         </div>
       </div>
@@ -70,13 +86,13 @@ export const FocusBoard: React.FC<FocusBoardProps> = ({
                <button
                   key={s}
                   onClick={() => setStatusFilter(s)}
-                  className={`px-5 py-2 rounded-xl text-xs font-bold capitalize transition-all whitespace-nowrap ${
+                  className={`px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap ${
                      statusFilter === s 
-                        ? 'bg-white text-slate-900 shadow-sm' 
+                        ? 'bg-white text-indigo-600 shadow-sm' 
                         : 'text-slate-500 hover:text-slate-700'
                   }`}
                >
-                  {s.replace('-', ' ')}
+                  {s === 'assigned' ? 'Active' : s === 'fulfilled' ? 'Fulfilled' : 'All Requests'}
                </button>
             ))}
          </div>

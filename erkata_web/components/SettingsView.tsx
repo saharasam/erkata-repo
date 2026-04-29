@@ -5,7 +5,7 @@ import { useModal } from '../contexts/ModalContext';
 import { motion } from 'framer-motion';
 
 interface SettingsViewProps {
-  role: 'agent' | 'operator' | 'admin' | 'customer' | 'super_admin';
+  role: 'agent' | 'operator' | 'admin' | 'customer' | 'super_admin' | 'financial_operator';
 }
 
 const SettingsView: React.FC<SettingsViewProps> = ({ role }) => {

@@ -72,6 +72,8 @@ export enum Action {
   RESOLVE_DISPUTE = 'RESOLVE_DISPUTE',
   ESCALATE_DISPUTE = 'ESCALATE_DISPUTE',
   VIEW_BROADCASTS = 'VIEW_BROADCASTS',
+  VERIFY_UPGRADE = 'VERIFY_UPGRADE',
+  APPROVE_UPGRADE = 'APPROVE_UPGRADE',
 }
 
 export const PermissionMatrix: Record<string, Action[]> = {
@@ -120,6 +122,7 @@ export const PermissionMatrix: Record<string, Action[]> = {
     Action.VIEW_FINANCIAL_REPORTS,
     Action.VIEW_BROADCASTS,
   ],
+  financial_operator: [Action.VERIFY_UPGRADE, Action.VIEW_BROADCASTS],
   admin: [
     Action.PROPOSE_RESOLUTION,
     Action.FINALIZE_RESOLUTION,
@@ -177,5 +180,6 @@ export const PermissionMatrix: Record<string, Action[]> = {
     Action.EXPORT_FINANCIAL_AUDIT,
     Action.VIEW_ASSIGNED_REQUEST_DETAILS,
     Action.VIEW_BROADCASTS,
+    Action.APPROVE_UPGRADE,
   ],
 };

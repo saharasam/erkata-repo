@@ -132,6 +132,18 @@ export class ConfigService implements OnModuleInit {
           'Processing fee percentage applied to withdrawals (e.g., 0.05 for 5%).',
         );
       }
+
+      if (!this.configs.has('BANK_DETAILS_UPGRADE')) {
+        await this.set(
+          'BANK_DETAILS_UPGRADE',
+          {
+            bankName: 'Commercial Bank of Ethiopia',
+            accountNumber: '1000123456789',
+            accountHolder: 'Erkata Platform PLC',
+          },
+          'Designated bank details for package upgrades.',
+        );
+      }
     } catch (error) {
       this.logger.error(
         '[ConfigService] Error loading configs. Ensure Prisma models are generated.',

@@ -10,6 +10,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import AgentDashboard from './pages/AgentDashboard';
 import OperatorDashboard from './pages/OperatorDashboard';
+import FinancialOperatorDashboard from './pages/FinancialOperatorDashboard';
 import About from './pages/About';
 import Contact from './pages/Contact';
 import Privacy from './pages/Privacy';
@@ -53,6 +54,14 @@ const AnimatedRoutes = () => {
             element={
               <ProtectedRoute allowedRole={UserRole.OPERATOR}>
                 <OperatorDashboard />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/financial-operator" 
+            element={
+              <ProtectedRoute allowedRole={UserRole.FINANCIAL_OPERATOR}>
+                <FinancialOperatorDashboard />
               </ProtectedRoute>
             } 
           />
@@ -102,13 +111,13 @@ const App: React.FC = () => {
   return (
     <AuthProvider>
       <SocketProvider>
-        <NotificationProvider>
-          <ModalProvider>
+        <ModalProvider>
+          <NotificationProvider>
             <HashRouter>
               <AnimatedRoutes />
             </HashRouter>
-          </ModalProvider>
-        </NotificationProvider>
+          </NotificationProvider>
+        </ModalProvider>
       </SocketProvider>
     </AuthProvider>
   );

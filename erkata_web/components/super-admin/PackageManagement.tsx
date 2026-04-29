@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Package, DollarSign, Users, Map, Info, Save, RotateCcw } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Package, DollarSign, Users, Map, Info, Save, RotateCcw, TrendingUp, Sparkles, ShieldCheck, ChevronRight } from 'lucide-react';
 import { useModal } from '../../contexts/ModalContext';
 import api from '../../utils/api';
 
@@ -13,6 +14,61 @@ interface SystemPackage {
     description: string;
     requiresApproval: boolean;
 }
+
+const TIER_THEMES: Record<string, any> = {
+    'ABUNDANT_LIFE': {
+        gradient: 'from-amber-400 via-amber-500 to-amber-600',
+        bg: 'bg-amber-50/50',
+        border: 'border-amber-200',
+        text: 'text-amber-700',
+        glow: 'shadow-amber-500/20',
+        iconBg: 'bg-amber-100',
+        accent: 'bg-amber-500',
+        ring: 'ring-amber-500/10'
+    },
+    'UNITY': {
+        gradient: 'from-indigo-400 via-indigo-500 to-indigo-600',
+        bg: 'bg-indigo-50/50',
+        border: 'border-indigo-200',
+        text: 'text-indigo-700',
+        glow: 'shadow-indigo-500/20',
+        iconBg: 'bg-indigo-100',
+        accent: 'bg-indigo-500',
+        ring: 'ring-indigo-500/10'
+    },
+    'LOVE': {
+        gradient: 'from-emerald-400 via-emerald-500 to-emerald-600',
+        bg: 'bg-emerald-50/50',
+        border: 'border-emerald-200',
+        text: 'text-emerald-700',
+        glow: 'shadow-emerald-500/20',
+        iconBg: 'bg-emerald-100',
+        accent: 'bg-emerald-500',
+        ring: 'ring-emerald-500/10'
+    },
+    'PEACE': {
+        gradient: 'from-sky-400 via-sky-500 to-sky-600',
+        bg: 'bg-sky-50/50',
+        border: 'border-sky-200',
+        text: 'text-sky-700',
+        glow: 'shadow-sky-500/20',
+        iconBg: 'bg-sky-100',
+        accent: 'bg-sky-500',
+        ring: 'ring-sky-500/10'
+    },
+    'FREE': {
+        gradient: 'from-slate-400 via-slate-500 to-slate-600',
+        bg: 'bg-slate-50/50',
+        border: 'border-slate-200',
+        text: 'text-slate-700',
+        glow: 'shadow-slate-500/20',
+        iconBg: 'bg-slate-100',
+        accent: 'bg-slate-500',
+        ring: 'ring-slate-500/10'
+    }
+};
+
+const getTheme = (name: string) => TIER_THEMES[name] || TIER_THEMES['FREE'];
 
 const PackageManagement: React.FC = () => {
     const { showConfirm, showAlert } = useModal();
@@ -93,148 +149,210 @@ const PackageManagement: React.FC = () => {
     }
 
     return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between mb-4">
+        <div className="space-y-8">
+            <div className="flex items-center justify-between">
                 <div>
-                    <h3 className="text-xl font-black text-slate-900 flex items-center gap-3">
-                        <Package className="w-6 h-6 text-indigo-600" />
+                    <h3 className="text-3xl font-black text-slate-900 flex items-center gap-4">
+                        <div className="p-3 bg-indigo-600 rounded-2xl shadow-lg shadow-indigo-200">
+                            <Package className="w-8 h-8 text-white" />
+                        </div>
                         Tier Architecture
                     </h3>
-                    <p className="text-slate-500 text-xs font-medium mt-1 uppercase tracking-wider">Configure economic & capacity limits for agent tiers</p>
+                    <p className="text-slate-500 text-sm font-medium mt-2 uppercase tracking-[0.1em] flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
+                        Configure economic & capacity limits for agent tiers
+                    </p>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-4">
-                {packages.map((pkg) => {
-                    const isEditing = editingId === pkg.id;
-                    return (
-                        <div key={pkg.id} className={`bg-white rounded-2xl border transition-all duration-300 overflow-hidden ${isEditing ? 'border-indigo-500 ring-4 ring-indigo-500/5 shadow-xl scale-[1.01]' : 'border-slate-100 hover:border-slate-200 shadow-sm'}`}>
-                            <div className="p-6">
-                                <div className="flex items-start justify-between">
-                                    <div className="flex items-center gap-4">
-                                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-sm border-2 ${
-                                            pkg.name === 'ABUNDANT_LIFE' ? 'bg-amber-50 border-amber-200 text-amber-700' :
-                                            pkg.name === 'UNITY' ? 'bg-indigo-50 border-indigo-200 text-indigo-700' :
-                                            pkg.name === 'LOVE' ? 'bg-emerald-50 border-emerald-200 text-emerald-700' :
-                                            'bg-slate-50 border-slate-200 text-slate-700'
-                                        }`}>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                <AnimatePresence>
+                    {packages.map((pkg, idx) => {
+                        const isEditing = editingId === pkg.id;
+                        const theme = getTheme(pkg.name);
+                        
+                        return (
+                            <motion.div 
+                                key={pkg.id}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: idx * 0.1 }}
+                                whileHover={!isEditing ? { y: -8, transition: { duration: 0.2 } } : {}}
+                                className={`group relative bg-white rounded-[2.5rem] border transition-all duration-500 flex flex-col ${
+                                    isEditing 
+                                    ? `border-indigo-500 ring-8 ${theme.ring} shadow-2xl scale-[1.02] z-10` 
+                                    : `border-slate-100 hover:border-slate-200 hover:shadow-2xl ${theme.glow}`
+                                }`}
+                            >
+                                {/* Tier Background Accent */}
+                                <div className={`absolute top-0 right-0 w-32 h-32 bg-gradient-to-br ${theme.gradient} opacity-[0.03] rounded-bl-[5rem] pointer-events-none transition-opacity duration-500 group-hover:opacity-[0.08]`} />
+
+                                <div className="p-8 flex-grow">
+                                    {/* Header: Name & Price */}
+                                    <div className="flex justify-between items-start mb-6">
+                                        <div className={`w-14 h-14 rounded-2xl ${theme.iconBg} flex items-center justify-center font-black text-xl border-2 ${theme.border} ${theme.text} shadow-sm`}>
                                             {pkg.name.charAt(0)}
                                         </div>
-                                        <div>
-                                            {isEditing ? (
-                                                <input 
-                                                    type="text"
-                                                    value={editData.displayName || ''}
-                                                    onChange={(e) => setEditData({...editData, displayName: e.target.value})}
-                                                    className="text-lg font-black text-slate-900 tracking-tight border-b-2 border-indigo-200 focus:outline-none bg-transparent w-full"
-                                                />
-                                            ) : (
-                                                <h4 className="text-lg font-black text-slate-900 tracking-tight">{pkg.displayName || pkg.name.replace('_', ' ')}</h4>
-                                            )}
-                                            <div className="flex items-center gap-2 mt-1">
-                                                <span className="text-[10px] font-black bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded uppercase tracking-tighter">INTERNAL: {pkg.name}</span>
-                                                {isEditing ? (
-                                                    <input 
-                                                        type="text"
-                                                        value={editData.description || ''}
-                                                        onChange={(e) => setEditData({...editData, description: e.target.value})}
-                                                        className="text-xs text-slate-600 border-b border-indigo-200 focus:outline-none flex-grow bg-transparent font-medium italic"
-                                                    />
-                                                ) : (
-                                                    <p className="text-xs text-slate-500 italic font-medium">{pkg.description}</p>
-                                                )}
+                                        <div className="text-right">
+                                            <div className="flex items-center justify-end gap-1.5 text-slate-400 mb-1">
+                                                <TrendingUp className="w-3 h-3" />
+                                                <span className="text-[10px] font-black uppercase tracking-widest">Entry Fee</span>
                                             </div>
+                                            {isEditing ? (
+                                                <div className="flex items-center gap-2 text-indigo-600 bg-slate-50 p-2 rounded-xl border border-indigo-100">
+                                                    <input 
+                                                        type="number" 
+                                                        value={editData.price || 0}
+                                                        onChange={(e) => setEditData({...editData, price: parseFloat(e.target.value)})}
+                                                        className="w-24 text-xl font-black focus:outline-none bg-transparent"
+                                                    />
+                                                    <span className="text-xs font-black">ETB</span>
+                                                </div>
+                                            ) : (
+                                                <p className="text-2xl font-black text-slate-900 leading-none">
+                                                    {parseFloat(pkg.price.toString()).toLocaleString()}
+                                                    <span className="text-[10px] text-slate-400 font-bold uppercase ml-1.5 tracking-tighter">ETB</span>
+                                                </p>
+                                            )}
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                        {isEditing ? (
-                                            <>
-                                                <button onClick={handleCancel} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
-                                                    <RotateCcw className="w-5 h-5" />
-                                                </button>
-                                                <button onClick={() => handleSave(pkg.id)} className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-black hover:bg-indigo-500 transition-all active:scale-95 shadow-lg shadow-indigo-500/20">
-                                                    <Save className="w-4 h-4" />
-                                                    DEPLOY
-                                                </button>
-                                            </>
-                                        ) : (
-                                            <button onClick={() => handleEdit(pkg)} className="text-indigo-600 hover:bg-indigo-50 px-4 py-2 rounded-xl text-xs font-black transition-colors uppercase tracking-widest border border-indigo-100">
-                                                Edit Config
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
 
-                                <div className="grid grid-cols-3 gap-8 mt-8 border-t border-slate-50 pt-6">
-                                    <div className="space-y-1">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                            <DollarSign className="w-3 h-3" />
-                                            Acquisition Cost
-                                        </p>
+                                    {/* Title & Desc */}
+                                    <div className="mb-8">
                                         {isEditing ? (
-                                            <div className="flex items-center gap-2 text-indigo-600">
+                                            <input 
+                                                type="text"
+                                                value={editData.displayName || ''}
+                                                onChange={(e) => setEditData({...editData, displayName: e.target.value})}
+                                                className="text-2xl font-black text-slate-900 tracking-tight border-b-2 border-indigo-200 focus:outline-none bg-transparent w-full mb-3"
+                                            />
+                                        ) : (
+                                            <h4 className="text-2xl font-black text-slate-900 tracking-tight mb-2 flex items-center gap-2">
+                                                {pkg.displayName || pkg.name.replace('_', ' ')}
+                                                {pkg.name === 'ABUNDANT_LIFE' && <Sparkles className="w-5 h-5 text-amber-500 fill-amber-500/20" />}
+                                            </h4>
+                                        )}
+                                        
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[9px] font-black bg-slate-900 text-white px-2 py-0.5 rounded-md uppercase tracking-wider">
+                                                ID: {pkg.name}
+                                            </span>
+                                            {isEditing ? (
+                                                <textarea 
+                                                    value={editData.description || ''}
+                                                    onChange={(e) => setEditData({...editData, description: e.target.value})}
+                                                    rows={2}
+                                                    className="w-full text-sm text-slate-600 border border-indigo-100 rounded-xl p-3 focus:outline-none bg-slate-50/50 font-medium italic"
+                                                />
+                                            ) : (
+                                                <p className="text-sm text-slate-500 font-medium leading-relaxed italic line-clamp-2">
+                                                    "{pkg.description}"
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Stats Grid */}
+                                    <div className="grid grid-cols-2 gap-4 pt-6 border-t border-slate-50">
+                                        <div className="bg-slate-50/80 p-4 rounded-[1.5rem] border border-slate-100/50">
+                                            <div className="flex items-center gap-2 text-slate-400 mb-2">
+                                                <Users className="w-3.5 h-3.5" />
+                                                <span className="text-[10px] font-black uppercase tracking-widest">Referrals</span>
+                                            </div>
+                                            {isEditing ? (
                                                 <input 
                                                     type="number" 
-                                                    value={editData.price || 0}
-                                                    onChange={(e) => setEditData({...editData, price: parseFloat(e.target.value)})}
-                                                    className="w-24 text-xl font-black focus:outline-none bg-slate-50 rounded-lg px-2 py-1"
+                                                    value={editData.referralSlots || 0}
+                                                    onChange={(e) => setEditData({...editData, referralSlots: parseInt(e.target.value)})}
+                                                    className="w-full text-xl font-black text-indigo-600 focus:outline-none bg-transparent"
                                                 />
-                                                <span className="text-sm font-black">ETB</span>
+                                            ) : (
+                                                <p className="text-xl font-black text-slate-900">
+                                                    {pkg.referralSlots}
+                                                    <span className="text-[10px] text-slate-400 font-bold ml-1.5 uppercase">Slots</span>
+                                                </p>
+                                            )}
+                                        </div>
+
+                                        <div className="bg-slate-50/80 p-4 rounded-[1.5rem] border border-slate-100/50">
+                                            <div className="flex items-center gap-2 text-slate-400 mb-2">
+                                                <Map className="w-3.5 h-3.5" />
+                                                <span className="text-[10px] font-black uppercase tracking-widest">Territory</span>
                                             </div>
-                                        ) : (
-                                            <p className="text-xl font-black text-slate-900">{parseFloat(pkg.price.toString()).toLocaleString()} <span className="text-sm text-slate-400 font-bold uppercase tracking-tight ml-1">ETB</span></p>
-                                        )}
-                                    </div>
-
-                                    <div className="space-y-1">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                            <Users className="w-3 h-3" />
-                                            Referral Slots
-                                        </p>
-                                        {isEditing ? (
-                                            <input 
-                                                type="number" 
-                                                value={editData.referralSlots || 0}
-                                                onChange={(e) => setEditData({...editData, referralSlots: parseInt(e.target.value)})}
-                                                className="w-16 text-xl font-black focus:outline-none bg-slate-50 rounded-lg px-2 py-1"
-                                            />
-                                        ) : (
-                                            <p className="text-xl font-black text-slate-900">{pkg.referralSlots} <span className="text-sm text-slate-400 font-bold uppercase tracking-tight ml-1">Slots</span></p>
-                                        )}
-                                    </div>
-
-                                    <div className="space-y-1">
-                                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                            <Map className="w-3 h-3" />
-                                            Zone Capacity
-                                        </p>
-                                        {isEditing ? (
-                                            <input 
-                                                type="number" 
-                                                value={editData.zoneLimit || 0}
-                                                onChange={(e) => setEditData({...editData, zoneLimit: parseInt(e.target.value)})}
-                                                className="w-16 text-xl font-black focus:outline-none bg-slate-50 rounded-lg px-2 py-1"
-                                            />
-                                        ) : (
-                                            <p className="text-xl font-black text-slate-900">{pkg.zoneLimit === 100 ? '∞' : pkg.zoneLimit} <span className="text-sm text-slate-400 font-bold uppercase tracking-tight ml-1">Zones</span></p>
-                                        )}
+                                            {isEditing ? (
+                                                <input 
+                                                    type="number" 
+                                                    value={editData.zoneLimit || 0}
+                                                    onChange={(e) => setEditData({...editData, zoneLimit: parseInt(e.target.value)})}
+                                                    className="w-full text-xl font-black text-indigo-600 focus:outline-none bg-transparent"
+                                                />
+                                            ) : (
+                                                <p className="text-xl font-black text-slate-900">
+                                                    {pkg.zoneLimit === 100 ? '∞' : pkg.zoneLimit}
+                                                    <span className="text-[10px] text-slate-400 font-bold ml-1.5 uppercase">Zones</span>
+                                                </p>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-                    );
-                })}
+
+                                {/* Footer Actions */}
+                                <div className="p-6 pt-0 mt-auto">
+                                    {isEditing ? (
+                                        <div className="flex gap-3">
+                                            <button 
+                                                onClick={handleCancel} 
+                                                className="flex-1 flex items-center justify-center gap-2 bg-slate-100 text-slate-600 px-4 py-3 rounded-2xl text-xs font-black hover:bg-slate-200 transition-all active:scale-95"
+                                            >
+                                                <RotateCcw className="w-4 h-4" />
+                                                CANCEL
+                                            </button>
+                                            <button 
+                                                onClick={() => handleSave(pkg.id)} 
+                                                className="flex-[2] flex items-center justify-center gap-2 bg-indigo-600 text-white px-4 py-3 rounded-2xl text-xs font-black hover:bg-indigo-500 transition-all active:scale-95 shadow-xl shadow-indigo-200"
+                                            >
+                                                <Save className="w-4 h-4" />
+                                                DEPLOY CHANGES
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <button 
+                                            onClick={() => handleEdit(pkg)} 
+                                            className="w-full flex items-center justify-center gap-2 bg-slate-950 text-white px-4 py-4 rounded-2xl text-xs font-black hover:bg-slate-800 transition-all active:scale-95 group/btn"
+                                        >
+                                            RECONFIGURE TIER
+                                            <ChevronRight className="w-4 h-4 text-indigo-400 group-hover:translate-x-1 transition-transform" />
+                                        </button>
+                                    )}
+                                </div>
+                            </motion.div>
+                        );
+                    })}
+                </AnimatePresence>
             </div>
 
-            <div className="bg-slate-900 p-6 rounded-3xl border border-slate-800 relative overflow-hidden group">
-                <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform">
-                    <Info className="w-12 h-12 text-white" />
+            <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.8 }}
+                className="bg-slate-900 p-8 rounded-[3rem] border border-slate-800 relative overflow-hidden group shadow-2xl"
+            >
+                <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:scale-110 transition-transform duration-700">
+                    <ShieldCheck className="w-24 h-24 text-white" />
                 </div>
-                <h5 className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-3">Governance Notice</h5>
-                <p className="text-slate-400 text-xs font-medium leading-relaxed max-w-2xl">
-                    Package modifications are destructive to local tier caches. Agents currently in the upgrade flow may experience a session reset. All price changes must be verified against the AGLP Liquidity Pool.
-                </p>
-            </div>
+                <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
+                    <div className="p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl">
+                        <Info className="w-8 h-8 text-indigo-400" />
+                    </div>
+                    <div>
+                        <h5 className="text-xs font-black text-indigo-400 uppercase tracking-[0.3em] mb-2">Governance Protocol Notice</h5>
+                        <p className="text-slate-400 text-sm font-medium leading-relaxed max-w-3xl">
+                            Tier modifications are destructive to local edge caches. Agents currently in the upgrade flow may experience a session reset. 
+                            All price adjustments must be verified against the <span className="text-white font-bold">AGLP Liquidity Pool</span> before deployment to mainnet.
+                        </p>
+                    </div>
+                </div>
+            </motion.div>
         </div>
     );
 };

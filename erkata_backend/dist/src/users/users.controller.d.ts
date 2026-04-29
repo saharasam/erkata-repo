@@ -18,8 +18,8 @@ export declare class UsersController {
             zoneId: string | null;
             createdAt: Date;
             agentId: string;
-            woreda: string;
             kifleKetema: string;
+            woreda: string;
         })[];
         package: {
             id: string;
@@ -39,6 +39,7 @@ export declare class UsersController {
     } & {
         id: string;
         email: string;
+        referralCode: string | null;
         passwordHash: string | null;
         fullName: string;
         phone: string;
@@ -51,7 +52,6 @@ export declare class UsersController {
         aglpBalance: import("@prisma/client/runtime/library").Decimal;
         aglpPending: import("@prisma/client/runtime/library").Decimal;
         aglpWithdrawn: import("@prisma/client/runtime/library").Decimal;
-        referralCode: string | null;
         isOnline: boolean;
         lastAssignmentAt: Date | null;
         missedAssignments: number;
@@ -67,14 +67,18 @@ export declare class UsersController {
             zoneId: string | null;
             createdAt: Date;
             agentId: string;
-            woreda: string;
             kifleKetema: string;
+            woreda: string;
         }[];
         referrals: {
             id: string;
             fullName: string;
             role: import(".prisma/client").$Enums.UserRole;
+            tier: import(".prisma/client").$Enums.Tier;
             createdAt: Date;
+            package: {
+                displayName: string;
+            };
         }[];
         package: {
             id: string;
@@ -94,6 +98,7 @@ export declare class UsersController {
     } & {
         id: string;
         email: string;
+        referralCode: string | null;
         passwordHash: string | null;
         fullName: string;
         phone: string;
@@ -106,7 +111,6 @@ export declare class UsersController {
         aglpBalance: import("@prisma/client/runtime/library").Decimal;
         aglpPending: import("@prisma/client/runtime/library").Decimal;
         aglpWithdrawn: import("@prisma/client/runtime/library").Decimal;
-        referralCode: string | null;
         isOnline: boolean;
         lastAssignmentAt: Date | null;
         missedAssignments: number;
@@ -134,6 +138,7 @@ export declare class UsersController {
             amount: number;
             chart: number[];
         };
+        totalEarnings: number;
         history: {
             id: string;
             action: string;
@@ -167,8 +172,9 @@ export declare class UsersController {
     }): Promise<{
         id: string;
         createdAt: Date;
-        status: import(".prisma/client").$Enums.AglpTransactionStatus;
+        profileId: string;
         type: import(".prisma/client").$Enums.AglpTransactionType;
+        status: import(".prisma/client").$Enums.AglpTransactionStatus;
         amount: import("@prisma/client/runtime/library").Decimal;
         etbEquivalent: import("@prisma/client/runtime/library").Decimal | null;
         conversionRate: import("@prisma/client/runtime/library").Decimal | null;
@@ -178,7 +184,6 @@ export declare class UsersController {
         bankAccountHolder: string | null;
         bankAccountNumber: string | null;
         bankName: string | null;
-        profileId: string;
     }>;
     generateReferralCode(req: AuthenticatedRequest): Promise<{
         code: string;
@@ -192,8 +197,8 @@ export declare class UsersController {
         zoneId: string | null;
         createdAt: Date;
         agentId: string;
-        woreda: string;
         kifleKetema: string;
+        woreda: string;
     }>;
     updateTier(req: AuthenticatedRequest, agentId: string, body: {
         tier: string;
@@ -217,6 +222,7 @@ export declare class UsersController {
     suspendUser(req: AuthenticatedRequest, userId: string): Promise<{
         id: string;
         email: string;
+        referralCode: string | null;
         passwordHash: string | null;
         fullName: string;
         phone: string;
@@ -229,7 +235,6 @@ export declare class UsersController {
         aglpBalance: import("@prisma/client/runtime/library").Decimal;
         aglpPending: import("@prisma/client/runtime/library").Decimal;
         aglpWithdrawn: import("@prisma/client/runtime/library").Decimal;
-        referralCode: string | null;
         isOnline: boolean;
         lastAssignmentAt: Date | null;
         missedAssignments: number;
@@ -242,6 +247,7 @@ export declare class UsersController {
     activateUser(req: AuthenticatedRequest, userId: string): Promise<{
         id: string;
         email: string;
+        referralCode: string | null;
         passwordHash: string | null;
         fullName: string;
         phone: string;
@@ -254,7 +260,6 @@ export declare class UsersController {
         aglpBalance: import("@prisma/client/runtime/library").Decimal;
         aglpPending: import("@prisma/client/runtime/library").Decimal;
         aglpWithdrawn: import("@prisma/client/runtime/library").Decimal;
-        referralCode: string | null;
         isOnline: boolean;
         lastAssignmentAt: Date | null;
         missedAssignments: number;
@@ -270,6 +275,7 @@ export declare class UsersController {
     }): Promise<{
         id: string;
         email: string;
+        referralCode: string | null;
         passwordHash: string | null;
         fullName: string;
         phone: string;
@@ -282,7 +288,6 @@ export declare class UsersController {
         aglpBalance: import("@prisma/client/runtime/library").Decimal;
         aglpPending: import("@prisma/client/runtime/library").Decimal;
         aglpWithdrawn: import("@prisma/client/runtime/library").Decimal;
-        referralCode: string | null;
         isOnline: boolean;
         lastAssignmentAt: Date | null;
         missedAssignments: number;
@@ -291,5 +296,100 @@ export declare class UsersController {
         tinNumber: string | null;
         tradeLicenseNumber: string | null;
         isVerified: boolean;
+    }>;
+    getUserProfile(userId: string): Promise<{
+        agentZones: {
+            id: string;
+            zoneId: string | null;
+            createdAt: Date;
+            agentId: string;
+            kifleKetema: string;
+            woreda: string;
+        }[];
+        referrals: {
+            id: string;
+            fullName: string;
+            role: import(".prisma/client").$Enums.UserRole;
+            tier: import(".prisma/client").$Enums.Tier;
+            createdAt: Date;
+            package: {
+                displayName: string;
+            };
+        }[];
+        package: {
+            id: string;
+            name: import(".prisma/client").$Enums.Tier;
+            price: import("@prisma/client/runtime/library").Decimal;
+            referralSlots: number;
+            zoneLimit: number;
+            displayName: string;
+        };
+        referralLink: {
+            id: string;
+            tier: import(".prisma/client").$Enums.Tier;
+            createdAt: Date;
+            referrerId: string;
+            code: string;
+        } | null;
+    } & {
+        id: string;
+        email: string;
+        referralCode: string | null;
+        passwordHash: string | null;
+        fullName: string;
+        phone: string;
+        role: import(".prisma/client").$Enums.UserRole;
+        tier: import(".prisma/client").$Enums.Tier;
+        isActive: boolean;
+        zoneId: string | null;
+        referredById: string | null;
+        createdAt: Date;
+        aglpBalance: import("@prisma/client/runtime/library").Decimal;
+        aglpPending: import("@prisma/client/runtime/library").Decimal;
+        aglpWithdrawn: import("@prisma/client/runtime/library").Decimal;
+        isOnline: boolean;
+        lastAssignmentAt: Date | null;
+        missedAssignments: number;
+        warningCount: number;
+        avatarUrl: string | null;
+        tinNumber: string | null;
+        tradeLicenseNumber: string | null;
+        isVerified: boolean;
+    }>;
+    getUserFinance(userId: string): Promise<{
+        balance: number;
+        aglpAvailable: number;
+        aglpPending: number;
+        aglpWithdrawn: number;
+        usedSlots: number;
+        totalSlots: number;
+        usedZones: number;
+        totalZones: number;
+        currentTier: string;
+        tier: import(".prisma/client").$Enums.Tier;
+        packageDisplayName: string;
+        nextTier: string;
+        weeklyGrowth: {
+            percentage: string;
+            amount: number;
+            chart: number[];
+        };
+        totalEarnings: number;
+        history: {
+            id: string;
+            action: string;
+            amount: number;
+            type: string;
+            createdAt: Date;
+            metadata: {
+                transactionId: string;
+                amount?: number;
+                amountAglp?: number;
+                amountEtb?: number;
+                aglpTxId?: string;
+                referenceId?: string;
+                reason?: string;
+            };
+        }[];
     }>;
 }

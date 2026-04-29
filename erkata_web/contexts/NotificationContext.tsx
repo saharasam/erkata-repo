@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { useSocket } from './SocketContext';
 import api from '../utils/api';
 import { useAuth } from '../hooks/useAuth';
+import { useModal } from './ModalContext';
 
 export interface Notification {
   id: string;
@@ -34,11 +35,39 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const { socket } = useSocket();
   const { user } = useAuth();
+  const { showAlert } = useModal();
+  const processingNotification = useRef<string | null>(null);
+
+  const checkSpecialNotifications = async (items: Notification[]) => {
+    // Only process one special notification at a time to avoid overlapping modals
+    const special = items.find(n => !n.read && (n.type === 'upgrade.approved' || n.type === 'upgrade.rejected'));
+    
+    if (special && processingNotification.current !== special.id) {
+      processingNotification.current = special.id;
+      
+      const isApproved = special.type === 'upgrade.approved';
+      
+      await showAlert({
+        title: isApproved ? 'Congratulations!' : 'Upgrade Update',
+        message: special.message,
+        type: isApproved ? 'success' : 'warning',
+        confirmText: 'Great, Thanks!'
+      });
+
+      await markAsRead(special.id);
+      processingNotification.current = null;
+      
+      // Check again if there are more
+      const remaining = items.filter(n => n.id !== special.id);
+      checkSpecialNotifications(remaining);
+    }
+  };
 
   const fetchNotifications = async () => {
     try {
       const res = await api.get('/notifications');
       setNotifications(res.data);
+      checkSpecialNotifications(res.data);
     } catch (err) {
       console.error('Failed to fetch notifications', err);
     }
@@ -56,7 +85,10 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     if (socket) {
       const handleNewNotification = (notification: Notification) => {
         setNotifications(prev => [notification, ...prev]);
-        // Optional: Trigger a browser notification or a toast here
+        
+        if (notification.type === 'upgrade.approved' || notification.type === 'upgrade.rejected') {
+          checkSpecialNotifications([notification]);
+        }
       };
 
       socket.on('notification', handleNewNotification);

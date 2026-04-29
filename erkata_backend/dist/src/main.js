@@ -41,8 +41,11 @@ dotenv.config();
 const core_1 = require("@nestjs/core");
 const app_module_1 = require("./app.module");
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
+const express_1 = require("express");
 async function bootstrap() {
     const app = await core_1.NestFactory.create(app_module_1.AppModule);
+    app.use((0, express_1.json)({ limit: '15mb' }));
+    app.use((0, express_1.urlencoded)({ extended: true, limit: '15mb' }));
     app.use((0, cookie_parser_1.default)());
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
     const allowedOrigins = [

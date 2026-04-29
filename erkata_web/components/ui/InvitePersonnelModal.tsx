@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import api from '../../utils/api';
 
-export type InvitableRole = 'admin' | 'operator' | 'agent';
+export type InvitableRole = 'admin' | 'operator' | 'agent' | 'financial_operator';
 
 interface InvitePersonnelModalProps {
   isOpen: boolean;
@@ -63,6 +63,13 @@ const ROLE_META: Record<
     bg: 'bg-emerald-50',
     border: 'border-emerald-200',
     description: 'Primary executor — fulfills service requests within their zone.',
+  },
+  financial_operator: {
+    label: 'Financial Operator',
+    color: 'text-indigo-900',
+    bg: 'bg-indigo-50',
+    border: 'border-indigo-300',
+    description: 'Financial verifier — validates bank transfers and approves package upgrades.',
   },
 };
 

@@ -351,10 +351,10 @@ const RequestIntakeFlow: React.FC<RequestIntakeFlowProps> = ({ onSuccess, onCanc
               <motion.div key="h3" className="flex flex-col items-center text-center max-w-2xl mx-auto">
                 <h2 className="text-3xl font-bold mb-10 text-slate-900">Number of bedrooms?</h2>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 w-full">
-                   {['Studio', '1', '2', '3', '4+'].map(num => (
+                   {['Studio', '1', '2', '3', '4+', 'Penthouse'].map(num => (
                      <button key={num} onClick={() => updateMetadata('bedrooms', num)} className="py-6 rounded-3xl border-2 border-gray-100 hover:border-erkata-primary hover:bg-erkata-primary/5 font-bold transition-all flex flex-col items-center gap-2">
                        <Bed className="w-6 h-6 text-gray-400" />
-                       {num} Bedroom
+                       {num === 'Penthouse' ? 'Penthouse' : `${num} Bedroom`}
                      </button>
                    ))}
                 </div>
@@ -425,15 +425,46 @@ const RequestIntakeFlow: React.FC<RequestIntakeFlowProps> = ({ onSuccess, onCanc
                     onChange={(val) => setArea(val)}
                     options={kifleKetemas.map(k => ({ value: k, label: k }))}
                   />
-                  <div className="space-y-2 text-left">
-                    <label className="text-xs font-bold uppercase tracking-widest text-gray-500 ml-4">Woreda / Specific Spot (Optional)</label>
-                    <input 
-                      value={woreda}
-                      onChange={(e) => setWoreda(e.target.value)}
-                      placeholder="e.g. Old Airport, Near Bole bulbula"
-                      className="w-full px-8 py-4 bg-gray-50 rounded-full outline-none focus:ring-2 focus:ring-black/5"
-                    />
-                  </div>
+                  <CustomSelect 
+                    label="Woreda / Specific Spot"
+                    value={woreda === 'Others' || !['Woreda 01', 'Woreda 02', 'Woreda 03', 'Woreda 04', 'Woreda 05'].includes(woreda) && woreda !== '' ? 'Others' : woreda}
+                    onChange={(val) => {
+                      if (val === 'Others') {
+                        setWoreda('Others');
+                      } else {
+                        setWoreda(val);
+                      }
+                    }}
+                    options={[
+                      { value: 'Woreda 01', label: 'Woreda 01' },
+                      { value: 'Woreda 02', label: 'Woreda 02' },
+                      { value: 'Woreda 03', label: 'Woreda 03' },
+                      { value: 'Woreda 04', label: 'Woreda 04' },
+                      { value: 'Woreda 05', label: 'Woreda 05' },
+                      { value: 'Others', label: 'Others' }
+                    ]}
+                    placeholder="Select Woreda"
+                  />
+                  
+                  <AnimatePresence>
+                    {(woreda === 'Others' || (!['Woreda 01', 'Woreda 02', 'Woreda 03', 'Woreda 04', 'Woreda 05'].includes(woreda) && woreda !== '')) && (
+                      <motion.div 
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="space-y-2 text-left"
+                      >
+                        <label className="text-xs font-bold uppercase tracking-widest text-gray-500 ml-4">Specify Other Location</label>
+                        <input 
+                          autoFocus
+                          value={woreda === 'Others' ? '' : woreda}
+                          onChange={(e) => setWoreda(e.target.value)}
+                          placeholder="e.g. Old Airport, Near Bole bulbula"
+                          className="w-full px-8 py-4 bg-gray-50 rounded-full outline-none focus:ring-2 focus:ring-black/5"
+                        />
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                   <button onClick={handleNext} className="w-full py-5 bg-slate-900 text-white rounded-full font-bold shadow-xl hover:bg-black transition-all">
                     Continue to Budget
                   </button>

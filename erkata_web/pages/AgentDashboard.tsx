@@ -91,9 +91,9 @@ const AgentDashboard: React.FC = () => {
     try {
       setIsLoadingData(true);
       const [profileRes, financeRes, jobsRes] = await Promise.all([
-        api.get('/users/me'),
-        api.get('/users/me/finance'),
-        api.get('/transactions/my-jobs')
+        api.get(`/users/me?t=${Date.now()}`),
+        api.get(`/users/me/finance?t=${Date.now()}`),
+        api.get(`/transactions/my-jobs?t=${Date.now()}`)
       ]);
       setProfile(profileRes.data);
       setFinance(financeRes.data);
@@ -241,6 +241,13 @@ const AgentDashboard: React.FC = () => {
   };
 
   const handlePayoutRequest = async () => {
+    // Refresh finance before opening to ensure the balance is current
+    try {
+      const financeRes = await api.get(`/users/me/finance?t=${Date.now()}`);
+      setFinance(financeRes.data);
+    } catch (error) {
+      console.error('Failed to refresh finance before payout:', error);
+    }
     setIsPayoutModalOpen(true);
   };
 
@@ -293,78 +300,6 @@ const AgentDashboard: React.FC = () => {
     }
   };
 
-  const rightPanelContent = (
-    <div className="space-y-8">
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-5 text-white shadow-lg relative overflow-hidden"
-      >
-         <div className="absolute top-0 right-0 p-3 opacity-10">
-            <TrendingUp className="w-20 h-20" />
-         </div>
-         <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Today's Performance</p>
-         <div className="flex items-baseline gap-1">
-            <span className="text-3xl font-bold tracking-tight">{mockEarnings.today}</span>
-            <span className="text-sm font-medium text-slate-400">AGLP</span>
-         </div>
-         <div className="mt-4 flex gap-2">
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-green-500/20 text-green-300 border border-green-500/20">
-               +12% vs yest.
-            </span>
-         </div>
-      </motion.div>
-
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-      >
-        <div className="flex items-center justify-between mb-3 px-1">
-           <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Referral Tier</h3>
-           <span className="text-xs font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">
-              {finance?.currentTier || '...'}
-           </span>
-        </div>
-        <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm relative overflow-hidden">
-           <div className="relative mb-3">
-              <div className="flex justify-between text-xs mb-1.5 font-bold text-slate-600">
-                 <span>Progress to {finance?.nextTier || '...'}</span>
-                 <span>{finance?.usedSlots || 0}/{finance?.totalSlots || 0}</span>
-              </div>
-              <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                 <motion.div 
-                    initial={{ width: 0 }}
-                    animate={{ width: `${((finance?.usedSlots || 0) / (finance?.totalSlots || 1)) * 100}%` }}
-                    transition={{ duration: 1, ease: "easeOut" }}
-                    className="h-full bg-purple-500 rounded-full" 
-                 />
-              </div>
-           </div>
-           <p className="text-[10px] text-slate-400 leading-relaxed">
-              Unlock the next tier {finance?.nextTier && `(${finance.nextTier})`} to increase your commission rate and territory coverage.
-           </p>
-        </div>
-      </motion.div>
-
-       <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-       >
-         <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 px-1">Active Territory</h3>
-         <div className="bg-slate-100 rounded-2xl h-32 relative overflow-hidden group cursor-pointer border border-slate-200">
-            <div className="absolute inset-0 bg-[url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Addis_Ababa_districts.png/800px-Addis_Ababa_districts.png')] bg-cover bg-center grayscale opacity-20 group-hover:opacity-30 group-hover:scale-110 transition-all duration-700" />
-            <div className="absolute inset-0 flex items-center justify-center">
-               <div className="bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-sm flex items-center gap-2">
-                  <MapPin className="w-3 h-3 text-erkata-primary" />
-                  <span className="text-xs font-bold text-slate-700">Addis Ababa</span>
-               </div>
-            </div>
-         </div>
-       </motion.div>
-    </div>
-  );
 
 
   if (isLoadingData && !profile) {
@@ -397,10 +332,8 @@ const AgentDashboard: React.FC = () => {
   return (
     <DashboardLayout
       role="agent"
-      sidebarContent={null}
       currentView={view}
       onViewChange={(newView) => setView(newView as DashboardView)}
-      rightPanelContent={rightPanelContent}
     >
       <AnimatePresence mode="wait">
         <motion.div

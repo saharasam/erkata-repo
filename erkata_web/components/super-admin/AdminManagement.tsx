@@ -118,7 +118,7 @@ const AdminManagement: React.FC = () => {
                             />
                         </div>
                         <div className="flex bg-slate-100 p-1 rounded-xl">
-                            {['all', 'admin', 'operator'].map((r) => (
+                            {['all', 'admin', 'operator', 'financial_operator'].map((r) => (
                                 <button
                                     key={r}
                                     onClick={() => setRoleFilter(r)}
@@ -259,7 +259,7 @@ const AdminManagement: React.FC = () => {
         <InvitePersonnelModal
             isOpen={inviteModalOpen}
             onClose={() => { setInviteModalOpen(false); handleInviteSuccess(); }}
-            availableRoles={['admin', 'operator']}
+            availableRoles={['admin', 'operator', 'financial_operator']}
             defaultRole="operator"
         />
         </>

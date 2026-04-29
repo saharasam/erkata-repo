@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Settings2, ShieldCheck, AlertTriangle, Lock, Zap, Clock, TrendingUp, ShieldAlert, Save } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+    Settings2, AlertTriangle, Lock, Zap, Clock, 
+    TrendingUp, ShieldAlert, Save, Activity,
+    ChevronRight, Globe, Database, ShieldCheck
+} from 'lucide-react';
 import { useModal } from '../../contexts/ModalContext';
 import api from '../../utils/api';
 
@@ -26,7 +31,6 @@ const ConfigFlags: React.FC = () => {
             if (Array.isArray(response.data)) {
                 setConfigs(response.data);
             } else {
-                console.error('Expected array from /admin/config, got:', typeof response.data);
                 setConfigs([]);
             }
         } catch (error) {
@@ -44,7 +48,7 @@ const ConfigFlags: React.FC = () => {
     const updateConfig = async (key: string, value: any) => {
         const confirmed = await showConfirm({
             title: 'Critical Configuration Shift',
-            message: `You are about to modify [${key}] to [${value}]. This action will be logged in the system audit and executed across all node clusters. Proceed?`,
+            message: `You are about to modify [${key}] to [${value}]. This action will be logged in the system audit. Proceed?`,
             confirmText: 'Authorize Change',
             type: 'warning'
         });
@@ -56,14 +60,13 @@ const ConfigFlags: React.FC = () => {
                 await fetchConfigs();
                 showAlert({
                     title: 'Configuration Propagated',
-                    message: `System flag [${key}] successfully updated. Changes are now live.`,
+                    message: `System flag [${key}] successfully updated.`,
                     type: 'success'
                 });
             } catch (error) {
-                console.error('Failed to update config:', error);
                 showAlert({
                     title: 'Update Rejected',
-                    message: 'The system core rejected the configuration change. Check firewall and permissions.',
+                    message: 'The system core rejected the configuration change.',
                     type: 'error'
                 });
             } finally {
@@ -80,252 +83,255 @@ const ConfigFlags: React.FC = () => {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center h-64">
-                <div className="flex flex-col items-center gap-4">
-                    <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-                    <p className="text-indigo-400 font-black text-xs uppercase tracking-widest animate-pulse">Accessing Vault...</p>
-                </div>
+            <div className="flex flex-col items-center justify-center h-96">
+                <motion.div 
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+                    className="w-16 h-16 border-t-4 border-r-4 border-indigo-500 rounded-full mb-6 shadow-[0_0_20px_rgba(99,102,241,0.3)]"
+                />
+                <motion.p 
+                    animate={{ opacity: [0.4, 1, 0.4] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                    className="text-indigo-400 font-black text-xs uppercase tracking-[0.3em]"
+                >
+                    Synchronizing Neural Vault
+                </motion.p>
             </div>
         );
     }
 
-    const autoBundle = getConfigValue('auto_bundle', true);
-    const referralComms = getConfigValue('referral_commissions', true);
     const emergencyLockdown = getConfigValue('emergency_lockdown', false);
-    const highRiskThreshold = getConfigValue('high_risk_threshold_etb', 100000);
     const aglpRate = getConfigValue('AGLP_TO_ETB_RATE', { rate: 1.0 }).rate;
+    const packageReferralComm = getConfigValue('AGLP_COMMISSION_PACKAGE_REFERRAL', { value: 0.1 }).value;
 
     return (
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <div className="bg-slate-950 rounded-3xl p-8 text-white shadow-2xl relative overflow-hidden border border-slate-800">
-                <div className="absolute top-0 right-0 p-8 opacity-10">
-                    <Settings2 className="w-32 h-32" />
-                </div>
-                
-                <div className="relative z-10 flex border-b border-slate-800 pb-8 mb-8">
-                    <div className="shrink-0 p-4 bg-indigo-900/50 rounded-2xl mr-6 border border-indigo-500/30">
-                        <Lock className="w-8 h-8 text-indigo-400" />
-                    </div>
-                    <div>
-                        <h3 className="text-2xl font-black tracking-tight mb-2">Protocol Governance</h3>
-                        <p className="text-slate-400 text-sm font-medium leading-relaxed max-w-xl">
-                            The following parameters control core platform mechanics. Changes here affect live transactions and are subject to mandatory audit logging.
-                        </p>
+        <div className="min-h-screen pb-20 space-y-10">
+
+
+            {/* Protocol Governance Module */}
+            <motion.div 
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.1 }}
+                className="grid grid-cols-1 lg:grid-cols-12 gap-8"
+            >
+                {/* Lockdown Card */}
+                <div className="lg:col-span-12">
+                    <div className={`relative group overflow-hidden rounded-[2.5rem] p-1 border transition-all duration-700 ${
+                        emergencyLockdown 
+                        ? 'bg-gradient-to-r from-red-600 to-rose-700 shadow-[0_20px_50px_rgba(225,29,72,0.3)]' 
+                        : 'bg-slate-800 border-slate-700'
+                    }`}>
+                        <div className={`relative h-full w-full rounded-[2.4rem] p-8 flex flex-col md:flex-row items-center justify-between gap-8 transition-colors duration-500 ${
+                            emergencyLockdown ? 'bg-red-950/90 backdrop-blur-md' : 'bg-slate-950'
+                        }`}>
+                            <div className="flex items-center gap-6">
+                                <motion.div 
+                                    animate={emergencyLockdown ? { scale: [1, 1.1, 1] } : {}}
+                                    transition={{ duration: 2, repeat: Infinity }}
+                                    className={`p-4 rounded-2xl ${emergencyLockdown ? 'bg-red-500/20 border border-red-500/50' : 'bg-slate-900 border border-slate-800'}`}
+                                >
+                                    <ShieldAlert className={`w-8 h-8 ${emergencyLockdown ? 'text-red-500' : 'text-slate-400'}`} />
+                                </motion.div>
+                                <div>
+                                    <h4 className={`text-xl font-black tracking-tight mb-1 ${emergencyLockdown ? 'text-red-100' : 'text-white'}`}>
+                                        PLATFORM EMERGENCY LOCKDOWN
+                                    </h4>
+                                    <p className={`text-sm font-medium ${emergencyLockdown ? 'text-red-400' : 'text-slate-500'}`}>
+                                        {emergencyLockdown 
+                                            ? 'ALL SERVICES SUSPENDED. System is currently in restricted mediation mode.' 
+                                            : 'Instantly halt all matching attempts and agent signups across all clusters.'}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <button 
+                                disabled={updatingKey === 'emergency_lockdown'}
+                                onClick={() => updateConfig('emergency_lockdown', !emergencyLockdown)}
+                                className={`relative group/btn overflow-hidden px-10 py-4 rounded-2xl font-black text-sm transition-all active:scale-95 disabled:opacity-50 ${
+                                    emergencyLockdown 
+                                    ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg' 
+                                    : 'bg-red-600 hover:bg-red-500 text-white shadow-[0_10px_20px_rgba(220,38,38,0.3)]'
+                                }`}
+                            >
+                                <span className="relative z-10">{emergencyLockdown ? 'DEACTIVATE LOCK' : 'INITIATE LOCKDOWN'}</span>
+                                <div className="absolute inset-0 bg-white/20 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300" />
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-6 relative z-10">
-                    <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl flex items-center justify-between hover:border-indigo-500/50 transition-colors">
-                        <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center">
-                                <Zap className={`w-5 h-5 ${autoBundle ? 'text-amber-400' : 'text-slate-600'}`} />
+                {/* Economic & Growth Modules */}
+                <div className="lg:col-span-6">
+                    <motion.div 
+                        whileHover={{ y: -5 }}
+                        className="h-full bg-slate-800 border border-slate-700 rounded-[2.5rem] p-8 overflow-hidden relative"
+                    >
+                        <div className="absolute top-0 right-0 p-8 opacity-5">
+                            <TrendingUp className="w-32 h-32 text-emerald-500" />
+                        </div>
+                        
+                        <div className="flex items-center gap-3 mb-8">
+                            <div className="p-2 bg-emerald-500/10 rounded-xl">
+                                <TrendingUp className="w-5 h-5 text-emerald-500" />
                             </div>
+                            <h5 className="font-black text-white tracking-tight">Growth Mechanics</h5>
+                        </div>
+
+                        <div className="space-y-6">
                             <div>
-                                <p className="text-sm font-black text-slate-100">Auto-Bundle Policy</p>
-                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Global Mediation</p>
-                            </div>
-                        </div>
-                        <button 
-                            disabled={updatingKey === 'auto_bundle'}
-                            onClick={() => updateConfig('auto_bundle', !autoBundle)}
-                            className={`w-12 h-6 rounded-full p-1 transition-all ${autoBundle ? 'bg-indigo-600' : 'bg-slate-700'} ${updatingKey === 'auto_bundle' ? 'opacity-50 cursor-not-allowed' : ''}`}
-                        >
-                            <div className={`w-4 h-4 bg-white rounded-full transition-all ${autoBundle ? 'ml-6' : 'ml-0'}`} />
-                        </button>
-                    </div>
-
-                    <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl flex items-center justify-between hover:border-emerald-500/50 transition-colors">
-                        <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center">
-                                <TrendingUp className={`w-5 h-5 ${referralComms ? 'text-emerald-400' : 'text-slate-600'}`} />
-                            </div>
-                            <div>
-                                <p className="text-sm font-black text-slate-100">Referral Commissions</p>
-                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Monetary Control</p>
-                            </div>
-                        </div>
-                        <button 
-                            disabled={updatingKey === 'referral_commissions'}
-                            onClick={() => updateConfig('referral_commissions', !referralComms)}
-                            className={`w-12 h-6 rounded-full p-1 transition-all ${referralComms ? 'bg-emerald-600' : 'bg-slate-700'} ${updatingKey === 'referral_commissions' ? 'opacity-50 cursor-not-allowed' : ''}`}
-                        >
-                            <div className={`w-4 h-4 bg-white rounded-full transition-all ${referralComms ? 'ml-6' : 'ml-0'}`} />
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <div className="bg-white rounded-3xl border border-slate-100 p-8 shadow-sm">
-                <div className="flex items-center justify-between mb-8">
-                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Global Timeouts & Thresholds</h4>
-                    <span className="text-[10px] bg-indigo-50 text-indigo-600 px-2 py-0.5 rounded-full font-black uppercase italic">Live Synchronized</span>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="bg-slate-50/50 p-6 rounded-2xl border border-slate-100 group relative overflow-hidden">
-                        <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform">
-                            <AlertTriangle className="w-12 h-12 text-indigo-600" />
-                        </div>
-                        <div className="flex items-center gap-3 text-slate-900 font-black text-sm mb-4">
-                            <ShieldAlert className="w-5 h-5 text-indigo-600" />
-                            High Risk Threshold (ETB)
-                        </div>
-                        <p className="text-slate-500 text-xs font-medium mb-6 leading-relaxed">
-                            Defines the transaction amount above which a case is automatically flagged for Appellate review.
-                        </p>
-                        <div className="flex items-center gap-3">
-                            <div className="relative flex-1">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400">ETB</span>
-                                <input 
-                                    type="number" 
-                                    defaultValue={highRiskThreshold}
-                                    onBlur={(e) => {
-                                        const newVal = parseInt(e.target.value);
-                                        if (newVal !== highRiskThreshold) {
-                                            updateConfig('high_risk_threshold_etb', newVal);
-                                        }
-                                    }}
-                                    className="w-full bg-white border border-slate-200 rounded-xl pl-10 pr-4 py-2 text-sm font-black text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all" 
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="bg-slate-50/50 p-6 rounded-2xl border border-slate-100 group relative overflow-hidden">
-                        <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:scale-110 transition-transform">
-                            <Clock className="w-12 h-12 text-indigo-600" />
-                        </div>
-                        <div className="flex items-center gap-3 text-slate-900 font-black text-sm mb-4">
-                            <Zap className="w-5 h-5 text-indigo-600" />
-                            AGLP Exchange Rate
-                        </div>
-                        <p className="text-slate-500 text-xs font-medium mb-6 leading-relaxed">
-                            Defines the number of AGLP credited per 1 ETB deposited. A value of 1.0 means 1:1 parity with ETB.
-                        </p>
-                        <div className="flex items-center gap-3">
-                            <div className="relative flex-1">
-                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400">1 ETB =</span>
-                                <input 
-                                    type="number" 
-                                    step="0.1"
-                                    defaultValue={aglpRate}
-                                    onBlur={(e) => {
-                                        const newVal = parseFloat(e.target.value);
-                                        if (newVal !== aglpRate && !isNaN(newVal)) {
-                                            updateConfig('AGLP_TO_ETB_RATE', { rate: newVal });
-                                        }
-                                    }}
-                                    className="w-full bg-white border border-slate-200 rounded-xl pl-14 pr-4 py-2 text-sm font-black text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all" 
-                                />
-                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400">AGLP</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="mt-12 space-y-8 pt-8 border-t border-slate-100">
-                    <div className="flex items-center justify-between mb-2">
-                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Economic Splits & Commission Logic</h4>
-                        <span className="text-[10px] bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-full font-black uppercase italic">Revenue Architecture</span>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {[
-                            { key: 'COMMISSION_REAL_ESTATE_PRIMARY', label: 'R.E. Primary', icon: ShieldCheck },
-                            { key: 'COMMISSION_REAL_ESTATE_OVERRIDE', label: 'R.E. Override', icon: TrendingUp },
-                            { key: 'COMMISSION_FURNITURE_PRIMARY', label: 'Furniture Primary', icon: Zap },
-                            { key: 'AGLP_COMMISSION_PACKAGE_REFERRAL', label: 'Package Referral', icon: Clock },
-                        ].map((comm) => {
-                            const val = getConfigValue(comm.key, { value: 0.1 }).value;
-                            return (
-                                <div key={comm.key} className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
-                                    <div className="flex items-center gap-2 text-slate-900 font-black text-[10px] mb-3 uppercase tracking-tight">
-                                        <comm.icon className="w-3 h-3 text-indigo-600" />
-                                        {comm.label}
+                                <label className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-3 block px-1">
+                                    Package Referral Commissions
+                                </label>
+                                <div className="relative group">
+                                    <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-emerald-500/50 group-focus-within:text-emerald-500 transition-colors">
+                                        <Globe className="w-4 h-4" />
                                     </div>
-                                    <div className="relative">
-                                        <input 
-                                            type="number" 
-                                            step="0.01"
-                                            defaultValue={val}
-                                            onBlur={(e) => {
-                                                const newVal = parseFloat(e.target.value);
-                                                if (newVal !== val && !isNaN(newVal)) {
-                                                    updateConfig(comm.key, { value: newVal });
-                                                }
-                                            }}
-                                            className="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-black text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" 
-                                        />
-                                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400">% / 100</span>
+                                    <input 
+                                        type="number" 
+                                        step="0.01"
+                                        defaultValue={packageReferralComm}
+                                        onBlur={(e) => {
+                                            const newVal = parseFloat(e.target.value);
+                                            if (newVal !== packageReferralComm && !isNaN(newVal)) {
+                                                updateConfig('AGLP_COMMISSION_PACKAGE_REFERRAL', { value: newVal });
+                                            }
+                                        }}
+                                        className="w-full bg-slate-900/80 border border-slate-700 rounded-2xl py-4 pl-12 pr-16 text-white font-black text-lg focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500/60 transition-all" 
+                                    />
+                                    <div className="absolute inset-y-0 right-4 flex items-center">
+                                        <span className="text-xs font-black text-slate-400 group-focus-within:text-emerald-500 transition-colors">%/100</span>
                                     </div>
                                 </div>
-                            );
-                        })}
-                    </div>
+                                <p className="mt-3 text-[10px] font-medium text-slate-300 leading-relaxed px-1">
+                                    Defines the payout ratio for tier upgrades. Current efficiency: <span className="text-emerald-500 font-bold">OPTIMIZED</span>
+                                </p>
+                            </div>
+                        </div>
+                    </motion.div>
                 </div>
 
-                <div className="mt-12 space-y-8 pt-8 border-t border-slate-100">
-                    <div className="flex items-center justify-between mb-2">
-                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Financial Disbursement (Withdrawal Policies)</h4>
-                        <span className="text-[10px] bg-amber-50 text-amber-600 px-2 py-0.5 rounded-full font-black uppercase italic">Capital Integrity</span>
-                    </div>
+                <div className="lg:col-span-6">
+                    <motion.div 
+                        whileHover={{ y: -5 }}
+                        className="h-full bg-slate-800 border border-slate-700 rounded-[2.5rem] p-8 overflow-hidden relative"
+                    >
+                        <div className="absolute top-0 right-0 p-8 opacity-5">
+                            <Zap className="w-32 h-32 text-indigo-500" />
+                        </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {[
-                            { key: 'withdrawal_min_amount', label: 'Min Withdrawal', icon: ShieldAlert, suffix: 'AGLP' },
-                            { key: 'withdrawal_max_amount_daily', label: 'Daily Cap', icon: AlertTriangle, suffix: 'AGLP' },
-                            { key: 'withdrawal_fee_percentage', label: 'Processing Fee', icon: Save, suffix: '%' },
-                        ].map((policy) => {
-                            const val = getConfigValue(policy.key, policy.key.includes('fee') ? 0.05 : 100);
-                            return (
-                                <div key={policy.key} className="bg-slate-50/50 p-4 rounded-2xl border border-slate-100">
-                                    <div className="flex items-center gap-2 text-slate-900 font-black text-[10px] mb-3 uppercase tracking-tight">
-                                        <policy.icon className="w-3 h-3 text-indigo-600" />
-                                        {policy.label}
+                        <div className="flex items-center gap-3 mb-8">
+                            <div className="p-2 bg-indigo-500/10 rounded-xl">
+                                <Zap className="w-5 h-5 text-indigo-500" />
+                            </div>
+                            <h5 className="font-black text-white tracking-tight">Monetary Protocol</h5>
+                        </div>
+
+                        <div className="space-y-6">
+                            <div>
+                                <label className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-3 block px-1">
+                                    AGLP Exchange Rate
+                                </label>
+                                <div className="relative group">
+                                    <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-indigo-500/50 group-focus-within:text-indigo-500 transition-colors">
+                                        <Database className="w-4 h-4" />
                                     </div>
-                                    <div className="relative">
-                                        <input 
-                                            type="number" 
-                                            step={policy.key.includes('fee') ? "0.01" : "1"}
-                                            defaultValue={val}
-                                            onBlur={(e) => {
-                                                const newVal = parseFloat(e.target.value);
-                                                if (newVal !== val && !isNaN(newVal)) {
-                                                    updateConfig(policy.key, newVal);
-                                                }
-                                            }}
-                                            className="w-full bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-black text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500" 
-                                        />
-                                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400">{policy.suffix}</span>
+                                    <input 
+                                        type="number" 
+                                        step="0.1"
+                                        defaultValue={aglpRate}
+                                        onBlur={(e) => {
+                                            const newVal = parseFloat(e.target.value);
+                                            if (newVal !== aglpRate && !isNaN(newVal)) {
+                                                updateConfig('AGLP_TO_ETB_RATE', { rate: newVal });
+                                            }
+                                        }}
+                                        className="w-full bg-slate-900/80 border border-slate-700 rounded-2xl py-4 pl-12 pr-16 text-white font-black text-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500/60 transition-all" 
+                                    />
+                                    <div className="absolute inset-y-0 right-4 flex items-center">
+                                        <span className="text-xs font-black text-slate-400 group-focus-within:text-indigo-500 transition-colors">1 ETB : AGLP</span>
                                     </div>
                                 </div>
-                            );
-                        })}
+                                <p className="mt-3 text-[10px] font-medium text-slate-300 leading-relaxed px-1">
+                                    Global currency conversion parity. <span className="text-indigo-400 font-bold italic">Real-time sync enabled.</span>
+                                </p>
+                            </div>
+                        </div>
+                    </motion.div>
+                </div>
+
+                {/* Withdrawal Policies */}
+                <div className="lg:col-span-12">
+                    <div className="bg-slate-800 border border-slate-700 rounded-[2.5rem] p-10 overflow-hidden relative">
+                        <div className="flex items-center justify-between mb-10">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-amber-500/10 rounded-2xl">
+                                    <Activity className="w-6 h-6 text-amber-500" />
+                                </div>
+                                <div>
+                                    <h5 className="font-black text-white text-xl tracking-tight">Capital Integrity Protocols</h5>
+                                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mt-1">Withdrawal & Disbursement Policies</p>
+                                </div>
+                            </div>
+                            <div className="px-4 py-1 bg-amber-500/5 border border-amber-500/20 rounded-full flex items-center gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                                <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest">Audited</span>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            {[
+                                { key: 'withdrawal_min_amount', label: 'Minimum Floor', icon: ShieldCheck, suffix: 'AGLP', color: 'indigo', bg: 'bg-indigo-500/10', text: 'text-indigo-500', ring: 'focus:ring-indigo-500/20', border: 'focus:border-indigo-500/50' },
+                                { key: 'withdrawal_max_amount_daily', label: 'Daily Ceiling', icon: AlertTriangle, suffix: 'AGLP', color: 'rose', bg: 'bg-rose-500/10', text: 'text-rose-500', ring: 'focus:ring-rose-500/20', border: 'focus:border-rose-500/50' },
+                                { key: 'withdrawal_fee_percentage', label: 'Processing Logic', icon: Save, suffix: '% Fee', color: 'amber', bg: 'bg-amber-500/10', text: 'text-amber-500', ring: 'focus:ring-amber-500/20', border: 'focus:border-amber-500/50' },
+                            ].map((policy) => {
+                                const val = getConfigValue(policy.key, policy.key.includes('fee') ? 0.05 : 100);
+                                return (
+                                    <motion.div 
+                                        key={policy.key}
+                                        whileHover={{ backgroundColor: 'rgba(30, 41, 59, 1)' }}
+                                        className="bg-slate-900 border border-slate-700 rounded-3xl p-6 transition-all"
+                                    >
+                                        <div className="flex items-center gap-3 mb-6">
+                                            <div className={`p-2 rounded-lg ${policy.bg}`}>
+                                                <policy.icon className={`w-4 h-4 ${policy.text}`} />
+                                            </div>
+                                            <span className="text-xs font-black text-white uppercase tracking-tight">{policy.label}</span>
+                                        </div>
+                                        <div className="relative group">
+                                            <input 
+                                                type="number" 
+                                                step={policy.key.includes('fee') ? "0.01" : "1"}
+                                                defaultValue={val}
+                                                onBlur={(e) => {
+                                                    const newVal = parseFloat(e.target.value);
+                                                    if (newVal !== val && !isNaN(newVal)) {
+                                                        updateConfig(policy.key, newVal);
+                                                    }
+                                                }}
+                                                className={`w-full bg-slate-900/80 border border-slate-700 rounded-xl px-4 py-3 text-sm font-black text-white focus:outline-none focus:ring-2 ${policy.ring} ${policy.border} transition-all`} 
+                                            />
+                                            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-300 uppercase">{policy.suffix}</span>
+                                        </div>
+                                    </motion.div>
+                                );
+                            })}
+                        </div>
                     </div>
                 </div>
-            </div>
-            
-            <div className={`rounded-3xl p-8 border flex items-center justify-between group transition-all duration-500 ${emergencyLockdown ? 'bg-red-50 border-red-200' : 'bg-red-950 border-red-900/50'}`}>
-                <div className="flex items-center gap-5">
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${emergencyLockdown ? 'bg-red-200 animate-none' : 'bg-red-900/50 animate-pulse'}`}>
-                        <ShieldAlert className={`w-6 h-6 ${emergencyLockdown ? 'text-red-700' : 'text-red-500'}`} />
-                    </div>
-                    <div>
-                        <h4 className={`text-lg font-black tracking-tight ${emergencyLockdown ? 'text-red-900' : 'text-red-100'}`}>PLATFORM EMERGENCY LOCKDOWN</h4>
-                        <p className={`text-xs font-medium ${emergencyLockdown ? 'text-red-700' : 'text-red-300'}`}>
-                            {emergencyLockdown 
-                                ? 'System is currently in RESTRICTED mode. All incoming requests are held.' 
-                                : 'Instantly suspends all new mediation attempts & agent signups.'}
-                        </p>
-                    </div>
+            </motion.div>
+
+            {/* Footer Status */}
+            <div className="flex items-center justify-center gap-8 py-6 opacity-80 group">
+                <div className="flex items-center gap-2">
+                    <Database className="w-3 h-3 text-slate-400" />
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Distributed Vault</span>
                 </div>
-                <button 
-                    disabled={updatingKey === 'emergency_lockdown'}
-                    onClick={() => updateConfig('emergency_lockdown', !emergencyLockdown)}
-                    className={`${emergencyLockdown ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-red-600 hover:bg-red-500'} text-white px-8 py-3 rounded-2xl font-black text-sm shadow-xl transition-all active:scale-95 disabled:opacity-50`}
-                >
-                    {emergencyLockdown ? 'RELEASE LOCKDOWN' : 'ENTER LOCKDOWN'}
-                </button>
+                <div className="w-1 h-1 rounded-full bg-slate-600" />
+                <div className="flex items-center gap-2">
+                    <Globe className="w-3 h-3 text-slate-400" />
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Edge Cluster Sync</span>
+                </div>
             </div>
         </div>
     );

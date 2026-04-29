@@ -47,6 +47,12 @@ let UsersService = class UsersService {
                         fullName: true,
                         createdAt: true,
                         role: true,
+                        tier: true,
+                        package: {
+                            select: {
+                                displayName: true,
+                            },
+                        },
                     },
                 },
             },
@@ -213,6 +219,7 @@ let UsersService = class UsersService {
                 amount: currentTotal - previousTotal,
                 chart: chartData,
             },
+            totalEarnings: profile.aglpBalance.toNumber() + dynamicWithdrawn,
             history: formattedHistory,
         };
     }
@@ -220,7 +227,10 @@ let UsersService = class UsersService {
         if (callerRole === client_1.UserRole.super_admin)
             return true;
         if (callerRole === client_1.UserRole.admin) {
-            const targetRoles = [client_1.UserRole.operator];
+            const targetRoles = [
+                client_1.UserRole.operator,
+                client_1.UserRole.financial_operator,
+            ];
             return targetRoles.includes(targetRole);
         }
         return false;
@@ -230,7 +240,14 @@ let UsersService = class UsersService {
             return {};
         if (role === client_1.UserRole.admin) {
             return {
-                role: { in: [client_1.UserRole.operator, client_1.UserRole.agent, client_1.UserRole.customer] },
+                role: {
+                    in: [
+                        client_1.UserRole.operator,
+                        client_1.UserRole.agent,
+                        client_1.UserRole.customer,
+                        client_1.UserRole.financial_operator,
+                    ],
+                },
             };
         }
         if (role === client_1.UserRole.operator) {
@@ -382,18 +399,18 @@ let UsersService = class UsersService {
         }
         return this.applyTierUpgrade(agentId, tier, paymentMethod);
     }
-    async applyTierUpgrade(agentId, tier, paymentMethod = 'ETB') {
+    async applyTierUpgrade(agentId, tier, paymentMethod = 'ETB', txOverride) {
         const tierEnum = tier.toUpperCase().replace(' ', '_');
         if (exports.TierPriority[tierEnum] === undefined) {
             throw new Error('Invalid tier name');
         }
-        const pkg = await this.prisma.package.findUnique({
+        const pkg = await (txOverride || this.prisma).package.findUnique({
             where: { name: tierEnum },
         });
         if (!pkg) {
             throw new common_1.NotFoundException(`Package for tier "${tier}" not found in system.`);
         }
-        return this.prisma.$transaction(async (tx) => {
+        const run = async (tx) => {
             if (pkg.price && Number(pkg.price) > 0 && paymentMethod !== 'ADMIN') {
                 if (paymentMethod === 'ETB') {
                     await this.aglpService.depositEtb(tx, agentId, Number(pkg.price), pkg.id, 'PACKAGE_PURCHASE');
@@ -426,7 +443,13 @@ let UsersService = class UsersService {
                     tier: tierEnum,
                 },
             });
-        });
+        };
+        if (txOverride) {
+            return run(txOverride);
+        }
+        else {
+            return this.prisma.$transaction(run);
+        }
     }
     async checkReferralEligibility(referrerId) {
         const referrer = await this.prisma.profile.findUnique({
@@ -468,10 +491,14 @@ let UsersService = class UsersService {
         if (!this.canModifyUser(callerRole, user.role)) {
             throw new common_1.ForbiddenException(`Role "${callerRole}" cannot suspend role "${user.role}"`);
         }
-        return this.prisma.profile.update({
+        const result = await this.prisma.profile.update({
             where: { id: userId },
             data: { isActive: false },
         });
+        this.notificationsGateway.sendToUser(userId, 'force_logout', {
+            reason: 'Your account has been suspended by an administrator.',
+        });
+        return result;
     }
     async requestWithdrawal(userId, amountAglp, bankDetails) {
         if (amountAglp <= 0) {

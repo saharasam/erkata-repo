@@ -203,6 +203,9 @@ model Profile {
   operatorRequests  Request[]         @relation("OperatorRequests")
   customerRequests  Request[]         @relation("CustomerRequests")
   proposals         ResolutionProposal[]
+  upgradeRequests   UpgradeRequest[]   @relation("AgentUpgradeRequests")
+  verifications     UpgradeRequest[]   @relation("OperatorVerifications")
+  approvals         UpgradeRequest[]   @relation("AdminApprovals")
 
   @@map("profiles")
 }
@@ -317,6 +320,26 @@ model Zone {
   @@map("zones")
 }
 
+model UpgradeRequest {
+  id            String               @id @default(cuid())
+  agentId       String               @map("agent_id") @db.Uuid
+  currentTier   Tier                 @map("current_tier")
+  targetTier    Tier                 @map("target_tier")
+  status        UpgradeRequestStatus @default(SUBMITTED)
+  proofUrl      String?              @map("proof_url")
+  internalNote  String?              @map("internal_note")
+  operatorId    String?              @map("operator_id") @db.Uuid
+  adminId       String?              @map("admin_id") @db.Uuid
+  createdAt     DateTime             @default(now()) @map("created_at")
+  updatedAt     DateTime             @updatedAt @map("updated_at")
+
+  agent         Profile              @relation("AgentUpgradeRequests", fields: [agentId], references: [id])
+  operator      Profile?             @relation("OperatorVerifications", fields: [operatorId], references: [id])
+  admin         Profile?             @relation("AdminApprovals", fields: [adminId], references: [id])
+
+  @@map("upgrade_requests")
+}
+
 enum AglpTransactionStatus {
   PENDING
   COMPLETED
@@ -376,10 +399,18 @@ enum TransactionStatus {
   failed
 }
 
+enum UpgradeRequestStatus {
+  SUBMITTED
+  OPERATOR_VERIFIED
+  APPROVED
+  REJECTED
+}
+
 enum UserRole {
   super_admin
   admin
   operator
+  financial_operator
   agent
   customer
 }

@@ -70,6 +70,12 @@ let UsersController = class UsersController {
     async updateBusinessProfile(req, body) {
         return this.usersService.updateBusinessProfile(req.user.id, body);
     }
+    async getUserProfile(userId) {
+        return this.usersService.getCurrentProfile(userId);
+    }
+    async getUserFinance(userId) {
+        return this.usersService.getFinanceSummary(userId);
+    }
 };
 exports.UsersController = UsersController;
 __decorate([
@@ -172,6 +178,22 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "updateBusinessProfile", null);
+__decorate([
+    (0, common_1.Get)(':id/profile'),
+    (0, guards_1.RequirePermission)(permissions_1.Action.VIEW_USER_DETAILS_ANY_ROLE),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "getUserProfile", null);
+__decorate([
+    (0, common_1.Get)(':id/finance'),
+    (0, guards_1.RequirePermission)(permissions_1.Action.VIEW_USER_DETAILS_ANY_ROLE),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "getUserFinance", null);
 exports.UsersController = UsersController = __decorate([
     (0, common_1.Controller)('users'),
     (0, common_1.UseGuards)(guards_1.JwtAuthGuard, guards_1.RolesGuard),

@@ -64,6 +64,12 @@ export class UsersService {
             fullName: true,
             createdAt: true,
             role: true,
+            tier: true,
+            package: {
+              select: {
+                displayName: true,
+              },
+            },
           },
         },
       },
@@ -266,6 +272,7 @@ export class UsersService {
         amount: currentTotal - previousTotal,
         chart: chartData,
       },
+      totalEarnings: profile.aglpBalance.toNumber() + dynamicWithdrawn,
       history: formattedHistory,
     };
   }
@@ -278,8 +285,11 @@ export class UsersService {
   canModifyUser(callerRole: UserRole, targetRole: UserRole): boolean {
     if (callerRole === UserRole.super_admin) return true;
     if (callerRole === UserRole.admin) {
-      // Admin can only target Operators. Agents are managed by Super Admin (invites/suspension).
-      const targetRoles: UserRole[] = [UserRole.operator];
+      // Admin can only target Operators and Financial Operators. Agents are managed by Super Admin (invites/suspension).
+      const targetRoles: UserRole[] = [
+        UserRole.operator,
+        UserRole.financial_operator,
+      ];
       return targetRoles.includes(targetRole);
     }
     // Operators, Agents, and Customers have zero write authority over others
@@ -296,7 +306,14 @@ export class UsersService {
     if (role === UserRole.admin) {
       // Admin sees Operators/Agents (could be filtered by region if managedBy exists)
       return {
-        role: { in: [UserRole.operator, UserRole.agent, UserRole.customer] },
+        role: {
+          in: [
+            UserRole.operator,
+            UserRole.agent,
+            UserRole.customer,
+            UserRole.financial_operator,
+          ],
+        },
       };
     }
 
@@ -497,18 +514,18 @@ export class UsersService {
     return this.applyTierUpgrade(agentId, tier, paymentMethod);
   }
 
-  private async applyTierUpgrade(
+  public async applyTierUpgrade(
     agentId: string,
     tier: string,
     paymentMethod: 'ETB' | 'AGLP' | 'ADMIN' = 'ETB',
+    txOverride?: Prisma.TransactionClient,
   ) {
     const tierEnum = tier.toUpperCase().replace(' ', '_') as Tier;
     if (TierPriority[tierEnum] === undefined) {
       throw new Error('Invalid tier name');
     }
 
-    // Fetch the package price
-    const pkg = await this.prisma.package.findUnique({
+    const pkg = await (txOverride || this.prisma).package.findUnique({
       where: { name: tierEnum },
     });
 
@@ -518,7 +535,7 @@ export class UsersService {
       );
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    const run = async (tx: Prisma.TransactionClient) => {
       if (pkg.price && Number(pkg.price) > 0 && paymentMethod !== 'ADMIN') {
         if (paymentMethod === 'ETB') {
           // Explicit cash purchase: Agent deposits ETB and gets the equivalent AGLP as a reward.
@@ -578,7 +595,13 @@ export class UsersService {
           tier: tierEnum,
         },
       });
-    });
+    };
+
+    if (txOverride) {
+      return run(txOverride);
+    } else {
+      return this.prisma.$transaction(run);
+    }
   }
 
   async checkReferralEligibility(referrerId: string) {
@@ -631,10 +654,17 @@ export class UsersService {
       );
     }
 
-    return this.prisma.profile.update({
+    const result = await this.prisma.profile.update({
       where: { id: userId },
       data: { isActive: false },
     });
+
+    // Immediate Force Logout via WebSocket
+    this.notificationsGateway.sendToUser(userId, 'force_logout', {
+      reason: 'Your account has been suspended by an administrator.',
+    });
+
+    return result;
   }
 
   async requestWithdrawal(

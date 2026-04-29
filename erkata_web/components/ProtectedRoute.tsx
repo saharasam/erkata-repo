@@ -25,6 +25,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
         if (user?.role === UserRole.OPERATOR) correctPath = '/operator-dashboard';
         if (user?.role === UserRole.ADMIN) correctPath = '/admin-dashboard';
         if (user?.role === UserRole.SUPER_ADMIN) correctPath = '/superadmin';
+        if (user?.role === UserRole.FINANCIAL_OPERATOR) correctPath = '/financial-operator';
         if (user?.role === UserRole.CUSTOMER) correctPath = '/customer';
         
         navigate(correctPath, { replace: true });

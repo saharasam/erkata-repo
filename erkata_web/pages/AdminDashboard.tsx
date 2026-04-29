@@ -24,15 +24,6 @@ const AdminDashboard: React.FC = () => {
             sidebarContent={null}
             currentView={currentView}
             onViewChange={setCurrentView}
-            rightPanelContent={
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.2 }}
-                >
-                    <SystemHealth />
-                </motion.div>
-            }
         >
             <div className="p-6 max-w-7xl mx-auto">
                 <AnimatePresence mode="wait">

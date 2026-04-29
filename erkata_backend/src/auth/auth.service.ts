@@ -11,6 +11,7 @@ import { InviteService } from './invite/invite.service';
 import * as bcrypt from 'bcrypt';
 import { UserRole, Tier } from '@prisma/client';
 import { randomUUID } from 'crypto';
+import { NotificationsGateway } from '../notifications/notifications.gateway';
 
 interface JwtPayload {
   sub: string;
@@ -25,6 +26,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly inviteService: InviteService,
+    private readonly notificationsGateway: NotificationsGateway,
   ) {}
 
   private sanitizePhone(phone: string): string {
@@ -251,11 +253,23 @@ export class AuthService {
     });
 
     // Mark invite as used if applicable
-    if (
-      data.inviteToken &&
-      (finalRole === 'admin' || finalRole === 'operator')
-    ) {
-      await this.inviteService.markInviteAsUsed(data.inviteToken);
+    if (data.inviteToken) {
+      const invite = await this.inviteService.markInviteAsUsed(
+        data.inviteToken,
+      );
+
+      // Notify the inviting admin so their "Pending Invites" list refreshes in real-time
+      if (invite && invite.createdById) {
+        this.notificationsGateway.sendToUser(
+          invite.createdById,
+          'notification',
+          {
+            type: 'invite.claimed',
+            inviteId: invite.id,
+            message: `The invitation for ${invite.email} has been claimed.`,
+          },
+        );
+      }
     }
 
     console.log(`[AuthService] User created successfully: ${newProfile.id}`);

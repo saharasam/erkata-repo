@@ -141,4 +141,16 @@ export class UsersController {
   ) {
     return this.usersService.updateBusinessProfile(req.user.id, body);
   }
+
+  @Get(':id/profile')
+  @RequirePermission(Action.VIEW_USER_DETAILS_ANY_ROLE)
+  async getUserProfile(@Param('id') userId: string) {
+    return this.usersService.getCurrentProfile(userId);
+  }
+
+  @Get(':id/finance')
+  @RequirePermission(Action.VIEW_USER_DETAILS_ANY_ROLE)
+  async getUserFinance(@Param('id') userId: string) {
+    return this.usersService.getFinanceSummary(userId);
+  }
 }

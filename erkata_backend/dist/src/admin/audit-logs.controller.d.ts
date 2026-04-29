@@ -6,16 +6,16 @@ export declare class AuditLogsController {
         entityType: string | null;
         entityId: string | null;
         actor: {
-            fullName: string;
             role: import(".prisma/client").$Enums.UserRole;
+            fullName: string;
         } | null;
         id: string;
-        createdAt: Date;
-        metadata: import("@prisma/client/runtime/library").JsonValue | null;
         action: string;
+        createdAt: Date;
+        actorId: string | null;
         targetTable: string | null;
         targetId: string | null;
         transactionId: string | null;
-        actorId: string | null;
+        metadata: import("@prisma/client/runtime/library").JsonValue | null;
     }[]>;
 }

@@ -12,10 +12,22 @@ import {
   Activity,
   Zap,
   UserCheck,
-  UserMinus
+  UserMinus,
+  Heart,
+  Crown,
+  Anchor,
+  Flame,
+  Filter
 } from 'lucide-react';
 import { useModal } from '../../contexts/ModalContext';
 import api from '../../utils/api';
+import { motion, AnimatePresence } from 'framer-motion';
+
+interface SystemPackage {
+    id: string;
+    name: string;
+    displayName: string;
+}
 
 interface AgentRecord {
   id: string;
@@ -26,6 +38,7 @@ interface AgentRecord {
   acceptedCount: number;
   rejectedCount: number;
   unfulfilledCount: number;
+  unfulfilledRate?: number;
   avgRating: number;
   package?: {
     displayName: string;
@@ -53,32 +66,43 @@ const TIER_CONFIG: Record<string, { color: string; border: string }> = {
 
 const TIERS = ['FREE', 'PEACE', 'LOVE', 'UNITY', 'ABUNDANT_LIFE'];
 
-const GlobalRightsOversight: React.FC = () => {
+interface GlobalRightsOversightProps {
+    onViewDetails: (agentId: string) => void;
+}
+
+const GlobalRightsOversight: React.FC<GlobalRightsOversightProps> = ({ onViewDetails }) => {
     const { showConfirm, showAlert } = useModal();
     const [searchTerm, setSearchTerm] = useState('');
+    const [tierFilter, setTierFilter] = useState<string>('ALL');
+    const [isTierMenuOpen, setIsTierMenuOpen] = useState(false);
     const [agents, setAgents] = useState<AgentRecord[]>([]);
+    const [systemPackages, setSystemPackages] = useState<SystemPackage[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [actionLoading, setActionLoading] = useState<string | null>(null);
 
-    const fetchAgents = async () => {
-      try {
-        setIsLoading(true);
-        const response = await api.get('/users?role=agent');
-        setAgents(response.data);
-      } catch (err) {
-        console.error('Failed to fetch agents:', err);
-        showAlert({
-            title: 'Registry Sync Error',
-            message: 'Unable to synchronize global agent rights database.',
-            type: 'error'
-        });
-      } finally {
-        setIsLoading(false);
-      }
+    const fetchData = async () => {
+        try {
+            setIsLoading(true);
+            const [agentsRes, packagesRes] = await Promise.all([
+                api.get('/users?role=agent'),
+                api.get('/admin/packages')
+            ]);
+            setAgents(agentsRes.data);
+            setSystemPackages(packagesRes.data);
+        } catch (error) {
+            console.error('Failed to fetch oversight data:', error);
+            showAlert({
+                title: 'Data Synchronization Error',
+                message: 'Unable to retrieve the latest agent and protocol registry.',
+                type: 'error'
+            });
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     useEffect(() => {
-      fetchAgents();
+        fetchData();
     }, []);
 
     const handleTierChange = async (agent: AgentRecord, direction: 'upgrade' | 'downgrade') => {
@@ -110,7 +134,7 @@ const GlobalRightsOversight: React.FC = () => {
                   message: `Authority updated. Agent ${agent.fullName} is now on ${nextTier} protocol.`,
                   type: 'success'
               });
-              fetchAgents();
+              fetchData();
             } catch (err) {
               showAlert({
                 title: 'Override Rejected',
@@ -141,7 +165,7 @@ const GlobalRightsOversight: React.FC = () => {
                   message: `Agent ${agent.fullName} status updated to ${!agent.isActive ? 'ACTIVE' : 'SUSPENDED'}.`,
                   type: 'success'
               });
-              fetchAgents();
+              fetchData();
             } catch (err) {
               showAlert({
                 title: 'Override Rejected',
@@ -154,47 +178,123 @@ const GlobalRightsOversight: React.FC = () => {
         }
     };
 
-    const filteredAgents = agents.filter(a => 
-        a.fullName.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const counts = {
+        ALL: agents.length,
+        FREE: agents.filter(a => a.tier === 'FREE').length,
+        PEACE: agents.filter(a => a.tier === 'PEACE').length,
+        LOVE: agents.filter(a => a.tier === 'LOVE').length,
+        UNITY: agents.filter(a => a.tier === 'UNITY').length,
+        ABUNDANT_LIFE: agents.filter(a => a.tier === 'ABUNDANT_LIFE').length,
+    };
+
+    const TIER_ICONS: Record<string, any> = {
+        FREE: Zap,
+        PEACE: ShieldAlert,
+        LOVE: Heart,
+        UNITY: Users,
+        ABUNDANT_LIFE: Crown,
+    };
+
+    const filteredAgents = agents.filter(a => {
+        const matchesSearch = a.fullName.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesTier = tierFilter === 'ALL' || a.tier === tierFilter;
+        return matchesSearch && matchesTier;
+    });
 
     return (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                {[
-                    { label: 'Total Agents', value: agents.length.toString(), icon: Users, color: 'text-indigo-600' },
-                    { label: 'Avg Success', value: '94.2%', icon: TrendingUp, color: 'text-emerald-600' },
-                    { label: 'Active Zones', value: Array.from(new Set(agents.flatMap(a => a.agentZones.map(z => z.woreda)))).length.toString(), icon: Globe, color: 'text-amber-600' },
-                    { label: 'Escalation Rate', value: '1.2%', icon: ShieldAlert, color: 'text-red-600' },
-                ].map((stat, i) => (
-                    <div key={i} className="bg-white p-6 rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/20 group hover:border-indigo-500/20 transition-all">
-                        <div className="flex justify-between items-start mb-4">
-                            <div className="w-10 h-10 rounded-2xl bg-slate-50 flex items-center justify-center group-hover:bg-indigo-50 transition-colors">
-                              <stat.icon className={`w-5 h-5 ${stat.color}`} />
-                            </div>
-                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2 py-0.5 bg-slate-50 rounded-full group-hover:bg-indigo-500 group-hover:text-white transition-all">Global</span>
-                        </div>
-                        <p className="text-3xl font-black text-slate-900 tracking-tight">{stat.value}</p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase mt-1 tracking-widest">{stat.label}</p>
-                    </div>
-                ))}
-            </div>
 
-            <div className="bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/20 overflow-hidden flex flex-col">
+            <div className="bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/20 overflow-visible flex flex-col">
                 <div className="p-8 border-b border-slate-50 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                     <div>
                         <h3 className="text-lg font-black text-slate-900 tracking-tight">Agent Rights & Tier Control</h3>
                         <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Tier-based commission & geo-fencing authority</p>
                     </div>
-                    <div className="relative w-full md:w-80">
-                        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <input 
-                            type="text" 
-                            placeholder="Search agents by name or key..." 
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="pl-10 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 w-full transition-all" 
-                        />
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-6 w-full">
+                        <div className="flex items-center gap-4 w-full md:w-auto">
+                            <div className="relative">
+                                <button 
+                                    onClick={() => setIsTierMenuOpen(!isTierMenuOpen)}
+                                    className="flex items-center gap-3 px-5 py-3 bg-white border border-slate-200 rounded-2xl text-xs font-black uppercase tracking-widest shadow-sm hover:border-indigo-500 transition-all min-w-[200px] justify-between group"
+                                >
+                                    <div className="flex items-center gap-2.5">
+                                        {tierFilter === 'ALL' ? (
+                                            <Filter className="w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors" />
+                                        ) : (
+                                            <div className={`w-2 h-2 rounded-full ${TIER_CONFIG[tierFilter].color.split(' ')[0].replace('text-', 'bg-')}`} />
+                                        )}
+                                        <span className="text-slate-900">
+                                            {tierFilter === 'ALL' ? 'All Packages' : tierFilter.replace('_', ' ')}
+                                        </span>
+                                    </div>
+                                    <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-300 ${isTierMenuOpen ? 'rotate-180' : ''}`} />
+                                </button>
+
+                                <AnimatePresence>
+                                    {isTierMenuOpen && (
+                                        <>
+                                            <div 
+                                                className="fixed inset-0 z-10" 
+                                                onClick={() => setIsTierMenuOpen(false)}
+                                            />
+                                            <motion.div 
+                                                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                                transition={{ duration: 0.2, ease: "easeOut" }}
+                                                className="absolute left-0 top-full mt-2 w-72 bg-white border border-slate-100 rounded-[2rem] shadow-2xl shadow-slate-200/50 z-20 overflow-hidden p-2"
+                                            >
+                                                <div 
+                                                    onClick={() => { setTierFilter('ALL'); setIsTierMenuOpen(false); }}
+                                                    className={`flex items-center justify-between p-4 rounded-2xl cursor-pointer transition-all ${
+                                                        tierFilter === 'ALL' ? 'bg-indigo-50 text-indigo-600' : 'hover:bg-slate-50 text-slate-500'
+                                                    }`}
+                                                >
+                                                    <div className="flex items-center gap-3">
+                                                        <Filter className="w-4 h-4" />
+                                                        <span className="text-[10px] font-black uppercase tracking-widest">All Registry</span>
+                                                    </div>
+                                                    <span className="px-2 py-0.5 rounded-md bg-white border border-slate-100 text-[8px] font-black">{counts.ALL}</span>
+                                                </div>
+                                                <div className="h-px bg-slate-50 my-2 mx-2" />
+                                                {systemPackages.map(pkg => {
+                                                    const Icon = TIER_ICONS[pkg.name] || Filter;
+                                                    const isActive = tierFilter === pkg.name;
+                                                    return (
+                                                        <div 
+                                                            key={pkg.id}
+                                                            onClick={() => { setTierFilter(pkg.name); setIsTierMenuOpen(false); }}
+                                                            className={`flex items-center justify-between p-4 rounded-2xl cursor-pointer transition-all ${
+                                                                isActive ? 'bg-indigo-50 text-indigo-600' : 'hover:bg-slate-50 text-slate-500'
+                                                            }`}
+                                                        >
+                                                            <div className="flex items-center gap-3">
+                                                                <Icon className={`w-4 h-4 ${isActive ? TIER_CONFIG[pkg.name]?.color.split(' ')[0] : 'text-slate-300'}`} />
+                                                                <span className="text-[10px] font-black uppercase tracking-widest">{pkg.displayName || pkg.name}</span>
+                                                            </div>
+                                                            <span className="px-2 py-0.5 rounded-md bg-white border border-slate-100 text-[8px] font-black">
+                                                                {agents.filter(a => a.tier === pkg.name).length}
+                                                            </span>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </motion.div>
+                                        </>
+                                    )}
+                                </AnimatePresence>
+                            </div>
+                        </div>
+
+                        <div className="relative w-full md:w-96">
+                            <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                            <input 
+                                type="text" 
+                                placeholder="Instant Search Registry..." 
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-500 w-full transition-all" 
+                            />
+                        </div>
                     </div>
                 </div>
 
@@ -258,15 +358,20 @@ const GlobalRightsOversight: React.FC = () => {
                                             </span>
                                         </td>
                                         <td className="px-8 py-6">
-                                            <div className="space-y-1.5 w-32">
-                                                <div className="flex justify-between text-[9px] font-black text-slate-400 tracking-tighter uppercase leading-none">
-                                                    <span>Success Rate</span>
-                                                    <span className="text-slate-600">92%</span>
-                                                </div>
-                                                <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                                    <div className="h-full bg-indigo-500" style={{ width: '92%' }} />
-                                                </div>
-                                            </div>
+                                            {(() => {
+                                                const successRate = 100 - (agent.unfulfilledRate || 0);
+                                                return (
+                                                    <div className="space-y-1.5 w-32">
+                                                        <div className="flex justify-between text-[9px] font-black text-slate-400 tracking-tighter uppercase leading-none">
+                                                            <span>Success Rate</span>
+                                                            <span className="text-slate-600">{successRate.toFixed(0)}%</span>
+                                                        </div>
+                                                        <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                                            <div className="h-full bg-indigo-500" style={{ width: `${successRate}%` }} />
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })()}
                                         </td>
                                         <td className="px-8 py-6 text-right">
                                             <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
@@ -296,7 +401,10 @@ const GlobalRightsOversight: React.FC = () => {
                                                 >
                                                     {agent.isActive ? <UserMinus className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
                                                 </button>
-                                                <button className="p-2.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-2xl border border-transparent hover:border-indigo-100 transition-all active:scale-90">
+                                                <button 
+                                                    onClick={() => onViewDetails(agent.id)}
+                                                    className="p-2.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-2xl border border-transparent hover:border-indigo-100 transition-all active:scale-90"
+                                                >
                                                     <ArrowUpRight className="w-4 h-4" />
                                                 </button>
                                             </div>

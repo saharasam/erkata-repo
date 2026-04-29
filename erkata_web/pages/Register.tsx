@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft, User, Mail, Phone, Lock, CheckCircle2, ShieldCheck, Loader2 } from 'lucide-react';
+import { ArrowLeft, User, Mail, Phone, Lock, CheckCircle2, ShieldCheck, Loader2, Shield, UserCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
 import api from '../utils/api';
@@ -271,35 +271,18 @@ const Register: React.FC<RegisterProps> = ({ initialRole = 'customer' }) => {
                     </motion.div>
                   )}
 
-                  {!isFromRequest && !inviteToken && (
-                  <motion.div variants={itemVariants} className="flex bg-white p-2 rounded-full border border-gray-100 mb-10 shadow-sm relative z-10">
-                    <div className="absolute inset-0 p-2 pointer-events-none">
-                      <motion.div 
-                        layoutId="roleHighlight"
-                        initial={false}
-                        animate={{ 
-                          x: role === 'customer' ? '0%' : '100%',
-                          backgroundColor: role === 'customer' ? '#000000' : '#FFBB00'
-                        }}
-                        className="h-full w-1/2 rounded-full shadow-lg"
-                      />
+                  {/* Role indicator */}
+                  <div className="flex justify-center mb-10">
+                    <div className="bg-gray-100 p-1.5 rounded-2xl inline-flex">
+                      <span className="px-8 py-2.5 rounded-xl text-sm font-bold bg-white text-erkata-primary shadow-sm border border-gray-100 flex items-center gap-2 capitalize">
+                        {role === 'customer' && <User className="w-4 h-4" />}
+                        {role === 'agent' && <Shield className="w-4 h-4" />}
+                        {role === 'operator' && <UserCheck className="w-4 h-4" />}
+                        {role === 'admin' && <Lock className="w-4 h-4" />}
+                        {role} Account
+                      </span>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setRole('customer')}
-                      className={`flex-1 py-3 px-4 rounded-full text-sm font-bold tracking-wide transition-colors duration-300 relative z-20 ${role === 'customer' ? 'text-white' : 'text-gray-400 hover:text-gray-600'}`}
-                    >
-                      Customer
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setRole('agent')}
-                      className={`flex-1 py-3 px-4 rounded-full text-sm font-bold tracking-wide transition-colors duration-300 relative z-20 ${role === 'agent' ? 'text-white' : 'text-gray-400 hover:text-gray-600'}`}
-                    >
-                      Agent
-                    </button>
-                  </motion.div>
-                  )}
+                  </div>
 
                   <form className="space-y-5" onSubmit={(e) => { e.preventDefault(); handleRegister(); }}>
                     <div className="grid grid-cols-2 gap-4">
@@ -310,8 +293,9 @@ const Register: React.FC<RegisterProps> = ({ initialRole = 'customer' }) => {
                           placeholder="Abebe"
                           value={formData.firstName}
                           onChange={(e) => updateField('firstName', e.target.value)}
+                          readOnly={!!inviteToken}
                           required
-                          className="w-full px-8 py-4 bg-white rounded-full border border-gray-100 shadow-sm outline-none focus:ring-2 focus:ring-black/5 focus:border-black transition-all text-gray-800"
+                          className={`w-full px-8 py-4 bg-white rounded-full border border-gray-100 shadow-sm outline-none focus:ring-2 focus:ring-black/5 focus:border-black transition-all text-gray-800 ${inviteToken ? 'bg-slate-50 opacity-70 cursor-not-allowed' : ''}`}
                         />
                       </div>
                       <div className="space-y-2">
@@ -321,8 +305,9 @@ const Register: React.FC<RegisterProps> = ({ initialRole = 'customer' }) => {
                           placeholder="Kebede"
                           value={formData.lastName}
                           onChange={(e) => updateField('lastName', e.target.value)}
+                          readOnly={!!inviteToken}
                           required
-                          className="w-full px-8 py-4 bg-white rounded-full border border-gray-100 shadow-sm outline-none focus:ring-2 focus:ring-black/5 focus:border-black transition-all text-gray-800"
+                          className={`w-full px-8 py-4 bg-white rounded-full border border-gray-100 shadow-sm outline-none focus:ring-2 focus:ring-black/5 focus:border-black transition-all text-gray-800 ${inviteToken ? 'bg-slate-50 opacity-70 cursor-not-allowed' : ''}`}
                         />
                       </div>
                     </div>

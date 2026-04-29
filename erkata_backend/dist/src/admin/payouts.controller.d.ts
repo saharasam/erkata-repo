@@ -15,8 +15,9 @@ export declare class PayoutsController {
     } & {
         id: string;
         createdAt: Date;
-        status: import(".prisma/client").$Enums.AglpTransactionStatus;
+        profileId: string;
         type: import(".prisma/client").$Enums.AglpTransactionType;
+        status: import(".prisma/client").$Enums.AglpTransactionStatus;
         amount: import("@prisma/client/runtime/library").Decimal;
         etbEquivalent: import("@prisma/client/runtime/library").Decimal | null;
         conversionRate: import("@prisma/client/runtime/library").Decimal | null;
@@ -26,7 +27,6 @@ export declare class PayoutsController {
         bankAccountHolder: string | null;
         bankAccountNumber: string | null;
         bankName: string | null;
-        profileId: string;
     })[]>;
     approvePayout(id: string): Promise<void>;
     rejectPayout(id: string, reason: string): Promise<void>;
@@ -40,8 +40,9 @@ export declare class PayoutsController {
     } & {
         id: string;
         createdAt: Date;
-        status: import(".prisma/client").$Enums.AglpTransactionStatus;
+        profileId: string;
         type: import(".prisma/client").$Enums.AglpTransactionType;
+        status: import(".prisma/client").$Enums.AglpTransactionStatus;
         amount: import("@prisma/client/runtime/library").Decimal;
         etbEquivalent: import("@prisma/client/runtime/library").Decimal | null;
         conversionRate: import("@prisma/client/runtime/library").Decimal | null;
@@ -51,20 +52,20 @@ export declare class PayoutsController {
         bankAccountHolder: string | null;
         bankAccountNumber: string | null;
         bankName: string | null;
-        profileId: string;
     })[]>;
     releaseEscrow(id: string): Promise<void>;
     getGlobalLedger(type?: AglpTransactionType, status?: AglpTransactionStatus, profileId?: string): Promise<({
         profile: {
             id: string;
-            fullName: string;
             role: import(".prisma/client").$Enums.UserRole;
+            fullName: string;
         };
     } & {
         id: string;
         createdAt: Date;
-        status: import(".prisma/client").$Enums.AglpTransactionStatus;
+        profileId: string;
         type: import(".prisma/client").$Enums.AglpTransactionType;
+        status: import(".prisma/client").$Enums.AglpTransactionStatus;
         amount: import("@prisma/client/runtime/library").Decimal;
         etbEquivalent: import("@prisma/client/runtime/library").Decimal | null;
         conversionRate: import("@prisma/client/runtime/library").Decimal | null;
@@ -74,6 +75,5 @@ export declare class PayoutsController {
         bankAccountHolder: string | null;
         bankAccountNumber: string | null;
         bankName: string | null;
-        profileId: string;
     })[]>;
 }

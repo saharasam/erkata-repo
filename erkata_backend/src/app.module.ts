@@ -18,6 +18,7 @@ import { AdminModule } from './admin/admin.module';
 import { AglpModule } from './aglp/aglp.module';
 import { RedisModule } from './common/redis/redis.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { UpgradesModule } from './upgrades/upgrades.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     AdminModule,
     AglpModule,
     RedisModule,
+    UpgradesModule,
   ],
   controllers: [AppController],
   providers: [

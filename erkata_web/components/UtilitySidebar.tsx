@@ -60,12 +60,13 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
     { id: 'analytics', icon: BarChart4, label: 'Analytics' },
     { id: 'tiers', icon: Package, label: 'Tier Architecture' },
     { id: 'disputes', icon: ShieldAlert, label: 'Disputes Audit', badge: disputeCount > 0 ? disputeCount : undefined },
+    { id: 'upgrade-approvals', icon: ShieldCheck, label: 'Upgrade Approvals' },
     { id: 'admins', icon: User, label: 'Admin Management' },
     { id: 'config', icon: Settings2, label: 'Config Flags' },
     { id: 'notices', icon: Megaphone, label: 'Broadcasts' },
     { id: 'audit', icon: History, label: 'Audit Logs' },
     { id: 'agents', icon: TrendingUp, label: 'Agent Oversight' },
-    { id: 'operators', icon: Users, label: 'Operator Oversight' },
+    // { id: 'operators', icon: Users, label: 'Operator Oversight' },
   ];
 
   const adminTools = [
@@ -77,7 +78,7 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
     // { id: 'finance', icon: Wallet, label: 'Financial Desk' },
     // { id: 'network', icon: Network, label: 'Network Intelligence' },
     { id: 'agents', icon: Users, label: 'Agents' },
-    { id: 'operators', icon: Users, label: 'Operators' },
+    { id: 'operators', icon: Users, label: 'Personnel' },
     { id: 'notices', icon: Megaphone, label: 'Broadcasts' },
   ];
 
@@ -102,10 +103,16 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
     { id: 'requests', icon: Package, label: 'My Requests' },
   ];
 
+  const financialOperatorTools = [
+    { id: 'verifications', icon: ShieldCheck, label: 'Upgrade Verifications' },
+    { id: 'notices', icon: Megaphone, label: 'Broadcasts' },
+  ];
+
   const roleTools: Record<string, any[]> = {
     [UserRole.SUPER_ADMIN]: superAdminTools,
     [UserRole.ADMIN]: adminTools,
     [UserRole.OPERATOR]: operatorTools,
+    [UserRole.FINANCIAL_OPERATOR]: financialOperatorTools,
     [UserRole.AGENT]: agentTools,
     [UserRole.CUSTOMER]: customerTools,
   };

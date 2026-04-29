@@ -433,6 +433,11 @@ export declare class RequestsService implements OnModuleInit {
             status: string;
             assignedAt: Date;
         })[];
+        assignedOperator: {
+            id: string;
+            fullName: string;
+            role: import(".prisma/client").$Enums.UserRole;
+        } | null;
     } & {
         id: string;
         zoneId: string;

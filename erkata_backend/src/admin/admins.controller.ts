@@ -39,7 +39,11 @@ export class AdminsController {
       where: normalizedRole
         ? { role: normalizedRole }
         : {
-            OR: [{ role: UserRole.admin }, { role: UserRole.operator }],
+            OR: [
+              { role: UserRole.admin },
+              { role: UserRole.operator },
+              { role: UserRole.financial_operator },
+            ],
           },
       select: {
         id: true,

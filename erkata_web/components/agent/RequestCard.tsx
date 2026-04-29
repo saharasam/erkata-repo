@@ -136,10 +136,9 @@ export const RequestCard = React.forwardRef<HTMLDivElement, RequestCardProps>(
               )}
             </div>
             <div>
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Location</span>
               <span className="text-sm font-semibold text-slate-700 flex items-center gap-1">
                 <MapPin className="w-3 h-3 text-slate-300 flex-shrink-0" />
-                {request.zone ? `${request.zone}${request.woreda !== 'N/A' ? `, ${request.woreda}` : ''}` : request.woreda}
+                {[request.zone, request.woreda].filter(Boolean).filter(v => v !== 'N/A' && v !== 'Unknown').join(', ') || 'N/A'}
               </span>
             </div>
           </div>
@@ -162,7 +161,6 @@ export const RequestCard = React.forwardRef<HTMLDivElement, RequestCardProps>(
           {formattedBudget && (
             <div className="mb-4">
               <span className="inline-flex items-center gap-1.5 bg-green-50 text-green-700 text-xs font-bold px-3 py-1.5 rounded-xl border border-green-100">
-                <DollarSign className="w-3.5 h-3.5" />
                 {formattedBudget}
               </span>
             </div>

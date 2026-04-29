@@ -5,7 +5,7 @@ import { getAccessToken } from '../utils/api';
 import { SocketContext } from './SocketContext';
 
 export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const [socket, setSocket] = useState<Socket | null>(null);
   const [connected, setConnected] = useState(false);
 
@@ -39,6 +39,12 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
       newSocket.on('connect_error', (err) => {
         console.error('[Socket] Connection Error:', err.message);
+      });
+
+      newSocket.on('force_logout', async (data: { reason: string }) => {
+        console.warn('[Socket] Force Logout Event Received:', data.reason);
+        await logout();
+        window.location.href = '/#/login'; // Ensure redirect to login
       });
 
       setSocket(newSocket);
