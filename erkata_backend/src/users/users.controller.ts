@@ -10,6 +10,7 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  ForbiddenException,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { RolesGuard, RequirePermission, JwtAuthGuard } from '../auth/guards';
@@ -144,7 +145,27 @@ export class UsersController {
 
   @Get(':id/profile')
   @RequirePermission(Action.VIEW_USER_DETAILS_ANY_ROLE)
-  async getUserProfile(@Param('id') userId: string) {
+  async getUserProfile(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') userId: string,
+  ) {
+    const callerRole = req.user.role;
+    const callerId = req.user.id;
+
+    // Hierarchy Check: Admins may not view profiles at their own level or above
+    if (callerRole === UserRole.admin) {
+      const target = await this.usersService.getProfileRoleById(userId);
+      if (
+        target &&
+        (target.role === UserRole.admin || target.role === UserRole.super_admin) &&
+        userId !== callerId
+      ) {
+        throw new ForbiddenException(
+          'Admins are not authorized to view profiles at admin level or above.',
+        );
+      }
+    }
+
     return this.usersService.getCurrentProfile(userId);
   }
 

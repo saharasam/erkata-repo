@@ -12,7 +12,13 @@ class AgentProfileScreen extends ConsumerWidget {
     final authState = ref.watch(authProvider);
     final user = authState.user;
 
-    final initials = user?.fullName?.split(' ').map((e) => e.isNotEmpty ? e[0] : '').take(2).join('') ?? 'A';
+    final initials =
+        user?.fullName
+            ?.split(' ')
+            .map((e) => e.isNotEmpty ? e[0] : '')
+            .take(2)
+            .join('') ??
+        'A';
 
     final menuItems = [
       {
@@ -54,189 +60,209 @@ class AgentProfileScreen extends ConsumerWidget {
     ];
 
     return Scaffold(
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.only(bottom: 100),
-        child: Column(
-          children: [
-            // Header
-            Container(
-              padding: const EdgeInsets.only(
-                top: 60,
-                bottom: 30,
-                left: 24,
-                right: 24,
-              ),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                borderRadius: const BorderRadius.only(
-                  bottomLeft: Radius.circular(40),
-                  bottomRight: Radius.circular(40),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Theme.of(context).shadowColor.withValues(alpha: 0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 5),
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            padding: const EdgeInsets.only(bottom: 100),
+            child: Column(
+              children: [
+                // Header
+                Container(
+                  padding: const EdgeInsets.only(
+                    top: 60,
+                    bottom: 30,
+                    left: 24,
+                    right: 24,
                   ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  Stack(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(40),
+                      bottomRight: Radius.circular(40),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color:
+                            Theme.of(context).shadowColor.withValues(alpha: 0.1),
+                        blurRadius: 10,
+                        offset: const Offset(0, 5),
+                      ),
+                    ],
+                  ),
+                  child: Column(
                     children: [
-                      Container(
-                        width: 96,
-                        height: 96,
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primary,
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Theme.of(
-                                context,
-                              ).shadowColor.withValues(alpha: 0.3),
-                              blurRadius: 10,
-                              offset: const Offset(0, 5),
+                      Stack(
+                        children: [
+                          Container(
+                            width: 96,
+                            height: 96,
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.primary,
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Theme.of(
+                                    context,
+                                  ).shadowColor.withValues(alpha: 0.3),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 5),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                        child: Center(
-                          child: Text(
-                            initials,
-                            style: TextStyle(
-                              fontSize: 36,
-                              fontWeight: FontWeight.bold,
-                              color: Theme.of(context).colorScheme.onPrimary,
+                            child: Center(
+                              child: Text(
+                                initials,
+                                style: TextStyle(
+                                  fontSize: 36,
+                                  fontWeight: FontWeight.bold,
+                                  color:
+                                      Theme.of(context).colorScheme.onPrimary,
+                                ),
+                              ),
                             ),
                           ),
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.primary,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Theme.of(context).colorScheme.surface,
+                                  width: 4,
+                                ),
+                              ),
+                              child: Icon(
+                                Icons.edit,
+                                size: 14,
+                                color: Theme.of(context).colorScheme.onPrimary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        user?.fullName ?? 'Agent Name',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
-                      Positioned(
-                        bottom: 0,
-                        right: 0,
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
+                      Text(
+                        user?.email ?? 'email@example.com',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _Badge(
+                            text: user?.tier ?? 'FREE',
                             color: Theme.of(context).colorScheme.primary,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: Theme.of(context).colorScheme.surface,
-                              width: 4,
-                            ),
+                            bgColor:
+                                Theme.of(context).colorScheme.primaryContainer,
                           ),
-                          child: Icon(
-                            Icons.edit,
-                            size: 14,
-                            color: Theme.of(context).colorScheme.onPrimary,
+                          const SizedBox(width: 12),
+                          _Badge(
+                            text: 'Verified Agent',
+                            color:
+                                Theme.of(context).brightness == Brightness.dark
+                                    ? Colors.greenAccent
+                                    : AppColors.successGreen,
+                            bgColor:
+                                Theme.of(context).brightness == Brightness.dark
+                                    ? AppColors.successGreenLight.withValues(
+                                      alpha: 0.1,
+                                    )
+                                    : AppColors.successGreenLight,
                           ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+
+                // Menu Options
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    children: [
+                      ...menuItems.map(
+                        (item) => _MenuItem(
+                          icon: item['icon'] as IconData,
+                          label: item['label'] as String,
+                          sub: item['sub'] as String,
+                          onTap: () {
+                            final route = item['route'] as String?;
+                            if (route != null) {
+                              context.push(route);
+                            }
+                          },
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Logout
+                      TextButton.icon(
+                        onPressed: () {
+                          ref.read(authProvider.notifier).logout();
+                          context.go('/auth');
+                        },
+                        icon: Icon(
+                          Icons.logout,
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                        label: Text(
+                          'Log Out',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.all(16),
+                          backgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.errorContainer,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          minimumSize: const Size(double.infinity, 50),
+                        ),
+                      ),
+
+                      const SizedBox(height: 32),
+                      Text(
+                        'Version 1.0.2',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          fontSize: 12,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    user?.fullName ?? 'Agent Name',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
-                  Text(
-                    user?.email ?? 'email@example.com',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _Badge(
-                        text: user?.tier ?? 'FREE',
-                        color: Theme.of(context).colorScheme.primary,
-                        bgColor: Theme.of(context).colorScheme.primaryContainer,
-                      ),
-                      const SizedBox(width: 12),
-                      _Badge(
-                        text: 'Verified Agent',
-                        color: Theme.of(context).brightness == Brightness.dark
-                            ? Colors.greenAccent
-                            : AppColors.successGreen,
-                        bgColor: Theme.of(context).brightness == Brightness.dark
-                            ? AppColors.successGreenLight.withValues(alpha: 0.1)
-                            : AppColors.successGreenLight,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-            const SizedBox(height: 24),
-
-            // Menu Options
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                children: [
-                  ...menuItems.map(
-                    (item) => _MenuItem(
-                      icon: item['icon'] as IconData,
-                      label: item['label'] as String,
-                      sub: item['sub'] as String,
-                      onTap: () {
-                        final route = item['route'] as String?;
-                        if (route != null) {
-                          context.push(route);
-                        }
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Logout
-                  TextButton.icon(
-                    onPressed: () {
-                      ref.read(authProvider.notifier).logout();
-                      context.go('/auth');
-                    },
-                    icon: Icon(
-                      Icons.logout,
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                    label: Text(
-                      'Log Out',
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    style: TextButton.styleFrom(
-                      padding: const EdgeInsets.all(16),
-                      backgroundColor: Theme.of(
-                        context,
-                      ).colorScheme.errorContainer,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      minimumSize: const Size(double.infinity, 50),
-                    ),
-                  ),
-
-                  const SizedBox(height: 32),
-                  Text(
-                    'Version 1.0.2',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
+          ),
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 8,
+            left: 8,
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back_rounded),
+              onPressed: () => context.pop(),
+              color: Theme.of(context).colorScheme.primary,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

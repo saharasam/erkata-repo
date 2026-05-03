@@ -1,6 +1,6 @@
 import { PrismaService } from '../prisma/prisma.service';
 import { UsersService } from '../users/users.service';
-import { UserRole } from '@prisma/client';
+import { UserRole, Prisma } from '@prisma/client';
 import type { AuthenticatedRequest } from '../auth/guards';
 import { InviteService } from '../auth/invite/invite.service';
 export declare class AdminsController {
@@ -8,7 +8,12 @@ export declare class AdminsController {
     private inviteService;
     private usersService;
     constructor(prisma: PrismaService, inviteService: InviteService, usersService: UsersService);
-    getPersonnel(role?: string): Promise<{
+    getPersonnel(req: AuthenticatedRequest, role?: string): Promise<{
+        _count: {
+            resolutionProposals: number;
+            operatorMatches: number;
+            proposals: number;
+        };
         id: string;
         fullName: string;
         phone: string;
@@ -16,10 +21,6 @@ export declare class AdminsController {
         isActive: boolean;
         createdAt: Date;
         missedAssignments: number;
-        _count: {
-            operatorMatches: number;
-            proposals: number;
-        };
     }[]>;
     createInvite(req: AuthenticatedRequest, body: {
         email: string;
@@ -62,7 +63,6 @@ export declare class AdminsController {
     }): Promise<{
         id: string;
         email: string;
-        referralCode: string | null;
         passwordHash: string | null;
         fullName: string;
         phone: string;
@@ -72,9 +72,10 @@ export declare class AdminsController {
         zoneId: string | null;
         referredById: string | null;
         createdAt: Date;
-        aglpBalance: import("@prisma/client/runtime/library").Decimal;
-        aglpPending: import("@prisma/client/runtime/library").Decimal;
-        aglpWithdrawn: import("@prisma/client/runtime/library").Decimal;
+        aglpBalance: Prisma.Decimal;
+        aglpPending: Prisma.Decimal;
+        aglpWithdrawn: Prisma.Decimal;
+        referralCode: string | null;
         isOnline: boolean;
         lastAssignmentAt: Date | null;
         missedAssignments: number;

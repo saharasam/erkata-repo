@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/errors/error_handler.dart';
 import '../../../../core/models/service_request.dart';
-import '../../../auth/state/auth_provider.dart';
+import '../../../../core/providers/core_providers.dart';
 
 class RequestRepository {
   final Dio _dio;

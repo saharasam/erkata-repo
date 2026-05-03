@@ -262,16 +262,20 @@ class HomeScreen extends HookConsumerWidget {
                                               ).colorScheme.onSurfaceVariant,
                                             ),
                                             const SizedBox(width: 4),
-                                            Text(
-                                              request.location,
-                                              style: TextStyle(
-                                                fontSize: 13,
-                                                color: Theme.of(
-                                                  context,
-                                                ).colorScheme.onSurfaceVariant,
+                                            Expanded(
+                                              child: Text(
+                                                request.location,
+                                                style: TextStyle(
+                                                  fontSize: 13,
+                                                  color: Theme.of(
+                                                    context,
+                                                  ).colorScheme.onSurfaceVariant,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
                                               ),
                                             ),
-                                            const Spacer(),
+                                            const SizedBox(width: 8),
                                             Container(
                                               padding:
                                                   const EdgeInsets.symmetric(

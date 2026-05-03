@@ -138,6 +138,7 @@ exports.PermissionMatrix = {
         Action.VIEW_SYSTEM_STATISTICS,
         Action.RESOLVE_DISPUTE,
         Action.VIEW_BROADCASTS,
+        Action.VIEW_USER_DETAILS_ANY_ROLE,
     ],
     super_admin: [
         Action.EMERGENCY_ARCHIVE,

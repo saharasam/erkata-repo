@@ -48,8 +48,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (!authState.isAuthenticated) {
         // Allow access to auth and intake flow
         if (isLoggingIn || isIntake) return null;
-        // Everything else redirects to intake (Intake-First flow)
-        return '/request/new';
+
+        // Only redirect to intake if it's the first time
+        if (authState.isFirstLaunch) {
+          return '/request/new';
+        }
+        
+        // Otherwise, returning users (or those who explicitly abandoned intake) go to auth
+        return '/auth';
       }
 
       // 2. Authenticated users

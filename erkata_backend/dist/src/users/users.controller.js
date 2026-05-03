@@ -70,7 +70,17 @@ let UsersController = class UsersController {
     async updateBusinessProfile(req, body) {
         return this.usersService.updateBusinessProfile(req.user.id, body);
     }
-    async getUserProfile(userId) {
+    async getUserProfile(req, userId) {
+        const callerRole = req.user.role;
+        const callerId = req.user.id;
+        if (callerRole === client_1.UserRole.admin) {
+            const target = await this.usersService.getProfileRoleById(userId);
+            if (target &&
+                (target.role === client_1.UserRole.admin || target.role === client_1.UserRole.super_admin) &&
+                userId !== callerId) {
+                throw new common_1.ForbiddenException('Admins are not authorized to view profiles at admin level or above.');
+            }
+        }
         return this.usersService.getCurrentProfile(userId);
     }
     async getUserFinance(userId) {
@@ -181,9 +191,10 @@ __decorate([
 __decorate([
     (0, common_1.Get)(':id/profile'),
     (0, guards_1.RequirePermission)(permissions_1.Action.VIEW_USER_DETAILS_ANY_ROLE),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('id')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "getUserProfile", null);
 __decorate([

@@ -25,7 +25,7 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
 }) => {
   const { showConfirm } = useModal();
   const [activeTool, setActiveTool] = useState<string | null>(null);
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { notifications, payoutCount } = useNotifications();
@@ -84,7 +84,7 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
 
   const operatorTools = [
     { id: 'overview', icon: LayoutGrid, label: 'Overview' },
-    { id: 'finance', icon: Wallet, label: 'Financial Desk', badge: payoutCount > 0 ? payoutCount : undefined },
+    // { id: 'finance', icon: Wallet, label: 'Financial Desk', badge: payoutCount > 0 ? payoutCount : undefined },
     { id: 'disputes', icon: ShieldAlert, label: 'Disputes', badge: disputeCount > 0 ? disputeCount : undefined },
     { id: 'history', icon: History, label: 'Assignment History' },
     { id: 'notices', icon: Megaphone, label: 'Broadcasts' },

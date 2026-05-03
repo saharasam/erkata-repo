@@ -8,6 +8,7 @@ import {
   UserCheck,
   UserMinus,
   Phone,
+  ArrowUpRight,
 } from 'lucide-react';
 import { useModal } from '../../contexts/ModalContext';
 import InvitePersonnelModal from '../ui/InvitePersonnelModal';
@@ -27,7 +28,11 @@ interface AdminUser {
   };
 }
 
-const AdminManagement: React.FC = () => {
+interface AdminManagementProps {
+    onViewDetails: (id: string) => void;
+}
+
+const AdminManagement: React.FC<AdminManagementProps> = ({ onViewDetails }) => {
     const { showConfirm, showAlert } = useModal();
     const [searchTerm, setSearchTerm] = useState('');
     const [roleFilter, setRoleFilter] = useState<string>('all');
@@ -166,7 +171,11 @@ const AdminManagement: React.FC = () => {
                             ))
                         ) : filteredAdmins.length > 0 ? (
                             filteredAdmins.map((admin) => (
-                                <tr key={admin.id} className="hover:bg-slate-50/30 transition-colors group">
+                                <tr 
+                                    key={admin.id} 
+                                    onClick={() => onViewDetails(admin.id)}
+                                    className="hover:bg-slate-50/30 transition-colors group cursor-pointer"
+                                >
                                     <td className="px-8 py-5">
                                         <div className="flex items-center gap-4">
                                             <div className="w-11 h-11 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-600 font-black text-sm border border-indigo-100 uppercase group-hover:scale-110 transition-transform">
@@ -219,9 +228,6 @@ const AdminManagement: React.FC = () => {
                                                 }`}
                                             >
                                                 {admin.isActive ? <UserMinus className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
-                                            </button>
-                                            <button className="p-2 text-slate-300 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-all">
-                                                <Activity className="w-4 h-4" />
                                             </button>
                                         </div>
                                     </td>

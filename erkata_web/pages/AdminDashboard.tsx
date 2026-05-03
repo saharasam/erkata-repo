@@ -14,9 +14,18 @@ import OperationsHub from '../components/admin/OperationsHub';
 import FinancialDesk from '../components/admin/FinancialDesk';
 import NetworkIntelligence from '../components/admin/NetworkIntelligence';
 import BroadcastInbox from '../components/shared/BroadcastInbox';
+import UserDeepDive from '../components/shared/UserDeepDive';
 
 const AdminDashboard: React.FC = () => {
     const [currentView, setCurrentView] = useState('overview');
+    const [previousView, setPreviousView] = useState('overview');
+    const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+
+    const handleViewDetails = (id: string) => {
+        setPreviousView(currentView);
+        setSelectedUserId(id);
+        setCurrentView('user-details');
+    };
 
     return (
         <DashboardLayout
@@ -45,8 +54,19 @@ const AdminDashboard: React.FC = () => {
                         {currentView === 'disputes' && <EscalatedDisputes />}
                         {currentView === 'actions' && <PendingActions />}
                         {currentView === 'history' && <ProposalHistory />}
-                        {currentView === 'agents' && <AdminAgentList />}
-                        {currentView === 'operators' && <AdminOperatorList />}
+                        {currentView === 'agents' && <AdminAgentList onViewDetails={handleViewDetails} />}
+                        {currentView === 'operators' && <AdminOperatorList onViewDetails={handleViewDetails} />}
+
+                        {currentView === 'user-details' && selectedUserId && (
+                            <UserDeepDive 
+                                userId={selectedUserId} 
+                                viewerRole="admin"
+                                onBack={() => {
+                                    setSelectedUserId(null);
+                                    setCurrentView(previousView);
+                                }} 
+                            />
+                        )}
                     </motion.div>
                 </AnimatePresence>
             </div>

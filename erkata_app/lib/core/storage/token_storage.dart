@@ -10,6 +10,7 @@ class TokenStorage {
   static const _keyUserTier = 'user_tier';
   static const _keyUserFullName = 'user_full_name';
   static const _keyUserEmail = 'user_email';
+  static const _keyHasLaunched = 'has_launched';
 
   final FlutterSecureStorage _storage;
 
@@ -70,7 +71,21 @@ class TokenStorage {
   Future<String?> getUserFullName() => _storage.read(key: _keyUserFullName);
   Future<String?> getUserEmail() => _storage.read(key: _keyUserEmail);
 
+  Future<bool> isFirstLaunch() async {
+    final value = await _storage.read(key: _keyHasLaunched);
+    return value == null;
+  }
+
+  Future<void> markAsLaunched() =>
+      _storage.write(key: _keyHasLaunched, value: 'true');
+
   // ──────── Clear ────────
 
-  Future<void> clearAll() => _storage.deleteAll();
+  Future<void> clearAll() async {
+    final launched = await _storage.read(key: _keyHasLaunched);
+    await _storage.deleteAll();
+    if (launched != null) {
+      await _storage.write(key: _keyHasLaunched, value: launched);
+    }
+  }
 }

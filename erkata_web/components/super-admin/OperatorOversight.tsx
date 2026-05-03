@@ -7,7 +7,7 @@ import {
   Activity, 
   ShieldAlert,
   Search,
-  MoreVertical,
+  ArrowUpRight,
   Timer,
   Zap
 } from 'lucide-react';
@@ -27,7 +27,11 @@ interface OperatorPerformance {
   };
 }
 
-const OperatorOversight: React.FC = () => {
+interface OperatorOversightProps {
+    onViewDetails: (id: string) => void;
+}
+
+const OperatorOversight: React.FC<OperatorOversightProps> = ({ onViewDetails }) => {
     const { showConfirm, showAlert } = useModal();
     const [searchTerm, setSearchTerm] = useState('');
     const [operators, setOperators] = useState<OperatorPerformance[]>([]);
@@ -185,8 +189,11 @@ const OperatorOversight: React.FC = () => {
                                                 >
                                                     {op.isActive ? <ShieldAlert className="w-4 h-4" /> : <Activity className="w-4 h-4" />}
                                                 </button>
-                                                <button className="p-2.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-2xl border border-transparent hover:border-indigo-100 transition-all active:scale-90">
-                                                    <MoreVertical className="w-4 h-4" />
+                                                <button 
+                                                    onClick={() => onViewDetails(op.id)}
+                                                    className="p-2.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-2xl border border-transparent hover:border-indigo-100 transition-all active:scale-90"
+                                                >
+                                                    <ArrowUpRight className="w-4 h-4" />
                                                 </button>
                                             </div>
                                         </td>

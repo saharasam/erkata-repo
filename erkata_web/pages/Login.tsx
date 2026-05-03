@@ -46,6 +46,7 @@ const Login: React.FC = () => {
       else if (role === UserRole.OPERATOR) navigate('/operator-dashboard');
       else if (role === UserRole.ADMIN) navigate('/admin-dashboard');
       else if (role === UserRole.SUPER_ADMIN) navigate('/superadmin');
+      else if (role === UserRole.FINANCIAL_OPERATOR) navigate('/financial-operator');
       else if (role === UserRole.CUSTOMER) navigate('/customer');
     }
   }, [user, navigate]);

@@ -8,9 +8,9 @@ export declare class NotificationsController {
         createdAt: Date;
         type: string;
         link: string | null;
-        title: string;
-        userId: string;
         message: string;
+        userId: string;
+        title: string;
         read: boolean;
     }[]>;
     markAsRead(id: string, req: RequestWithUser): Promise<any>;

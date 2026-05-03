@@ -213,9 +213,6 @@ const OperatorDashboard: React.FC = () => {
 
     const toggleOnline = () => {
         setIsOnline(!isOnline);
-        if (!isOnline) {
-            showAlert({ title: 'You are now Online', message: 'Requests will be pushed to you automatically.', type: 'info' });
-        }
     };
 
     if (isLoading) {

@@ -6,6 +6,7 @@ import 'package:socket_io_client/socket_io_client.dart' as socket_io;
 import '../config/env_config.dart';
 import '../storage/token_storage.dart';
 import '../../features/auth/state/auth_provider.dart';
+import '../providers/core_providers.dart';
 
 class SocketService {
   final TokenStorage _tokenStorage;

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/models/user_role.dart';
 import '../../../core/theme/colors.dart';
 import '../../../shared/widgets/primary_button.dart';
@@ -14,7 +15,11 @@ class AuthScreen extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final isLogin = useState(true);
+    // Read extra parameter to determine initial view
+    final extra = GoRouterState.of(context).extra as Map<String, dynamic>?;
+    final initialIsLogin = extra?['isLogin'] as bool? ?? true;
+    
+    final isLogin = useState(initialIsLogin);
     final selectedRole = useState<UserRole>(UserRole.customer);
     final nameController = useTextEditingController();
     final phoneController = useTextEditingController();
@@ -46,19 +51,53 @@ class AuthScreen extends HookConsumerWidget {
 
 
     Future<void> handleSubmit() async {
+      final email = phoneController.text.trim();
+      final password = passwordController.text;
+
+      if (email.isEmpty || password.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please fill in all fields')),
+        );
+        return;
+      }
+
       if (isLogin.value) {
         await ref.read(authProvider.notifier).login(
               LoginRequest(
-                identifier: phoneController.text,
-                password: passwordController.text,
+                identifier: email,
+                password: password,
               ),
             );
       } else {
+        final name = nameController.text.trim();
+        final confirmPassword = confirmPasswordController.text;
+
+        if (name.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Please enter your name')),
+          );
+          return;
+        }
+
+        if (password != confirmPassword) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Passwords do not match')),
+          );
+          return;
+        }
+
+        if (password.length < 6) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Password must be at least 6 characters')),
+          );
+          return;
+        }
+
         await ref.read(authProvider.notifier).register(
               RegisterRequest(
-                fullName: nameController.text,
-                email: phoneController.text,
-                password: passwordController.text,
+                fullName: name,
+                email: email,
+                password: password,
                 role: selectedRole.value.name,
               ),
             );

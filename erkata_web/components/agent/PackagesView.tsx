@@ -126,7 +126,7 @@ export const PackagesView: React.FC<PackagesViewProps> = ({ finance, profile, on
               </div>
             </div>
 
-            <div className="group">
+            {/* <div className="group">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center">
@@ -150,7 +150,7 @@ export const PackagesView: React.FC<PackagesViewProps> = ({ finance, profile, on
                   className="h-full bg-orange-500 rounded-full" 
                 />
               </div>
-            </div>
+            </div> */}
 
             <div className="pt-6 border-t border-slate-100 space-y-6">
               <div className="flex items-center gap-2 mb-2">

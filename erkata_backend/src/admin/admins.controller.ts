@@ -13,10 +13,15 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { JwtAuthGuard, RolesGuard, RequirePermission } from '../auth/guards';
+import {
+  JwtAuthGuard,
+  RolesGuard,
+  RequirePermission,
+  Roles,
+} from '../auth/guards';
 import { Action } from '../auth/permissions';
 import { UsersService } from '../users/users.service';
-import { UserRole } from '@prisma/client';
+import { UserRole, Prisma } from '@prisma/client';
 import type { AuthenticatedRequest } from '../auth/guards';
 import { InviteService } from '../auth/invite/invite.service';
 
@@ -30,21 +35,46 @@ export class AdminsController {
   ) {}
 
   @Get()
-  @RequirePermission(Action.MANAGE_ADMINS)
-  async getPersonnel(@Query('role') role?: string) {
-    // Normalize role casing to match UserRole enum
+  @Roles('admin')
+  async getPersonnel(
+    @Req() req: AuthenticatedRequest,
+    @Query('role') role?: string,
+  ) {
+    const callerRole = req.user.role;
     const normalizedRole = role?.toLowerCase() as UserRole | undefined;
 
-    return this.prisma.profile.findMany({
-      where: normalizedRole
-        ? { role: normalizedRole }
-        : {
-            OR: [
-              { role: UserRole.admin },
-              { role: UserRole.operator },
-              { role: UserRole.financial_operator },
-            ],
-          },
+    const queryWhere: Prisma.ProfileWhereInput = {};
+
+    if (callerRole === UserRole.admin) {
+      // Admins only manage Operators and Financial Operators
+      const allowedRoles: UserRole[] = [
+        UserRole.operator,
+        UserRole.financial_operator,
+      ];
+
+      if (normalizedRole) {
+        if (!allowedRoles.includes(normalizedRole)) {
+          throw new ForbiddenException(
+            'Admins can only view operators and financial operators',
+          );
+        }
+        queryWhere.role = normalizedRole;
+      } else {
+        queryWhere.role = { in: allowedRoles };
+      }
+    } else {
+      // Super Admin can see all administrative roles
+      if (normalizedRole) {
+        queryWhere.role = normalizedRole;
+      } else {
+        queryWhere.role = {
+          in: [UserRole.admin, UserRole.operator, UserRole.financial_operator],
+        };
+      }
+    }
+
+    const profiles = await this.prisma.profile.findMany({
+      where: queryWhere,
       select: {
         id: true,
         fullName: true,
@@ -62,6 +92,15 @@ export class AdminsController {
       },
       orderBy: { createdAt: 'desc' },
     });
+
+    // Map to ensure frontend compatibility with different naming (proposals vs resolutionProposals)
+    return profiles.map((p) => ({
+      ...p,
+      _count: {
+        ...p._count,
+        resolutionProposals: p._count.proposals,
+      },
+    }));
   }
 
   @Post('invite')
@@ -125,7 +164,7 @@ export class AdminsController {
   }
 
   @Patch(':id/status')
-  @RequirePermission(Action.MANAGE_ADMINS)
+  @RequirePermission(Action.MANAGE_OPERATORS)
   async updateStatus(
     @Req() req: AuthenticatedRequest,
     @Param('id') id: string,

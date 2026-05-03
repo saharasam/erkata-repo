@@ -29,18 +29,37 @@ let AdminsController = class AdminsController {
         this.inviteService = inviteService;
         this.usersService = usersService;
     }
-    async getPersonnel(role) {
+    async getPersonnel(req, role) {
+        const callerRole = req.user.role;
         const normalizedRole = role?.toLowerCase();
-        return this.prisma.profile.findMany({
-            where: normalizedRole
-                ? { role: normalizedRole }
-                : {
-                    OR: [
-                        { role: client_1.UserRole.admin },
-                        { role: client_1.UserRole.operator },
-                        { role: client_1.UserRole.financial_operator },
-                    ],
-                },
+        const queryWhere = {};
+        if (callerRole === client_1.UserRole.admin) {
+            const allowedRoles = [
+                client_1.UserRole.operator,
+                client_1.UserRole.financial_operator,
+            ];
+            if (normalizedRole) {
+                if (!allowedRoles.includes(normalizedRole)) {
+                    throw new common_1.ForbiddenException('Admins can only view operators and financial operators');
+                }
+                queryWhere.role = normalizedRole;
+            }
+            else {
+                queryWhere.role = { in: allowedRoles };
+            }
+        }
+        else {
+            if (normalizedRole) {
+                queryWhere.role = normalizedRole;
+            }
+            else {
+                queryWhere.role = {
+                    in: [client_1.UserRole.admin, client_1.UserRole.operator, client_1.UserRole.financial_operator],
+                };
+            }
+        }
+        const profiles = await this.prisma.profile.findMany({
+            where: queryWhere,
             select: {
                 id: true,
                 fullName: true,
@@ -58,6 +77,13 @@ let AdminsController = class AdminsController {
             },
             orderBy: { createdAt: 'desc' },
         });
+        return profiles.map((p) => ({
+            ...p,
+            _count: {
+                ...p._count,
+                resolutionProposals: p._count.proposals,
+            },
+        }));
     }
     async createInvite(req, body) {
         if (req.user.role === client_1.UserRole.admin && body.role === client_1.UserRole.agent) {
@@ -101,10 +127,11 @@ let AdminsController = class AdminsController {
 exports.AdminsController = AdminsController;
 __decorate([
     (0, common_1.Get)(),
-    (0, guards_1.RequirePermission)(permissions_1.Action.MANAGE_ADMINS),
-    __param(0, (0, common_1.Query)('role')),
+    (0, guards_1.Roles)('admin'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Query)('role')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", Promise)
 ], AdminsController.prototype, "getPersonnel", null);
 __decorate([
@@ -135,7 +162,7 @@ __decorate([
 ], AdminsController.prototype, "cancelInvite", null);
 __decorate([
     (0, common_1.Patch)(':id/status'),
-    (0, guards_1.RequirePermission)(permissions_1.Action.MANAGE_ADMINS),
+    (0, guards_1.RequirePermission)(permissions_1.Action.MANAGE_OPERATORS),
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Param)('id')),
     __param(2, (0, common_1.Body)()),

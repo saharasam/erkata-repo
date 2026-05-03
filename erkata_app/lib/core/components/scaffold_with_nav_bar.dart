@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/user_role.dart';
 import '../../features/auth/state/auth_provider.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class ScaffoldWithNavBar extends ConsumerStatefulWidget {
   final Widget child;
@@ -32,6 +32,10 @@ class _ScaffoldWithNavBarState extends ConsumerState<ScaffoldWithNavBar> {
       _ => UserRole.customer,
     };
 
+    // The nav bar is only visible on the main home pages for customers or agents
+    final isHomePage =
+        widget.location == '/home' || widget.location == '/agent';
+
     return Scaffold(
       body: NotificationListener<UserScrollNotification>(
         onNotification: (notification) {
@@ -45,14 +49,18 @@ class _ScaffoldWithNavBarState extends ConsumerState<ScaffoldWithNavBar> {
         child: Stack(
           children: [
             widget.child,
-            AnimatedPositioned(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
-              left: 24,
-              right: 24,
-              bottom: _isVisible ? 24 : -100, // Move offscreen when hidden
-              child: _CustomBottomNavBar(role: role, currentLocation: widget.location),
-            ),
+            if (isHomePage)
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+                left: 24,
+                right: 24,
+                bottom: _isVisible ? 24 : -100,
+                child: _CustomBottomNavBar(
+                  role: role,
+                  currentLocation: widget.location,
+                ),
+              ),
           ],
         ),
       ),
@@ -81,7 +89,7 @@ class _CustomBottomNavBar extends StatelessWidget {
             ),
             _NavItem(
               path: '/activity',
-              icon: Icons.bar_chart_outlined, // Activity
+              icon: Icons.bar_chart_outlined,
               activeIcon: Icons.bar_chart,
               label: 'Activity',
             ),
@@ -95,7 +103,7 @@ class _CustomBottomNavBar extends StatelessWidget {
         : [
             _NavItem(
               path: '/agent',
-              icon: Icons.grid_view, // LayoutDashboard
+              icon: Icons.grid_view,
               activeIcon: Icons.grid_view_sharp,
               label: 'Feed',
             ),
@@ -122,15 +130,11 @@ class _CustomBottomNavBar extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(
-          16,
-        ), // Rounded-2xl in React (usually 16px)
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
         boxShadow: [
           BoxShadow(
-            color: Theme.of(
-              context,
-            ).shadowColor.withValues(alpha: 0.05), // slightly lighter shadow
+            color: Theme.of(context).shadowColor.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -140,13 +144,6 @@ class _CustomBottomNavBar extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: items.map((item) {
-          // Check if current location starts with item path
-          // For exact matches like /home, check equality.
-          // For nested routes, one might need exact check or startsWith.
-          // Given the router structure, let's stick to simple exact matching for now or robust check.
-          // Note: exact match is better for tabs unless we have sub-routes that should keep tab active.
-          // React logic: `isActive = currentView === item.view` => exact state match.
-          // Here: check URL.
           final isActive = currentLocation == item.path;
 
           return _NavBarItem(
@@ -187,15 +184,6 @@ class _NavBarItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Styling from React:
-    // w-14 h-14 (56px)
-    // rounded-xl (12px)
-    // transition-all duration-200
-    // Active: text-ethio-blue bg-ethio-blue/5
-    // Inactive: text-gray-400 hover:text-gray-600 hover:bg-gray-50
-    // Icon: size 24. Active stroke 2.5 (flutter doesn't do stroke width easily on icons, use weight or fill).
-    // Text: text-[10px] font-medium tracking-wide mt-1
-
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
@@ -214,7 +202,6 @@ class _NavBarItem extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Icon
             TweenAnimationBuilder<double>(
               tween: Tween<double>(begin: 1.0, end: isActive ? 1.05 : 1.0),
               duration: const Duration(milliseconds: 200),
@@ -231,7 +218,6 @@ class _NavBarItem extends StatelessWidget {
                 );
               },
             ),
-            // Label
             const SizedBox(height: 4),
             Text(
               item.label,

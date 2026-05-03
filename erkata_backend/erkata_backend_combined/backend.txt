@@ -12157,6 +12157,9 @@ model Profile {
   operatorRequests  Request[]         @relation("OperatorRequests")
   customerRequests  Request[]         @relation("CustomerRequests")
   proposals         ResolutionProposal[]
+  upgradeRequests   UpgradeRequest[]   @relation("AgentUpgradeRequests")
+  verifications     UpgradeRequest[]   @relation("OperatorVerifications")
+  approvals         UpgradeRequest[]   @relation("AdminApprovals")
 
   @@map("profiles")
 }
@@ -12271,6 +12274,26 @@ model Zone {
   @@map("zones")
 }
 
+model UpgradeRequest {
+  id            String               @id @default(cuid())
+  agentId       String               @map("agent_id") @db.Uuid
+  currentTier   Tier                 @map("current_tier")
+  targetTier    Tier                 @map("target_tier")
+  status        UpgradeRequestStatus @default(SUBMITTED)
+  proofUrl      String?              @map("proof_url")
+  internalNote  String?              @map("internal_note")
+  operatorId    String?              @map("operator_id") @db.Uuid
+  adminId       String?              @map("admin_id") @db.Uuid
+  createdAt     DateTime             @default(now()) @map("created_at")
+  updatedAt     DateTime             @updatedAt @map("updated_at")
+
+  agent         Profile              @relation("AgentUpgradeRequests", fields: [agentId], references: [id])
+  operator      Profile?             @relation("OperatorVerifications", fields: [operatorId], references: [id])
+  admin         Profile?             @relation("AdminApprovals", fields: [adminId], references: [id])
+
+  @@map("upgrade_requests")
+}
+
 enum AglpTransactionStatus {
   PENDING
   COMPLETED
@@ -12330,10 +12353,18 @@ enum TransactionStatus {
   failed
 }
 
+enum UpgradeRequestStatus {
+  SUBMITTED
+  OPERATOR_VERIFIED
+  APPROVED
+  REJECTED
+}
+
 enum UserRole {
   super_admin
   admin
   operator
+  financial_operator
   agent
   customer
 }
@@ -12962,7 +12993,11 @@ export class AdminsController {
       where: normalizedRole
         ? { role: normalizedRole }
         : {
-            OR: [{ role: UserRole.admin }, { role: UserRole.operator }],
+            OR: [
+              { role: UserRole.admin },
+              { role: UserRole.operator },
+              { role: UserRole.financial_operator },
+            ],
           },
       select: {
         id: true,
@@ -14867,6 +14902,7 @@ import { AdminModule } from './admin/admin.module';
 import { AglpModule } from './aglp/aglp.module';
 import { RedisModule } from './common/redis/redis.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { UpgradesModule } from './upgrades/upgrades.module';
 
 @Module({
   imports: [
@@ -14889,6 +14925,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     AdminModule,
     AglpModule,
     RedisModule,
+    UpgradesModule,
   ],
   controllers: [AppController],
   providers: [
@@ -15090,6 +15127,7 @@ import { InviteService } from './invite/invite.service';
 import * as bcrypt from 'bcrypt';
 import { UserRole, Tier } from '@prisma/client';
 import { randomUUID } from 'crypto';
+import { NotificationsGateway } from '../notifications/notifications.gateway';
 
 interface JwtPayload {
   sub: string;
@@ -15104,6 +15142,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly inviteService: InviteService,
+    private readonly notificationsGateway: NotificationsGateway,
   ) {}
 
   private sanitizePhone(phone: string): string {
@@ -15330,11 +15369,23 @@ export class AuthService {
     });
 
     // Mark invite as used if applicable
-    if (
-      data.inviteToken &&
-      (finalRole === 'admin' || finalRole === 'operator')
-    ) {
-      await this.inviteService.markInviteAsUsed(data.inviteToken);
+    if (data.inviteToken) {
+      const invite = await this.inviteService.markInviteAsUsed(
+        data.inviteToken,
+      );
+
+      // Notify the inviting admin so their "Pending Invites" list refreshes in real-time
+      if (invite && invite.createdById) {
+        this.notificationsGateway.sendToUser(
+          invite.createdById,
+          'notification',
+          {
+            type: 'invite.claimed',
+            inviteId: invite.id,
+            message: `The invitation for ${invite.email} has been claimed.`,
+          },
+        );
+      }
     }
 
     console.log(`[AuthService] User created successfully: ${newProfile.id}`);
@@ -15899,6 +15950,8 @@ export enum Action {
   RESOLVE_DISPUTE = 'RESOLVE_DISPUTE',
   ESCALATE_DISPUTE = 'ESCALATE_DISPUTE',
   VIEW_BROADCASTS = 'VIEW_BROADCASTS',
+  VERIFY_UPGRADE = 'VERIFY_UPGRADE',
+  APPROVE_UPGRADE = 'APPROVE_UPGRADE',
 }
 
 export const PermissionMatrix: Record<string, Action[]> = {
@@ -15947,6 +16000,7 @@ export const PermissionMatrix: Record<string, Action[]> = {
     Action.VIEW_FINANCIAL_REPORTS,
     Action.VIEW_BROADCASTS,
   ],
+  financial_operator: [Action.VERIFY_UPGRADE, Action.VIEW_BROADCASTS],
   admin: [
     Action.PROPOSE_RESOLUTION,
     Action.FINALIZE_RESOLUTION,
@@ -15968,6 +16022,7 @@ export const PermissionMatrix: Record<string, Action[]> = {
     Action.VIEW_SYSTEM_STATISTICS,
     Action.RESOLVE_DISPUTE,
     Action.VIEW_BROADCASTS,
+    Action.VIEW_USER_DETAILS_ANY_ROLE,
   ],
   super_admin: [
     Action.EMERGENCY_ARCHIVE,
@@ -16004,6 +16059,7 @@ export const PermissionMatrix: Record<string, Action[]> = {
     Action.EXPORT_FINANCIAL_AUDIT,
     Action.VIEW_ASSIGNED_REQUEST_DETAILS,
     Action.VIEW_BROADCASTS,
+    Action.APPROVE_UPGRADE,
   ],
 };
 
@@ -16286,6 +16342,18 @@ export class ConfigService implements OnModuleInit {
           'withdrawal_fee_percentage',
           0.05,
           'Processing fee percentage applied to withdrawals (e.g., 0.05 for 5%).',
+        );
+      }
+
+      if (!this.configs.has('BANK_DETAILS_UPGRADE')) {
+        await this.set(
+          'BANK_DETAILS_UPGRADE',
+          {
+            bankName: 'Commercial Bank of Ethiopia',
+            accountNumber: '1000123456789',
+            accountHolder: 'Erkata Platform PLC',
+          },
+          'Designated bank details for package upgrades.',
         );
       }
     } catch (error) {
@@ -17077,9 +17145,12 @@ dotenv.config();
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import cookieParser from 'cookie-parser';
+import { json, urlencoded } from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.use(json({ limit: '15mb' }));
+  app.use(urlencoded({ extended: true, limit: '15mb' }));
   app.use(cookieParser());
   const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
   const allowedOrigins = [
@@ -20308,6 +20379,380 @@ export class TransactionsService {
 }
 
 
+===== FILE: src\upgrades\upgrades.controller.ts =====
+
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Body,
+  Param,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
+import { UpgradesService } from './upgrades.service';
+import { ConfigService } from '../common/config.service';
+import { JwtAuthGuard, RolesGuard, RequirePermission } from '../auth/guards';
+import type { AuthenticatedRequest } from '../auth/guards';
+import { Action } from '../auth/permissions';
+import { Tier } from '@prisma/client';
+
+@Controller('upgrades')
+@UseGuards(JwtAuthGuard, RolesGuard)
+export class UpgradesController {
+  constructor(
+    private readonly upgradesService: UpgradesService,
+    private readonly configService: ConfigService,
+  ) {}
+
+  @Get('active')
+  async getMyActiveRequest(@Req() req: AuthenticatedRequest) {
+    return this.upgradesService.getActiveRequestForUser(req.user.id);
+  }
+
+  @Get('bank-details')
+  async getBankDetails() {
+    return await this.configService.get('BANK_DETAILS_UPGRADE');
+  }
+
+  @Get('pending')
+  @RequirePermission(Action.VERIFY_UPGRADE)
+  async getPendingRequests() {
+    return this.upgradesService.getPendingForOperator();
+  }
+
+  @Get('verified')
+  @RequirePermission(Action.APPROVE_UPGRADE)
+  async getVerifiedRequests() {
+    return this.upgradesService.getVerifiedForAdmin();
+  }
+
+  @Post('request')
+  async createRequest(
+    @Req() req: AuthenticatedRequest,
+    @Body() body: { targetTier: Tier },
+  ) {
+    return this.upgradesService.createRequest(req.user.id, body.targetTier);
+  }
+
+  @Patch(':id/proof')
+  async uploadProof(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Body() body: { proofUrl: string },
+  ) {
+    return this.upgradesService.uploadProof(id, req.user.id, body.proofUrl);
+  }
+
+  @Patch(':id/verify')
+  @RequirePermission(Action.VERIFY_UPGRADE)
+  async verifyRequest(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Body() body: { internalNote: string },
+  ) {
+    return this.upgradesService.verifyRequest(
+      id,
+      req.user.id,
+      body.internalNote,
+    );
+  }
+
+  @Patch(':id/approve')
+  @RequirePermission(Action.APPROVE_UPGRADE)
+  async approveRequest(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') id: string,
+  ) {
+    return this.upgradesService.approveRequest(id, req.user.id);
+  }
+
+  @Patch(':id/reject')
+  @RequirePermission(Action.APPROVE_UPGRADE)
+  async rejectRequest(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Body() body: { reason: string },
+  ) {
+    return this.upgradesService.rejectRequest(id, req.user.id, body.reason);
+  }
+}
+
+
+===== FILE: src\upgrades\upgrades.module.ts =====
+
+import { Module } from '@nestjs/common';
+import { UpgradesService } from './upgrades.service';
+import { UpgradesController } from './upgrades.controller';
+import { PrismaModule } from '../prisma/prisma.module';
+import { NotificationsModule } from '../notifications/notifications.module';
+import { UsersModule } from '../users/users.module';
+
+@Module({
+  imports: [PrismaModule, NotificationsModule, UsersModule],
+  controllers: [UpgradesController],
+  providers: [UpgradesService],
+  exports: [UpgradesService],
+})
+export class UpgradesModule {}
+
+
+===== FILE: src\upgrades\upgrades.service.ts =====
+
+import {
+  Injectable,
+  NotFoundException,
+  ForbiddenException,
+  BadRequestException,
+} from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { Tier } from '@prisma/client';
+import { NotificationsGateway } from '../notifications/notifications.gateway';
+import { UsersService } from '../users/users.service';
+
+@Injectable()
+export class UpgradesService {
+  constructor(
+    private prisma: PrismaService,
+    private notifications: NotificationsGateway,
+    private usersService: UsersService,
+  ) {}
+
+  async getActiveRequestForUser(agentId: string) {
+    return this.prisma.upgradeRequest.findFirst({
+      where: {
+        agentId,
+        status: { in: ['SUBMITTED', 'OPERATOR_VERIFIED'] },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async createRequest(agentId: string, targetTier: Tier) {
+    const agent = await this.prisma.profile.findUnique({
+      where: { id: agentId },
+      include: { package: true },
+    });
+
+    if (!agent) throw new NotFoundException('Agent not found');
+
+    // Check if there's already a pending request
+    const existing = await this.prisma.upgradeRequest.findFirst({
+      where: {
+        agentId,
+        status: { in: ['SUBMITTED', 'OPERATOR_VERIFIED'] },
+      },
+    });
+
+    if (existing) {
+      throw new BadRequestException(
+        'You already have a pending upgrade request.',
+      );
+    }
+
+    return this.prisma.upgradeRequest.create({
+      data: {
+        agentId,
+        currentTier: agent.tier,
+        targetTier,
+        status: 'SUBMITTED',
+      },
+    });
+  }
+
+  async uploadProof(requestId: string, agentId: string, proofUrl: string) {
+    const request = await this.prisma.upgradeRequest.findUnique({
+      where: { id: requestId },
+    });
+
+    if (!request) throw new NotFoundException('Request not found');
+    if (request.agentId !== agentId) {
+      throw new ForbiddenException('Not your request');
+    }
+
+    const updated = await this.prisma.upgradeRequest.update({
+      where: { id: requestId },
+      data: { proofUrl },
+    });
+
+    // Notify Financial Operators
+    this.notifications.sendToRole('financial_operator', 'notification', {
+      type: 'upgrade.submitted',
+      title: 'New Upgrade Proof',
+      message: `Agent has uploaded proof for ${request.targetTier} upgrade.`,
+      requestId: request.id,
+    });
+
+    return updated;
+  }
+
+  async getPendingForOperator() {
+    return this.prisma.upgradeRequest.findMany({
+      where: { status: 'SUBMITTED', proofUrl: { not: null } },
+      include: {
+        agent: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            phone: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async verifyRequest(requestId: string, operatorId: string, note: string) {
+    const request = await this.prisma.upgradeRequest.findUnique({
+      where: { id: requestId },
+    });
+
+    if (!request) throw new NotFoundException('Request not found');
+
+    const updated = await this.prisma.upgradeRequest.update({
+      where: { id: requestId },
+      data: {
+        status: 'OPERATOR_VERIFIED',
+        internalNote: note,
+        operatorId,
+      },
+    });
+
+    // Notify Super Admins
+    this.notifications.sendToRole('super_admin', 'notification', {
+      type: 'upgrade.verified',
+      title: 'Upgrade Verified by Operator',
+      message: `A request for ${request.targetTier} has been verified and is ready for approval.`,
+      requestId: request.id,
+    });
+
+    return updated;
+  }
+
+  async getVerifiedForAdmin() {
+    return this.prisma.upgradeRequest.findMany({
+      where: { status: 'OPERATOR_VERIFIED' },
+      include: {
+        agent: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            phone: true,
+          },
+        },
+        operator: {
+          select: {
+            id: true,
+            fullName: true,
+          },
+        },
+      },
+      orderBy: { updatedAt: 'desc' },
+    });
+  }
+
+  async approveRequest(requestId: string, adminId: string) {
+    const request = await this.prisma.upgradeRequest.findUnique({
+      where: { id: requestId },
+      include: { agent: true },
+    });
+
+    if (!request) throw new NotFoundException('Request not found');
+    if (request.status !== 'OPERATOR_VERIFIED') {
+      throw new BadRequestException(
+        'Request must be verified by an operator first',
+      );
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      // 1. Mark request as approved
+      await tx.upgradeRequest.update({
+        where: { id: requestId },
+        data: {
+          status: 'APPROVED',
+          adminId,
+        },
+      });
+
+      // 2. Perform the actual upgrade using UsersService
+      await this.usersService.applyTierUpgrade(
+        request.agentId,
+        request.targetTier,
+        'ETB',
+        tx,
+      );
+
+      // 3. Create persistent notification
+      await tx.notification.create({
+        data: {
+          userId: request.agentId,
+          type: 'upgrade.approved',
+          title: 'Upgrade Approved!',
+          message: `Your account has been upgraded to ${request.targetTier}.`,
+        },
+      });
+
+      // 4. Notify Agent (Real-time)
+      this.notifications.sendToUser(request.agentId, 'notification', {
+        type: 'upgrade.approved',
+        title: 'Upgrade Approved!',
+        message: `Your account has been upgraded to ${request.targetTier}.`,
+      });
+
+      return { success: true };
+    });
+  }
+
+  async rejectRequest(requestId: string, adminId: string, reason: string) {
+    const request = await this.prisma.upgradeRequest.findUnique({
+      where: { id: requestId },
+    });
+
+    if (!request) throw new NotFoundException('Request not found');
+
+    await this.prisma.upgradeRequest.update({
+      where: { id: requestId },
+      data: {
+        status: 'REJECTED',
+        internalNote: `REJECTED: ${reason}. ${request.internalNote || ''}`,
+        adminId,
+      },
+    });
+
+    // Create persistent notification
+    await this.prisma.notification.create({
+      data: {
+        userId: request.agentId,
+        type: 'upgrade.rejected',
+        title: 'Upgrade Request Denied',
+        message: `Your upgrade request was rejected. Reason: ${reason}`,
+      },
+    });
+
+    // Notify Agent (Real-time)
+    this.notifications.sendToUser(request.agentId, 'notification', {
+      type: 'upgrade.rejected',
+      title: 'Upgrade Request Denied',
+      message: `Your upgrade request was rejected. Reason: ${reason}`,
+    });
+
+    // Also notify operator if they were involved
+    if (request.operatorId) {
+      this.notifications.sendToUser(request.operatorId, 'notification', {
+        type: 'upgrade.rejected',
+        title: 'Request Denied by Admin',
+        message: `The request you verified for agent ${request.agentId} was rejected by Super Admin.`,
+      });
+    }
+
+    return { success: true };
+  }
+}
+
+
 ===== FILE: src\users\users.controller.ts =====
 
 import {
@@ -20322,6 +20767,7 @@ import {
   Query,
   HttpCode,
   HttpStatus,
+  ForbiddenException,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { RolesGuard, RequirePermission, JwtAuthGuard } from '../auth/guards';
@@ -20456,7 +20902,27 @@ export class UsersController {
 
   @Get(':id/profile')
   @RequirePermission(Action.VIEW_USER_DETAILS_ANY_ROLE)
-  async getUserProfile(@Param('id') userId: string) {
+  async getUserProfile(
+    @Req() req: AuthenticatedRequest,
+    @Param('id') userId: string,
+  ) {
+    const callerRole = req.user.role;
+    const callerId = req.user.id;
+
+    // Hierarchy Check: Admins may not view profiles at their own level or above
+    if (callerRole === UserRole.admin) {
+      const target = await this.usersService.getProfileRoleById(userId);
+      if (
+        target &&
+        (target.role === UserRole.admin || target.role === UserRole.super_admin) &&
+        userId !== callerId
+      ) {
+        throw new ForbiddenException(
+          'Admins are not authorized to view profiles at admin level or above.',
+        );
+      }
+    }
+
     return this.usersService.getCurrentProfile(userId);
   }
 
@@ -20543,7 +21009,11 @@ export class UsersService {
     const profile = await this.prisma.profile.findUnique({
       where: { id: userId },
       include: {
-        agentZones: true,
+        agentZones: {
+          include: {
+            zone: true,
+          },
+        },
         referralLink: true,
         package: true,
         referrals: {
@@ -20560,11 +21030,29 @@ export class UsersService {
             },
           },
         },
+        _count: {
+          select: {
+            operatorMatches: true,
+            proposals: true,
+            agentMatches: true,
+          },
+        },
       },
     });
 
     if (!profile) throw new NotFoundException('Profile not found');
     return profile;
+  }
+
+  /**
+   * Lightweight lookup used by the controller hierarchy check.
+   * Returns only the role field to avoid over-fetching.
+   */
+  async getProfileRoleById(userId: string) {
+    return this.prisma.profile.findUnique({
+      where: { id: userId },
+      select: { id: true, role: true },
+    });
   }
 
   async getFinanceSummary(userId: string) {
@@ -20629,23 +21117,6 @@ export class UsersService {
       take: 20,
     });
 
-    // Gather AGLP transaction IDs from audit log metadata to fetch real statuses
-    const aglpTxIds = history
-      .map((log) => {
-        const meta = (log.metadata as AuditLogMetadata) || {};
-        return meta.aglpTxId || meta.transactionId;
-      })
-      .filter((id): id is string => !!id);
-
-    let txStatusMap = new Map<string, string>();
-    if (aglpTxIds.length > 0) {
-      const txStatuses = await this.prisma.aglpTransaction.findMany({
-        where: { id: { in: aglpTxIds } },
-        select: { id: true, status: true },
-      });
-      txStatusMap = new Map(txStatuses.map((t) => [t.id, t.status]));
-    }
-
     // Format history for the UI
     const formattedHistory = history.map((log) => {
       const metadata = (log.metadata as AuditLogMetadata) || {};
@@ -20658,19 +21129,15 @@ export class UsersService {
             ? 'Withdrawal'
             : 'Commission';
 
-      const txId = metadata.aglpTxId || metadata.transactionId;
-      const txStatus = txStatusMap.get(txId) || 'COMPLETED';
-
       return {
         id: log.id,
         action: log.action,
         amount: metadata.amount || metadata.amountAglp || 0,
         type,
-        status: txStatus,
         createdAt: log.createdAt,
         metadata: {
           ...metadata,
-          transactionId: txId || log.id,
+          transactionId: metadata.transactionId || metadata.aglpTxId || log.id,
         },
       };
     });
@@ -20757,33 +21224,16 @@ export class UsersService {
       },
     );
 
-    const pendingWithdrawalAmount =
-      pendingWithdrawalsSum._sum.amount?.toNumber() || 0;
-    const pendingCommissionAmount =
-      pendingCommissionsSum._sum.amount?.toNumber() || 0;
+    const dynamicPending =
+      (pendingCommissionsSum._sum.amount?.toNumber() || 0) +
+      (pendingWithdrawalsSum._sum.amount?.toNumber() || 0);
     const dynamicWithdrawn =
       completedWithdrawalsSum._sum.amount?.toNumber() || 0;
 
-    // True available = ledger balance minus any in-flight withdrawal requests
-    const aglpAvailable =
-      profile.aglpBalance.toNumber() - pendingWithdrawalAmount;
-
-    // Total lifetime earnings: sum of all completed EARN transactions
-    const totalEarningsResult = await this.prisma.aglpTransaction.aggregate({
-      where: {
-        profileId: userId,
-        type: 'EARN',
-        status: 'COMPLETED',
-      },
-      _sum: { amount: true },
-    });
-    const totalEarnings = totalEarningsResult._sum.amount?.toNumber() || 0;
-
     return {
-      balance: aglpAvailable,
-      aglpAvailable,
-      aglpPendingCommissions: pendingCommissionAmount,
-      aglpPendingWithdrawals: pendingWithdrawalAmount,
+      balance: profile.aglpBalance.toNumber(),
+      aglpAvailable: profile.aglpBalance.toNumber(),
+      aglpPending: dynamicPending,
       aglpWithdrawn: dynamicWithdrawn,
       usedSlots,
       totalSlots,
@@ -20798,7 +21248,7 @@ export class UsersService {
         amount: currentTotal - previousTotal,
         chart: chartData,
       },
-      totalEarnings,
+      totalEarnings: profile.aglpBalance.toNumber() + dynamicWithdrawn,
       history: formattedHistory,
     };
   }
@@ -20811,8 +21261,11 @@ export class UsersService {
   canModifyUser(callerRole: UserRole, targetRole: UserRole): boolean {
     if (callerRole === UserRole.super_admin) return true;
     if (callerRole === UserRole.admin) {
-      // Admin can only target Operators. Agents are managed by Super Admin (invites/suspension).
-      const targetRoles: UserRole[] = [UserRole.operator];
+      // Admin can only target Operators and Financial Operators. Agents are managed by Super Admin (invites/suspension).
+      const targetRoles: UserRole[] = [
+        UserRole.operator,
+        UserRole.financial_operator,
+      ];
       return targetRoles.includes(targetRole);
     }
     // Operators, Agents, and Customers have zero write authority over others
@@ -20829,7 +21282,14 @@ export class UsersService {
     if (role === UserRole.admin) {
       // Admin sees Operators/Agents (could be filtered by region if managedBy exists)
       return {
-        role: { in: [UserRole.operator, UserRole.agent, UserRole.customer] },
+        role: {
+          in: [
+            UserRole.operator,
+            UserRole.agent,
+            UserRole.customer,
+            UserRole.financial_operator,
+          ],
+        },
       };
     }
 
@@ -21030,18 +21490,18 @@ export class UsersService {
     return this.applyTierUpgrade(agentId, tier, paymentMethod);
   }
 
-  private async applyTierUpgrade(
+  public async applyTierUpgrade(
     agentId: string,
     tier: string,
     paymentMethod: 'ETB' | 'AGLP' | 'ADMIN' = 'ETB',
+    txOverride?: Prisma.TransactionClient,
   ) {
     const tierEnum = tier.toUpperCase().replace(' ', '_') as Tier;
     if (TierPriority[tierEnum] === undefined) {
       throw new Error('Invalid tier name');
     }
 
-    // Fetch the package price
-    const pkg = await this.prisma.package.findUnique({
+    const pkg = await (txOverride || this.prisma).package.findUnique({
       where: { name: tierEnum },
     });
 
@@ -21051,7 +21511,7 @@ export class UsersService {
       );
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    const run = async (tx: Prisma.TransactionClient) => {
       if (pkg.price && Number(pkg.price) > 0 && paymentMethod !== 'ADMIN') {
         if (paymentMethod === 'ETB') {
           // Explicit cash purchase: Agent deposits ETB and gets the equivalent AGLP as a reward.
@@ -21111,7 +21571,13 @@ export class UsersService {
           tier: tierEnum,
         },
       });
-    });
+    };
+
+    if (txOverride) {
+      return run(txOverride);
+    } else {
+      return this.prisma.$transaction(run);
+    }
   }
 
   async checkReferralEligibility(referrerId: string) {
@@ -21164,10 +21630,17 @@ export class UsersService {
       );
     }
 
-    return this.prisma.profile.update({
+    const result = await this.prisma.profile.update({
       where: { id: userId },
       data: { isActive: false },
     });
+
+    // Immediate Force Logout via WebSocket
+    this.notificationsGateway.sendToUser(userId, 'force_logout', {
+      reason: 'Your account has been suspended by an administrator.',
+    });
+
+    return result;
   }
 
   async requestWithdrawal(

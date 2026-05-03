@@ -9,42 +9,42 @@ export declare class UpgradesService {
     constructor(prisma: PrismaService, notifications: NotificationsGateway, usersService: UsersService);
     getActiveRequestForUser(agentId: string): Promise<{
         id: string;
+        createdAt: Date;
         agentId: string;
+        operatorId: string | null;
+        status: import(".prisma/client").$Enums.UpgradeRequestStatus;
+        updatedAt: Date;
         currentTier: import(".prisma/client").$Enums.Tier;
         targetTier: import(".prisma/client").$Enums.Tier;
-        status: import(".prisma/client").$Enums.UpgradeRequestStatus;
         proofUrl: string | null;
         internalNote: string | null;
-        operatorId: string | null;
         adminId: string | null;
-        createdAt: Date;
-        updatedAt: Date;
     } | null>;
     createRequest(agentId: string, targetTier: Tier): Promise<{
         id: string;
+        createdAt: Date;
         agentId: string;
+        operatorId: string | null;
+        status: import(".prisma/client").$Enums.UpgradeRequestStatus;
+        updatedAt: Date;
         currentTier: import(".prisma/client").$Enums.Tier;
         targetTier: import(".prisma/client").$Enums.Tier;
-        status: import(".prisma/client").$Enums.UpgradeRequestStatus;
         proofUrl: string | null;
         internalNote: string | null;
-        operatorId: string | null;
         adminId: string | null;
-        createdAt: Date;
-        updatedAt: Date;
     }>;
     uploadProof(requestId: string, agentId: string, proofUrl: string): Promise<{
         id: string;
+        createdAt: Date;
         agentId: string;
+        operatorId: string | null;
+        status: import(".prisma/client").$Enums.UpgradeRequestStatus;
+        updatedAt: Date;
         currentTier: import(".prisma/client").$Enums.Tier;
         targetTier: import(".prisma/client").$Enums.Tier;
-        status: import(".prisma/client").$Enums.UpgradeRequestStatus;
         proofUrl: string | null;
         internalNote: string | null;
-        operatorId: string | null;
         adminId: string | null;
-        createdAt: Date;
-        updatedAt: Date;
     }>;
     getPendingForOperator(): Promise<({
         agent: {
@@ -55,53 +55,53 @@ export declare class UpgradesService {
         };
     } & {
         id: string;
+        createdAt: Date;
         agentId: string;
+        operatorId: string | null;
+        status: import(".prisma/client").$Enums.UpgradeRequestStatus;
+        updatedAt: Date;
         currentTier: import(".prisma/client").$Enums.Tier;
         targetTier: import(".prisma/client").$Enums.Tier;
-        status: import(".prisma/client").$Enums.UpgradeRequestStatus;
         proofUrl: string | null;
         internalNote: string | null;
-        operatorId: string | null;
         adminId: string | null;
-        createdAt: Date;
-        updatedAt: Date;
     })[]>;
     verifyRequest(requestId: string, operatorId: string, note: string): Promise<{
         id: string;
+        createdAt: Date;
         agentId: string;
+        operatorId: string | null;
+        status: import(".prisma/client").$Enums.UpgradeRequestStatus;
+        updatedAt: Date;
         currentTier: import(".prisma/client").$Enums.Tier;
         targetTier: import(".prisma/client").$Enums.Tier;
-        status: import(".prisma/client").$Enums.UpgradeRequestStatus;
         proofUrl: string | null;
         internalNote: string | null;
-        operatorId: string | null;
         adminId: string | null;
-        createdAt: Date;
-        updatedAt: Date;
     }>;
     getVerifiedForAdmin(): Promise<({
+        operator: {
+            id: string;
+            fullName: string;
+        } | null;
         agent: {
             id: string;
             email: string;
             fullName: string;
             phone: string;
         };
-        operator: {
-            id: string;
-            fullName: string;
-        } | null;
     } & {
         id: string;
+        createdAt: Date;
         agentId: string;
+        operatorId: string | null;
+        status: import(".prisma/client").$Enums.UpgradeRequestStatus;
+        updatedAt: Date;
         currentTier: import(".prisma/client").$Enums.Tier;
         targetTier: import(".prisma/client").$Enums.Tier;
-        status: import(".prisma/client").$Enums.UpgradeRequestStatus;
         proofUrl: string | null;
         internalNote: string | null;
-        operatorId: string | null;
         adminId: string | null;
-        createdAt: Date;
-        updatedAt: Date;
     })[]>;
     approveRequest(requestId: string, adminId: string): Promise<{
         success: boolean;

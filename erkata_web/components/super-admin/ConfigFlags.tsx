@@ -109,12 +109,7 @@ const ConfigFlags: React.FC = () => {
 
 
             {/* Protocol Governance Module */}
-            <motion.div 
-                initial={{ opacity: 0, scale: 0.98 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.1 }}
-                className="grid grid-cols-1 lg:grid-cols-12 gap-8"
-            >
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 {/* Lockdown Card */}
                 <div className="lg:col-span-12">
                     <div className={`relative group overflow-hidden rounded-[2.5rem] p-1 border transition-all duration-700 ${
@@ -126,13 +121,9 @@ const ConfigFlags: React.FC = () => {
                             emergencyLockdown ? 'bg-red-950/90 backdrop-blur-md' : 'bg-slate-950'
                         }`}>
                             <div className="flex items-center gap-6">
-                                <motion.div 
-                                    animate={emergencyLockdown ? { scale: [1, 1.1, 1] } : {}}
-                                    transition={{ duration: 2, repeat: Infinity }}
-                                    className={`p-4 rounded-2xl ${emergencyLockdown ? 'bg-red-500/20 border border-red-500/50' : 'bg-slate-900 border border-slate-800'}`}
-                                >
+                                <div className={`p-4 rounded-2xl ${emergencyLockdown ? 'bg-red-500/20 border border-red-500/50' : 'bg-slate-900 border border-slate-800'}`}>
                                     <ShieldAlert className={`w-8 h-8 ${emergencyLockdown ? 'text-red-500' : 'text-slate-400'}`} />
-                                </motion.div>
+                                </div>
                                 <div>
                                     <h4 className={`text-xl font-black tracking-tight mb-1 ${emergencyLockdown ? 'text-red-100' : 'text-white'}`}>
                                         PLATFORM EMERGENCY LOCKDOWN
@@ -319,7 +310,7 @@ const ConfigFlags: React.FC = () => {
                         </div>
                     </div>
                 </div>
-            </motion.div>
+            </div>
 
             {/* Footer Status */}
             <div className="flex items-center justify-center gap-8 py-6 opacity-80 group">

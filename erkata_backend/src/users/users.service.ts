@@ -34,6 +34,19 @@ interface AuditLogMetadata {
   [key: string]: any;
 }
 
+export interface PerformanceStats {
+  missedAssignments: number;
+  warningCount: number;
+  acceptedCount?: number;
+  rejectedCount?: number;
+  completedCount?: number;
+  avgRating?: number;
+  assignmentCount?: number;
+  disputeResolutionCount?: number;
+  finalDecisionCount?: number;
+  proposalsCount?: number;
+}
+
 export const TierPriority: Record<string, number> = {
   ABUNDANT_LIFE: 5,
   UNITY: 4,
@@ -55,7 +68,11 @@ export class UsersService {
     const profile = await this.prisma.profile.findUnique({
       where: { id: userId },
       include: {
-        agentZones: true,
+        agentZones: {
+          include: {
+            zone: true,
+          },
+        },
         referralLink: true,
         package: true,
         referrals: {
@@ -72,11 +89,91 @@ export class UsersService {
             },
           },
         },
+        _count: {
+          select: {
+            operatorMatches: true,
+            proposals: true,
+            agentMatches: true,
+            finalResolutions: true,
+          },
+        },
       },
     });
 
     if (!profile) throw new NotFoundException('Profile not found');
-    return profile;
+
+    // Performance Data Aggregation
+    let performanceStats: PerformanceStats = {
+      missedAssignments: profile.missedAssignments,
+      warningCount: profile.warningCount,
+    };
+
+    if (profile.role === UserRole.agent) {
+      const matchStats = await this.prisma.match.groupBy({
+        by: ['status'],
+        where: { agentId: userId },
+        _count: true,
+      });
+
+      const statsMap = matchStats.reduce(
+        (acc, curr) => {
+          acc[curr.status] = curr._count;
+          return acc;
+        },
+        {} as Record<string, number>,
+      );
+
+      const ratingStats = await this.prisma.feedback.aggregate({
+        where: {
+          authorId: { not: userId },
+          transaction: { match: { agentId: userId } },
+        },
+        _avg: { rating: true },
+      });
+
+      performanceStats = {
+        ...performanceStats,
+        acceptedCount: statsMap['accepted'] || 0,
+        rejectedCount: statsMap['rejected'] || 0,
+        completedCount: statsMap['completed'] || 0,
+        avgRating: ratingStats._avg.rating || 0,
+      };
+    }
+
+    if (profile.role === UserRole.operator) {
+      performanceStats = {
+        ...performanceStats,
+        assignmentCount: profile._count.operatorMatches,
+        disputeResolutionCount: profile._count.proposals,
+      };
+    }
+
+    if (
+      profile.role === UserRole.admin ||
+      profile.role === UserRole.super_admin
+    ) {
+      performanceStats = {
+        ...performanceStats,
+        finalDecisionCount: profile._count.finalResolutions,
+        proposalsCount: profile._count.proposals,
+      };
+    }
+
+    return {
+      ...profile,
+      performanceStats,
+    };
+  }
+
+  /**
+   * Lightweight lookup used by the controller hierarchy check.
+   * Returns only the role field to avoid over-fetching.
+   */
+  async getProfileRoleById(userId: string) {
+    return this.prisma.profile.findUnique({
+      where: { id: userId },
+      select: { id: true, role: true },
+    });
   }
 
   async getFinanceSummary(userId: string) {
@@ -349,6 +446,12 @@ export class UsersService {
         isActive: filters.isActive,
       },
       include: {
+        referredBy: {
+          select: {
+            id: true,
+            fullName: true,
+          },
+        },
         referralLink: true,
         package: true,
         agentZones: {

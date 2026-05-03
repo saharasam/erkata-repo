@@ -13,133 +13,7 @@ import '../data/repositories/request_repository.dart';
 import '../state/customer_requests_provider.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
-
-// Form Data Model
-class RequestFormData {
-  RequestType? type;
-  String furnitureContext;
-  List<String> furnitureCategories;
-  int quantity;
-  String condition;
-  String propertyType;
-  int bedrooms;
-  String kifleKetema;
-  String wereda;
-  String address;
-  int budgetMin;
-  int budgetMax;
-  String urgency;
-  String deliveryDate;
-  String notes;
-  int attachments;
-
-  RequestFormData({
-    this.type,
-    this.furnitureContext = 'Home',
-    this.furnitureCategories = const [],
-    this.quantity = 1,
-    this.condition = 'New',
-    this.propertyType = 'Apartment',
-    this.bedrooms = 1,
-    this.kifleKetema = '',
-    this.wereda = '',
-    this.address = '',
-    this.budgetMin = 5000,
-    this.budgetMax = 50000,
-    this.urgency = 'Standard',
-    this.deliveryDate = '',
-    this.notes = '',
-    this.attachments = 0,
-  });
-
-  RequestFormData copyWith({
-    RequestType? type,
-    String? furnitureContext,
-    List<String>? furnitureCategories,
-    int? quantity,
-    String? condition,
-    String? propertyType,
-    int? bedrooms,
-    String? kifleKetema,
-    String? wereda,
-    String? address,
-    int? budgetMin,
-    int? budgetMax,
-    String? urgency,
-    String? deliveryDate,
-    String? notes,
-    int? attachments,
-  }) {
-    return RequestFormData(
-      type: type ?? this.type,
-      furnitureContext: furnitureContext ?? this.furnitureContext,
-      furnitureCategories: furnitureCategories ?? this.furnitureCategories,
-      quantity: quantity ?? this.quantity,
-      condition: condition ?? this.condition,
-      propertyType: propertyType ?? this.propertyType,
-      bedrooms: bedrooms ?? this.bedrooms,
-      kifleKetema: kifleKetema ?? this.kifleKetema,
-      wereda: wereda ?? this.wereda,
-      address: address ?? this.address,
-      budgetMin: budgetMin ?? this.budgetMin,
-      budgetMax: budgetMax ?? this.budgetMax,
-      urgency: urgency ?? this.urgency,
-      deliveryDate: deliveryDate ?? this.deliveryDate,
-      notes: notes ?? this.notes,
-      attachments: attachments ?? this.attachments,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'type': type?.name,
-      'furnitureContext': furnitureContext,
-      'furnitureCategories': furnitureCategories,
-      'quantity': quantity,
-      'condition': condition,
-      'propertyType': propertyType,
-      'bedrooms': bedrooms,
-      'kifleKetema': kifleKetema,
-      'wereda': wereda,
-      'address': address,
-      'budgetMin': budgetMin,
-      'budgetMax': budgetMax,
-      'urgency': urgency,
-      'deliveryDate': deliveryDate,
-      'notes': notes,
-      'attachments': attachments,
-    };
-  }
-
-  factory RequestFormData.fromJson(Map<String, dynamic> json) {
-    RequestType? parsedType;
-    if (json['type'] != null) {
-      parsedType = RequestType.values.firstWhere(
-        (e) => e.name == json['type'],
-        orElse: () => RequestType.furniture,
-      );
-    }
-    
-    return RequestFormData(
-      type: parsedType,
-      furnitureContext: json['furnitureContext'] ?? 'Home',
-      furnitureCategories: List<String>.from(json['furnitureCategories'] ?? []),
-      quantity: json['quantity'] ?? 1,
-      condition: json['condition'] ?? 'New',
-      propertyType: json['propertyType'] ?? 'Apartment',
-      bedrooms: json['bedrooms'] ?? 1,
-      kifleKetema: json['kifleKetema'] ?? '',
-      wereda: json['wereda'] ?? '',
-      address: json['address'] ?? '',
-      budgetMin: json['budgetMin'] ?? 5000,
-      budgetMax: json['budgetMax'] ?? 50000,
-      urgency: json['urgency'] ?? 'Standard',
-      deliveryDate: json['deliveryDate'] ?? '',
-      notes: json['notes'] ?? '',
-      attachments: json['attachments'] ?? 0,
-    );
-  }
-}
+import '../data/models/request_form_data.dart';
 
 class RequestIntakeScreen extends HookConsumerWidget {
   const RequestIntakeScreen({super.key});
@@ -147,7 +21,7 @@ class RequestIntakeScreen extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final step = useState(1);
-    final totalSteps = 5;
+    final totalSteps = 8;
     final formData = useState(RequestFormData());
 
     // Page Controller for transitions
@@ -172,7 +46,7 @@ class RequestIntakeScreen extends HookConsumerWidget {
         final prefs = await SharedPreferences.getInstance();
         final savedData = prefs.getString('erkata_pending_request');
         final savedStep = prefs.getInt('erkata_pending_request_step');
-        
+
         if (savedData != null) {
           final decoded = jsonDecode(savedData);
           formData.value = RequestFormData.fromJson(decoded);
@@ -207,6 +81,12 @@ class RequestIntakeScreen extends HookConsumerWidget {
       return null;
     }, [formData.value, step.value]);
 
+    // Mark as launched on first entry so it doesn't reappear on restart if abandoned
+    useEffect(() {
+      ref.read(authProvider.notifier).markAsLaunched();
+      return null;
+    }, []);
+
     // Sync PageController with step state
     useEffect(() {
       if (pageController.hasClients) {
@@ -222,44 +102,23 @@ class RequestIntakeScreen extends HookConsumerWidget {
     Future<void> submitRequest() async {
       final authState = ref.read(authProvider);
       if (!authState.isAuthenticated) {
-        context.go('/auth');
+        // Mark as launched so returning users aren't forced into intake
+        await ref.read(authProvider.notifier).markAsLaunched();
+        if (context.mounted) {
+          context.go('/auth', extra: {'isLogin': false});
+        }
         return;
       }
 
       isLoading.value = true;
       try {
-        final data = formData.value;
-        
-        // Map form to Backend DTO
-        final zoneLabel = kKifleKetemas
-            .firstWhere((k) => k.value == data.kifleKetema, orElse: () => kKifleKetemas.first)
-            .label;
-
-        final payload = {
-          'category': data.type == RequestType.realEstate 
-              ? data.propertyType 
-              : data.furnitureContext,
-          'type': data.type == RequestType.realEstate ? 'real_estate' : 'furniture',
-          'details': {
-            'description': data.notes,
-            'budgetMin': data.budgetMin,
-            'budgetMax': data.budgetMax,
-            'bedrooms': data.bedrooms,
-            'quantity': data.quantity,
-            'condition': data.condition,
-            'furnitureCategories': data.furnitureCategories,
-          },
-          'locationZone': {
-            'kifleKetema': zoneLabel,
-            'woreda': data.wereda,
-          },
-        };
+        final payload = formData.value.toBackendPayload();
 
         await ref.read(requestRepositoryProvider).createRequest(payload);
-        
+
         // Refresh the customer history
         ref.read(customerRequestsProvider.notifier).refresh();
-        
+
         await clearDraft();
 
         if (context.mounted) {
@@ -267,9 +126,9 @@ class RequestIntakeScreen extends HookConsumerWidget {
         }
       } catch (e) {
         if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Failed to submit: $e')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Failed to submit: $e')));
         }
       } finally {
         if (context.mounted) {
@@ -296,30 +155,57 @@ class RequestIntakeScreen extends HookConsumerWidget {
 
     bool isNextDisabled() {
       if (isLoading.value) return true;
-      if (step.value == 1 && formData.value.type == null) return true;
-      if (step.value == 2 &&
-          formData.value.type == RequestType.furniture &&
-          formData.value.furnitureCategories.isEmpty) {
+      final data = formData.value;
+      if (step.value == 1 && data.intent == null) return true;
+      if (step.value == 2 && data.type == null) return true;
+      if (step.value == 3) {
+        if (data.type == RequestType.realEstate &&
+            data.constructionStatus == null) {
+          return true;
+        }
+        if (data.type == RequestType.furniture && data.customization == null) {
+          return true;
+        }
+      }
+      if (step.value == 4) {
+        if (data.type == RequestType.realEstate && data.bedrooms == null) {
+          return true;
+        }
+        if (data.type == RequestType.furniture && data.targetRoom == null) {
+          return true;
+        }
+      }
+      if (step.value == 5) {
+        if (data.type == RequestType.realEstate && data.bankLoan == null) {
+          return true;
+        }
+        if (data.type == RequestType.furniture && data.paymentPlan == null) {
+          return true;
+        }
+      }
+      if (step.value == 6 &&
+          (data.kifleKetema.isEmpty || data.wereda.isEmpty)) {
         return true;
       }
-      if (step.value == 3 &&
-          (formData.value.kifleKetema.isEmpty ||
-              formData.value.wereda.isEmpty)) {
-        return true;
-      }
+      if (step.value == 7 && data.budgetMax <= 0) return true;
       return false;
     }
+
+    final authState = ref.watch(authProvider);
+    final isFirstLaunch = authState.isFirstLaunch;
 
     return Scaffold(
       body: SafeArea(
         child: Column(
           children: [
-            ErkataScreenHeader(
-              title: _getTitle(step.value, formData.value.type),
-              subtitle: 'Step ${step.value} of $totalSteps',
-              onActionTap: handleBack,
-            ),
-            _StepIndicator(currentStep: step.value, totalSteps: totalSteps),
+            if (!isFirstLaunch)
+              ErkataScreenHeader(
+                title: _getTitle(step.value, formData.value.type),
+                subtitle: 'Step ${step.value} of $totalSteps',
+                onActionTap: handleBack,
+              ),
+            if (!isFirstLaunch)
+              _StepIndicator(currentStep: step.value, totalSteps: totalSteps),
             const SizedBox(height: 8),
             Expanded(
               child: Column(
@@ -329,18 +215,26 @@ class RequestIntakeScreen extends HookConsumerWidget {
                       controller: pageController,
                       physics: const NeverScrollableScrollPhysics(),
                       children: [
-                        _Step1TypeSelection(
+                        _Step1IntentSelection(
+                          formData: formData,
+                          onNext: handleNext,
+                          isFirstLaunch: isFirstLaunch,
+                        ),
+                        _Step2TypeSelection(
                           formData: formData,
                           onNext: handleNext,
                         ),
-                        _Step2Specifications(formData),
-                        _Step3Location(formData),
-                        _Step4Budget(formData),
-                        _Step5Review(formData),
+                        _Step3PathQ1(formData: formData, onNext: handleNext),
+                        _Step4PathQ2(formData: formData, onNext: handleNext),
+                        _Step5PathQ3(formData: formData, onNext: handleNext),
+                        _Step6Location(formData: formData, onNext: handleNext),
+                        _Step7Budget(formData: formData, onNext: handleNext),
+                        _Step8Review(formData: formData),
                       ],
                     ),
                   ),
-                  if (step.value != 1)
+                  if ((isFirstLaunch && step.value == totalSteps) ||
+                      (!isFirstLaunch && step.value != 1))
                     Container(
                       padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
                       decoration: BoxDecoration(
@@ -373,153 +267,126 @@ class RequestIntakeScreen extends HookConsumerWidget {
   }
 
   String _getTitle(int step, RequestType? type) {
-    if (step == 1) return 'New Request';
-    if (step == 2) return '${type?.label ?? ""} Details';
-    if (step == 3) return 'Location';
-    if (step == 4) return 'Budget & Extras';
-    return 'Review';
+    switch (step) {
+      case 1:
+        return 'Request Intent';
+      case 2:
+        return 'Category';
+      case 3:
+        return type == RequestType.realEstate
+            ? 'Property Status'
+            : 'Manufacturing';
+      case 4:
+        return type == RequestType.realEstate ? 'Bedrooms' : 'Target Room';
+      case 5:
+        return type == RequestType.realEstate ? 'Financial' : 'Payment Plan';
+      case 6:
+        return 'Location';
+      case 7:
+        return 'Budget';
+      case 8:
+        return 'Review';
+      default:
+        return 'New Request';
+    }
   }
 }
 
-// Sub-widgets for steps (Simplified for brevity, would be full widgets in real code)
-
-class _Step1TypeSelection extends HookWidget {
+// --- STEP 1: INTENT SELECTION ---
+class _Step1IntentSelection extends HookWidget {
   final ValueNotifier<RequestFormData> formData;
   final VoidCallback onNext;
-  const _Step1TypeSelection({required this.formData, required this.onNext});
+  final bool isFirstLaunch;
+  const _Step1IntentSelection({
+    required this.formData,
+    required this.onNext,
+    this.isFirstLaunch = false,
+  });
 
   @override
   Widget build(BuildContext context) {
-    // Animation controller for staggered entry
-    final animationController = useAnimationController(
-      duration: const Duration(milliseconds: 1200),
-    );
-
-    useEffect(() {
-      animationController.forward();
-      return null;
-    }, []);
-
-    // Staggered animations
-    final titleAnimation = CurvedAnimation(
-      parent: animationController,
-      curve: const Interval(0.0, 0.4, curve: Curves.easeOut),
-    );
-
-    final propertyAnimation = CurvedAnimation(
-      parent: animationController,
-      curve: const Interval(0.2, 0.7, curve: Curves.easeOutBack),
-    );
-
-    final furnitureAnimation = CurvedAnimation(
-      parent: animationController,
-      curve: const Interval(0.4, 0.9, curve: Curves.easeOutBack),
-    );
-
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          FadeTransition(
-            opacity: titleAnimation,
-            child: Text(
-              'What do you need?',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Theme.of(context).colorScheme.onSurface,
-                letterSpacing: -0.5,
-              ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          FadeTransition(
-            opacity: titleAnimation,
-            child: Text(
-              'Select a category to get started',
-              style: TextStyle(
-                fontSize: 16,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
+          _StepHeader(
+            title: 'What do you need?',
+            subtitle: 'Select an intent to get started',
           ),
           const SizedBox(height: 32),
-          // Property Card
-          AnimatedBuilder(
-            animation: propertyAnimation,
-            builder: (context, child) {
-              return Transform.translate(
-                offset: Offset(0, 50 * (1 - propertyAnimation.value)),
-                child: Opacity(
-                  opacity: propertyAnimation.value.clamp(0.0, 1.0),
-                  child: child,
-                ),
-              );
+          _SelectionCard(
+            title: 'I want to Buy / Find',
+            description:
+                'Looking for property or items? We\'ll find them for you.',
+            icon: Icons.shopping_bag_rounded,
+            isSelected: formData.value.intent == 'buy',
+            onTap: () {
+              formData.value = formData.value.copyWith(intent: 'buy');
+              Future.delayed(const Duration(milliseconds: 200), onNext);
             },
-            child: _SelectionCard(
-              label: 'Property',
-              icon: Icons.home_rounded,
-              isSelected: formData.value.type == RequestType.realEstate,
-              onTap: () {
-                formData.value = formData.value.copyWith(
-                  type: RequestType.realEstate,
-                );
-                // Delay slightly for visual feedback
-                Future.delayed(const Duration(milliseconds: 200), onNext);
-              },
-            ),
           ),
           const SizedBox(height: 16),
-          // Furniture Card
-          AnimatedBuilder(
-            animation: furnitureAnimation,
-            builder: (context, child) {
-              return Transform.translate(
-                offset: Offset(0, 50 * (1 - furnitureAnimation.value)),
-                child: Opacity(
-                  opacity: furnitureAnimation.value.clamp(0.0, 1.0),
-                  child: child,
-                ),
-              );
+          _SelectionCard(
+            title: 'I want to Sell / List',
+            description: 'Want to list your assets? Start here.',
+            icon: Icons.trending_up_rounded,
+            isSelected: formData.value.intent == 'sell',
+            dark: true,
+            onTap: () {
+              formData.value = formData.value.copyWith(intent: 'sell');
+              Future.delayed(const Duration(milliseconds: 200), onNext);
             },
-            child: _SelectionCard(
-              label: 'Furniture',
-              icon: Icons.chair_rounded,
-              isSelected: formData.value.type == RequestType.furniture,
-              onTap: () {
-                formData.value = formData.value.copyWith(
-                  type: RequestType.furniture,
-                );
-                // Delay slightly for visual feedback
-                Future.delayed(const Duration(milliseconds: 200), onNext);
-              },
-            ),
           ),
-          const SizedBox(height: 40),
-          // Returning User Link
-          Center(
-            child: TextButton(
-              onPressed: () => context.go('/auth'),
-              child: RichText(
-                text: TextSpan(
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    fontSize: 14,
-                  ),
-                  children: [
-                    const TextSpan(text: 'Already have an account? '),
-                    TextSpan(
-                      text: 'Log in',
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.primary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+          if (!isFirstLaunch) ...[const SizedBox(height: 40), _LoginLink()],
+        ],
+      ),
+    );
+  }
+}
+
+// --- STEP 2: CATEGORY SELECTION ---
+class _Step2TypeSelection extends HookWidget {
+  final ValueNotifier<RequestFormData> formData;
+  final VoidCallback onNext;
+  const _Step2TypeSelection({required this.formData, required this.onNext});
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _StepHeader(
+            title: 'Select Category',
+            subtitle: 'What kind of request is this?',
+          ),
+          const SizedBox(height: 32),
+          _SelectionCard(
+            title: 'Home / Real Estate',
+            description: 'Houses, apartments, lands, or villas.',
+            icon: Icons.home_rounded,
+            isSelected: formData.value.type == RequestType.realEstate,
+            onTap: () {
+              formData.value = formData.value.copyWith(
+                type: RequestType.realEstate,
+              );
+              Future.delayed(const Duration(milliseconds: 200), onNext);
+            },
+          ),
+          const SizedBox(height: 16),
+          _SelectionCard(
+            title: 'Furniture',
+            description: 'Sofa sets, beds, office furniture, etc.',
+            icon: Icons.chair_rounded,
+            isSelected: formData.value.type == RequestType.furniture,
+            onTap: () {
+              formData.value = formData.value.copyWith(
+                type: RequestType.furniture,
+              );
+              Future.delayed(const Duration(milliseconds: 200), onNext);
+            },
           ),
         ],
       ),
@@ -527,283 +394,75 @@ class _Step1TypeSelection extends HookWidget {
   }
 }
 
-class _SelectionCard extends HookWidget {
-  final String label;
-  final IconData icon;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _SelectionCard({
-    required this.label,
-    required this.icon,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isHovered = useState(false);
-    final isPressed = useState(false);
-    final scale = isPressed.value ? 0.95 : (isHovered.value ? 1.02 : 1.0);
-
-    return MouseRegion(
-      onEnter: (_) => isHovered.value = true,
-      onExit: (_) => isHovered.value = false,
-      child: GestureDetector(
-        onTapDown: (_) => isPressed.value = true,
-        onTapUp: (_) {
-          isPressed.value = false;
-          onTap();
-        },
-        onTapCancel: () => isPressed.value = false,
-        child: AnimatedScale(
-          scale: scale,
-          duration: const Duration(milliseconds: 150),
-          curve: Curves.easeInOut,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.1)
-                  : Theme.of(context).colorScheme.surface,
-              border: Border.all(
-                color: isSelected ? AppColors.brandPrimary : Colors.transparent,
-                width: 2,
-              ),
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: isSelected
-                      ? Theme.of(
-                          context,
-                        ).colorScheme.primary.withValues(alpha: 0.2)
-                      : Theme.of(context).shadowColor.withValues(
-                          alpha: isHovered.value ? 0.08 : 0.03,
-                        ),
-                  blurRadius: isSelected || isHovered.value ? 12 : 8,
-                  offset: Offset(0, isSelected || isHovered.value ? 6 : 2),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? Theme.of(
-                            context,
-                          ).colorScheme.primary.withValues(alpha: 0.2)
-                        : Theme.of(context).colorScheme.surfaceContainerHighest,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    icon,
-                    size: 32,
-                    color: isSelected
-                        ? Theme.of(context).colorScheme.primary
-                        : Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                AnimatedDefaultTextStyle(
-                  duration: const Duration(milliseconds: 200),
-                  style: TextStyle(
-                    fontFamily: 'Inter', // Default system or specified font
-                    fontWeight: FontWeight.bold,
-                    color: isSelected
-                        ? Theme.of(context).colorScheme.primary
-                        : Theme.of(context).colorScheme.onSurface,
-                  ),
-                  child: Text(label),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _Step2Specifications extends StatelessWidget {
+// --- STEP 3: PATH Q1 (Status / Customization) ---
+class _Step3PathQ1 extends StatelessWidget {
   final ValueNotifier<RequestFormData> formData;
-  const _Step2Specifications(this.formData);
-
-  static const furnitureSubCategories = {
-    'Home': [
-      'Sofa',
-      'Bed',
-      'Dining Table',
-      'Coffee Table',
-      'Chair',
-      'Wardrobe',
-      'TV Stand',
-    ],
-    'Office': [
-      'Office Desk',
-      'Office Chair',
-      'Conference Table',
-      'Filing Cabinet',
-      'Bookshelf',
-      'Reception Desk',
-      'Workstation',
-    ],
-  };
-
-  static const propertyTypes = [
-    'Apartment',
-    'House',
-    'Villa',
-    'Condominium',
-    'Office Space',
-    'Warehouse',
-    'Land',
-  ];
+  final VoidCallback onNext;
+  const _Step3PathQ1({required this.formData, required this.onNext});
 
   @override
   Widget build(BuildContext context) {
-    final isFurniture = formData.value.type == RequestType.furniture;
-
+    final isHome = formData.value.type == RequestType.realEstate;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            isFurniture ? 'Furniture Details' : 'Property Details',
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-              color: Theme.of(context).colorScheme.onSurface,
-              letterSpacing: -0.5,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            isFurniture
-                ? 'Tell us more about the furniture you need'
-                : 'Tell us more about the property you are looking for',
-            style: TextStyle(
-              fontSize: 16,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
+          _StepHeader(
+            title: isHome
+                ? 'Current status of the house?'
+                : 'Preference for manufacturing?',
+            center: true,
           ),
           const SizedBox(height: 32),
-          if (isFurniture) ...[
-            // Context (Home/Office)
-            const Text(
-              'Category',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          if (isHome) ...[
+            _SelectionCard(
+              title: 'Under Construction',
+              icon: Icons.build_rounded,
+              isSelected:
+                  formData.value.constructionStatus == 'Under Construction',
+              onTap: () {
+                formData.value = formData.value.copyWith(
+                  constructionStatus: 'Under Construction',
+                );
+                Future.delayed(const Duration(milliseconds: 200), onNext);
+              },
             ),
-            const SizedBox(height: 12),
-            Row(
-              children: ['Home', 'Office']
-                  .map(
-                    (ctx) => Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        child: _SelectionCard(
-                          label: ctx,
-                          icon: ctx == 'Home'
-                              ? Icons.home_rounded
-                              : Icons.business_center_rounded,
-                          isSelected: formData.value.furnitureContext == ctx,
-                          onTap: () {
-                            formData.value = formData.value.copyWith(
-                              furnitureContext: ctx,
-                              furnitureCategories: [],
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                  )
-                  .toList(),
-            ),
-            const SizedBox(height: 32),
-            // Categories
-            const Text(
-              'Specific Items',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 12,
-              children: furnitureSubCategories[formData.value.furnitureContext]!
-                  .map((cat) {
-                    final isSelected = formData.value.furnitureCategories
-                        .contains(cat);
-                    return _AnimatedChip(
-                      label: cat,
-                      isSelected: isSelected,
-                      onSelected: (selected) {
-                        final cats = List<String>.from(
-                          formData.value.furnitureCategories,
-                        );
-                        if (selected) {
-                          cats.add(cat);
-                        } else {
-                          cats.remove(cat);
-                        }
-                        formData.value = formData.value.copyWith(
-                          furnitureCategories: cats,
-                        );
-                      },
-                    );
-                  })
-                  .toList(),
-            ),
-            const SizedBox(height: 32),
-            // Quantity Selection
-            _QuantitySelector(
-              label: 'Quantity',
-              value: formData.value.quantity,
-              onChanged: (val) =>
-                  formData.value = formData.value.copyWith(quantity: val),
+            const SizedBox(height: 16),
+            _SelectionCard(
+              title: 'Completed',
+              icon: Icons.check_circle_rounded,
+              isSelected: formData.value.constructionStatus == 'Completed',
+              onTap: () {
+                formData.value = formData.value.copyWith(
+                  constructionStatus: 'Completed',
+                );
+                Future.delayed(const Duration(milliseconds: 200), onNext);
+              },
             ),
           ] else ...[
-            // Property Type
-            const Text(
-              'Property Type',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 12,
-              children: propertyTypes.map((type) {
-                final isSelected = formData.value.propertyType == type;
-                return _AnimatedChip(
-                  label: type,
-                  isSelected: isSelected,
-                  onSelected: (selected) {
-                    if (selected) {
-                      formData.value = formData.value.copyWith(
-                        propertyType: type,
-                      );
-                    }
-                  },
+            _SelectionCard(
+              title: 'Custom-made',
+              icon: Icons.handyman_rounded,
+              isSelected: formData.value.customization == 'Custom-made',
+              onTap: () {
+                formData.value = formData.value.copyWith(
+                  customization: 'Custom-made',
                 );
-              }).toList(),
+                Future.delayed(const Duration(milliseconds: 200), onNext);
+              },
             ),
-            const SizedBox(height: 32),
-            // Bedrooms
-            if (formData.value.propertyType != 'Land' &&
-                formData.value.propertyType != 'Warehouse')
-              _QuantitySelector(
-                label: 'Bedrooms',
-                subtitle: 'Select number of bedrooms',
-                value: formData.value.bedrooms,
-                onChanged: (val) =>
-                    formData.value = formData.value.copyWith(bedrooms: val),
-                minValue: 0,
-                maxValue: 10,
-                zeroLabel: 'Studio',
-              ),
+            const SizedBox(height: 16),
+            _SelectionCard(
+              title: 'Ready-made',
+              icon: Icons.shopping_cart_rounded,
+              isSelected: formData.value.customization == 'Ready-made',
+              onTap: () {
+                formData.value = formData.value.copyWith(
+                  customization: 'Ready-made',
+                );
+                Future.delayed(const Duration(milliseconds: 200), onNext);
+              },
+            ),
           ],
         ],
       ),
@@ -811,131 +470,241 @@ class _Step2Specifications extends StatelessWidget {
   }
 }
 
-class _QuantitySelector extends StatelessWidget {
-  final String label;
-  final String? subtitle;
-  final int value;
-  final ValueChanged<int> onChanged;
-  final int minValue;
-  final int maxValue;
-  final String? zeroLabel;
-
-  const _QuantitySelector({
-    required this.label,
-    this.subtitle,
-    required this.value,
-    required this.onChanged,
-    this.minValue = 1,
-    this.maxValue = 99,
-    this.zeroLabel,
-  });
+// --- STEP 4: PATH Q2 (Bedrooms / Target Room) ---
+class _Step4PathQ2 extends StatelessWidget {
+  final ValueNotifier<RequestFormData> formData;
+  final VoidCallback onNext;
+  const _Step4PathQ2({required this.formData, required this.onNext});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
-      ),
-      child: Row(
+    final isHome = formData.value.type == RequestType.realEstate;
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-                if (subtitle != null)
-                  Text(
-                    subtitle!,
-                    style: TextStyle(fontSize: 12, color: AppColors.mediumGrey),
-                  ),
-              ],
-            ),
+          _StepHeader(
+            title: isHome ? 'Number of bedrooms?' : 'For which room?',
+            center: true,
           ),
-          Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                _IconButton(
-                  icon: Icons.remove,
-                  onPressed: value > minValue
-                      ? () => onChanged(value - 1)
-                      : null,
-                ),
-                SizedBox(
-                  width: 60,
-                  child: Center(
+          const SizedBox(height: 32),
+          if (isHome)
+            GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: 2,
+              mainAxisSpacing: 16,
+              crossAxisSpacing: 16,
+              childAspectRatio: 1.5,
+              children: ['Studio', '1', '2', '3', '4+', 'Penthouse'].map((
+                option,
+              ) {
+                final isSelected = formData.value.bedrooms == option;
+                return InkWell(
+                  onTap: () {
+                    formData.value = formData.value.copyWith(bedrooms: option);
+                    Future.delayed(const Duration(milliseconds: 200), onNext);
+                  },
+                  borderRadius: BorderRadius.circular(24),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? Theme.of(
+                              context,
+                            ).colorScheme.primary.withValues(alpha: 0.1)
+                          : Theme.of(context).colorScheme.surface,
+                      border: Border.all(
+                        color: isSelected
+                            ? AppColors.brandPrimary
+                            : Theme.of(context).colorScheme.outlineVariant,
+                        width: 2,
+                      ),
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.bed_rounded,
+                          color: isSelected
+                              ? AppColors.brandPrimary
+                              : Colors.grey,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          option == 'Penthouse'
+                              ? 'Penthouse'
+                              : '$option Bedroom',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: isSelected
+                                ? AppColors.brandPrimary
+                                : Colors.black87,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
+            )
+          else
+            GridView.count(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisCount: 2,
+              mainAxisSpacing: 16,
+              crossAxisSpacing: 16,
+              childAspectRatio: 1.2,
+              children: ['Living room', 'Bedroom', 'Office', 'Kitchen'].map((
+                room,
+              ) {
+                final isSelected = formData.value.targetRoom == room;
+                return InkWell(
+                  onTap: () {
+                    formData.value = formData.value.copyWith(targetRoom: room);
+                    Future.delayed(const Duration(milliseconds: 200), onNext);
+                  },
+                  borderRadius: BorderRadius.circular(24),
+                  child: Container(
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? Theme.of(
+                              context,
+                            ).colorScheme.primary.withValues(alpha: 0.1)
+                          : Theme.of(context).colorScheme.surface,
+                      border: Border.all(
+                        color: isSelected
+                            ? AppColors.brandPrimary
+                            : Theme.of(context).colorScheme.outlineVariant,
+                        width: 2,
+                      ),
+                      borderRadius: BorderRadius.circular(24),
+                    ),
                     child: Text(
-                      (value == 0 && zeroLabel != null) ? zeroLabel! : '$value',
+                      room,
                       style: TextStyle(
-                        fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: Theme.of(context).colorScheme.onSurface,
+                        fontSize: 16,
+                        color: isSelected
+                            ? AppColors.brandPrimary
+                            : Colors.black87,
                       ),
                     ),
                   ),
-                ),
-                _IconButton(
-                  icon: Icons.add,
-                  onPressed: value < maxValue
-                      ? () => onChanged(value + 1)
-                      : null,
-                ),
-              ],
+                );
+              }).toList(),
             ),
-          ),
         ],
       ),
     );
   }
 }
 
-class _IconButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback? onPressed;
-
-  const _IconButton({required this.icon, this.onPressed});
+// --- STEP 5: PATH Q3 (Bank Loan / Payment Plan) ---
+class _Step5PathQ3 extends StatelessWidget {
+  final ValueNotifier<RequestFormData> formData;
+  final VoidCallback onNext;
+  const _Step5PathQ3({required this.formData, required this.onNext});
 
   @override
   Widget build(BuildContext context) {
-    return IconButton(
-      onPressed: onPressed,
-      icon: Icon(icon),
-      color: Theme.of(context).colorScheme.primary,
-      disabledColor: Theme.of(
-        context,
-      ).colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+    final isHome = formData.value.type == RequestType.realEstate;
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        children: [
+          _StepHeader(
+            title: isHome
+                ? 'Do you require a bank loan?'
+                : 'Do you require a payment plan?',
+            center: true,
+          ),
+          const SizedBox(height: 32),
+          if (isHome) ...[
+            _SelectionCard(
+              title: 'Yes, Required',
+              icon: Icons.credit_card_rounded,
+              isSelected: formData.value.bankLoan == 'Yes',
+              onTap: () {
+                formData.value = formData.value.copyWith(bankLoan: 'Yes');
+                Future.delayed(const Duration(milliseconds: 200), onNext);
+              },
+            ),
+            const SizedBox(height: 16),
+            _SelectionCard(
+              title: 'No, Cash / Other',
+              icon: Icons.payments_rounded,
+              isSelected: formData.value.bankLoan == 'No',
+              onTap: () {
+                formData.value = formData.value.copyWith(bankLoan: 'No');
+                Future.delayed(const Duration(milliseconds: 200), onNext);
+              },
+            ),
+          ] else ...[
+            _SelectionCard(
+              title: 'Yes, Installments',
+              icon: Icons.calendar_month_rounded,
+              isSelected: formData.value.paymentPlan == 'Yes',
+              onTap: () {
+                formData.value = formData.value.copyWith(paymentPlan: 'Yes');
+                Future.delayed(const Duration(milliseconds: 200), onNext);
+              },
+            ),
+            const SizedBox(height: 16),
+            _SelectionCard(
+              title: 'No, Upfront',
+              icon: Icons.money_rounded,
+              isSelected: formData.value.paymentPlan == 'No',
+              onTap: () {
+                formData.value = formData.value.copyWith(paymentPlan: 'No');
+                Future.delayed(const Duration(milliseconds: 200), onNext);
+              },
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
 
-class _Step3Location extends StatelessWidget {
+// --- STEP 6: LOCATION ---
+class _Step6Location extends HookWidget {
   final ValueNotifier<RequestFormData> formData;
-  const _Step3Location(this.formData);
+  final VoidCallback onNext;
+  const _Step6Location({required this.formData, required this.onNext});
 
   @override
   Widget build(BuildContext context) {
+    final woredaOptions = [
+      'Woreda 01',
+      'Woreda 02',
+      'Woreda 03',
+      'Woreda 04',
+      'Woreda 05',
+      'Others',
+    ];
+    final isOtherWoreda = useState(
+      formData.value.wereda.isNotEmpty &&
+          !woredaOptions.sublist(0, 5).contains(formData.value.wereda),
+    );
+    final otherController = useTextEditingController(
+      text: isOtherWoreda.value ? formData.value.wereda : '',
+    );
+
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
-            'Location',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          _StepHeader(
+            title: formData.value.type == RequestType.realEstate
+                ? 'Preferred Location?'
+                : 'Where should we deliver?',
+            center: true,
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 32),
           ErkataDropdown<String>(
             label: 'Sub-City',
             hint: 'Select Sub-City',
@@ -947,282 +716,442 @@ class _Step3Location extends StatelessWidget {
                 kKifleKetemas.firstWhere((k) => k.value == val).label,
             onChanged: (val) {
               if (val != null) {
-                formData.value = formData.value.copyWith(
-                  kifleKetema: val,
-                  wereda: '',
-                );
+                formData.value = formData.value.copyWith(kifleKetema: val);
               }
             },
           ),
           const SizedBox(height: 24),
-          if (formData.value.kifleKetema.isNotEmpty)
-            ErkataDropdown<String>(
-              label: 'Wereda',
-              hint: 'Select Wereda',
-              value: formData.value.wereda.isEmpty
-                  ? null
-                  : formData.value.wereda,
-              items: kKifleKetemas
-                  .firstWhere((k) => k.value == formData.value.kifleKetema)
-                  .weredas,
-              itemLabel: (val) => val,
+          ErkataDropdown<String>(
+            label: 'Woreda / Specific Spot',
+            hint: 'Select Woreda',
+            value: isOtherWoreda.value
+                ? 'Others'
+                : (formData.value.wereda.isEmpty
+                      ? null
+                      : formData.value.wereda),
+            items: woredaOptions,
+            itemLabel: (val) => val,
+            onChanged: (val) {
+              if (val == 'Others') {
+                isOtherWoreda.value = true;
+                formData.value = formData.value.copyWith(wereda: '');
+              } else if (val != null) {
+                isOtherWoreda.value = false;
+                formData.value = formData.value.copyWith(wereda: val);
+              }
+            },
+          ),
+          if (isOtherWoreda.value) ...[
+            const SizedBox(height: 24),
+            Text(
+              'Specify Other Location',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey.shade600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: otherController,
+              decoration: InputDecoration(
+                hintText: 'e.g. Old Airport, Near Bole bulbula',
+                filled: true,
+                fillColor: Colors.grey.shade50,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(32),
+                  borderSide: BorderSide.none,
+                ),
+              ),
               onChanged: (val) {
-                if (val != null) {
-                  formData.value = formData.value.copyWith(wereda: val);
-                }
+                formData.value = formData.value.copyWith(wereda: val);
               },
             ),
+          ],
+          const SizedBox(height: 40),
+          PrimaryButton(text: 'Continue to Budget', onPressed: onNext),
         ],
       ),
     );
   }
 }
 
-class _Step4Budget extends StatelessWidget {
+// --- STEP 7: BUDGET ---
+class _Step7Budget extends HookWidget {
   final ValueNotifier<RequestFormData> formData;
-  const _Step4Budget(this.formData);
+  final VoidCallback onNext;
+  const _Step7Budget({required this.formData, required this.onNext});
 
   @override
   Widget build(BuildContext context) {
+    final controller = useTextEditingController(
+      text: formData.value.budgetMax > 0
+          ? formData.value.budgetMax.toString()
+          : '',
+    );
+
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
-            'Budget',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          _StepHeader(
+            title: 'What is your planned budget? (ETB)',
+            center: true,
           ),
-          const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
+          const SizedBox(height: 40),
+          TextField(
+            controller: controller,
+            keyboardType: TextInputType.number,
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+            decoration: InputDecoration(
+              hintText: 'e.g. 5,000,000',
+              suffixIcon: const Icon(
+                Icons.payments_rounded,
+                size: 32,
+                color: Colors.grey,
+              ),
+              enabledBorder: UnderlineInputBorder(
+                borderSide: BorderSide(color: Colors.grey.shade200, width: 4),
+              ),
+              focusedBorder: const UnderlineInputBorder(
+                borderSide: BorderSide(color: AppColors.brandPrimary, width: 4),
+              ),
+            ),
+            onChanged: (val) {
+              final budget = int.tryParse(val) ?? 0;
+              formData.value = formData.value.copyWith(budgetMax: budget);
+            },
+          ),
+          const SizedBox(height: 60),
+          PrimaryButton(text: 'Last Step: Additional Info', onPressed: onNext),
+        ],
+      ),
+    );
+  }
+}
+
+// --- STEP 8: REVIEW & DETAILS ---
+class _Step8Review extends HookWidget {
+  final ValueNotifier<RequestFormData> formData;
+  const _Step8Review({required this.formData});
+
+  @override
+  Widget build(BuildContext context) {
+    final noteController = useTextEditingController(text: formData.value.notes);
+    final isHome = formData.value.type == RequestType.realEstate;
+
+    final zoneLabel = formData.value.kifleKetema.isEmpty
+        ? 'Not selected'
+        : kKifleKetemas
+              .firstWhere(
+                (k) => k.value == formData.value.kifleKetema,
+                orElse: () => kKifleKetemas.first,
+              )
+              .label;
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _StepHeader(title: 'Any additional requirements?', center: true),
+          const SizedBox(height: 24),
+          TextField(
+            controller: noteController,
+            maxLines: 4,
+            style: const TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+              hintText: 'Add notes here...',
+              hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+              filled: true,
+              fillColor: AppColors.deepNavy,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(32),
+                borderSide: BorderSide.none,
+              ),
+            ),
+            onChanged: (val) {
+              formData.value = formData.value.copyWith(notes: val);
+            },
+          ),
+          const SizedBox(height: 32),
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: AppColors.deepNavy,
+              borderRadius: BorderRadius.circular(32),
+            ),
+            child: Column(
+              children: [
+                _SummaryRow(
+                  label: 'Intent',
+                  value: formData.value.intent == 'buy'
+                      ? 'Buy / Find'
+                      : 'Sell / List',
+                ),
+                _SummaryRow(
+                  label: 'Category',
+                  value: isHome ? 'Home / Real Estate' : 'Furniture',
+                ),
+                if (isHome) ...[
+                  _SummaryRow(
+                    label: 'Status',
+                    value: formData.value.constructionStatus ?? '',
+                  ),
+                  _SummaryRow(
+                    label: 'Bedrooms',
+                    value: formData.value.bedrooms ?? '',
+                  ),
+                  _SummaryRow(
+                    label: 'Bank Loan',
+                    value: formData.value.bankLoan ?? '',
+                  ),
+                ] else ...[
+                  _SummaryRow(
+                    label: 'Manufacturing',
+                    value: formData.value.customization ?? '',
+                  ),
+                  _SummaryRow(
+                    label: 'Room',
+                    value: formData.value.targetRoom ?? '',
+                  ),
+                  _SummaryRow(
+                    label: 'Payment Plan',
+                    value: formData.value.paymentPlan ?? '',
+                  ),
+                ],
+                _SummaryRow(
+                  label: 'Location',
+                  value: '$zoneLabel, ${formData.value.wereda}',
+                ),
+                _SummaryRow(
+                  label: 'Budget',
+                  value: '${formData.value.budgetMax} ETB',
+                  valueColor: AppColors.brandGold,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// --- HELPER COMPONENTS ---
+
+class _StepHeader extends StatelessWidget {
+  final String title;
+  final String? subtitle;
+  final bool center;
+
+  const _StepHeader({required this.title, this.subtitle, this.center = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: center
+          ? CrossAxisAlignment.center
+          : CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          textAlign: center ? TextAlign.center : TextAlign.left,
+          style: TextStyle(
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+            color: Theme.of(context).colorScheme.onSurface,
+            letterSpacing: -0.5,
+          ),
+        ),
+        if (subtitle != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            subtitle!,
+            textAlign: center ? TextAlign.center : TextAlign.left,
+            style: TextStyle(
+              fontSize: 16,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _SelectionCard extends StatelessWidget {
+  final String title;
+  final String? description;
+  final IconData icon;
+  final bool isSelected;
+  final bool dark;
+  final VoidCallback onTap;
+
+  const _SelectionCard({
+    required this.title,
+    this.description,
+    required this.icon,
+    required this.isSelected,
+    this.dark = false,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final bgColor = isSelected
+        ? theme.colorScheme.primary.withValues(alpha: 0.1)
+        : (dark ? AppColors.deepNavy : Colors.white);
+
+    final borderColor = isSelected
+        ? AppColors.brandPrimary
+        : (dark ? Colors.transparent : Colors.grey.shade100);
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(32),
+          border: Border.all(color: borderColor, width: 2),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 20,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: dark
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : AppColors.brandPrimary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(
+                icon,
+                color: dark ? Colors.white : AppColors.brandPrimary,
+                size: 28,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: dark ? Colors.white : Colors.grey.shade900,
+              ),
+            ),
+            if (description != null) ...[
+              const SizedBox(height: 8),
               Text(
-                'Maximum Budget',
+                description!,
                 style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                  color: dark ? Colors.grey.shade400 : Colors.grey.shade500,
                 ),
               ),
-              Text(
-                '${formData.value.budgetMax} ETB',
+            ],
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Text(
+                  'Select',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: dark ? AppColors.brandGold : AppColors.brandPrimary,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  size: 18,
+                  color: dark ? AppColors.brandGold : AppColors.brandPrimary,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SummaryRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color? valueColor;
+
+  const _SummaryRow({
+    required this.label,
+    required this.value,
+    this.valueColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.6)),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                color: valueColor ?? Colors.white,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LoginLink extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: TextButton(
+        onPressed: () => context.go('/auth', extra: {'isLogin': true}),
+        child: RichText(
+          text: TextSpan(
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+              fontSize: 14,
+            ),
+            children: [
+              const TextSpan(text: 'Already have an account? '),
+              TextSpan(
+                text: 'Log in',
                 style: TextStyle(
-                  color: Theme.of(context).colorScheme.onSurface,
+                  color: Theme.of(context).colorScheme.primary,
                   fontWeight: FontWeight.bold,
-                  fontSize: 18,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              activeTrackColor: Theme.of(context).colorScheme.primary,
-              inactiveTrackColor: Theme.of(context).colorScheme.outlineVariant,
-              thumbColor: Theme.of(context).colorScheme.primary,
-              overlayColor: Theme.of(
-                context,
-              ).colorScheme.primary.withValues(alpha: 0.1),
-              trackHeight: 6,
-            ),
-            child: Slider(
-              min: 1000,
-              max: 200000,
-              divisions: 200,
-              value: formData.value.budgetMax.toDouble(),
-              onChanged: (val) => formData.value = formData.value.copyWith(
-                budgetMax: val.toInt(),
-              ),
-            ),
-          ),
-          const SizedBox(height: 32),
-          Text(
-            'Additional Notes',
-            style: TextStyle(
-              color: Theme.of(context).colorScheme.onSurface,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 8),
-          TextField(
-            maxLines: 4,
-            decoration: InputDecoration(
-              hintText: 'Any specific details we should know?',
-              hintStyle: TextStyle(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-              filled: true,
-              fillColor: Theme.of(context).colorScheme.surface,
-              contentPadding: const EdgeInsets.all(16),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(
-                  color: Theme.of(context).colorScheme.outline,
-                ),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide(
-                  color: Theme.of(context).colorScheme.outline,
-                ),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: const BorderSide(
-                  color: AppColors.brandGold,
-                  width: 2,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Step5Review extends StatelessWidget {
-  final ValueNotifier<RequestFormData> formData;
-  const _Step5Review(this.formData);
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Review',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 20),
-          Container(
-            decoration: BoxDecoration(
-              color: AppColors.deepNavy,
-              borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.deepNavy.withValues(alpha: 0.2),
-                  blurRadius: 16,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: AppColors.brandPrimary,
-                    borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(24),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: AppColors.pureWhite.withValues(alpha: 0.24),
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          formData.value.type == RequestType.furniture
-                              ? Icons.chair
-                              : Icons.home,
-                          color: AppColors.brandGold,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              formData.value.type?.label ?? 'Request',
-                              style: const TextStyle(
-                                color: AppColors.pureWhite,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              'Summary',
-                              style: TextStyle(
-                                color: AppColors.pureWhite.withValues(
-                                  alpha: 0.8,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    children: [
-                      _row(
-                        'Item/Type',
-                        formData.value.type == RequestType.furniture
-                            ? formData.value.furnitureCategories.join(', ')
-                            : '${formData.value.propertyType}${formData.value.bedrooms > 0 ? " (${formData.value.bedrooms} BR)" : ""}',
-                      ),
-                      Divider(
-                        color: AppColors.pureWhite.withValues(alpha: 0.24),
-                        height: 32,
-                      ),
-                      _row(
-                        'Location',
-                        '${formData.value.kifleKetema}\n${formData.value.wereda}',
-                      ),
-                      Divider(
-                        color: AppColors.pureWhite.withValues(alpha: 0.24),
-                        height: 32,
-                      ),
-                      _row(
-                        'Budget',
-                        '${formData.value.budgetMax} ETB',
-                        valueColor: AppColors.brandGold,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _row(String label, String value, {Color? valueColor}) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          flex: 2,
-          child: Text(
-            label,
-            style: TextStyle(color: AppColors.pureWhite.withValues(alpha: 0.6)),
-          ),
         ),
-        Expanded(
-          flex: 3,
-          child: Text(
-            value,
-            textAlign: TextAlign.right,
-            style: TextStyle(
-              color: valueColor ?? AppColors.pureWhite,
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
@@ -1236,216 +1165,36 @@ class _StepIndicator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-      child: Stack(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      child: Column(
         children: [
-          // Background Track
-          Container(
-            height: 4,
-            margin: const EdgeInsets.symmetric(
-              vertical: 18,
-            ), // Center with 40px nodes
-            decoration: BoxDecoration(
-              color: Theme.of(
-                context,
-              ).colorScheme.outlineVariant.withValues(alpha: 0.5),
-              borderRadius: BorderRadius.circular(2),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: LinearProgressIndicator(
+              value: currentStep / totalSteps,
+              backgroundColor: Colors.grey.shade100,
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                AppColors.brandPrimary,
+              ),
+              minHeight: 8,
             ),
           ),
-
-          // Animated Progress Line
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final stepWidth = constraints.maxWidth / (totalSteps - 1);
-              final progressWidth = (currentStep - 1) * stepWidth;
-
-              return AnimatedContainer(
-                duration: const Duration(milliseconds: 400),
-                curve: Curves.easeInOutCubic,
-                height: 4,
-                width: progressWidth,
-                margin: const EdgeInsets.symmetric(vertical: 18),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Theme.of(context).colorScheme.primary,
-                      AppColors.brandGold,
-                    ],
-                  ),
-                  borderRadius: BorderRadius.circular(2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.primary.withValues(alpha: 0.3),
-                      blurRadius: 4,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Text(
+                'Step $currentStep of $totalSteps',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey.shade400,
+                  letterSpacing: 1,
                 ),
-              );
-            },
-          ),
-
-          // Step Nodes
-          SizedBox(
-            height: 40,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: List.generate(totalSteps, (index) {
-                final stepNum = index + 1;
-                final isCompleted = stepNum < currentStep;
-                final isActive = stepNum == currentStep;
-
-                return _StepNode(
-                  stepNumber: stepNum,
-                  isActive: isActive,
-                  isCompleted: isCompleted,
-                );
-              }),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _StepNode extends StatelessWidget {
-  final int stepNumber;
-  final bool isActive;
-  final bool isCompleted;
-
-  const _StepNode({
-    required this.stepNumber,
-    required this.isActive,
-    required this.isCompleted,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 400),
-      curve: Curves.easeOutCubic,
-      width: isActive ? 40 : 32,
-      height: isActive ? 40 : 32,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: isCompleted
-            ? AppColors.brandGold
-            : (isActive ? colorScheme.primary : colorScheme.surface),
-        border: Border.all(
-          color: isActive || isCompleted
-              ? Colors.transparent
-              : colorScheme.outlineVariant,
-          width: 2,
-        ),
-        boxShadow: isActive
-            ? [
-                BoxShadow(
-                  color: colorScheme.primary.withValues(alpha: 0.4),
-                  blurRadius: 12,
-                  spreadRadius: 2,
-                ),
-              ]
-            : (isCompleted
-                  ? [
-                      BoxShadow(
-                        color: AppColors.brandGold.withValues(alpha: 0.2),
-                        blurRadius: 6,
-                        offset: const Offset(0, 2),
-                      ),
-                    ]
-                  : null),
-      ),
-      child: Center(
-        child: AnimatedSwitcher(
-          duration: const Duration(milliseconds: 300),
-          child: isCompleted
-              ? Icon(
-                  Icons.check_rounded,
-                  key: const ValueKey('check'),
-                  size: isActive ? 20 : 18,
-                  color: AppColors.brandPrimary,
-                )
-              : Text(
-                  '$stepNumber',
-                  key: ValueKey('text_$stepNumber'),
-                  style: TextStyle(
-                    color: isActive
-                        ? colorScheme.onPrimary
-                        : colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.bold,
-                    fontSize: isActive ? 16 : 14,
-                  ),
-                ),
-        ),
-      ),
-    );
-  }
-}
-
-class _AnimatedChip extends HookWidget {
-  final String label;
-  final bool isSelected;
-  final ValueChanged<bool> onSelected;
-
-  const _AnimatedChip({
-    required this.label,
-    required this.isSelected,
-    required this.onSelected,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isPressed = useState(false);
-
-    return GestureDetector(
-      onTapDown: (_) => isPressed.value = true,
-      onTapUp: (_) {
-        isPressed.value = false;
-        onSelected(!isSelected);
-      },
-      onTapCancel: () => isPressed.value = false,
-      child: AnimatedScale(
-        scale: isPressed.value ? 0.92 : 1.0,
-        duration: const Duration(milliseconds: 150),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: isSelected
-                  ? Theme.of(context).colorScheme.primary
-                  : Theme.of(context).colorScheme.outlineVariant,
-            ),
-            boxShadow: [
-              if (isSelected)
-                BoxShadow(
-                  color: Theme.of(
-                    context,
-                  ).colorScheme.primary.withValues(alpha: 0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
+              ),
             ],
           ),
-          child: Text(
-            label,
-            style: TextStyle(
-              color: isSelected
-                  ? Theme.of(context).colorScheme.onPrimary
-                  : Theme.of(context).colorScheme.onSurfaceVariant,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-            ),
-          ),
-        ),
+        ],
       ),
     );
   }

@@ -11,8 +11,8 @@ export declare class MediationService {
         id: string;
         createdAt: Date;
         transactionId: string;
-        authorId: string;
         rating: number;
+        authorId: string;
         comment: string | null;
         categories: string[];
         content: string;

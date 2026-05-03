@@ -9,7 +9,7 @@ import AuditLog from '../components/super-admin/AuditLog';
 import BroadcastNotices from '../components/super-admin/BroadcastNotices';
 import ConfigFlags from '../components/super-admin/ConfigFlags';
 import PackageManagement from '../components/super-admin/PackageManagement';
-import AgentDeepDive from '../components/super-admin/AgentDeepDive';
+import UserDeepDive from '../components/shared/UserDeepDive';
 import UpgradeApprovalsAudit from '../components/super-admin/UpgradeApprovalsAudit';
 import {
   ShieldAlert,
@@ -21,11 +21,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const SuperAdminDashboard: React.FC = () => {
     const [currentView, setCurrentView] = useState('analytics');
-    const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
+    const [previousView, setPreviousView] = useState('analytics');
+    const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
-    const handleViewAgentDetails = (agentId: string) => {
-        setSelectedAgentId(agentId);
-        setCurrentView('agent-details');
+    const handleViewDetails = (userId: string) => {
+        setPreviousView(currentView);
+        setSelectedUserId(userId);
+        setCurrentView('user-details');
     };
 
     // Authority UI Colors: Indigo/Navy
@@ -84,18 +86,19 @@ const SuperAdminDashboard: React.FC = () => {
                              {currentView === 'tiers' && <PackageManagement />}
                              {currentView === 'disputes' && <DisputesAudit />}
                              {currentView === 'upgrade-approvals' && <UpgradeApprovalsAudit />}
-                             {currentView === 'admins' && <AdminManagement />}
-                             {currentView === 'agents' && <GlobalRightsOversight onViewDetails={handleViewAgentDetails} />}
-                             {currentView === 'agent-details' && selectedAgentId && (
-                                <AgentDeepDive 
-                                    agentId={selectedAgentId} 
+                             {currentView === 'admins' && <AdminManagement onViewDetails={handleViewDetails} />}
+                             {currentView === 'agents' && <GlobalRightsOversight onViewDetails={handleViewDetails} />}
+                             {currentView === 'user-details' && selectedUserId && (
+                                <UserDeepDive 
+                                    userId={selectedUserId} 
+                                    viewerRole="super_admin"
                                     onBack={() => {
-                                        setSelectedAgentId(null);
-                                        setCurrentView('agents');
+                                        setSelectedUserId(null);
+                                        setCurrentView(previousView);
                                     }} 
                                 />
                              )}
-                             {currentView === 'operators' && <OperatorOversight />}
+                             {currentView === 'operators' && <OperatorOversight onViewDetails={handleViewDetails} />}
                              {currentView === 'audit' && <AuditLog />}
                              {currentView === 'notices' && <BroadcastNotices />}
                              {currentView === 'config' && <ConfigFlags />}

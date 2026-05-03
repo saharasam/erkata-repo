@@ -38,7 +38,11 @@ let UsersService = class UsersService {
         const profile = await this.prisma.profile.findUnique({
             where: { id: userId },
             include: {
-                agentZones: true,
+                agentZones: {
+                    include: {
+                        zone: true,
+                    },
+                },
                 referralLink: true,
                 package: true,
                 referrals: {
@@ -55,11 +59,72 @@ let UsersService = class UsersService {
                         },
                     },
                 },
+                _count: {
+                    select: {
+                        operatorMatches: true,
+                        proposals: true,
+                        agentMatches: true,
+                        finalResolutions: true,
+                    },
+                },
             },
         });
         if (!profile)
             throw new common_1.NotFoundException('Profile not found');
-        return profile;
+        let performanceStats = {
+            missedAssignments: profile.missedAssignments,
+            warningCount: profile.warningCount,
+        };
+        if (profile.role === client_1.UserRole.agent) {
+            const matchStats = await this.prisma.match.groupBy({
+                by: ['status'],
+                where: { agentId: userId },
+                _count: true,
+            });
+            const statsMap = matchStats.reduce((acc, curr) => {
+                acc[curr.status] = curr._count;
+                return acc;
+            }, {});
+            const ratingStats = await this.prisma.feedback.aggregate({
+                where: {
+                    authorId: { not: userId },
+                    transaction: { match: { agentId: userId } },
+                },
+                _avg: { rating: true },
+            });
+            performanceStats = {
+                ...performanceStats,
+                acceptedCount: statsMap['accepted'] || 0,
+                rejectedCount: statsMap['rejected'] || 0,
+                completedCount: statsMap['completed'] || 0,
+                avgRating: ratingStats._avg.rating || 0,
+            };
+        }
+        if (profile.role === client_1.UserRole.operator) {
+            performanceStats = {
+                ...performanceStats,
+                assignmentCount: profile._count.operatorMatches,
+                disputeResolutionCount: profile._count.proposals,
+            };
+        }
+        if (profile.role === client_1.UserRole.admin ||
+            profile.role === client_1.UserRole.super_admin) {
+            performanceStats = {
+                ...performanceStats,
+                finalDecisionCount: profile._count.finalResolutions,
+                proposalsCount: profile._count.proposals,
+            };
+        }
+        return {
+            ...profile,
+            performanceStats,
+        };
+    }
+    async getProfileRoleById(userId) {
+        return this.prisma.profile.findUnique({
+            where: { id: userId },
+            select: { id: true, role: true },
+        });
     }
     async getFinanceSummary(userId) {
         const profile = await this.prisma.profile.findUnique({
@@ -274,6 +339,12 @@ let UsersService = class UsersService {
                 isActive: filters.isActive,
             },
             include: {
+                referredBy: {
+                    select: {
+                        id: true,
+                        fullName: true,
+                    },
+                },
                 referralLink: true,
                 package: true,
                 agentZones: {

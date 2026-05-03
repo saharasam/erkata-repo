@@ -54,6 +54,10 @@ interface AgentRecord {
       name: string;
     };
   }>;
+  referredBy?: {
+    id: string;
+    fullName: string;
+  } | null;
 }
 
 const TIER_CONFIG: Record<string, { color: string; border: string }> = {
@@ -306,7 +310,7 @@ const GlobalRightsOversight: React.FC<GlobalRightsOversightProps> = ({ onViewDet
                                 <th className="px-8 py-5">Geographic Zones</th>
                                 <th className="px-8 py-5">Tier Status</th>
                                 <th className="px-8 py-5">Account Status</th>
-                                <th className="px-8 py-5">Performance</th>
+                                <th className="px-8 py-5">Referrer</th>
                                 <th className="px-8 py-5 text-right">Oversight Actions</th>
                             </tr>
                         </thead>
@@ -314,12 +318,16 @@ const GlobalRightsOversight: React.FC<GlobalRightsOversightProps> = ({ onViewDet
                             {isLoading ? (
                                 Array.from({ length: 3 }).map((_, i) => (
                                     <tr key={i} className="animate-pulse">
-                                        <td colSpan={5} className="px-8 py-10"><div className="h-12 bg-slate-50 rounded-2xl w-full"></div></td>
+                                        <td colSpan={6} className="px-8 py-10"><div className="h-12 bg-slate-50 rounded-2xl w-full"></div></td>
                                     </tr>
                                 ))
                             ) : filteredAgents.length > 0 ? (
                                 filteredAgents.map((agent) => (
-                                    <tr key={agent.id} className={`hover:bg-slate-50/30 transition-colors group ${!agent.isActive ? 'opacity-60 grayscale-[0.5]' : ''}`}>
+                                    <tr 
+                                        key={agent.id} 
+                                        onClick={() => onViewDetails(agent.id)}
+                                        className={`hover:bg-slate-50/30 transition-colors group cursor-pointer ${!agent.isActive ? 'opacity-60 grayscale-[0.5]' : ''}`}
+                                    >
                                         <td className="px-8 py-6">
                                             <div className="flex items-center gap-4">
                                                 <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center font-black text-indigo-600 text-xs uppercase group-hover:scale-110 transition-transform">
@@ -344,7 +352,7 @@ const GlobalRightsOversight: React.FC<GlobalRightsOversightProps> = ({ onViewDet
                                             </div>
                                         </td>
                                         <td className="px-8 py-6">
-                                            <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-tighter border ${
+                                            <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-tighter border whitespace-nowrap ${
                                                 TIER_CONFIG[agent.tier]?.color || TIER_CONFIG.FREE.color
                                             } ${TIER_CONFIG[agent.tier]?.border || TIER_CONFIG.FREE.border}`}>
                                                 {agent.package?.displayName || agent.tier.replace('_', ' ')}
@@ -358,20 +366,27 @@ const GlobalRightsOversight: React.FC<GlobalRightsOversightProps> = ({ onViewDet
                                             </span>
                                         </td>
                                         <td className="px-8 py-6">
-                                            {(() => {
-                                                const successRate = 100 - (agent.unfulfilledRate || 0);
-                                                return (
-                                                    <div className="space-y-1.5 w-32">
-                                                        <div className="flex justify-between text-[9px] font-black text-slate-400 tracking-tighter uppercase leading-none">
-                                                            <span>Success Rate</span>
-                                                            <span className="text-slate-600">{successRate.toFixed(0)}%</span>
-                                                        </div>
-                                                        <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                                            <div className="h-full bg-indigo-500" style={{ width: `${successRate}%` }} />
-                                                        </div>
+                                            {agent.referredBy ? (
+                                                <div 
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        onViewDetails(agent.referredBy!.id);
+                                                    }}
+                                                    className="flex items-center gap-2 hover:bg-white p-1.5 rounded-xl border border-transparent hover:border-indigo-100 hover:shadow-sm transition-all"
+                                                >
+                                                    <div className="w-6 h-6 rounded-lg bg-indigo-50 flex items-center justify-center text-[10px] font-black text-indigo-600 border border-indigo-100">
+                                                        {agent.referredBy.fullName.charAt(0)}
                                                     </div>
-                                                );
-                                            })()}
+                                                    <div>
+                                                        <p className="font-bold text-slate-700 text-xs hover:text-indigo-600 transition-colors">{agent.referredBy.fullName}</p>
+                                                        <p className="text-[9px] text-slate-400 font-mono">#{agent.referredBy.id.split('-')[0].toUpperCase()}</p>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <span className="px-2 py-0.5 bg-slate-50 rounded text-[9px] font-bold text-slate-400 border border-slate-100">
+                                                    Direct Signup
+                                                </span>
+                                            )}
                                         </td>
                                         <td className="px-8 py-6 text-right">
                                             <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all">
@@ -401,19 +416,13 @@ const GlobalRightsOversight: React.FC<GlobalRightsOversightProps> = ({ onViewDet
                                                 >
                                                     {agent.isActive ? <UserMinus className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
                                                 </button>
-                                                <button 
-                                                    onClick={() => onViewDetails(agent.id)}
-                                                    className="p-2.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-2xl border border-transparent hover:border-indigo-100 transition-all active:scale-90"
-                                                >
-                                                    <ArrowUpRight className="w-4 h-4" />
-                                                </button>
                                             </div>
                                         </td>
                                     </tr>
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan={5} className="px-8 py-20 text-center">
+                                    <td colSpan={6} className="px-8 py-20 text-center">
                                         <div className="flex flex-col items-center gap-3">
                                             <Zap className="w-8 h-8 text-slate-200" />
                                             <p className="text-slate-400 font-bold italic">No intelligence matching this protocol identifier.</p>
