@@ -1,42 +1,47 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/theme/colors.dart';
 import '../../core/models/user_role.dart';
+import '../../features/customer/state/customer_requests_provider.dart';
 
-class FeedbackFormScreen extends HookWidget {
-  final String requestId;
+class FeedbackFormScreen extends HookConsumerWidget {
+  final String transactionId;
   final String recipientName;
   final UserRole role;
 
   const FeedbackFormScreen({
     super.key,
-    required this.requestId,
+    required this.transactionId,
     required this.recipientName,
     required this.role,
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final rating = useState(0);
     final commentController = useTextEditingController();
     final selectedCategories = useState<List<String>>([]);
     final isSubmitted = useState(false);
+    final isSubmitting = useState(false);
 
-    final categories = role == UserRole.agent
-        ? [
-            'Timeliness',
-            'Document Quality',
-            'Communication',
-            'Zone Accuracy',
-            'Professionalism',
-          ]
-        : [
-            'Clear Requirements',
-            'Prompt Payment',
-            'Responsiveness',
-            'Fair Specification',
-            'Politeness',
-          ];
+    final categories =
+        role == UserRole.agent
+            ? [
+              'Timeliness',
+              'Document Quality',
+              'Communication',
+              'Zone Accuracy',
+              'Professionalism',
+            ]
+            : [
+              'Clear Requirements',
+              'Prompt Payment',
+              'Responsiveness',
+              'Fair Specification',
+              'Politeness',
+            ];
 
     void toggleCategory(String category) {
       if (selectedCategories.value.contains(category)) {
@@ -79,7 +84,7 @@ class FeedbackFormScreen extends HookWidget {
                   ),
                 ),
                 const SizedBox(height: 12),
-                Text(
+                const Text(
                   'Thank you for providing your feedback. It has been securely sent to our regional operator for verification.',
                   textAlign: TextAlign.center,
                   style: TextStyle(color: AppColors.darkGrey, fontSize: 16),
@@ -89,7 +94,7 @@ class FeedbackFormScreen extends HookWidget {
                   width: double.infinity,
                   height: 52,
                   child: ElevatedButton(
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: () => context.go('/home'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.brandPrimary,
                       shape: RoundedRectangleBorder(
@@ -137,7 +142,7 @@ class FeedbackFormScreen extends HookWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              'Request: $requestId',
+              'Transaction: $transactionId',
               style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
@@ -248,9 +253,33 @@ class FeedbackFormScreen extends HookWidget {
               width: double.infinity,
               height: 56,
               child: ElevatedButton(
-                onPressed: rating.value == 0
+                onPressed: (rating.value == 0 || isSubmitting.value)
                     ? null
-                    : () => isSubmitted.value = true,
+                    : () async {
+                        isSubmitting.value = true;
+                        try {
+                          await ref
+                              .read(customerRequestsProvider.notifier)
+                              .submitFeedback(
+                                transactionId,
+                                content: commentController.text,
+                                rating: rating.value,
+                                categories: selectedCategories.value,
+                              );
+                          isSubmitted.value = true;
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Error: ${e.toString()}'),
+                                backgroundColor: AppColors.errorRed,
+                              ),
+                            );
+                          }
+                        } finally {
+                          isSubmitting.value = false;
+                        }
+                      },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.brandPrimary,
                   disabledBackgroundColor: AppColors.softGrey,
@@ -259,14 +288,23 @@ class FeedbackFormScreen extends HookWidget {
                   ),
                   elevation: 0,
                 ),
-                child: const Text(
-                  'Submit to Operator',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: AppColors.pureWhite,
-                  ),
-                ),
+                child: isSubmitting.value
+                    ? const SizedBox(
+                        height: 24,
+                        width: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text(
+                        'Submit to Operator',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: AppColors.pureWhite,
+                        ),
+                      ),
               ),
             ),
             const SizedBox(height: 24),

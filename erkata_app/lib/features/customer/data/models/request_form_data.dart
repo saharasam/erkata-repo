@@ -14,7 +14,7 @@ class RequestFormData {
   String kifleKetema;
   String wereda;
   String address;
-  int budgetMax;
+  int budget;
   String notes;
 
   RequestFormData({
@@ -30,7 +30,7 @@ class RequestFormData {
     this.kifleKetema = '',
     this.wereda = '',
     this.address = '',
-    this.budgetMax = 1000000,
+    this.budget = 1000000,
     this.notes = '',
   });
 
@@ -47,7 +47,7 @@ class RequestFormData {
     String? kifleKetema,
     String? wereda,
     String? address,
-    int? budgetMax,
+    int? budget,
     String? notes,
   }) {
     return RequestFormData(
@@ -63,7 +63,7 @@ class RequestFormData {
       kifleKetema: kifleKetema ?? this.kifleKetema,
       wereda: wereda ?? this.wereda,
       address: address ?? this.address,
-      budgetMax: budgetMax ?? this.budgetMax,
+      budget: budget ?? this.budget,
       notes: notes ?? this.notes,
     );
   }
@@ -82,7 +82,7 @@ class RequestFormData {
       'kifleKetema': kifleKetema,
       'wereda': wereda,
       'address': address,
-      'budgetMax': budgetMax,
+      'budget': budget,
       'notes': notes,
     };
   }
@@ -95,7 +95,7 @@ class RequestFormData {
         orElse: () => RequestType.furniture,
       );
     }
-    
+
     return RequestFormData(
       type: parsedType,
       intent: json['intent'],
@@ -109,7 +109,7 @@ class RequestFormData {
       kifleKetema: json['kifleKetema'] ?? '',
       wereda: json['wereda'] ?? '',
       address: json['address'] ?? '',
-      budgetMax: json['budgetMax'] ?? 1000000,
+      budget: json['budget'] ?? 1000000,
       notes: json['notes'] ?? '',
     );
   }
@@ -119,7 +119,10 @@ class RequestFormData {
     final isFurniture = type == RequestType.furniture;
 
     final zoneLabel = kKifleKetemas
-        .firstWhere((k) => k.value == kifleKetema, orElse: () => kKifleKetemas.first)
+        .firstWhere(
+          (k) => k.value == kifleKetema,
+          orElse: () => kKifleKetemas.first,
+        )
         .label;
 
     return {
@@ -130,7 +133,7 @@ class RequestFormData {
             ? '${bedrooms ?? ''} Bedroom Home in $zoneLabel'
             : 'Furniture for ${targetRoom ?? 'Room'}',
         'description': notes,
-        'budgetMax': budgetMax,
+        'budget': budget,
       },
       'metadata': {
         'intent': intent,
@@ -141,10 +144,7 @@ class RequestFormData {
         if (isFurniture) 'targetRoom': targetRoom,
         if (isFurniture) 'paymentPlan': paymentPlan,
       },
-      'locationZone': {
-        'kifleKetema': zoneLabel,
-        'woreda': wereda,
-      },
+      'locationZone': {'kifleKetema': zoneLabel, 'woreda': wereda},
     };
   }
 }

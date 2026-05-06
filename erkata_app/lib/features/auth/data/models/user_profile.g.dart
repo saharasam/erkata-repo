@@ -20,6 +20,7 @@ _$UserProfileImpl _$$UserProfileImplFromJson(Map<String, dynamic> json) =>
       referrals: (json['referrals'] as List<dynamic>?)
           ?.map((e) => ReferralInfo.fromJson(e as Map<String, dynamic>))
           .toList(),
+      referralCode: json['referralCode'] as String?,
     );
 
 Map<String, dynamic> _$$UserProfileImplToJson(_$UserProfileImpl instance) =>
@@ -34,6 +35,7 @@ Map<String, dynamic> _$$UserProfileImplToJson(_$UserProfileImpl instance) =>
       'tradeLicenseNumber': instance.tradeLicenseNumber,
       'isVerified': instance.isVerified,
       'referrals': instance.referrals,
+      'referralCode': instance.referralCode,
     };
 
 _$ReferralInfoImpl _$$ReferralInfoImplFromJson(Map<String, dynamic> json) =>
@@ -42,6 +44,8 @@ _$ReferralInfoImpl _$$ReferralInfoImplFromJson(Map<String, dynamic> json) =>
       fullName: json['fullName'] as String,
       createdAt: json['createdAt'] as String,
       role: json['role'] as String,
+      tier: json['tier'] as String?,
+      package: json['package'] as Map<String, dynamic>?,
     );
 
 Map<String, dynamic> _$$ReferralInfoImplToJson(_$ReferralInfoImpl instance) =>
@@ -50,4 +54,6 @@ Map<String, dynamic> _$$ReferralInfoImplToJson(_$ReferralInfoImpl instance) =>
       'fullName': instance.fullName,
       'createdAt': instance.createdAt,
       'role': instance.role,
+      'tier': instance.tier,
+      'package': instance.package,
     };

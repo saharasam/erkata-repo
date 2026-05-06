@@ -1,7 +1,6 @@
 import { Queue } from 'bullmq';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
-import { Prisma } from '@prisma/client';
 import { AglpService } from '../aglp/aglp.service';
 import { ConfigService } from '../common/config.service';
 export declare class TransactionsService {
@@ -44,9 +43,8 @@ export declare class TransactionsService {
                 zoneId: string | null;
                 referredById: string | null;
                 createdAt: Date;
-                aglpBalance: Prisma.Decimal;
-                aglpPending: Prisma.Decimal;
-                aglpWithdrawn: Prisma.Decimal;
+                aglpBalance: import("@prisma/client/runtime/library").Decimal;
+                aglpWithdrawn: import("@prisma/client/runtime/library").Decimal;
                 referralCode: string | null;
                 isOnline: boolean;
                 lastAssignmentAt: Date | null;
@@ -69,9 +67,8 @@ export declare class TransactionsService {
             zoneId: string | null;
             referredById: string | null;
             createdAt: Date;
-            aglpBalance: Prisma.Decimal;
-            aglpPending: Prisma.Decimal;
-            aglpWithdrawn: Prisma.Decimal;
+            aglpBalance: import("@prisma/client/runtime/library").Decimal;
+            aglpWithdrawn: import("@prisma/client/runtime/library").Decimal;
             referralCode: string | null;
             isOnline: boolean;
             lastAssignmentAt: Date | null;
@@ -91,9 +88,8 @@ export declare class TransactionsService {
             category: string;
             type: string;
             description: string;
-            budgetMin: Prisma.Decimal | null;
-            budgetMax: Prisma.Decimal | null;
-            metadata: Prisma.JsonValue;
+            metadata: import("@prisma/client/runtime/library").JsonValue;
+            budget: import("@prisma/client/runtime/library").Decimal | null;
             woreda: string;
             assignedOperatorId: string | null;
             assignmentPushedAt: Date | null;
@@ -121,11 +117,11 @@ export declare class TransactionsService {
             id: string;
             category: string;
             description: string;
-            budgetMax: string;
+            budget: string;
             woreda: string;
             type: string;
             status: import(".prisma/client").$Enums.RequestStatus;
-            metadata: string | number | boolean | Prisma.JsonObject | Prisma.JsonArray;
+            metadata: string | number | boolean | import("@prisma/client/runtime/library").JsonObject | import("@prisma/client/runtime/library").JsonArray;
             zone: string;
             customer: {
                 id: string;
@@ -152,7 +148,7 @@ export declare class TransactionsService {
                 createdAt: Date;
                 name: string;
                 type: string;
-                metadata: Prisma.JsonValue | null;
+                metadata: import("@prisma/client/runtime/library").JsonValue | null;
             };
             customer: {
                 id: string;
@@ -168,9 +164,8 @@ export declare class TransactionsService {
             category: string;
             type: string;
             description: string;
-            budgetMin: Prisma.Decimal | null;
-            budgetMax: Prisma.Decimal | null;
-            metadata: Prisma.JsonValue;
+            metadata: import("@prisma/client/runtime/library").JsonValue;
+            budget: import("@prisma/client/runtime/library").Decimal | null;
             woreda: string;
             assignedOperatorId: string | null;
             assignmentPushedAt: Date | null;

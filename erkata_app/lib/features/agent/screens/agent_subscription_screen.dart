@@ -1,10 +1,14 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart' as p;
 import '../../../core/theme/colors.dart';
 import '../../../shared/widgets/erkata_screen_header.dart';
 import '../data/repositories/agent_repository.dart';
 import '../state/packages_provider.dart';
+import '../state/active_upgrade_provider.dart';
 import '../../auth/state/auth_provider.dart';
 
 class AgentSubscriptionScreen extends ConsumerWidget {
@@ -13,6 +17,7 @@ class AgentSubscriptionScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final packagesAsync = ref.watch(availablePackagesProvider);
+    final activeUpgradeAsync = ref.watch(activeUpgradeProvider);
     final user = ref.watch(authProvider).user;
     final currentTier = user?.tier ?? 'FREE';
 
@@ -27,16 +32,62 @@ class AgentSubscriptionScreen extends ConsumerWidget {
               subtitle: 'Manage your membership plan',
               onActionTap: () => context.pop(),
             ),
+            activeUpgradeAsync.when(
+              data: (upgrade) {
+                if (upgrade != null) {
+                  return Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 10,
+                    ),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.brandGold.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: AppColors.brandGold.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.info_outline, color: AppColors.brandGold),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Upgrade Pending Administrator Approval',
+                            style: TextStyle(
+                              color: AppColors.brandGold,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+              loading: () => const SizedBox.shrink(),
+              error: (_, _) => const SizedBox.shrink(),
+            ),
             Expanded(
               child: packagesAsync.when(
                 loading: () => const Center(
-                  child: CircularProgressIndicator(color: AppColors.brandPrimary),
+                  child: CircularProgressIndicator(
+                    color: AppColors.brandPrimary,
+                  ),
                 ),
                 error: (err, stack) => Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Icon(Icons.error_outline, size: 48, color: AppColors.errorRed),
+                      const Icon(
+                        Icons.error_outline,
+                        size: 48,
+                        color: AppColors.errorRed,
+                      ),
                       const SizedBox(height: 16),
                       Text('Error loading plans: $err'),
                       TextButton(
@@ -51,6 +102,8 @@ class AgentSubscriptionScreen extends ConsumerWidget {
                     (p) => p['name'] == currentTier,
                     orElse: () => null,
                   );
+
+                  final hasPending = activeUpgradeAsync.value != null;
 
                   return ListView(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -90,12 +143,16 @@ class AgentSubscriptionScreen extends ConsumerWidget {
                       const SizedBox(height: 20),
 
                       // Filter out current tier and show upgrades
-                      ...packages.where((p) => p['name'] != currentTier).map(
-                        (pkg) => _PackageUpgradeCard(
-                          pkg: pkg,
-                          onUpgrade: () => _handleUpgrade(context, ref, pkg),
-                        ),
-                      ),
+                      ...packages
+                          .where((p) => p['name'] != currentTier)
+                          .map(
+                            (pkg) => _PackageUpgradeCard(
+                              pkg: pkg,
+                              isLocked: hasPending,
+                              onUpgrade: () =>
+                                  _handleUpgrade(context, ref, pkg),
+                            ),
+                          ),
                       const SizedBox(height: 40),
                     ],
                   );
@@ -109,67 +166,417 @@ class AgentSubscriptionScreen extends ConsumerWidget {
   }
 
   void _handleUpgrade(BuildContext context, WidgetRef ref, dynamic pkg) async {
-    final confirmed = await showDialog<bool>(
+    showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text('Upgrade to ${pkg['displayName']}'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+      barrierDismissible: false,
+      builder: (context) => _UpgradeFlowDialog(pkg: pkg),
+    );
+  }
+}
+
+class _UpgradeFlowDialog extends StatefulWidget {
+  final dynamic pkg;
+  const _UpgradeFlowDialog({required this.pkg});
+
+  @override
+  State<_UpgradeFlowDialog> createState() => _UpgradeFlowDialogState();
+}
+
+class _UpgradeFlowDialogState extends State<_UpgradeFlowDialog> {
+  int _step = 1; // 1: Bank Details, 2: Proof Upload
+  bool _isLoading = false;
+  bool _isCreatingRequest = false;
+  File? _selectedImage;
+  String? _errorMessage;
+
+  /// Stored after request creation. Reused on proof retry to avoid orphaning.
+  String? _pendingRequestId;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchBankDetails();
+  }
+
+  Future<void> _fetchBankDetails() async {
+    setState(() => _isLoading = true);
+    try {
+      // Data fetched via FutureBuilder in UI
+    } catch (e) {
+      // Handle error
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // We need to access providers here. We can use Consumer
+    return Consumer(
+      builder: (context, ref, child) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (_step == 1) _buildBankDetailsStep(ref),
+                if (_step == 2) _buildProofUploadStep(ref),
+                if (_errorMessage != null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    _errorMessage!,
+                    style: const TextStyle(
+                      color: AppColors.errorRed,
+                      fontSize: 12,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildBankDetailsStep(WidgetRef ref) {
+    return Column(
+      children: [
+        const Icon(
+          Icons.account_balance_wallet_outlined,
+          size: 48,
+          color: AppColors.brandPrimary,
+        ),
+        const SizedBox(height: 16),
+        Text(
+          'Step 1: Payment',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w900,
+            color: AppColors.brandPrimary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Please transfer ${widget.pkg['price']} ETB to the following account:',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: AppColors.slate, fontSize: 14),
+        ),
+        const SizedBox(height: 24),
+        FutureBuilder(
+          future: ref.read(agentRepositoryProvider).getBankDetails(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const CircularProgressIndicator();
+            }
+            if (snapshot.hasError) {
+              return Text('Error: ${snapshot.error}');
+            }
+            final details = snapshot.data as Map<String, dynamic>;
+            return Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppColors.background,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.borderColor),
+              ),
+              child: Column(
+                children: [
+                  _buildDetailRow('Bank', details['bankName']),
+                  const Divider(height: 24),
+                  _buildDetailRow('Number', details['accountNumber']),
+                  const Divider(height: 24),
+                  _buildDetailRow('Name', details['accountHolder']),
+                ],
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 32),
+        Row(
           children: [
-            Text('Get ${pkg['referralSlots']} referral slots and access to ${pkg['zoneLimit']} zones.'),
-            const SizedBox(height: 16),
-            Text(
-              'Investment: ${pkg['price']} ETB',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            Expanded(
+              child: TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              flex: 2,
+              child: ElevatedButton(
+                onPressed: _isCreatingRequest
+                    ? null
+                    : () => _createRequestAndProceed(ref),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.brandPrimary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                child: _isCreatingRequest
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text(' sent '),
+              ),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Maybe later', style: TextStyle(color: AppColors.slate)),
+      ],
+    );
+  }
+
+  Widget _buildDetailRow(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(color: AppColors.slate, fontSize: 12),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
           ),
-          Padding(
-            padding: const EdgeInsets.only(right: 8, bottom: 8),
-            child: FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.brandPrimary,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProofUploadStep(WidgetRef ref) {
+    return Column(
+      children: [
+        const Icon(
+          Icons.cloud_upload_outlined,
+          size: 48,
+          color: AppColors.brandPrimary,
+        ),
+        const SizedBox(height: 16),
+        const Text(
+          'Step 2: Upload Proof',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w900,
+            color: AppColors.brandPrimary,
+          ),
+        ),
+        const SizedBox(height: 8),
+        const Text(
+          'Upload a screenshot of your transaction receipt.',
+          textAlign: TextAlign.center,
+          style: TextStyle(color: AppColors.slate, fontSize: 14),
+        ),
+        const SizedBox(height: 24),
+        GestureDetector(
+          onTap: _pickImage,
+          child: Container(
+            height: 160,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: AppColors.background,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: AppColors.borderColor,
+                style: BorderStyle.solid,
               ),
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('Confirm Upgrade'),
             ),
+            child: _selectedImage == null
+                ? const Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.add_a_photo_outlined, color: AppColors.slate),
+                      SizedBox(height: 8),
+                      Text(
+                        'Select Receipt Photo',
+                        style: TextStyle(color: AppColors.slate, fontSize: 13),
+                      ),
+                    ],
+                  )
+                : Stack(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Image.file(
+                          _selectedImage!,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      Positioned(
+                        right: 8,
+                        top: 8,
+                        child: CircleAvatar(
+                          backgroundColor: Colors.black54,
+                          child: IconButton(
+                            icon: const Icon(Icons.close, color: Colors.white),
+                            onPressed: () =>
+                                setState(() => _selectedImage = null),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
+        ),
+        if (_selectedImage != null) ...[
+          const SizedBox(height: 12),
+          Text(
+            p.basename(_selectedImage!.path),
+            style: const TextStyle(fontSize: 12, color: AppColors.slate),
           ),
         ],
-      ),
+        const SizedBox(height: 32),
+        Row(
+          children: [
+            Expanded(
+              child: TextButton(
+                onPressed: () => setState(() => _step = 1),
+                child: const Text('Back'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              flex: 2,
+              child: ElevatedButton(
+                onPressed: (_selectedImage == null || _isLoading)
+                    ? null
+                    : () => _submitProof(ref),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _selectedImage == null
+                      ? AppColors.slate
+                      : AppColors.successGreen,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                child: _isLoading
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : Text(
+                        _selectedImage == null
+                            ? 'Select a photo first'
+                            : 'Confirm Submission',
+                      ),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
+  }
 
-    if (confirmed == true) {
-      try {
-        await ref.read(agentRepositoryProvider).purchasePackage(pkg['name']);
-        await ref.read(authProvider.notifier).refreshProfile();
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Welcome to ${pkg['displayName']} tier!'),
-              backgroundColor: AppColors.successGreen,
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final image = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 70,
+    );
+    if (image != null) {
+      setState(() {
+        _selectedImage = File(image.path);
+        _errorMessage = null; // clear any previous error on new selection
+      });
+    }
+  }
+
+  /// Step 1 → 2: Creates the upgrade request on the backend and advances the step.
+  /// The returned request ID is stored so that proof submission can retry
+  /// without creating a new (orphaned) request.
+  Future<void> _createRequestAndProceed(WidgetRef ref) async {
+    setState(() {
+      _isCreatingRequest = true;
+      _errorMessage = null;
+    });
+    try {
+      final repo = ref.read(agentRepositoryProvider);
+      final request = await repo.requestUpgrade(widget.pkg['name']);
+      _pendingRequestId = request['id'] as String;
+      if (mounted) setState(() => _step = 2);
+    } catch (e) {
+      setState(() {
+        _errorMessage =
+            'Could not initiate upgrade request. Please check your connection and try again.';
+      });
+    } finally {
+      if (mounted) setState(() => _isCreatingRequest = false);
+    }
+  }
+
+  /// Step 2: Submits the proof photo for the already-created request.
+  /// Always uses [_pendingRequestId] — safe to retry without orphaning.
+  Future<void> _submitProof(WidgetRef ref) async {
+    // Hard guard: image is required
+    if (_selectedImage == null) {
+      setState(
+        () => _errorMessage =
+            'You must select a payment receipt photo before submitting.',
+      );
+      return;
+    }
+    // Session guard: request must exist
+    if (_pendingRequestId == null) {
+      setState(
+        () => _errorMessage =
+            'Session error — request ID missing. Please close and start again.',
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final repo = ref.read(agentRepositoryProvider);
+      // Reuses the stored ID — retrying this step never creates a new orphan
+      await repo.submitProof(_pendingRequestId!, _selectedImage!);
+      ref.invalidate(activeUpgradeProvider);
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Upgrade request submitted! Awaiting operator review.',
             ),
-          );
-        }
-      } catch (e) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to upgrade: ${e.toString()}'),
-              backgroundColor: AppColors.errorRed,
-            ),
-          );
-        }
+            backgroundColor: AppColors.successGreen,
+            duration: Duration(seconds: 4),
+          ),
+        );
       }
+    } catch (e) {
+      // Proof failed — request is still alive; user can tap retry
+      setState(() {
+        _errorMessage =
+            'Proof upload failed. Your request is still active — please tap Confirm again to retry.';
+      });
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 }
@@ -189,7 +596,9 @@ class _CurrentPlanHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final progress = referralSlots > 0 ? (usedSlots / referralSlots).clamp(0.0, 1.0) : 0.0;
+    final progress = referralSlots > 0
+        ? (usedSlots / referralSlots).clamp(0.0, 1.0)
+        : 0.0;
     final gradient = _getGradientForTier(tier);
 
     return Container(
@@ -213,11 +622,16 @@ class _CurrentPlanHero extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.3),
+                  ),
                 ),
                 child: const Text(
                   'ACTIVE PLAN',
@@ -334,8 +748,13 @@ class _CurrentPlanHero extends StatelessWidget {
 class _PackageUpgradeCard extends StatelessWidget {
   final dynamic pkg;
   final VoidCallback onUpgrade;
+  final bool isLocked;
 
-  const _PackageUpgradeCard({required this.pkg, required this.onUpgrade});
+  const _PackageUpgradeCard({
+    required this.pkg,
+    required this.onUpgrade,
+    this.isLocked = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -355,7 +774,10 @@ class _PackageUpgradeCard extends StatelessWidget {
           ),
         ],
         border: isPremium
-            ? Border.all(color: AppColors.brandGold.withValues(alpha: 0.3), width: 2)
+            ? Border.all(
+                color: AppColors.brandGold.withValues(alpha: 0.3),
+                width: 2,
+              )
             : Border.all(color: AppColors.borderColor),
       ),
       child: ClipRRect(
@@ -398,7 +820,10 @@ class _PackageUpgradeCard extends StatelessWidget {
                         ),
                       ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.brandPrimaryLight,
                           borderRadius: BorderRadius.circular(12),
@@ -437,18 +862,20 @@ class _PackageUpgradeCard extends StatelessWidget {
                     width: double.infinity,
                     height: 56,
                     child: ElevatedButton(
-                      onPressed: onUpgrade,
+                      onPressed: isLocked ? null : onUpgrade,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: isPremium ? AppColors.brandGold : AppColors.brandPrimary,
+                        backgroundColor: isPremium
+                            ? AppColors.brandGold
+                            : AppColors.brandPrimary,
                         foregroundColor: Colors.white,
                         elevation: 0,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16),
                         ),
                       ),
-                      child: const Text(
-                        'Select Plan',
-                        style: TextStyle(
+                      child: Text(
+                        isLocked ? 'Upgrade Pending' : 'Select Plan',
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
@@ -517,10 +944,7 @@ class _TierFeatureItem extends StatelessWidget {
             ),
             Text(
               subtitle,
-              style: const TextStyle(
-                fontSize: 12,
-                color: AppColors.slate,
-              ),
+              style: const TextStyle(fontSize: 12, color: AppColors.slate),
             ),
           ],
         ),
@@ -528,4 +952,3 @@ class _TierFeatureItem extends StatelessWidget {
     );
   }
 }
-

@@ -73,7 +73,6 @@ export declare class AdminsController {
         referredById: string | null;
         createdAt: Date;
         aglpBalance: Prisma.Decimal;
-        aglpPending: Prisma.Decimal;
         aglpWithdrawn: Prisma.Decimal;
         referralCode: string | null;
         isOnline: boolean;

@@ -50,7 +50,7 @@ const FinancialDesk: React.FC = () => {
     const handleApprove = async (p: PayoutRequest) => {
         const confirmed = await showConfirm({
             title: 'Verify & Approve Payout',
-            message: `IMPORTANT: Ensure you have manually transferred ${parseFloat(p.amount).toLocaleString()} AGLP to ${p.bankAccountHolder} via ${p.bankName} (Acc: ${p.bankAccountNumber}). Have you successfully completed this transfer?`,
+            message: `IMPORTANT: Ensure you have manually transferred ${parseFloat(p.amount).toLocaleString()} ETB to ${p.bankAccountHolder} via ${p.bankName} (Acc: ${p.bankAccountNumber}). Have you successfully completed this transfer?`,
             confirmText: 'Yes, Funds Sent',
             type: 'success'
         });

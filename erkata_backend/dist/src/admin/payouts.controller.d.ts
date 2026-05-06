@@ -30,30 +30,6 @@ export declare class PayoutsController {
     })[]>;
     approvePayout(id: string): Promise<void>;
     rejectPayout(id: string, reason: string): Promise<void>;
-    getPendingEscrow(): Promise<({
-        profile: {
-            id: string;
-            email: string;
-            fullName: string;
-            phone: string;
-        };
-    } & {
-        id: string;
-        createdAt: Date;
-        status: import(".prisma/client").$Enums.AglpTransactionStatus;
-        type: import(".prisma/client").$Enums.AglpTransactionType;
-        amount: import("@prisma/client/runtime/library").Decimal;
-        etbEquivalent: import("@prisma/client/runtime/library").Decimal | null;
-        conversionRate: import("@prisma/client/runtime/library").Decimal | null;
-        referenceId: string | null;
-        referenceType: string | null;
-        updatedAt: Date;
-        bankAccountHolder: string | null;
-        bankAccountNumber: string | null;
-        bankName: string | null;
-        profileId: string;
-    })[]>;
-    releaseEscrow(id: string): Promise<void>;
     getGlobalLedger(type?: AglpTransactionType, status?: AglpTransactionStatus, profileId?: string): Promise<({
         profile: {
             id: string;

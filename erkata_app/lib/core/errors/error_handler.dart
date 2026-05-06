@@ -22,7 +22,9 @@ class ErrorHandler {
         return const UnknownException(message: 'Request cancelled');
 
       case DioExceptionType.badCertificate:
-        return const NetworkException(message: 'Certificate verification failed');
+        return const NetworkException(
+          message: 'Certificate verification failed',
+        );
 
       case DioExceptionType.unknown:
         if (e.error.toString().contains('SocketException')) {
@@ -35,7 +37,9 @@ class ErrorHandler {
   static AppException _fromStatusCode(int? code, dynamic data) {
     final message = _extractMessage(data);
 
-    if (code == null) return UnknownException(message: message ?? 'Unexpected error');
+    if (code == null) {
+      return UnknownException(message: message ?? 'Unexpected error');
+    }
 
     return switch (code) {
       400 || 422 => ValidationException(

@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   BadRequestException,
   OnModuleInit,
+  Logger,
 } from '@nestjs/common';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
@@ -13,10 +14,15 @@ import { AglpService } from '../aglp/aglp.service';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 
+// Updated data instructions to expect a single budget number
 export interface CreateRequestDto {
   category: string;
   type?: 'real_estate' | 'furniture';
-  details: Record<string, any>;
+  details: {
+    description: string;
+    budget?: number; // Changed from budgetMin/Max to single budget
+    [key: string]: any;
+  };
   metadata?: Record<string, any>;
   locationZone: {
     kifleKetema: string;
@@ -34,6 +40,8 @@ interface RequestCreatedPayload {
 
 @Injectable()
 export class RequestsService implements OnModuleInit {
+  private readonly logger = new Logger(RequestsService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly eventEmitter: EventEmitter2,
@@ -43,8 +51,7 @@ export class RequestsService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    // Schedule a recurring sweeper job to prevent requests from getting stuck in "Pending Limbo"
-    // This runs every minute and re-triggers assignment for any unassigned pending requests.
+    // Routine system sweep for pending requests
     await this.timeoutQueue.add(
       'queue-sweeper',
       {},
@@ -53,6 +60,18 @@ export class RequestsService implements OnModuleInit {
         removeOnComplete: true,
         removeOnFail: true,
         jobId: 'global-queue-sweeper',
+      },
+    );
+
+    // Routine system sweep for stale upgrade requests
+    await this.timeoutQueue.add(
+      'upgrade-sweeper',
+      {},
+      {
+        repeat: { every: 10 * 60 * 1000 },
+        removeOnComplete: true,
+        removeOnFail: true,
+        jobId: 'global-upgrade-sweeper',
       },
     );
   }
@@ -76,22 +95,31 @@ export class RequestsService implements OnModuleInit {
     };
   }
 
-  // ── 1. Customer submits a request ────────────────────────────────────────
+  // 1. Logic for creating a new request
   async createRequest(customerId: string, dto: CreateRequestDto) {
+    // Convert input to number
+    const budget =
+      dto.details.budget !== undefined ? Number(dto.details.budget) : undefined;
+
+    // Simplified validation: only checking for positive numbers
+    if (budget !== undefined && budget < 0) {
+      throw new BadRequestException('Budget value must be a positive number');
+    }
+
     const zone = await this.prisma.zone.findFirst({
       where: { name: dto.locationZone.kifleKetema },
     });
 
     if (!zone) throw new BadRequestException('Invalid zone');
 
+    // Saving to the new single "budget" field
     const request = await this.prisma.request.create({
       data: {
         customerId,
         category: dto.category,
         type: dto.type || 'real_estate',
-        description: dto.details.description as string,
-        budgetMin: dto.details.budgetMin as number | undefined,
-        budgetMax: dto.details.budgetMax as number | undefined,
+        description: dto.details.description,
+        budget: budget,
         metadata: dto.metadata || {},
         zoneId: zone.id,
         woreda: dto.locationZone.woreda,
@@ -101,13 +129,13 @@ export class RequestsService implements OnModuleInit {
 
     this.eventEmitter.emit('request.created', request);
 
-    // Trigger instant assignment attempt
+    // Trigger instant assignment to an operator
     await this.assignToNextReadyOperator(request.id);
 
     return request;
   }
 
-  // ── New: Automated Push Logic ─────────────────────────────────────────────
+  // Logic for pushing a request to an available operator
   async assignToNextReadyOperator(requestId: string) {
     const request = await this.prisma.request.findUnique({
       where: { id: requestId },
@@ -118,15 +146,11 @@ export class RequestsService implements OnModuleInit {
       request.status !== RequestStatus.pending ||
       request.assignedOperatorId
     ) {
+      this.logger.debug(`[ASSIGN] Skipping ${requestId}: status=${request?.status}, alreadyAssigned=${!!request?.assignedOperatorId}`);
       return;
     }
 
-    // 2. Select operator using row-level locking to avoid race condition
-    // We want an operator who:
-    // - Is online
-    // - Has no pending assignments
-    // - Is the least recently assigned (fairness)
-    // We use FOR UPDATE SKIP LOCKED to ensure concurrency safety
+    // Select operator based on online status and current workload
     const operators = await this.prisma.$queryRaw<OperatorIdResult[]>`
       SELECT p.id 
       FROM profiles p
@@ -142,11 +166,12 @@ export class RequestsService implements OnModuleInit {
       FOR UPDATE SKIP LOCKED
     `;
 
+    this.logger.log(`[ASSIGN] request=${requestId} → found ${operators.length} eligible operator(s)`);
+
     const operatorId = operators[0]?.id;
     if (!operatorId) return;
 
     await this.prisma.$transaction(async (tx) => {
-      // Final check: Is the request still unassigned?
       const targetRequest = await tx.request.findUnique({
         where: { id: requestId },
       });
@@ -175,6 +200,7 @@ export class RequestsService implements OnModuleInit {
       );
     });
 
+    this.logger.log(`[ASSIGN] request=${requestId} → pushed to operator=${operatorId}`);
     this.eventEmitter.emit('request.pushed', { requestId, operatorId });
   }
 
@@ -203,11 +229,11 @@ export class RequestsService implements OnModuleInit {
     await this.handleOperatorReady();
   }
 
-  // ── 2. Operator views incoming queue (customer PII redacted) ─────────────
+  // Logic for viewing the list of unassigned requests
   async getOperatorQueue(filters?: { zoneId?: string }) {
     const whereClause: Prisma.RequestWhereInput = {
       status: RequestStatus.pending,
-      assignedOperatorId: null, // Only show unassigned/unpushed requests
+      assignedOperatorId: null,
     };
 
     if (filters?.zoneId) {
@@ -226,7 +252,7 @@ export class RequestsService implements OnModuleInit {
     });
   }
 
-  // ── 3. Operator assigns an eligible Agent ────────────────────────────────
+  // Logic for assigning an agent to a specific request
   async assignAgent(requestId: string, agentId: string, operatorId: string) {
     const request = await this.prisma.request.findUnique({
       where: { id: requestId },
@@ -241,7 +267,6 @@ export class RequestsService implements OnModuleInit {
       );
     }
 
-    // Authority Check: Only the assigned operator can assign an agent
     if (request.assignedOperatorId !== operatorId) {
       throw new ForbiddenException('This request is not assigned to you');
     }
@@ -276,7 +301,6 @@ export class RequestsService implements OnModuleInit {
       });
 
       if (existing) {
-        // If the match was previously rejected, reset it to assigned
         if (existing.status === 'rejected') {
           return tx.match.update({
             where: { id: existing.id },
@@ -301,20 +325,18 @@ export class RequestsService implements OnModuleInit {
 
     this.eventEmitter.emit('match.created', { match, agentId });
 
-    // Fallback: If agent doesn't accept/decline in 1 hour, reclaim to operator pool
     await this.timeoutQueue.add(
       'check-agent-timeout',
       { requestId, agentId, matchId: match.id },
       { delay: 60 * 60 * 1000, jobId: `agent-timeout-${match.id}` },
     );
 
-    // Trigger ready for next task
     await this.handleOperatorReady();
 
     return match;
   }
 
-  // ── 4. Generic request fetch with role-scoped visibility ──────────────────
+  // Logic for looking up a single request with privacy rules
   async getRequest(requestId: string, userId: string, role: UserRole) {
     const request = await this.prisma.request.findUnique({
       where: { id: requestId },
@@ -354,7 +376,7 @@ export class RequestsService implements OnModuleInit {
       if (activeMatch && activeMatch.status === 'assigned') {
         agentInfo = this.redact(
           { id: '', fullName: '', phone: '' },
-          'An agent has been assigned — details will be visible once they accept.',
+          'Details hidden until agent accepts.',
         );
       }
 
@@ -377,16 +399,15 @@ export class RequestsService implements OnModuleInit {
         ...request,
         customer: this.redact(
           request.customer,
-          'Customer PII is hidden until assignment.',
+          'Customer contact hidden until assignment.',
         ),
       };
     }
 
-    // Admins see everything
     return request;
   }
 
-  // ── 5. Eligible agents listing ───────────────────────────────────────────
+  // Logic for finding agents sorted by level and location
   async findEligibleAgents() {
     const agents = await this.prisma.profile.findMany({
       where: {
@@ -424,7 +445,7 @@ export class RequestsService implements OnModuleInit {
       });
   }
 
-  // ── 6. Customer history ──────────────────────────────────────────────────
+  // Logic for showing a customer their own requests
   async getCustomerRequests(customerId: string) {
     return this.prisma.request.findMany({
       where: { customerId },
@@ -433,7 +454,14 @@ export class RequestsService implements OnModuleInit {
         matches: {
           include: {
             agent: { select: { id: true, fullName: true, avatarUrl: true } },
-            transaction: { select: { id: true } },
+            transaction: {
+              select: {
+                id: true,
+                feedbacks: {
+                  select: { authorId: true },
+                },
+              },
+            },
           },
         },
       },
@@ -441,6 +469,7 @@ export class RequestsService implements OnModuleInit {
     });
   }
 
+  // Logic for marking work as done or raising a problem
   async confirmFulfillment(
     requestId: string,
     customerId: string,
@@ -454,7 +483,6 @@ export class RequestsService implements OnModuleInit {
     if (request.customerId !== customerId)
       throw new ForbiddenException('Not your request');
 
-    // Only allow confirmation if request is fulfilled (by agent)
     if (request.status !== RequestStatus.fulfilled) {
       throw new BadRequestException('Request is not in a confirmable state');
     }
@@ -468,15 +496,6 @@ export class RequestsService implements OnModuleInit {
             completedAt: new Date(),
           },
         });
-
-        // Release commissions for all matches of this request
-        const matches = await tx.match.findMany({
-          where: { requestId },
-        });
-
-        for (const match of matches) {
-          await this.aglpService.releaseCommissionByMatchId(tx, match.id);
-        }
       });
     } else {
       await this.prisma.request.update({
@@ -493,7 +512,7 @@ export class RequestsService implements OnModuleInit {
     return { success: true, status: confirmed ? 'completed' : 'disputed' };
   }
 
-  // Operator resolves a dispute by marking it fulfilled
+  // Logic for operators to settle a disagreement
   async resolveDispute(requestId: string, operatorId: string, note?: string) {
     const request = await this.prisma.request.findUnique({
       where: { id: requestId },
@@ -523,15 +542,6 @@ export class RequestsService implements OnModuleInit {
         include: { customer: true, matches: { include: { agent: true } } },
       });
 
-      // Release commissions for all matches of this request
-      const matches = await tx.match.findMany({
-        where: { requestId },
-      });
-
-      for (const match of matches) {
-        await this.aglpService.releaseCommissionByMatchId(tx, match.id);
-      }
-
       return req;
     });
 
@@ -543,7 +553,7 @@ export class RequestsService implements OnModuleInit {
     return updated;
   }
 
-  // Operator escalates a dispute to Admin
+  // Logic for sending a difficult case to high-level management
   async escalateDispute(requestId: string, operatorId: string, note?: string) {
     const request = await this.prisma.request.findUnique({
       where: { id: requestId },
@@ -562,7 +572,7 @@ export class RequestsService implements OnModuleInit {
         isEscalated: true,
         metadata: {
           ...currentMetadata,
-          escalationNote: note || 'No description provided by operator.',
+          escalationNote: note || 'No description provided.',
           escalatedAt: new Date().toISOString(),
           escalatedBy: operatorId,
         },
@@ -577,7 +587,7 @@ export class RequestsService implements OnModuleInit {
     return updated;
   }
 
-  // Operator voiding a dispute, returning it to the agent for a redo
+  // Logic for cancelling work and allowing the agent to try again
   async voidDispute(requestId: string, operatorId: string, note?: string) {
     const request = await this.prisma.request.findUnique({
       where: { id: requestId },
@@ -599,7 +609,7 @@ export class RequestsService implements OnModuleInit {
           metadata: {
             ...currentMetadata,
             needsRedo: true,
-            voidNote: note || 'Fulfillment voided. Redo required.',
+            voidNote: note || 'Redo required.',
             voidAt: new Date().toISOString(),
             voidBy: operatorId,
             resolvedAt: new Date().toISOString(),
@@ -607,7 +617,6 @@ export class RequestsService implements OnModuleInit {
         },
       });
 
-      // Reset the active match back to 'accepted' so the agent can resubmit
       await tx.match.updateMany({
         where: {
           requestId,
@@ -629,9 +638,8 @@ export class RequestsService implements OnModuleInit {
     return updated;
   }
 
-  // Fetch historical disputes for the audit dashboard
+  // Logic for viewing a history of all disagreements
   async getDisputeHistory() {
-    // We look for requests that are currently disputed OR have dispute resolution metadata
     return this.prisma.request.findMany({
       where: {
         OR: [
@@ -665,7 +673,7 @@ export class RequestsService implements OnModuleInit {
     });
   }
 
-  // Operator forces a request to complete (bypass customer)
+  // Logic for bypassing the customer and marking a request finished manually
   async forceComplete(requestId: string, operatorId: string, note?: string) {
     const request = await this.prisma.request.findUnique({
       where: { id: requestId },
@@ -690,20 +698,11 @@ export class RequestsService implements OnModuleInit {
             ...currentMetadata,
             forceCompletedAt: new Date().toISOString(),
             forceCompletedBy: operatorId,
-            forceCompletionNote: note || 'Manually confirmed by operator.',
+            forceCompletionNote: note || 'Manually confirmed.',
           },
         },
         include: { customer: true, matches: { include: { agent: true } } },
       });
-
-      // Release commissions for all matches of this request
-      const matches = await tx.match.findMany({
-        where: { requestId },
-      });
-
-      for (const match of matches) {
-        await this.aglpService.releaseCommissionByMatchId(tx, match.id);
-      }
 
       return req;
     });

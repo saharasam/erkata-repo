@@ -24,12 +24,10 @@ class RequestIntakeScreen extends HookConsumerWidget {
     final totalSteps = 8;
     final formData = useState(RequestFormData());
 
-    // Page Controller for transitions
     final pageController = usePageController();
     final isLoading = useState(false);
     final isInitialized = useState(false);
 
-    // Draft handling
     Future<void> saveDraft(RequestFormData data, int currentStep) async {
       try {
         final prefs = await SharedPreferences.getInstance();
@@ -67,13 +65,11 @@ class RequestIntakeScreen extends HookConsumerWidget {
       await prefs.remove('erkata_pending_request_step');
     }
 
-    // Load initial draft
     useEffect(() {
       loadDraft();
       return null;
     }, []);
 
-    // Save draft on change
     useEffect(() {
       if (isInitialized.value) {
         saveDraft(formData.value, step.value);
@@ -81,13 +77,11 @@ class RequestIntakeScreen extends HookConsumerWidget {
       return null;
     }, [formData.value, step.value]);
 
-    // Mark as launched on first entry so it doesn't reappear on restart if abandoned
     useEffect(() {
       ref.read(authProvider.notifier).markAsLaunched();
       return null;
     }, []);
 
-    // Sync PageController with step state
     useEffect(() {
       if (pageController.hasClients) {
         pageController.animateToPage(
@@ -102,7 +96,6 @@ class RequestIntakeScreen extends HookConsumerWidget {
     Future<void> submitRequest() async {
       final authState = ref.read(authProvider);
       if (!authState.isAuthenticated) {
-        // Mark as launched so returning users aren't forced into intake
         await ref.read(authProvider.notifier).markAsLaunched();
         if (context.mounted) {
           context.go('/auth', extra: {'isLogin': false});
@@ -113,16 +106,13 @@ class RequestIntakeScreen extends HookConsumerWidget {
       isLoading.value = true;
       try {
         final payload = formData.value.toBackendPayload();
-
-        await ref.read(requestRepositoryProvider).createRequest(payload);
-
-        // Refresh the customer history
+        final request = await ref
+            .read(requestRepositoryProvider)
+            .createRequest(payload);
         ref.read(customerRequestsProvider.notifier).refresh();
-
         await clearDraft();
-
         if (context.mounted) {
-          context.go('/request/status');
+          context.go('/request/status', extra: request);
         }
       } catch (e) {
         if (context.mounted) {
@@ -158,36 +148,6 @@ class RequestIntakeScreen extends HookConsumerWidget {
       final data = formData.value;
       if (step.value == 1 && data.intent == null) return true;
       if (step.value == 2 && data.type == null) return true;
-      if (step.value == 3) {
-        if (data.type == RequestType.realEstate &&
-            data.constructionStatus == null) {
-          return true;
-        }
-        if (data.type == RequestType.furniture && data.customization == null) {
-          return true;
-        }
-      }
-      if (step.value == 4) {
-        if (data.type == RequestType.realEstate && data.bedrooms == null) {
-          return true;
-        }
-        if (data.type == RequestType.furniture && data.targetRoom == null) {
-          return true;
-        }
-      }
-      if (step.value == 5) {
-        if (data.type == RequestType.realEstate && data.bankLoan == null) {
-          return true;
-        }
-        if (data.type == RequestType.furniture && data.paymentPlan == null) {
-          return true;
-        }
-      }
-      if (step.value == 6 &&
-          (data.kifleKetema.isEmpty || data.wereda.isEmpty)) {
-        return true;
-      }
-      if (step.value == 7 && data.budgetMax <= 0) return true;
       return false;
     }
 
@@ -196,70 +156,57 @@ class RequestIntakeScreen extends HookConsumerWidget {
 
     return Scaffold(
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            if (!isFirstLaunch)
-              ErkataScreenHeader(
-                title: _getTitle(step.value, formData.value.type),
-                subtitle: 'Step ${step.value} of $totalSteps',
-                onActionTap: handleBack,
-              ),
-            if (!isFirstLaunch)
-              _StepIndicator(currentStep: step.value, totalSteps: totalSteps),
-            const SizedBox(height: 8),
-            Expanded(
-              child: Column(
-                children: [
-                  Expanded(
-                    child: PageView(
-                      controller: pageController,
-                      physics: const NeverScrollableScrollPhysics(),
-                      children: [
-                        _Step1IntentSelection(
-                          formData: formData,
-                          onNext: handleNext,
-                          isFirstLaunch: isFirstLaunch,
-                        ),
-                        _Step2TypeSelection(
-                          formData: formData,
-                          onNext: handleNext,
-                        ),
-                        _Step3PathQ1(formData: formData, onNext: handleNext),
-                        _Step4PathQ2(formData: formData, onNext: handleNext),
-                        _Step5PathQ3(formData: formData, onNext: handleNext),
-                        _Step6Location(formData: formData, onNext: handleNext),
-                        _Step7Budget(formData: formData, onNext: handleNext),
-                        _Step8Review(formData: formData),
-                      ],
-                    ),
+            Column(
+              children: [
+                if (!isFirstLaunch)
+                  ErkataScreenHeader(
+                    title: _getTitle(step.value, formData.value.type),
+                    subtitle: 'Step ${step.value} of $totalSteps',
+                    onActionTap: handleBack,
                   ),
-                  if ((isFirstLaunch && step.value == totalSteps) ||
-                      (!isFirstLaunch && step.value != 1))
-                    Container(
-                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 32),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surface,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Theme.of(
-                              context,
-                            ).shadowColor.withValues(alpha: 0.05),
-                            blurRadius: 10,
-                            offset: const Offset(0, -4),
-                          ),
-                        ],
+                if (!isFirstLaunch)
+                  _StepIndicator(currentStep: step.value, totalSteps: totalSteps),
+                const SizedBox(height: 8),
+                Expanded(
+                  child: PageView(
+                    controller: pageController,
+                    physics: const NeverScrollableScrollPhysics(),
+                    children: [
+                      _Step1IntentSelection(
+                        formData: formData,
+                        onNext: handleNext,
+                        isFirstLaunch: isFirstLaunch,
                       ),
-                      child: PrimaryButton(
-                        text: step.value == totalSteps
-                            ? 'Submit Request'
-                            : 'Continue',
-                        isEnabled: !isNextDisabled(),
-                        onPressed: handleNext,
+                      _Step2TypeSelection(
+                        formData: formData,
+                        onNext: handleNext,
                       ),
-                    ),
-                ],
-              ),
+                      _Step3PathQ1(formData: formData, onNext: handleNext),
+                      _Step4PathQ2(formData: formData, onNext: handleNext),
+                      _Step5PathQ3(formData: formData, onNext: handleNext),
+                      _Step6Location(formData: formData, onNext: handleNext),
+                      _Step7Budget(formData: formData, onNext: handleNext),
+                      _Step8Review(formData: formData),
+                    ],
+                  ),
+                ),
+              ],
             ),
+            if (step.value == totalSteps)
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
+                  child: PrimaryButton(
+                    text: 'Submit Request',
+                    isLoading: isLoading.value,
+                    isEnabled: !isNextDisabled(),
+                    onPressed: handleNext,
+                  ),
+                ),
+              ),
           ],
         ),
       ),
@@ -305,6 +252,8 @@ class _Step1IntentSelection extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
+    final localSelection = useState<String?>(null);
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -320,8 +269,9 @@ class _Step1IntentSelection extends HookWidget {
             description:
                 'Looking for property or items? We\'ll find them for you.',
             icon: Icons.shopping_bag_rounded,
-            isSelected: formData.value.intent == 'buy',
+            isSelected: localSelection.value == 'buy',
             onTap: () {
+              localSelection.value = 'buy';
               formData.value = formData.value.copyWith(intent: 'buy');
               Future.delayed(const Duration(milliseconds: 200), onNext);
             },
@@ -331,14 +281,16 @@ class _Step1IntentSelection extends HookWidget {
             title: 'I want to Sell / List',
             description: 'Want to list your assets? Start here.',
             icon: Icons.trending_up_rounded,
-            isSelected: formData.value.intent == 'sell',
+            isSelected: localSelection.value == 'sell',
             dark: true,
             onTap: () {
+              localSelection.value = 'sell';
               formData.value = formData.value.copyWith(intent: 'sell');
               Future.delayed(const Duration(milliseconds: 200), onNext);
             },
           ),
-          if (!isFirstLaunch) ...[const SizedBox(height: 40), _LoginLink()],
+          const SizedBox(height: 40),
+          const _LoginLink(),
         ],
       ),
     );
@@ -353,6 +305,8 @@ class _Step2TypeSelection extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
+    final localSelection = useState<RequestType?>(null);
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -367,8 +321,9 @@ class _Step2TypeSelection extends HookWidget {
             title: 'Home / Real Estate',
             description: 'Houses, apartments, lands, or villas.',
             icon: Icons.home_rounded,
-            isSelected: formData.value.type == RequestType.realEstate,
+            isSelected: localSelection.value == RequestType.realEstate,
             onTap: () {
+              localSelection.value = RequestType.realEstate;
               formData.value = formData.value.copyWith(
                 type: RequestType.realEstate,
               );
@@ -380,8 +335,9 @@ class _Step2TypeSelection extends HookWidget {
             title: 'Furniture',
             description: 'Sofa sets, beds, office furniture, etc.',
             icon: Icons.chair_rounded,
-            isSelected: formData.value.type == RequestType.furniture,
+            isSelected: localSelection.value == RequestType.furniture,
             onTap: () {
+              localSelection.value = RequestType.furniture;
               formData.value = formData.value.copyWith(
                 type: RequestType.furniture,
               );
@@ -395,14 +351,16 @@ class _Step2TypeSelection extends HookWidget {
 }
 
 // --- STEP 3: PATH Q1 (Status / Customization) ---
-class _Step3PathQ1 extends StatelessWidget {
+class _Step3PathQ1 extends HookWidget {
   final ValueNotifier<RequestFormData> formData;
   final VoidCallback onNext;
   const _Step3PathQ1({required this.formData, required this.onNext});
 
   @override
   Widget build(BuildContext context) {
+    final localSelection = useState<String?>(null);
     final isHome = formData.value.type == RequestType.realEstate;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -418,9 +376,9 @@ class _Step3PathQ1 extends StatelessWidget {
             _SelectionCard(
               title: 'Under Construction',
               icon: Icons.build_rounded,
-              isSelected:
-                  formData.value.constructionStatus == 'Under Construction',
+              isSelected: localSelection.value == 'Under Construction',
               onTap: () {
+                localSelection.value = 'Under Construction';
                 formData.value = formData.value.copyWith(
                   constructionStatus: 'Under Construction',
                 );
@@ -431,8 +389,9 @@ class _Step3PathQ1 extends StatelessWidget {
             _SelectionCard(
               title: 'Completed',
               icon: Icons.check_circle_rounded,
-              isSelected: formData.value.constructionStatus == 'Completed',
+              isSelected: localSelection.value == 'Completed',
               onTap: () {
+                localSelection.value = 'Completed';
                 formData.value = formData.value.copyWith(
                   constructionStatus: 'Completed',
                 );
@@ -443,8 +402,9 @@ class _Step3PathQ1 extends StatelessWidget {
             _SelectionCard(
               title: 'Custom-made',
               icon: Icons.handyman_rounded,
-              isSelected: formData.value.customization == 'Custom-made',
+              isSelected: localSelection.value == 'Custom-made',
               onTap: () {
+                localSelection.value = 'Custom-made';
                 formData.value = formData.value.copyWith(
                   customization: 'Custom-made',
                 );
@@ -455,8 +415,9 @@ class _Step3PathQ1 extends StatelessWidget {
             _SelectionCard(
               title: 'Ready-made',
               icon: Icons.shopping_cart_rounded,
-              isSelected: formData.value.customization == 'Ready-made',
+              isSelected: localSelection.value == 'Ready-made',
               onTap: () {
+                localSelection.value = 'Ready-made';
                 formData.value = formData.value.copyWith(
                   customization: 'Ready-made',
                 );
@@ -471,14 +432,16 @@ class _Step3PathQ1 extends StatelessWidget {
 }
 
 // --- STEP 4: PATH Q2 (Bedrooms / Target Room) ---
-class _Step4PathQ2 extends StatelessWidget {
+class _Step4PathQ2 extends HookWidget {
   final ValueNotifier<RequestFormData> formData;
   final VoidCallback onNext;
   const _Step4PathQ2({required this.formData, required this.onNext});
 
   @override
   Widget build(BuildContext context) {
+    final localSelection = useState<String?>(null);
     final isHome = formData.value.type == RequestType.realEstate;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -499,9 +462,10 @@ class _Step4PathQ2 extends StatelessWidget {
               children: ['Studio', '1', '2', '3', '4+', 'Penthouse'].map((
                 option,
               ) {
-                final isSelected = formData.value.bedrooms == option;
+                final isSelected = localSelection.value == option;
                 return InkWell(
                   onTap: () {
+                    localSelection.value = option;
                     formData.value = formData.value.copyWith(bedrooms: option);
                     Future.delayed(const Duration(milliseconds: 200), onNext);
                   },
@@ -559,9 +523,10 @@ class _Step4PathQ2 extends StatelessWidget {
               children: ['Living room', 'Bedroom', 'Office', 'Kitchen'].map((
                 room,
               ) {
-                final isSelected = formData.value.targetRoom == room;
+                final isSelected = localSelection.value == room;
                 return InkWell(
                   onTap: () {
+                    localSelection.value = room;
                     formData.value = formData.value.copyWith(targetRoom: room);
                     Future.delayed(const Duration(milliseconds: 200), onNext);
                   },
@@ -603,14 +568,16 @@ class _Step4PathQ2 extends StatelessWidget {
 }
 
 // --- STEP 5: PATH Q3 (Bank Loan / Payment Plan) ---
-class _Step5PathQ3 extends StatelessWidget {
+class _Step5PathQ3 extends HookWidget {
   final ValueNotifier<RequestFormData> formData;
   final VoidCallback onNext;
   const _Step5PathQ3({required this.formData, required this.onNext});
 
   @override
   Widget build(BuildContext context) {
+    final localSelection = useState<String?>(null);
     final isHome = formData.value.type == RequestType.realEstate;
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -626,8 +593,9 @@ class _Step5PathQ3 extends StatelessWidget {
             _SelectionCard(
               title: 'Yes, Required',
               icon: Icons.credit_card_rounded,
-              isSelected: formData.value.bankLoan == 'Yes',
+              isSelected: localSelection.value == 'Yes',
               onTap: () {
+                localSelection.value = 'Yes';
                 formData.value = formData.value.copyWith(bankLoan: 'Yes');
                 Future.delayed(const Duration(milliseconds: 200), onNext);
               },
@@ -636,8 +604,9 @@ class _Step5PathQ3 extends StatelessWidget {
             _SelectionCard(
               title: 'No, Cash / Other',
               icon: Icons.payments_rounded,
-              isSelected: formData.value.bankLoan == 'No',
+              isSelected: localSelection.value == 'No',
               onTap: () {
+                localSelection.value = 'No';
                 formData.value = formData.value.copyWith(bankLoan: 'No');
                 Future.delayed(const Duration(milliseconds: 200), onNext);
               },
@@ -646,8 +615,9 @@ class _Step5PathQ3 extends StatelessWidget {
             _SelectionCard(
               title: 'Yes, Installments',
               icon: Icons.calendar_month_rounded,
-              isSelected: formData.value.paymentPlan == 'Yes',
+              isSelected: localSelection.value == 'Yes',
               onTap: () {
+                localSelection.value = 'Yes';
                 formData.value = formData.value.copyWith(paymentPlan: 'Yes');
                 Future.delayed(const Duration(milliseconds: 200), onNext);
               },
@@ -656,8 +626,9 @@ class _Step5PathQ3 extends StatelessWidget {
             _SelectionCard(
               title: 'No, Upfront',
               icon: Icons.money_rounded,
-              isSelected: formData.value.paymentPlan == 'No',
+              isSelected: localSelection.value == 'No',
               onTap: () {
+                localSelection.value = 'No';
                 formData.value = formData.value.copyWith(paymentPlan: 'No');
                 Future.delayed(const Duration(milliseconds: 200), onNext);
               },
@@ -785,9 +756,7 @@ class _Step7Budget extends HookWidget {
   @override
   Widget build(BuildContext context) {
     final controller = useTextEditingController(
-      text: formData.value.budgetMax > 0
-          ? formData.value.budgetMax.toString()
-          : '',
+      text: formData.value.budget > 0 ? formData.value.budget.toString() : '',
     );
 
     return SingleChildScrollView(
@@ -804,7 +773,7 @@ class _Step7Budget extends HookWidget {
             controller: controller,
             keyboardType: TextInputType.number,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
             decoration: InputDecoration(
               hintText: 'e.g. 5,000,000',
               suffixIcon: const Icon(
@@ -812,16 +781,25 @@ class _Step7Budget extends HookWidget {
                 size: 32,
                 color: Colors.grey,
               ),
-              enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.grey.shade200, width: 4),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(24),
+                borderSide: BorderSide(color: Colors.grey.shade200, width: 2),
               ),
-              focusedBorder: const UnderlineInputBorder(
-                borderSide: BorderSide(color: AppColors.brandPrimary, width: 4),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(24),
+                borderSide: BorderSide(color: Colors.grey.shade200, width: 2),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(18),
+                borderSide: const BorderSide(
+                  color: AppColors.brandPrimary,
+                  width: 2,
+                ),
               ),
             ),
             onChanged: (val) {
               final budget = int.tryParse(val) ?? 0;
-              formData.value = formData.value.copyWith(budgetMax: budget);
+              formData.value = formData.value.copyWith(budget: budget);
             },
           ),
           const SizedBox(height: 60),
@@ -832,7 +810,7 @@ class _Step7Budget extends HookWidget {
   }
 }
 
-// --- STEP 8: REVIEW & DETAILS ---
+// --- STEP 8: REVIEW ---
 class _Step8Review extends HookWidget {
   final ValueNotifier<RequestFormData> formData;
   const _Step8Review({required this.formData});
@@ -841,7 +819,6 @@ class _Step8Review extends HookWidget {
   Widget build(BuildContext context) {
     final noteController = useTextEditingController(text: formData.value.notes);
     final isHome = formData.value.type == RequestType.realEstate;
-
     final zoneLabel = formData.value.kifleKetema.isEmpty
         ? 'Not selected'
         : kKifleKetemas
@@ -852,7 +829,7 @@ class _Step8Review extends HookWidget {
               .label;
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -868,7 +845,15 @@ class _Step8Review extends HookWidget {
               filled: true,
               fillColor: AppColors.deepNavy,
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(32),
+                borderRadius: BorderRadius.circular(20),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(20),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(20),
                 borderSide: BorderSide.none,
               ),
             ),
@@ -928,25 +913,23 @@ class _Step8Review extends HookWidget {
                 ),
                 _SummaryRow(
                   label: 'Budget',
-                  value: '${formData.value.budgetMax} ETB',
+                  value: '${formData.value.budget} ETB',
                   valueColor: AppColors.brandGold,
                 ),
               ],
             ),
           ),
+          const SizedBox(height: 120),
         ],
       ),
     );
   }
 }
 
-// --- HELPER COMPONENTS ---
-
 class _StepHeader extends StatelessWidget {
   final String title;
   final String? subtitle;
   final bool center;
-
   const _StepHeader({required this.title, this.subtitle, this.center = false});
 
   @override
@@ -989,7 +972,6 @@ class _SelectionCard extends StatelessWidget {
   final bool isSelected;
   final bool dark;
   final VoidCallback onTap;
-
   const _SelectionCard({
     required this.title,
     this.description,
@@ -1005,7 +987,6 @@ class _SelectionCard extends StatelessWidget {
     final bgColor = isSelected
         ? theme.colorScheme.primary.withValues(alpha: 0.1)
         : (dark ? AppColors.deepNavy : Colors.white);
-
     final borderColor = isSelected
         ? AppColors.brandPrimary
         : (dark ? Colors.transparent : Colors.grey.shade100);
@@ -1091,7 +1072,6 @@ class _SummaryRow extends StatelessWidget {
   final String label;
   final String value;
   final Color? valueColor;
-
   const _SummaryRow({
     required this.label,
     required this.value,
@@ -1127,9 +1107,14 @@ class _SummaryRow extends StatelessWidget {
   }
 }
 
-class _LoginLink extends StatelessWidget {
+class _LoginLink extends ConsumerWidget {
+  const _LoginLink();
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authProvider);
+    if (authState.isAuthenticated) return const SizedBox.shrink();
+
     return Center(
       child: TextButton(
         onPressed: () => context.go('/auth', extra: {'isLogin': true}),
@@ -1159,7 +1144,6 @@ class _LoginLink extends StatelessWidget {
 class _StepIndicator extends StatelessWidget {
   final int currentStep;
   final int totalSteps;
-
   const _StepIndicator({required this.currentStep, required this.totalSteps});
 
   @override

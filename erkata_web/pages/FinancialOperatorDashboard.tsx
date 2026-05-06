@@ -3,6 +3,7 @@ import DashboardLayout from '../components/DashboardLayout';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShieldCheck, Megaphone, Loader2 } from 'lucide-react';
 import UpgradeVerificationsBoard from '../components/financial/UpgradeVerificationsBoard';
+import FinancialDesk from '../components/operator/FinancialDesk';
 import BroadcastInbox from '../components/shared/BroadcastInbox';
 
 const FinancialOperatorDashboard: React.FC = () => {
@@ -37,6 +38,12 @@ const FinancialOperatorDashboard: React.FC = () => {
                 </div>
 
                 <UpgradeVerificationsBoard />
+              </div>
+            )}
+
+            {currentView === 'payouts' && (
+              <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm min-h-[600px]">
+                <FinancialDesk />
               </div>
             )}
 

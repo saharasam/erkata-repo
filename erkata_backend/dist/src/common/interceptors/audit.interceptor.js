@@ -52,6 +52,8 @@ let AuditInterceptor = class AuditInterceptor {
                             targetId: targetIdFromContext,
                             metadata: {
                                 requestBody: body,
+                                ip: request.ip,
+                                userAgent: request.headers['user-agent'],
                                 response: response && typeof response === 'object'
                                     ? { ...response }
                                     : null,

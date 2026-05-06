@@ -20,7 +20,7 @@ export declare class AuthController {
     login(body: {
         identifier: string;
         password: string;
-    }, res: Response): Promise<{
+    }, res: Response, req: any): Promise<{
         user: {
             id: string;
             email: string;
@@ -37,7 +37,7 @@ export declare class AuthController {
     logout(res: Response): Promise<{
         message: string;
     }>;
-    register(body: RegisterDto, res: Response): Promise<{
+    register(body: RegisterDto, res: Response, req: any): Promise<{
         message: string;
         user: {
             id: string;

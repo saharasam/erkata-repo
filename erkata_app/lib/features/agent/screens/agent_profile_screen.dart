@@ -82,8 +82,9 @@ class AgentProfileScreen extends ConsumerWidget {
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color:
-                            Theme.of(context).shadowColor.withValues(alpha: 0.1),
+                        color: Theme.of(
+                          context,
+                        ).shadowColor.withValues(alpha: 0.1),
                         blurRadius: 10,
                         offset: const Offset(0, 5),
                       ),
@@ -115,8 +116,9 @@ class AgentProfileScreen extends ConsumerWidget {
                                 style: TextStyle(
                                   fontSize: 36,
                                   fontWeight: FontWeight.bold,
-                                  color:
-                                      Theme.of(context).colorScheme.onPrimary,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onPrimary,
                                 ),
                               ),
                             ),
@@ -166,22 +168,23 @@ class AgentProfileScreen extends ConsumerWidget {
                           _Badge(
                             text: user?.tier ?? 'FREE',
                             color: Theme.of(context).colorScheme.primary,
-                            bgColor:
-                                Theme.of(context).colorScheme.primaryContainer,
+                            bgColor: Theme.of(
+                              context,
+                            ).colorScheme.primaryContainer,
                           ),
                           const SizedBox(width: 12),
                           _Badge(
                             text: 'Verified Agent',
                             color:
                                 Theme.of(context).brightness == Brightness.dark
-                                    ? Colors.greenAccent
-                                    : AppColors.successGreen,
+                                ? Colors.greenAccent
+                                : AppColors.successGreen,
                             bgColor:
                                 Theme.of(context).brightness == Brightness.dark
-                                    ? AppColors.successGreenLight.withValues(
-                                      alpha: 0.1,
-                                    )
-                                    : AppColors.successGreenLight,
+                                ? AppColors.successGreenLight.withValues(
+                                    alpha: 0.1,
+                                  )
+                                : AppColors.successGreenLight,
                           ),
                         ],
                       ),

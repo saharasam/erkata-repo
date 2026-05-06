@@ -38,10 +38,12 @@ export class AuthController {
   async login(
     @Body() body: { identifier: string; password: string },
     @Res({ passthrough: true }) res: Response,
+    @Req() req: any,
   ) {
     return await this.authService.login(
       { identifier: body.identifier, pass: body.password },
       res,
+      req,
     );
   }
 
@@ -68,9 +70,10 @@ export class AuthController {
   async register(
     @Body() body: RegisterDto,
     @Res({ passthrough: true }) res: Response,
+    @Req() req: any,
   ) {
     try {
-      return await this.authService.register(body, res);
+      return await this.authService.register(body, res, req);
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : 'Registration failed';
       throw new InternalServerErrorException(message);

@@ -6,6 +6,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { AssignmentProcessor } from './assignment.processor';
 import { RedisModule } from '../common/redis/redis.module';
 import { AglpModule } from '../aglp/aglp.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { AglpModule } from '../aglp/aglp.module';
     BullModule.registerQueue({ name: 'assignment-timeout' }),
     RedisModule,
     AglpModule,
+    NotificationsModule,
   ],
   providers: [RequestsService, AssignmentProcessor],
   controllers: [RequestsController],

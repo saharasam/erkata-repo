@@ -8,6 +8,7 @@ import '../../../core/models/request_type.dart';
 import '../../../core/theme/colors.dart';
 import '../../../shared/widgets/erkata_screen_header.dart';
 import '../../auth/state/auth_provider.dart';
+import '../../auth/data/models/user_profile.dart';
 
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import '../state/agent_jobs_provider.dart';
@@ -145,15 +146,26 @@ class AgentRequestDetailScreen extends HookConsumerWidget {
             itemCount: referrals.length,
             separatorBuilder: (context, index) => const Divider(height: 1),
             itemBuilder: (context, index) {
-              final refInfo = referrals[index];
+              final ReferralInfo refInfo = referrals[index];
+              final tier = refInfo.tier ?? 'FREE';
+              final packageDisplayName =
+                  refInfo.package?['displayName'] as String? ??
+                  tier.replaceAll('_', ' ');
+              final isFree = tier == 'FREE';
+
               return ListTile(
-                contentPadding: const EdgeInsets.symmetric(horizontal: 24),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 4,
+                ),
                 leading: CircleAvatar(
                   backgroundColor: Theme.of(
                     context,
                   ).colorScheme.primaryContainer.withValues(alpha: 0.5),
                   child: Text(
-                    refInfo.fullName[0].toUpperCase(),
+                    refInfo.fullName.isNotEmpty
+                        ? refInfo.fullName[0].toUpperCase()
+                        : '?',
                     style: TextStyle(
                       color: Theme.of(context).colorScheme.primary,
                       fontWeight: FontWeight.bold,
@@ -164,11 +176,43 @@ class AgentRequestDetailScreen extends HookConsumerWidget {
                   refInfo.fullName,
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
-                subtitle: Text(
-                  'Agent',
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                subtitle: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isFree
+                            ? Theme.of(context).colorScheme.secondaryContainer
+                            : Theme.of(
+                                context,
+                              ).colorScheme.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        packageDisplayName.toUpperCase(),
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                          color: isFree
+                              ? Theme.of(
+                                  context,
+                                ).colorScheme.onSecondaryContainer
+                              : Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Agent',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                 ),
                 onTap: () async {
                   await ref

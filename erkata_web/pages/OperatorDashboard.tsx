@@ -26,7 +26,6 @@ import { useHeartbeat } from '../hooks/useHeartbeat';
 import { useSocket } from '../contexts/SocketContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import DisputesBoard from '../components/operator/DisputesBoard.tsx';
-import FinancialDesk from '../components/operator/FinancialDesk';
 import BroadcastInbox from '../components/shared/BroadcastInbox';
 
 const OperatorDashboard: React.FC = () => {
@@ -526,11 +525,7 @@ const OperatorDashboard: React.FC = () => {
                         </div>
                     )}
 
-                    {currentView === 'finance' && (
-                        <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm min-h-[600px]">
-                             <FinancialDesk />
-                        </div>
-                    )}
+
 
                     {currentView === 'notices' && (
                         <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm min-h-[600px]">

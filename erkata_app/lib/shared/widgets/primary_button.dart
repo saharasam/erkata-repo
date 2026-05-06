@@ -30,9 +30,7 @@ class PrimaryButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final bool effectiveEnabled = isEnabled && !isLoading && onPressed != null;
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      curve: Curves.easeInOut,
+    return Container(
       width: width,
       height: height,
       decoration: BoxDecoration(

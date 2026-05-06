@@ -11,16 +11,16 @@ class CustomerRequestsNotifier extends AsyncNotifier<List<ServiceRequest>> {
   Future<List<ServiceRequest>> build() async {
     // Watch socket service to ensure it's initialized
     final socketService = ref.watch(socketServiceProvider);
-    
+
     // Cleanup old subscription if any (though build() should only run once unless watched deps change)
     _socketSub?.cancel();
-    
+
     _socketSub = socketService.notifications.listen((notification) {
       final type = notification['type'] as String?;
-      if (type != null && 
-          (type.startsWith('match.') || 
-           type.startsWith('request.') || 
-           type == 'notification')) {
+      if (type != null &&
+          (type.startsWith('match.') ||
+              type.startsWith('request.') ||
+              type == 'notification')) {
         // Trigger a background refresh when a relevant event occurs
         refresh();
       }
@@ -36,7 +36,7 @@ class CustomerRequestsNotifier extends AsyncNotifier<List<ServiceRequest>> {
   Future<void> refresh() async {
     // Use guard to handle errors gracefully without breaking the stream
     final result = await AsyncValue.guard(
-      () => ref.read(requestRepositoryProvider).getMyRequests()
+      () => ref.read(requestRepositoryProvider).getMyRequests(),
     );
     state = result;
   }
@@ -45,8 +45,24 @@ class CustomerRequestsNotifier extends AsyncNotifier<List<ServiceRequest>> {
     await ref.read(requestRepositoryProvider).confirmFulfillment(id, confirmed);
     await refresh();
   }
+
+  Future<void> submitFeedback(
+    String transactionId, {
+    required String content,
+    required int rating,
+    List<String>? categories,
+  }) async {
+    await ref.read(requestRepositoryProvider).submitFeedback(
+      transactionId,
+      content: content,
+      rating: rating,
+      categories: categories,
+    );
+    await refresh();
+  }
 }
 
-final customerRequestsProvider = AsyncNotifierProvider<CustomerRequestsNotifier, List<ServiceRequest>>(() {
-  return CustomerRequestsNotifier();
-});
+final customerRequestsProvider =
+    AsyncNotifierProvider<CustomerRequestsNotifier, List<ServiceRequest>>(() {
+      return CustomerRequestsNotifier();
+    });

@@ -31,6 +31,8 @@ interface AuditLogMetadata {
   transactionId?: string;
   referenceId?: string;
   reason?: string;
+  ip?: string;
+  userAgent?: string;
   [key: string]: any;
 }
 
@@ -159,10 +161,33 @@ export class UsersService {
       };
     }
 
+    // Fetch last login from audit logs
+    const lastLoginLog = await this.prisma.auditLog.findFirst({
+      where: {
+        actorId: userId,
+        action: 'USER_LOGIN',
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const loginMetadata =
+      (lastLoginLog?.metadata as unknown as AuditLogMetadata) || {};
+
     return {
       ...profile,
       performanceStats,
+      lastLoginAt: lastLoginLog?.createdAt || null,
+      lastLoginIp: loginMetadata.ip || null,
+      lastLoginDevice: loginMetadata.userAgent || null,
     };
+  }
+
+  async isReferrerOf(referrerId: string, targetId: string): Promise<boolean> {
+    const target = await this.prisma.profile.findUnique({
+      where: { id: targetId },
+      select: { referredById: true },
+    });
+    return target?.referredById === referrerId;
   }
 
   /**
@@ -181,7 +206,6 @@ export class UsersService {
       where: { id: userId },
       select: {
         aglpBalance: true,
-        aglpPending: true,
         aglpWithdrawn: true,
         tier: true,
         referrals: { select: { id: true } },
@@ -258,6 +282,7 @@ export class UsersService {
         createdAt: log.createdAt,
         metadata: {
           ...metadata,
+          amountAglp: metadata.amountAglp || metadata.amount || 0,
           transactionId: metadata.transactionId || metadata.aglpTxId || log.id,
         },
       };
@@ -315,20 +340,10 @@ export class UsersService {
       return sumLogs(dayLogs);
     }).reverse();
 
-    // Fetch dynamic totals from transactions for accuracy
     const pendingWithdrawalsSum = await this.prisma.aglpTransaction.aggregate({
       where: {
         profileId: userId,
         type: 'WITHDRAWAL',
-        status: 'PENDING',
-      },
-      _sum: { amount: true },
-    });
-
-    const pendingCommissionsSum = await this.prisma.aglpTransaction.aggregate({
-      where: {
-        profileId: userId,
-        type: 'EARN',
         status: 'PENDING',
       },
       _sum: { amount: true },
@@ -345,16 +360,16 @@ export class UsersService {
       },
     );
 
-    const dynamicPending =
-      (pendingCommissionsSum._sum.amount?.toNumber() || 0) +
-      (pendingWithdrawalsSum._sum.amount?.toNumber() || 0);
     const dynamicWithdrawn =
       completedWithdrawalsSum._sum.amount?.toNumber() || 0;
+    const dynamicPendingWithdrawals =
+      pendingWithdrawalsSum._sum.amount?.toNumber() || 0;
 
     return {
       balance: profile.aglpBalance.toNumber(),
       aglpAvailable: profile.aglpBalance.toNumber(),
-      aglpPending: dynamicPending,
+      aglpPending: dynamicPendingWithdrawals,
+      aglpPendingWithdrawals: dynamicPendingWithdrawals,
       aglpWithdrawn: dynamicWithdrawn,
       usedSlots,
       totalSlots,
@@ -657,7 +672,11 @@ export class UsersService {
           });
 
           if (agent?.referredById) {
-            const referralCommissionRate = 0.1; // 10%
+            const referralCommissionConfig = this.configService.get<{
+              value: number;
+            }>('AGLP_COMMISSION_PACKAGE_REFERRAL', { value: 0.1 });
+            const referralCommissionRate =
+              referralCommissionConfig.value || 0.1;
             const referralCommissionEtb =
               Number(pkg.price) * referralCommissionRate;
 
@@ -792,8 +811,8 @@ export class UsersService {
       return this.aglpService.withdrawAglp(tx, userId, amountAglp, bankDetails);
     });
 
-    // Notify all online operators in real-time
-    this.notificationsGateway.sendToRole('operator', 'notification', {
+    // Notify only the financial operators in real-time
+    this.notificationsGateway.sendToRole('financial_operator', 'notification', {
       type: 'payout.requested',
       title: 'New Payout Request',
       message: `${agent?.fullName || 'An agent'} has requested a withdrawal of ${amountAglp.toLocaleString()} AGLP.`,
@@ -878,10 +897,6 @@ export class UsersService {
     return { code, link };
   }
 
-  /**
-   * Looks up a referrer by their referral code.
-   * Used during registration to attribute new users.
-   */
   /**
    * Updates the agent's business verification details.
    */

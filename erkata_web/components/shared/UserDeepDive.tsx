@@ -69,6 +69,10 @@ interface UserProfile {
     finalDecisionCount?: number;
     proposalsCount?: number;
   };
+  createdAt: string;
+  lastLoginAt?: string;
+  lastLoginIp?: string;
+  lastLoginDevice?: string;
 }
 
 interface FinanceSummary {
@@ -376,7 +380,9 @@ const UserDeepDive: React.FC<UserDeepDiveProps> = ({ userId, onBack, viewerRole 
                   </div>
                   <div>
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Join Date</p>
-                    <p className="text-sm font-black text-slate-900">May 12, 2024</p>
+                    <p className="text-sm font-black text-slate-900">
+                      {new Date(profile.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                    </p>
                   </div>
                 </>
               )}
@@ -409,7 +415,7 @@ const UserDeepDive: React.FC<UserDeepDiveProps> = ({ userId, onBack, viewerRole 
                     <Wallet className="w-5 h-5 text-indigo-600" />
                   </div>
                   <div>
-                    <h3 className="font-black text-slate-900 uppercase text-xs tracking-widest leading-none">Aglp Ledger</h3>
+                    <h3 className="font-black text-slate-900 uppercase text-xs tracking-widest leading-none">Aglp balance</h3>
                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tight mt-1">Financial liquidity & earnings</p>
                   </div>
                 </div>
@@ -435,7 +441,7 @@ const UserDeepDive: React.FC<UserDeepDiveProps> = ({ userId, onBack, viewerRole 
 
               <div className="mt-8 pt-8 border-t border-slate-50">
                 <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
-                  <Clock className="w-3 h-3" /> Recent Activity Stream
+                  <Clock className="w-3 h-3" /> Recent History
                 </h4>
                 <div className="space-y-3">
                   {finance.history.map((log) => (
@@ -496,9 +502,25 @@ const UserDeepDive: React.FC<UserDeepDiveProps> = ({ userId, onBack, viewerRole 
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {[
-                    { label: 'Avg Response Time', value: '14m', icon: Clock },
-                    { label: 'Dispute Resolution', value: '98%', icon: ShieldAlert },
-                    { label: 'System Uptime', value: '100%', icon: Zap },
+                    { 
+                      label: 'Assignment Success', 
+                      value: profile.performanceStats.acceptedCount 
+                        ? `${Math.round((profile.performanceStats.acceptedCount / (profile.performanceStats.assignmentCount || 1)) * 100)}%` 
+                        : '0%', 
+                      icon: Target 
+                    },
+                    { 
+                      label: 'Avg Rating', 
+                      value: profile.performanceStats.avgRating 
+                        ? `${profile.performanceStats.avgRating.toFixed(1)} / 5` 
+                        : 'No reviews', 
+                      icon: Award 
+                    },
+                    { 
+                      label: 'Compliance', 
+                      value: profile.performanceStats.warningCount === 0 ? '100%' : `${Math.max(0, 100 - (profile.performanceStats.warningCount * 20))}%`, 
+                      icon: ShieldAlert 
+                    },
                   ].map((stat, i) => (
                     <div key={i} className="flex items-center gap-3 p-4 bg-white border border-slate-50 rounded-2xl">
                       <stat.icon className="w-4 h-4 text-indigo-500" />
@@ -671,16 +693,43 @@ const UserDeepDive: React.FC<UserDeepDiveProps> = ({ userId, onBack, viewerRole 
             </h4>
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <span className="text-[10px] font-bold text-slate-400 uppercase">Registered IP</span>
-                <span className="text-[10px] font-black text-slate-900">192.168.1.1</span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase">Access Location</span>
+                <span className="text-[10px] font-black text-slate-900">
+                  {profile.lastLoginIp === '::1' 
+                    ? '127.0.0.1' 
+                    : (profile.lastLoginIp?.replace(/^::ffff:/, '') || 'Not recorded')}
+                </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-[10px] font-bold text-slate-400 uppercase">Last Login</span>
-                <span className="text-[10px] font-black text-slate-900">2 hours ago</span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase">Last Seen</span>
+                <span className="text-[10px] font-black text-slate-900">
+                  {profile.lastLoginAt ? (
+                    (() => {
+                      const diff = Date.now() - new Date(profile.lastLoginAt).getTime();
+                      const minutes = Math.floor(diff / 60000);
+                      if (minutes < 1) return 'Just now';
+                      if (minutes < 60) return `${minutes}m ago`;
+                      const hours = Math.floor(minutes / 60);
+                      if (hours < 24) return `${hours}h ago`;
+                      return new Date(profile.lastLoginAt).toLocaleDateString();
+                    })()
+                  ) : 'Never'}
+                </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-[10px] font-bold text-slate-400 uppercase">Device ID</span>
-                <span className="text-[10px] font-black text-slate-900 uppercase">DX-882-901</span>
+                <span className="text-[10px] font-bold text-slate-400 uppercase">Primary Device</span>
+                <span className="text-[10px] font-black text-slate-900">
+                  {(() => {
+                    if (!profile.lastLoginDevice) return 'Unknown';
+                    const ua = profile.lastLoginDevice;
+                    if (ua.includes('iPhone')) return 'iPhone App';
+                    if (ua.includes('Android')) return 'Android App';
+                    if (ua.includes('Chrome')) return 'Chrome Browser';
+                    if (ua.includes('Firefox')) return 'Firefox Browser';
+                    if (ua.includes('Safari')) return 'Safari Browser';
+                    return 'Desktop Browser';
+                  })()}
+                </span>
               </div>
             </div>
           </div>

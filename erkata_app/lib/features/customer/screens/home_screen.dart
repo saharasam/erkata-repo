@@ -168,7 +168,10 @@ class HomeScreen extends HookConsumerWidget {
                               return Material(
                                 color: Colors.transparent,
                                 child: InkWell(
-                                  onTap: () => context.push('/request/status', extra: request),
+                                  onTap: () => context.push(
+                                    '/request/status',
+                                    extra: request,
+                                  ),
                                   borderRadius: BorderRadius.circular(20),
                                   child: Container(
                                     padding: const EdgeInsets.all(20),
@@ -267,36 +270,38 @@ class HomeScreen extends HookConsumerWidget {
                                                 request.location,
                                                 style: TextStyle(
                                                   fontSize: 13,
-                                                  color: Theme.of(
-                                                    context,
-                                                  ).colorScheme.onSurfaceVariant,
+                                                  color: Theme.of(context)
+                                                      .colorScheme
+                                                      .onSurfaceVariant,
                                                 ),
                                                 maxLines: 1,
                                                 overflow: TextOverflow.ellipsis,
                                               ),
                                             ),
                                             const SizedBox(width: 8),
-                                            Container(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    horizontal: 10,
-                                                    vertical: 4,
+                                            if (request.status == RequestStatus.pending)
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 10,
+                                                      vertical: 4,
+                                                    ),
+                                                decoration: BoxDecoration(
+                                                  color: AppColors.brandPrimary
+                                                      .withAlpha(15),
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                ),
+                                                child: Text(
+                                                  request.budget,
+                                                  style: const TextStyle(
+                                                    color:
+                                                        AppColors.brandPrimary,
+                                                    fontSize: 13,
+                                                    fontWeight: FontWeight.w600,
                                                   ),
-                                              decoration: BoxDecoration(
-                                                color: AppColors.brandPrimary
-                                                    .withAlpha(15),
-                                                borderRadius:
-                                                    BorderRadius.circular(8),
-                                              ),
-                                              child: Text(
-                                                request.budget,
-                                                style: const TextStyle(
-                                                  color: AppColors.brandPrimary,
-                                                  fontSize: 13,
-                                                  fontWeight: FontWeight.w600,
                                                 ),
                                               ),
-                                            ),
                                           ],
                                         ),
                                       ],

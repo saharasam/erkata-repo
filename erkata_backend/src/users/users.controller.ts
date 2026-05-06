@@ -15,7 +15,7 @@ import {
 import { UsersService } from './users.service';
 import { RolesGuard, RequirePermission, JwtAuthGuard } from '../auth/guards';
 import type { AuthenticatedRequest } from '../auth/guards';
-import { Action } from '../auth/permissions';
+import { Action, PermissionMatrix } from '../auth/permissions';
 import { UserRole } from '@prisma/client';
 
 @Controller('users')
@@ -103,18 +103,6 @@ export class UsersController {
     return this.usersService.updateTier(callerRole, agentId, body.tier);
   }
 
-  @Post('me/package')
-  async purchasePackage(
-    @Req() req: AuthenticatedRequest,
-    @Body() body: { tier: string; paymentMethod?: 'ETB' | 'AGLP' },
-  ) {
-    return this.usersService.purchasePackage(
-      req.user.id,
-      body.tier,
-      body.paymentMethod,
-    );
-  }
-
   @Patch(':id/suspend')
   @RequirePermission(Action.MANAGE_AGENTS) // Admin can manage agents
   async suspendUser(
@@ -144,20 +132,35 @@ export class UsersController {
   }
 
   @Get(':id/profile')
-  @RequirePermission(Action.VIEW_USER_DETAILS_ANY_ROLE)
   async getUserProfile(
     @Req() req: AuthenticatedRequest,
     @Param('id') userId: string,
   ) {
     const callerRole = req.user.role;
     const callerId = req.user.id;
+    const permissions = PermissionMatrix[callerRole] || [];
+
+    // Authorization logic
+    const hasBroadAccess = permissions.includes(
+      Action.VIEW_USER_DETAILS_ANY_ROLE,
+    );
+    const isReferrer = await this.usersService.isReferrerOf(callerId, userId);
+    const hasReferralAccess =
+      permissions.includes(Action.VIEW_REFERRAL_DETAILS) && isReferrer;
+
+    if (!hasBroadAccess && !hasReferralAccess && callerId !== userId) {
+      throw new ForbiddenException(
+        'You do not have permission to view this profile.',
+      );
+    }
 
     // Hierarchy Check: Admins may not view profiles at their own level or above
     if (callerRole === UserRole.admin) {
       const target = await this.usersService.getProfileRoleById(userId);
       if (
         target &&
-        (target.role === UserRole.admin || target.role === UserRole.super_admin) &&
+        (target.role === UserRole.admin ||
+          target.role === UserRole.super_admin) &&
         userId !== callerId
       ) {
         throw new ForbiddenException(

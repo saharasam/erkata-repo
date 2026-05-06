@@ -20,16 +20,22 @@ const client_1 = require("@prisma/client");
 const common_1 = require("@nestjs/common");
 const ioredis_1 = require("ioredis");
 const event_emitter_1 = require("@nestjs/event-emitter");
+const notifications_gateway_1 = require("../notifications/notifications.gateway");
+const notifications_service_1 = require("../notifications/notifications.service");
 let AssignmentProcessor = AssignmentProcessor_1 = class AssignmentProcessor extends bullmq_1.WorkerHost {
     prisma;
     redis;
     eventEmitter;
+    notificationsGateway;
+    notificationsService;
     logger = new common_1.Logger(AssignmentProcessor_1.name);
-    constructor(prisma, redis, eventEmitter) {
+    constructor(prisma, redis, eventEmitter, notificationsGateway, notificationsService) {
         super();
         this.prisma = prisma;
         this.redis = redis;
         this.eventEmitter = eventEmitter;
+        this.notificationsGateway = notificationsGateway;
+        this.notificationsService = notificationsService;
     }
     async process(job) {
         if (job.name === 'check-timeout') {
@@ -145,6 +151,69 @@ let AssignmentProcessor = AssignmentProcessor_1 = class AssignmentProcessor exte
                 }
             }
         }
+        if (job.name === 'upgrade-sweeper') {
+            await this.handleStaleUpgradeRequests();
+        }
+    }
+    async handleStaleUpgradeRequests() {
+        this.logger.log('[AssignmentProcessor] Running Upgrade Sweeper...');
+        const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000);
+        const staleRequests = await this.prisma.upgradeRequest.findMany({
+            where: {
+                status: client_1.UpgradeRequestStatus.SUBMITTED,
+                createdAt: {
+                    lt: fortyEightHoursAgo,
+                },
+            },
+        });
+        if (staleRequests.length === 0) {
+            return;
+        }
+        this.logger.log(`[AssignmentProcessor] Found ${staleRequests.length} stale upgrade requests. Auto-rejecting...`);
+        let cleanedUpCount = 0;
+        for (const req of staleRequests) {
+            try {
+                await this.prisma.$transaction(async (tx) => {
+                    await tx.upgradeRequest.update({
+                        where: { id: req.id },
+                        data: {
+                            status: client_1.UpgradeRequestStatus.REJECTED,
+                            internalNote: 'Auto-rejected: No operator action within 48h.',
+                        },
+                    });
+                    await tx.auditLog.create({
+                        data: {
+                            action: 'UPGRADE_AUTO_REJECTED',
+                            targetTable: 'upgrade_requests',
+                            targetId: req.id,
+                            metadata: {
+                                reason: 'No operator action within 48h',
+                                previousStatus: req.status,
+                            },
+                        },
+                    });
+                    await tx.notification.create({
+                        data: {
+                            userId: req.agentId,
+                            title: 'Upgrade Request Expired',
+                            message: 'Your upgrade request has expired because it was not verified within 48 hours. Please submit a new request if needed.',
+                            type: 'upgrade.rejected',
+                            link: '/agent/upgrade',
+                        },
+                    });
+                });
+                this.notificationsGateway.sendToUser(req.agentId, 'notification', {
+                    title: 'Upgrade Request Expired',
+                    message: 'Your upgrade request has expired because it was not verified within 48 hours.',
+                    type: 'upgrade.rejected',
+                });
+                cleanedUpCount++;
+            }
+            catch (error) {
+                this.logger.error(`[AssignmentProcessor] Failed to auto-reject upgrade request ${req.id}:`, error);
+            }
+        }
+        this.logger.log(`[AssignmentProcessor] Successfully auto-rejected ${cleanedUpCount} stale upgrade requests.`);
     }
 };
 exports.AssignmentProcessor = AssignmentProcessor;
@@ -153,6 +222,8 @@ exports.AssignmentProcessor = AssignmentProcessor = AssignmentProcessor_1 = __de
     __param(1, (0, common_1.Inject)('REDIS_CLIENT')),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         ioredis_1.Redis,
-        event_emitter_1.EventEmitter2])
+        event_emitter_1.EventEmitter2,
+        notifications_gateway_1.NotificationsGateway,
+        notifications_service_1.NotificationsService])
 ], AssignmentProcessor);
 //# sourceMappingURL=assignment.processor.js.map

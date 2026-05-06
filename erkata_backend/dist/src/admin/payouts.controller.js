@@ -58,31 +58,6 @@ let PayoutsController = class PayoutsController {
             return this.aglpService.rejectWithdrawal(tx, id, reason);
         });
     }
-    async getPendingEscrow() {
-        return this.prisma.aglpTransaction.findMany({
-            where: {
-                type: client_1.AglpTransactionType.EARN,
-                status: client_1.AglpTransactionStatus.PENDING,
-                referenceType: 'COMMISSION_ESCROW',
-            },
-            include: {
-                profile: {
-                    select: {
-                        id: true,
-                        fullName: true,
-                        email: true,
-                        phone: true,
-                    },
-                },
-            },
-            orderBy: { createdAt: 'desc' },
-        });
-    }
-    async releaseEscrow(id) {
-        return this.prisma.$transaction(async (tx) => {
-            return this.aglpService.releaseEscrow(tx, id);
-        });
-    }
     async getGlobalLedger(type, status, profileId) {
         return this.prisma.aglpTransaction.findMany({
             where: {
@@ -128,21 +103,6 @@ __decorate([
     __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", Promise)
 ], PayoutsController.prototype, "rejectPayout", null);
-__decorate([
-    (0, common_1.Get)('escrow'),
-    (0, guards_1.RequirePermission)(permissions_1.Action.APPROVE_PAYOUT),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
-    __metadata("design:returntype", Promise)
-], PayoutsController.prototype, "getPendingEscrow", null);
-__decorate([
-    (0, common_1.Post)(':id/release'),
-    (0, guards_1.RequirePermission)(permissions_1.Action.APPROVE_PAYOUT),
-    __param(0, (0, common_1.Param)('id')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", Promise)
-], PayoutsController.prototype, "releaseEscrow", null);
 __decorate([
     (0, common_1.Get)('ledger'),
     (0, guards_1.RequirePermission)(permissions_1.Action.MODIFY_GOVERNANCE),

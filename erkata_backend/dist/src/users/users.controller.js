@@ -56,9 +56,6 @@ let UsersController = class UsersController {
         const callerRole = req.user.role;
         return this.usersService.updateTier(callerRole, agentId, body.tier);
     }
-    async purchasePackage(req, body) {
-        return this.usersService.purchasePackage(req.user.id, body.tier, body.paymentMethod);
-    }
     async suspendUser(req, userId) {
         const callerRole = req.user.role;
         return this.usersService.suspendUser(callerRole, userId);
@@ -73,10 +70,18 @@ let UsersController = class UsersController {
     async getUserProfile(req, userId) {
         const callerRole = req.user.role;
         const callerId = req.user.id;
+        const permissions = permissions_1.PermissionMatrix[callerRole] || [];
+        const hasBroadAccess = permissions.includes(permissions_1.Action.VIEW_USER_DETAILS_ANY_ROLE);
+        const isReferrer = await this.usersService.isReferrerOf(callerId, userId);
+        const hasReferralAccess = permissions.includes(permissions_1.Action.VIEW_REFERRAL_DETAILS) && isReferrer;
+        if (!hasBroadAccess && !hasReferralAccess && callerId !== userId) {
+            throw new common_1.ForbiddenException('You do not have permission to view this profile.');
+        }
         if (callerRole === client_1.UserRole.admin) {
             const target = await this.usersService.getProfileRoleById(userId);
             if (target &&
-                (target.role === client_1.UserRole.admin || target.role === client_1.UserRole.super_admin) &&
+                (target.role === client_1.UserRole.admin ||
+                    target.role === client_1.UserRole.super_admin) &&
                 userId !== callerId) {
                 throw new common_1.ForbiddenException('Admins are not authorized to view profiles at admin level or above.');
             }
@@ -155,14 +160,6 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "updateTier", null);
 __decorate([
-    (0, common_1.Post)('me/package'),
-    __param(0, (0, common_1.Req)()),
-    __param(1, (0, common_1.Body)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
-    __metadata("design:returntype", Promise)
-], UsersController.prototype, "purchasePackage", null);
-__decorate([
     (0, common_1.Patch)(':id/suspend'),
     (0, guards_1.RequirePermission)(permissions_1.Action.MANAGE_AGENTS),
     __param(0, (0, common_1.Req)()),
@@ -190,7 +187,6 @@ __decorate([
 ], UsersController.prototype, "updateBusinessProfile", null);
 __decorate([
     (0, common_1.Get)(':id/profile'),
-    (0, guards_1.RequirePermission)(permissions_1.Action.VIEW_USER_DETAILS_ANY_ROLE),
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Param)('id')),
     __metadata("design:type", Function),

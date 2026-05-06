@@ -72,6 +72,8 @@ export enum Action {
   EXPORT_ALL_REPORTS = "EXPORT_ALL_REPORTS",
   OVERRIDE_FINANCIAL_STATE = "OVERRIDE_FINANCIAL_STATE",
   EXPORT_FINANCIAL_AUDIT = "EXPORT_FINANCIAL_AUDIT",
+  VIEW_BROADCASTS = "VIEW_BROADCASTS",
+  VERIFY_UPGRADE = "VERIFY_UPGRADE",
 }
 
 export const usePermissions = () => {
@@ -111,6 +113,7 @@ export const usePermissions = () => {
         Action.VIEW_COMMISSION_EARNINGS,
         Action.REQUEST_PAYOUT,
         Action.VIEW_PAYOUT_HISTORY,
+        Action.VIEW_BROADCASTS,
       ],
       [UserRole.OPERATOR]: [
         Action.VIEW_QUEUE,
@@ -118,6 +121,11 @@ export const usePermissions = () => {
         Action.MEDIATE_MESSAGE,
         Action.BUNDLE_FEEDBACK,
         Action.VIEW_MANAGED_TRANSACTIONS,
+        Action.VIEW_BROADCASTS,
+      ],
+      [UserRole.FINANCIAL_OPERATOR]: [
+        Action.VERIFY_UPGRADE,
+        Action.VIEW_BROADCASTS,
         Action.APPROVE_PAYOUT,
         Action.VIEW_FINANCIAL_REPORTS,
       ],
@@ -134,8 +142,10 @@ export const usePermissions = () => {
         Action.VIEW_MANAGED_TRANSACTIONS,
         Action.VIEW_RESOLUTIONS_BY_ADMIN,
         Action.ESCALATE_TO_SUPER_ADMIN,
+        Action.APPROVE_PAYOUT,
         Action.VIEW_FINANCIAL_REPORTS,
         Action.PROCESS_REFUND,
+        Action.VIEW_BROADCASTS,
       ],
       [UserRole.SUPER_ADMIN]: [
         Action.FINALIZE_RESOLUTION,
@@ -165,6 +175,9 @@ export const usePermissions = () => {
         Action.VIEW_RESOLUTIONS_BY_ADMIN,
         Action.OVERRIDE_FINANCIAL_STATE,
         Action.EXPORT_FINANCIAL_AUDIT,
+        Action.APPROVE_PAYOUT,
+        Action.VIEW_FINANCIAL_REPORTS,
+        Action.VIEW_BROADCASTS,
       ],
     };
 

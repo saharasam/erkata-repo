@@ -27,6 +27,7 @@ var Action;
     Action["VIEW_COMMISSION_EARNINGS"] = "VIEW_COMMISSION_EARNINGS";
     Action["REQUEST_PAYOUT"] = "REQUEST_PAYOUT";
     Action["VIEW_PAYOUT_HISTORY"] = "VIEW_PAYOUT_HISTORY";
+    Action["VIEW_REFERRAL_DETAILS"] = "VIEW_REFERRAL_DETAILS";
     Action["VIEW_QUEUE"] = "VIEW_QUEUE";
     Action["ASSIGN_AGENT"] = "ASSIGN_AGENT";
     Action["MEDIATE_MESSAGE"] = "MEDIATE_MESSAGE";
@@ -101,6 +102,7 @@ exports.PermissionMatrix = {
         Action.REQUEST_PAYOUT,
         Action.VIEW_PAYOUT_HISTORY,
         Action.VIEW_BROADCASTS,
+        Action.VIEW_REFERRAL_DETAILS,
     ],
     operator: [
         Action.VIEW_QUEUE,
@@ -112,11 +114,14 @@ exports.PermissionMatrix = {
         Action.VIEW_ASSIGNED_REQUEST_DETAILS,
         Action.RESOLVE_DISPUTE,
         Action.ESCALATE_DISPUTE,
-        Action.APPROVE_PAYOUT,
-        Action.VIEW_FINANCIAL_REPORTS,
         Action.VIEW_BROADCASTS,
     ],
-    financial_operator: [Action.VERIFY_UPGRADE, Action.VIEW_BROADCASTS],
+    financial_operator: [
+        Action.VERIFY_UPGRADE,
+        Action.VIEW_BROADCASTS,
+        Action.APPROVE_PAYOUT,
+        Action.VIEW_FINANCIAL_REPORTS,
+    ],
     admin: [
         Action.PROPOSE_RESOLUTION,
         Action.FINALIZE_RESOLUTION,

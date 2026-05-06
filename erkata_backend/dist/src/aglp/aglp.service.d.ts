@@ -61,23 +61,5 @@ export declare class AglpService {
     }>;
     rejectWithdrawal(tx: Prisma.TransactionClient, aglpTxId: string, reason: string): Promise<void>;
     completeWithdrawal(tx: Prisma.TransactionClient, aglpTxId: string): Promise<void>;
-    lockCommission(tx: Prisma.TransactionClient, profileId: string, amountEtb: number, referenceId: string, reason: string): Promise<{
-        id: string;
-        createdAt: Date;
-        status: import(".prisma/client").$Enums.AglpTransactionStatus;
-        type: import(".prisma/client").$Enums.AglpTransactionType;
-        amount: Prisma.Decimal;
-        etbEquivalent: Prisma.Decimal | null;
-        conversionRate: Prisma.Decimal | null;
-        referenceId: string | null;
-        referenceType: string | null;
-        updatedAt: Date;
-        bankAccountHolder: string | null;
-        bankAccountNumber: string | null;
-        bankName: string | null;
-        profileId: string;
-    }>;
-    releaseEscrow(tx: Prisma.TransactionClient, aglpTxId: string): Promise<void>;
-    releaseCommissionByMatchId(tx: Prisma.TransactionClient, matchId: string): Promise<void>;
     cancelWithdrawal(tx: Prisma.TransactionClient, aglpTxId: string, requestedByProfileId: string): Promise<void>;
 }

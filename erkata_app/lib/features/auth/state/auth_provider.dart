@@ -95,15 +95,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
   /// is still valid.
   Future<void> hydrate() async {
     try {
-
       final isFirst = await _tokenStorage.isFirstLaunch();
       final token = await _tokenStorage.getAccessToken();
 
       if (token == null || token.isEmpty) {
-        state = state.copyWith(
-          isHydrated: true,
-          isFirstLaunch: isFirst,
-        );
+        state = state.copyWith(isHydrated: true, isFirstLaunch: isFirst);
         return;
       }
 
@@ -122,6 +118,10 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
         // Check for orphaned drafts on restart
         _reconcilePendingRequest();
+
+        // Asynchronously refresh the profile from the backend to ensure local data
+        // (like tier and balance) is synced, without blocking the splash screen.
+        refreshProfile();
         return;
       }
 
@@ -136,20 +136,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
           user: profile,
           isFirstLaunch: isFirst,
         );
+
+        // Asynchronously refresh the profile after token refresh
+        refreshProfile();
       } catch (_) {
         // Refresh failed — user must re-authenticate
         await _tokenStorage.clearAll();
-        state = state.copyWith(
-          isHydrated: true,
-          isFirstLaunch: isFirst,
-        );
+        state = state.copyWith(isHydrated: true, isFirstLaunch: isFirst);
       }
     } catch (_) {
       final isFirst = await _tokenStorage.isFirstLaunch();
-      state = state.copyWith(
-        isHydrated: true,
-        isFirstLaunch: isFirst,
-      );
+      state = state.copyWith(isHydrated: true, isFirstLaunch: isFirst);
     }
   }
 
@@ -197,12 +194,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
     try {
       await _repo.register(request);
-      
+
       // Auto-login after successful registration
-      await login(LoginRequest(
-        identifier: request.email,
-        password: request.password,
-      ));
+      await login(
+        LoginRequest(identifier: request.email, password: request.password),
+      );
     } on AppException catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.message);
     } catch (e) {
@@ -228,7 +224,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> refreshProfile() async {
     try {
       final profile = await _repo.getProfile();
-      
+
       // Update storage too so it's consistent on restart
       await _tokenStorage.saveUserProfile(
         userId: profile.id,
@@ -252,7 +248,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> markAsLaunched() async {
     await _tokenStorage.markAsLaunched();
     // We don't update state.isFirstLaunch here to avoid triggering a router redirect
-    // while the user is still in the intake flow. The storage is updated, so 
+    // while the user is still in the intake flow. The storage is updated, so
     // subsequent launches will correctly reflect the state.
   }
 
@@ -285,11 +281,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
         final payload = formData.toBackendPayload();
 
         await _ref.read(requestRepositoryProvider).createRequest(payload);
-        
+
         // Success — clear draft
         await prefs.remove('erkata_pending_request');
         await prefs.remove('erkata_pending_request_step');
-        
+
         // Optional: Notify UI to refresh if needed
         // but since we are usually redirecting to Home, the initial refresh will catch it.
       }

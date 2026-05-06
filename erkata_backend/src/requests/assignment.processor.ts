@@ -1,10 +1,12 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service';
-import { RequestStatus } from '@prisma/client';
+import { RequestStatus, UpgradeRequestStatus, Prisma } from '@prisma/client';
 import { Logger, Inject } from '@nestjs/common';
 import { Redis } from 'ioredis';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { NotificationsGateway } from '../notifications/notifications.gateway';
+import { NotificationsService } from '../notifications/notifications.service';
 
 interface AssignmentJobData {
   requestId?: string;
@@ -21,6 +23,8 @@ export class AssignmentProcessor extends WorkerHost {
     private readonly prisma: PrismaService,
     @Inject('REDIS_CLIENT') private readonly redis: Redis,
     private readonly eventEmitter: EventEmitter2,
+    private readonly notificationsGateway: NotificationsGateway,
+    private readonly notificationsService: NotificationsService,
   ) {
     super();
   }
@@ -126,7 +130,7 @@ export class AssignmentProcessor extends WorkerHost {
               status: RequestStatus.pending,
               metadata: {
                 ...(typeof currentRequest?.metadata === 'object'
-                  ? (currentRequest.metadata as any)
+                  ? (currentRequest.metadata as Record<string, any>)
                   : {}),
                 agentTimeoutAt: new Date().toISOString(),
                 lastTimedOutAgentId: agentId,
@@ -193,5 +197,94 @@ export class AssignmentProcessor extends WorkerHost {
         }
       }
     }
+
+    if (job.name === 'upgrade-sweeper') {
+      await this.handleStaleUpgradeRequests();
+    }
+  }
+
+  private async handleStaleUpgradeRequests() {
+    this.logger.log('[AssignmentProcessor] Running Upgrade Sweeper...');
+
+    // Find requests older than 48 hours
+    const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000);
+
+    const staleRequests = await this.prisma.upgradeRequest.findMany({
+      where: {
+        status: UpgradeRequestStatus.SUBMITTED,
+        createdAt: {
+          lt: fortyEightHoursAgo,
+        },
+      },
+    });
+
+    if (staleRequests.length === 0) {
+      return;
+    }
+
+    this.logger.log(
+      `[AssignmentProcessor] Found ${staleRequests.length} stale upgrade requests. Auto-rejecting...`,
+    );
+
+    let cleanedUpCount = 0;
+
+    for (const req of staleRequests) {
+      try {
+        await this.prisma.$transaction(async (tx) => {
+          // 1. Update status and internalNote
+          await tx.upgradeRequest.update({
+            where: { id: req.id },
+            data: {
+              status: UpgradeRequestStatus.REJECTED,
+              internalNote: 'Auto-rejected: No operator action within 48h.',
+            },
+          });
+
+          // 2. Create Audit Log
+          await tx.auditLog.create({
+            data: {
+              action: 'UPGRADE_AUTO_REJECTED',
+              targetTable: 'upgrade_requests',
+              targetId: req.id,
+              metadata: {
+                reason: 'No operator action within 48h',
+                previousStatus: req.status,
+              } as Prisma.InputJsonValue,
+            },
+          });
+
+          // 3. Create Notification record for agent
+          await tx.notification.create({
+            data: {
+              userId: req.agentId,
+              title: 'Upgrade Request Expired',
+              message:
+                'Your upgrade request has expired because it was not verified within 48 hours. Please submit a new request if needed.',
+              type: 'upgrade.rejected',
+              link: '/agent/upgrade',
+            },
+          });
+        });
+
+        // 4. Emit WebSocket notification
+        this.notificationsGateway.sendToUser(req.agentId, 'notification', {
+          title: 'Upgrade Request Expired',
+          message:
+            'Your upgrade request has expired because it was not verified within 48 hours.',
+          type: 'upgrade.rejected',
+        });
+
+        cleanedUpCount++;
+      } catch (error) {
+        this.logger.error(
+          `[AssignmentProcessor] Failed to auto-reject upgrade request ${req.id}:`,
+          error,
+        );
+      }
+    }
+
+    this.logger.log(
+      `[AssignmentProcessor] Successfully auto-rejected ${cleanedUpCount} stale upgrade requests.`,
+    );
   }
 }

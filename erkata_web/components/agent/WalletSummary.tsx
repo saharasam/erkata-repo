@@ -15,7 +15,6 @@ interface WalletSummaryProps {
   finance: {
     balance: number;
     aglpAvailable?: number;
-    aglpPendingCommissions?: number;
     aglpPendingWithdrawals?: number;
     aglpWithdrawn?: number;
     weeklyGrowth?: {
@@ -52,17 +51,17 @@ const WalletSummary: React.FC<WalletSummaryProps> = ({ finance, onPayoutRequest 
             </div>
             
             <div className="flex gap-8 mb-8 pb-6 border-b border-white/10">
-               <div>
+               {/* <div>
                   <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-1">Pending Commissions</p>
                   <p className="text-lg font-bold text-emerald-400">{(finance.aglpPendingCommissions ?? 0).toLocaleString()} AGLP</p>
-               </div>
+               </div> */}
                <div>
                   <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-1">Pending Withdrawal</p>
                   <p className="text-lg font-bold text-amber-400">{(finance.aglpPendingWithdrawals ?? 0).toLocaleString()} AGLP</p>
                </div>
                <div>
                   <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold mb-1">Withdrawn</p>
-                  <p className="text-lg font-bold text-slate-300">{(finance.aglpWithdrawn ?? 0).toLocaleString()} AGLP</p>
+                  <p className="text-lg font-bold text-emerald-400">{(finance.aglpWithdrawn ?? 0).toLocaleString()} AGLP</p>
                </div>
             </div>
             

@@ -1,172 +1,5 @@
 
 
-===== FILE: .env =====
-
-# Environment variables declared in this file are NOT automatically loaded by Prisma.
-# Please add `import "dotenv/config";` to your `prisma.config.ts` file, or use the Prisma CLI with Bun
-# to load environment variables from .env files: https://pris.ly/prisma-config-env-vars.
-
-# DATABASE_URL="postgresql://neondb_owner:npg_BSjQO59pbMcx@ep-royal-leaf-anh0op8c.c-6.us-east-1.aws.neon.tech/neondb?sslmode=require&connect_timeout=30"
-# DIRECT_URL="postgresql://neondb_owner:npg_BSjQO59pbMcx@ep-royal-leaf-anh0op8c.c-6.us-east-1.aws.neon.tech/neondb?sslmode=require&connect_timeout=30"
-
-
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/neondb"
-DIRECT_URL="postgresql://postgres:postgres@localhost:5432/neondb"
-
-
-JWT_SECRET="E2N8cq8Hvk2CYFvq0jlxAdutt1h85yz4rlx9JbUQX7/6Y5LqlrDO9j7vYvkKO5HKnG5p2hcxOUR6Xy7eNyHfTw=="
-
-# Admin Configuration
-SUPER_ADMIN_EMAIL="blimwlim1@gmail.com"
-FRONTEND_URL="http://localhost:5173"
-
-===== FILE: .gitignore =====
-
-node_modules
-# Keep environment variables out of version control
-.env
-
-/generated/prisma
-
-
-===== FILE: .prettierrc =====
-
-{
-  "singleQuote": true,
-  "trailingComma": "all"
-}
-
-
-===== FILE: combine.cjs =====
-
-#!/usr/bin/env node
-
-const fs = require('fs');
-const path = require('path');
-const readline = require('readline');
-
-const rootDir = process.cwd();
-const rootName = path.basename(rootDir);
-const outputDir = path.join(rootDir, `${rootName}_combined`);
-
-// ensure output folder exists
-if (!fs.existsSync(outputDir)) {
-  fs.mkdirSync(outputDir);
-}
-
-// ignore rules
-const IGNORE_DIRS = new Set([
-  'node_modules', '.git', 'dist', 'build',
-  'ios', 'android', '.dart_tool',
-  `${rootName}_combined`
-]);
-
-const IGNORE_EXT = new Set([
-  '.png', '.jpg', '.jpeg', '.gif', '.webp',
-  '.mp4', '.mp3', '.zip', '.tar', '.gz', '.exe',
-  '.lock'
-]);
-
-// ---------- prompt ----------
-function askMode() {
-  return new Promise((resolve) => {
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout,
-    });
-
-    rl.question(
-      'Output mode? (1 = per-directory, 2 = single file): ',
-      (answer) => {
-        rl.close();
-        resolve(answer.trim() === '2' ? 'single' : 'multi');
-      }
-    );
-  });
-}
-
-// ---------- helpers ----------
-function getOutputFileName(dir) {
-  const relative = path.relative(rootDir, dir);
-  if (!relative) return 'root.txt';
-  return relative.split(path.sep).join('__') + '.txt';
-}
-
-// ---------- mode 1: per-directory ----------
-function processDirectory(dir) {
-  const fileName = getOutputFileName(dir);
-  const outputFile = path.join(outputDir, fileName);
-
-  fs.writeFileSync(outputFile, '');
-
-  const entries = fs.readdirSync(dir, { withFileTypes: true });
-  entries.sort((a, b) => a.name.localeCompare(b.name));
-
-  for (const entry of entries) {
-    const fullPath = path.join(dir, entry.name);
-
-    if (entry.isDirectory()) {
-      if (IGNORE_DIRS.has(entry.name)) continue;
-      processDirectory(fullPath);
-      continue;
-    }
-
-    const ext = path.extname(entry.name).toLowerCase();
-    if (IGNORE_EXT.has(ext)) continue;
-
-    if (entry.isFile()) {
-      try {
-        const content = fs.readFileSync(fullPath, 'utf-8');
-        const header = `\n\n===== FILE: ${entry.name} =====\n\n`;
-        fs.appendFileSync(outputFile, header + content);
-      } catch {}
-    }
-  }
-}
-
-// ---------- mode 2: single file ----------
-function processAllFiles(dir, outputFile) {
-  const entries = fs.readdirSync(dir, { withFileTypes: true });
-  entries.sort((a, b) => a.name.localeCompare(b.name));
-
-  for (const entry of entries) {
-    const fullPath = path.join(dir, entry.name);
-
-    if (entry.isDirectory()) {
-      if (IGNORE_DIRS.has(entry.name)) continue;
-      processAllFiles(fullPath, outputFile);
-      continue;
-    }
-
-    const ext = path.extname(entry.name).toLowerCase();
-    if (IGNORE_EXT.has(ext)) continue;
-
-    if (entry.isFile()) {
-      try {
-        const content = fs.readFileSync(fullPath, 'utf-8');
-        const relative = path.relative(rootDir, fullPath);
-        const header = `\n\n===== FILE: ${relative} =====\n\n`;
-        fs.appendFileSync(outputFile, header + content);
-      } catch {}
-    }
-  }
-}
-
-// ---------- entry ----------
-(async () => {
-  const mode = await askMode();
-
-  if (mode === 'single') {
-    const outputFile = path.join(outputDir, 'all.txt');
-    fs.writeFileSync(outputFile, '');
-    processAllFiles(rootDir, outputFile);
-    console.log(`Done: ${outputFile}`);
-  } else {
-    processDirectory(rootDir);
-    console.log(`Done: ${outputDir}`);
-  }
-})();
-
 ===== FILE: eslint.config.mjs =====
 
 // @ts-check
@@ -265,6 +98,7 @@ export default tseslint.config(
         "@types/cookie-parser": "^1.4.10",
         "@types/express": "^5.0.0",
         "@types/jest": "^30.0.0",
+        "@types/multer": "^2.1.0",
         "@types/node": "^22.10.7",
         "@types/passport-jwt": "^4.0.1",
         "@types/passport-local": "^1.0.38",
@@ -3288,6 +3122,16 @@ export default tseslint.config(
       "resolved": "https://registry.npmjs.org/@types/ms/-/ms-2.1.0.tgz",
       "integrity": "sha512-GsCCIZDE/p3i96vtEqx+7dBUGXrc7zeSK3wwPHIaRThS+9OhWIXRqzs4d6k1SVU8g91DrNRWxWUGhp5KXQb2VA==",
       "license": "MIT"
+    },
+    "node_modules/@types/multer": {
+      "version": "2.1.0",
+      "resolved": "https://registry.npmjs.org/@types/multer/-/multer-2.1.0.tgz",
+      "integrity": "sha512-zYZb0+nJhOHtPpGDb3vqPjwpdeGlGC157VpkqNQL+UU2qwoacoQ7MpsAmUptI/0Oa127X32JzWDqQVEXp2RcIA==",
+      "dev": true,
+      "license": "MIT",
+      "dependencies": {
+        "@types/express": "*"
+      }
     },
     "node_modules/@types/node": {
       "version": "22.19.11",
@@ -11459,6 +11303,7 @@ export default tseslint.config(
     "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.0",
     "@types/jest": "^30.0.0",
+    "@types/multer": "^2.1.0",
     "@types/node": "^22.10.7",
     "@types/passport-jwt": "^4.0.1",
     "@types/passport-local": "^1.0.38",
@@ -11584,8 +11429,7 @@ CREATE TABLE "requests" (
     "type" "RequestType" NOT NULL DEFAULT 'real_estate',
     "category" TEXT NOT NULL,
     "description" TEXT,
-    "budget_min" DECIMAL(12,2),
-    "budget_max" DECIMAL(12,2),
+    "budget" DECIMAL(12,2),
     "zone_id" TEXT NOT NULL,
     "woreda" TEXT,
     "status" "RequestStatus" NOT NULL DEFAULT 'pending',
@@ -11944,6 +11788,218 @@ ALTER TABLE "notifications" ADD CONSTRAINT "notifications_user_id_fkey" FOREIGN 
 ALTER TABLE "requests" ADD COLUMN     "completed_at" TIMESTAMP(3);
 
 
+===== FILE: prisma\migrations\20260505141610_consolidate_budget_field\migration.sql =====
+
+/*
+  Warnings:
+
+  - The values [matched,in_progress,ESCALATED,delivered,DISPUTED] on the enum `RequestStatus` will be removed. If these variants are still used in the database, this will fail.
+  - The primary key for the `aglp_transactions` table will be changed. If it partially fails, the table could be left without primary key constraint.
+  - The `id` column on the `aglp_transactions` table would be dropped and recreated. This will lead to data loss if there is data in the column.
+  - The primary key for the `audit_logs` table will be changed. If it partially fails, the table could be left without primary key constraint.
+  - The `id` column on the `audit_logs` table would be dropped and recreated. This will lead to data loss if there is data in the column.
+  - The primary key for the `feedbacks` table will be changed. If it partially fails, the table could be left without primary key constraint.
+  - The `id` column on the `feedbacks` table would be dropped and recreated. This will lead to data loss if there is data in the column.
+  - You are about to drop the column `assigned_at` on the `matches` table. All the data in the column will be lost.
+  - The `status` column on the `matches` table would be dropped and recreated. This will lead to data loss if there is data in the column.
+  - You are about to drop the column `created_at` on the `packages` table. All the data in the column will be lost.
+  - You are about to drop the column `description` on the `packages` table. All the data in the column will be lost.
+  - You are about to drop the column `requires_approval` on the `packages` table. All the data in the column will be lost.
+  - You are about to drop the column `updated_at` on the `packages` table. All the data in the column will be lost.
+  - You are about to drop the column `aglp_pending` on the `profiles` table. All the data in the column will be lost.
+  - You are about to drop the column `budget_max` on the `requests` table. All the data in the column will be lost.
+  - You are about to drop the column `budget_min` on the `requests` table. All the data in the column will be lost.
+  - The `type` column on the `requests` table would be dropped and recreated. This will lead to data loss if there is data in the column.
+  - The `status` column on the `transactions` table would be dropped and recreated. This will lead to data loss if there is data in the column.
+  - You are about to drop the column `city` on the `zones` table. All the data in the column will be lost.
+  - You are about to drop the column `is_active` on the `zones` table. All the data in the column will be lost.
+  - A unique constraint covering the columns `[transaction_id]` on the table `feedbacks` will be added. If there are existing duplicate values, this will fail.
+  - A unique constraint covering the columns `[match_id]` on the table `resolution_proposals` will be added. If there are existing duplicate values, this will fail.
+  - A unique constraint covering the columns `[name]` on the table `zones` will be added. If there are existing duplicate values, this will fail.
+  - Added the required column `display_name` to the `packages` table without a default value. This is not possible if the table is not empty.
+  - Made the column `description` on table `requests` required. This step will fail if there are existing NULL values in that column.
+  - Made the column `woreda` on table `requests` required. This step will fail if there are existing NULL values in that column.
+
+*/
+-- CreateEnum
+CREATE TYPE "UpgradeRequestStatus" AS ENUM ('SUBMITTED', 'OPERATOR_VERIFIED', 'APPROVED', 'REJECTED');
+
+-- AlterEnum
+BEGIN;
+CREATE TYPE "RequestStatus_new" AS ENUM ('pending', 'assigned', 'fulfilled', 'completed', 'disputed', 'cancelled');
+ALTER TABLE "requests" ALTER COLUMN "status" DROP DEFAULT;
+ALTER TABLE "requests" ALTER COLUMN "status" TYPE "RequestStatus_new" USING ("status"::text::"RequestStatus_new");
+ALTER TYPE "RequestStatus" RENAME TO "RequestStatus_old";
+ALTER TYPE "RequestStatus_new" RENAME TO "RequestStatus";
+DROP TYPE "RequestStatus_old";
+ALTER TABLE "requests" ALTER COLUMN "status" SET DEFAULT 'pending';
+COMMIT;
+
+-- AlterEnum
+ALTER TYPE "UserRole" ADD VALUE 'financial_operator';
+
+-- DropForeignKey
+ALTER TABLE "matches" DROP CONSTRAINT "matches_operator_id_fkey";
+
+-- DropIndex
+DROP INDEX "invites_token_idx";
+
+-- DropIndex
+DROP INDEX "transactions_status_idx";
+
+-- AlterTable
+ALTER TABLE "aglp_transactions" DROP CONSTRAINT "aglp_transactions_pkey",
+ADD COLUMN     "bank_account_holder" TEXT,
+ADD COLUMN     "bank_account_number" TEXT,
+ADD COLUMN     "bank_name" TEXT,
+DROP COLUMN "id",
+ADD COLUMN     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
+ADD CONSTRAINT "aglp_transactions_pkey" PRIMARY KEY ("id");
+
+-- AlterTable
+ALTER TABLE "audit_logs" DROP CONSTRAINT "audit_logs_pkey",
+DROP COLUMN "id",
+ADD COLUMN     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
+ADD CONSTRAINT "audit_logs_pkey" PRIMARY KEY ("id");
+
+-- AlterTable
+ALTER TABLE "feedbacks" DROP CONSTRAINT "feedbacks_pkey",
+ADD COLUMN     "comment" TEXT,
+DROP COLUMN "id",
+ADD COLUMN     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
+ADD CONSTRAINT "feedbacks_pkey" PRIMARY KEY ("id");
+-- AlterTable
+ALTER TABLE "final_resolutions" ADD COLUMN     "description" TEXT,
+ADD COLUMN     "final_decision" TEXT;
+
+-- AlterTable
+ALTER TABLE "matches" DROP COLUMN "assigned_at",
+ADD COLUMN     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ALTER COLUMN "operator_id" DROP NOT NULL,
+DROP COLUMN "status",
+ADD COLUMN     "status" TEXT NOT NULL DEFAULT 'assigned';
+
+-- AlterTable
+ALTER TABLE "notifications" ALTER COLUMN "id" SET DEFAULT gen_random_uuid();
+
+-- AlterTable
+ALTER TABLE "packages" DROP COLUMN "created_at",
+DROP COLUMN "description",
+DROP COLUMN "requires_approval",
+DROP COLUMN "updated_at",
+ADD COLUMN     "display_name" TEXT NOT NULL;
+
+-- AlterTable
+ALTER TABLE "profiles" DROP COLUMN "aglp_pending",
+ADD COLUMN     "avatar_url" TEXT,
+ADD COLUMN     "is_verified" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN     "missed_assignments" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "tin_number" TEXT,
+ADD COLUMN     "trade_license_number" TEXT,
+ADD COLUMN     "warning_count" INTEGER NOT NULL DEFAULT 0;
+
+-- AlterTable
+ALTER TABLE "requests" ADD COLUMN     "is_escalated" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN     "metadata" JSONB NOT NULL DEFAULT '{}',
+DROP COLUMN "type",
+ADD COLUMN     "type" TEXT NOT NULL DEFAULT 'real_estate',
+ALTER COLUMN "description" SET NOT NULL,
+ALTER COLUMN "woreda" SET NOT NULL;
+
+-- AlterTable
+ALTER TABLE "resolution_proposals" ADD COLUMN     "match_id" TEXT,
+ADD COLUMN     "status" TEXT NOT NULL DEFAULT 'pending';
+
+-- AlterTable
+ALTER TABLE "transactions" ADD COLUMN     "agent_earnings" DECIMAL(12,2),
+ADD COLUMN     "metadata" JSONB,
+ADD COLUMN     "platform_fee" DECIMAL(12,2),
+DROP COLUMN "status",
+ADD COLUMN     "status" TEXT NOT NULL DEFAULT 'pending';
+
+-- AlterTable
+ALTER TABLE "zones" DROP COLUMN "city",
+DROP COLUMN "is_active",
+ADD COLUMN     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+ADD COLUMN     "metadata" JSONB,
+ADD COLUMN     "type" TEXT NOT NULL DEFAULT 'city';
+
+-- CreateTable
+CREATE TABLE "system_broadcasts" (
+    "id" UUID NOT NULL DEFAULT gen_random_uuid(),
+    "title" TEXT NOT NULL,
+    "content" TEXT,
+    "target" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "system_broadcasts_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "upgrade_requests" (
+    "id" TEXT NOT NULL,
+    "agent_id" UUID NOT NULL,
+    "current_tier" "Tier" NOT NULL,
+    "target_tier" "Tier" NOT NULL,
+    "status" "UpgradeRequestStatus" NOT NULL DEFAULT 'SUBMITTED',
+    "proof_url" TEXT,
+    "internal_note" TEXT,
+    "operator_id" UUID,
+    "admin_id" UUID,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "upgrade_requests_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "attachments" (
+    "id" TEXT NOT NULL,
+    "file_name" TEXT NOT NULL,
+    "mime_type" TEXT NOT NULL,
+    "content" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "attachments_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE INDEX "aglp_transactions_created_at_profile_id_type_idx" ON "aglp_transactions"("created_at", "profile_id", "type");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "feedbacks_transaction_id_key" ON "feedbacks"("transaction_id");
+
+-- CreateIndex
+CREATE INDEX "matches_agent_id_status_idx" ON "matches"("agent_id", "status");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "resolution_proposals_match_id_key" ON "resolution_proposals"("match_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "zones_name_key" ON "zones"("name");
+
+-- AddForeignKey
+ALTER TABLE "matches" ADD CONSTRAINT "matches_operator_id_fkey" FOREIGN KEY ("operator_id") REFERENCES "profiles"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "profiles" ADD CONSTRAINT "profiles_tier_fkey" FOREIGN KEY ("tier") REFERENCES "packages"("name") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "referral_links" ADD CONSTRAINT "referral_links_tier_fkey" FOREIGN KEY ("tier") REFERENCES "packages"("name") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "resolution_proposals" ADD CONSTRAINT "resolution_proposals_match_id_fkey" FOREIGN KEY ("match_id") REFERENCES "matches"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "upgrade_requests" ADD CONSTRAINT "upgrade_requests_agent_id_fkey" FOREIGN KEY ("agent_id") REFERENCES "profiles"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "upgrade_requests" ADD CONSTRAINT "upgrade_requests_operator_id_fkey" FOREIGN KEY ("operator_id") REFERENCES "profiles"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "upgrade_requests" ADD CONSTRAINT "upgrade_requests_admin_id_fkey" FOREIGN KEY ("admin_id") REFERENCES "profiles"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+
 ===== FILE: prisma\migrations\migration_lock.toml =====
 
 # Please do not edit this file manually
@@ -12129,7 +12185,6 @@ model Profile {
   referredById      String?           @map("referred_by_id") @db.Uuid
   createdAt         DateTime          @default(now()) @map("created_at")
   aglpBalance       Decimal           @default(0) @map("aglp_balance") @db.Decimal(12, 2)
-  aglpPending       Decimal           @default(0) @map("aglp_pending") @db.Decimal(12, 2)
   aglpWithdrawn     Decimal           @default(0) @map("aglp_withdrawn") @db.Decimal(12, 2)
   referralCode      String?           @unique @map("referral_code")
   isOnline          Boolean           @default(false) @map("is_online")
@@ -12182,9 +12237,8 @@ model Request {
   category           String
   type               String              @default("real_estate")
   description        String
-  budgetMin          Decimal?            @map("budget_min") @db.Decimal(12, 2)
-  budgetMax          Decimal?            @map("budget_max") @db.Decimal(12, 2)
   metadata           Json                @default("{}")
+  budget             Decimal?            @db.Decimal(12, 2) // New consolidated field
   zoneId             String              @map("zone_id")
   woreda             String
   status             RequestStatus       @default(pending)
@@ -12292,6 +12346,16 @@ model UpgradeRequest {
   admin         Profile?             @relation("AdminApprovals", fields: [adminId], references: [id])
 
   @@map("upgrade_requests")
+}
+
+model Attachment {
+  id        String   @id @default(cuid())
+  fileName  String   @map("file_name")
+  mimeType  String   @map("mime_type")
+  content   String   // Storing Base64 data here
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("attachments")
 }
 
 enum AglpTransactionStatus {
@@ -12698,167 +12762,7 @@ Nest is an MIT-licensed open source project. It can grow thanks to the sponsors 
 Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
 
 
-===== FILE: scratch\check_config.ts =====
-
-import { PrismaClient } from '@prisma/client';
-
-async function checkConfig() {
-  const prisma = new PrismaClient();
-  try {
-    const configs = await prisma.systemConfig.findMany();
-    console.log('Current System Configs:');
-    configs.forEach((c) => {
-      console.log(`${c.key}: ${JSON.stringify(c.value)}`);
-    });
-  } catch (e) {
-    console.error('Error fetching configs:', e);
-  } finally {
-    await prisma.$disconnect();
-  }
-}
-
-checkConfig();
-
-
-===== FILE: scratch\check_user.ts =====
-
-import { PrismaClient } from '@prisma/client';
-
-async function checkUser() {
-  const prisma = new PrismaClient();
-  try {
-    const user = await prisma.profile.findFirst({
-      where: { role: 'agent' },
-    });
-    console.log('Agent User:', JSON.stringify(user));
-  } catch (e) {
-    console.error('Error fetching user:', e);
-  } finally {
-    await prisma.$disconnect();
-  }
-}
-
-checkUser();
-
-
-===== FILE: scratch\list_agents.ts =====
-
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
-
-async function main() {
-  const agents = await prisma.profile.findMany({
-    where: { role: 'agent' },
-    include: {
-      package: true,
-      referredBy: {
-        select: {
-          fullName: true
-        }
-      }
-    },
-    orderBy: { createdAt: 'desc' }
-  });
-
-  console.log(`Total Agents: ${agents.length}\n`);
-  console.log('| Name | Phone | Tier | Referred By | Joined At |');
-  console.log('|------|-------|------|-------------|-----------|');
-  agents.forEach(a => {
-    console.log(`| ${a.fullName} | ${a.phone} | ${a.package?.displayName || a.tier} | ${a.referredBy?.fullName || '-'} | ${a.createdAt.toISOString().split('T')[0]} |`);
-  });
-}
-
-main()
-  .catch(e => console.error(e))
-  .finally(async () => await prisma.$disconnect());
-
-
-===== FILE: scratch\list_operators.js =====
-
-
-const { PrismaClient } = require('@prisma/client');
-const prisma = new PrismaClient();
-
-async function main() {
-  const operators = await prisma.profile.findMany({
-    where: {
-      role: 'operator',
-    },
-    select: {
-      fullName: true,
-      email: true,
-    },
-  });
-
-  console.log('Registered Operators:');
-  console.table(operators);
-}
-
-main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
-
-
-===== FILE: scratch\test-db.js =====
-
-
-const { Client } = require('pg');
-require('dotenv').config();
-
-async function testConnection() {
-  const client = new Client({
-    connectionString: process.env.DATABASE_URL,
-    ssl: {
-      rejectUnauthorized: false
-    }
-  });
-
-  try {
-    console.log('Attempting to connect to:', process.env.DATABASE_URL.split('@')[1]);
-    await client.connect();
-    console.log('Successfully connected to the database!');
-    const res = await client.query('SELECT NOW()');
-    console.log('Query result:', res.rows[0]);
-    await client.end();
-  } catch (err) {
-    console.error('Connection error details:', err);
-  }
-}
-
-testConnection();
-
-
-===== FILE: scratch\test-db.ts =====
-
-import { PrismaClient } from '@prisma/client';
-
-async function main() {
-  const prisma = new PrismaClient({
-    log: ['query', 'info', 'warn', 'error'],
-  });
-  console.log('Connecting to database...');
-  try {
-    await prisma.$connect();
-    console.log('Connected successfully!');
-    const result = await prisma.$queryRaw`SELECT 1`;
-    console.log('Query result:', result);
-  } catch (error) {
-    console.error('Connection failed:', error);
-  } finally {
-    await prisma.$disconnect();
-  }
-}
-
-main();
-
-
-===== FILE: scripts\flush-requests.ts =====
+===== FILE: scripts\flush-requests.mjs =====
 
 import { PrismaClient } from '@prisma/client';
 
@@ -12967,10 +12871,15 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { JwtAuthGuard, RolesGuard, RequirePermission } from '../auth/guards';
+import {
+  JwtAuthGuard,
+  RolesGuard,
+  RequirePermission,
+  Roles,
+} from '../auth/guards';
 import { Action } from '../auth/permissions';
 import { UsersService } from '../users/users.service';
-import { UserRole } from '@prisma/client';
+import { UserRole, Prisma } from '@prisma/client';
 import type { AuthenticatedRequest } from '../auth/guards';
 import { InviteService } from '../auth/invite/invite.service';
 
@@ -12984,21 +12893,46 @@ export class AdminsController {
   ) {}
 
   @Get()
-  @RequirePermission(Action.MANAGE_ADMINS)
-  async getPersonnel(@Query('role') role?: string) {
-    // Normalize role casing to match UserRole enum
+  @Roles('admin')
+  async getPersonnel(
+    @Req() req: AuthenticatedRequest,
+    @Query('role') role?: string,
+  ) {
+    const callerRole = req.user.role;
     const normalizedRole = role?.toLowerCase() as UserRole | undefined;
 
-    return this.prisma.profile.findMany({
-      where: normalizedRole
-        ? { role: normalizedRole }
-        : {
-            OR: [
-              { role: UserRole.admin },
-              { role: UserRole.operator },
-              { role: UserRole.financial_operator },
-            ],
-          },
+    const queryWhere: Prisma.ProfileWhereInput = {};
+
+    if (callerRole === UserRole.admin) {
+      // Admins only manage Operators and Financial Operators
+      const allowedRoles: UserRole[] = [
+        UserRole.operator,
+        UserRole.financial_operator,
+      ];
+
+      if (normalizedRole) {
+        if (!allowedRoles.includes(normalizedRole)) {
+          throw new ForbiddenException(
+            'Admins can only view operators and financial operators',
+          );
+        }
+        queryWhere.role = normalizedRole;
+      } else {
+        queryWhere.role = { in: allowedRoles };
+      }
+    } else {
+      // Super Admin can see all administrative roles
+      if (normalizedRole) {
+        queryWhere.role = normalizedRole;
+      } else {
+        queryWhere.role = {
+          in: [UserRole.admin, UserRole.operator, UserRole.financial_operator],
+        };
+      }
+    }
+
+    const profiles = await this.prisma.profile.findMany({
+      where: queryWhere,
       select: {
         id: true,
         fullName: true,
@@ -13016,6 +12950,15 @@ export class AdminsController {
       },
       orderBy: { createdAt: 'desc' },
     });
+
+    // Map to ensure frontend compatibility with different naming (proposals vs resolutionProposals)
+    return profiles.map((p) => ({
+      ...p,
+      _count: {
+        ...p._count,
+        resolutionProposals: p._count.proposals,
+      },
+    }));
   }
 
   @Post('invite')
@@ -13079,7 +13022,7 @@ export class AdminsController {
   }
 
   @Patch(':id/status')
-  @RequirePermission(Action.MANAGE_ADMINS)
+  @RequirePermission(Action.MANAGE_OPERATORS)
   async updateStatus(
     @Req() req: AuthenticatedRequest,
     @Param('id') id: string,
@@ -13937,38 +13880,7 @@ export class PayoutsController {
     });
   }
 
-  // ── ESCROW MANAGEMENT ──────────────────────────────────────────────────────
 
-  @Get('escrow')
-  @RequirePermission(Action.APPROVE_PAYOUT)
-  async getPendingEscrow() {
-    return this.prisma.aglpTransaction.findMany({
-      where: {
-        type: AglpTransactionType.EARN,
-        status: AglpTransactionStatus.PENDING,
-        referenceType: 'COMMISSION_ESCROW',
-      },
-      include: {
-        profile: {
-          select: {
-            id: true,
-            fullName: true,
-            email: true,
-            phone: true,
-          },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-  }
-
-  @Post(':id/release')
-  @RequirePermission(Action.APPROVE_PAYOUT)
-  async releaseEscrow(@Param('id') id: string) {
-    return this.prisma.$transaction(async (tx) => {
-      return this.aglpService.releaseEscrow(tx, id);
-    });
-  }
 
   // ── SUPER ADMIN OVERSIGHT ──────────────────────────────────────────────────
 
@@ -14053,6 +13965,7 @@ export default class SystemBroadcastsController {
     if (user.role === 'admin') allowedTargets.push('ADMIN');
     if (user.role === 'operator') allowedTargets.push('OPERATOR');
     if (user.role === 'agent') allowedTargets.push('AGENT');
+    if (user.role === 'financial_operator') allowedTargets.push('FINANCE_OP');
 
     return await this.prisma.systemBroadcast.findMany({
       where: {
@@ -14081,6 +13994,7 @@ export default class SystemBroadcastsController {
     if (data.target === 'AGENT') userWhere.role = 'agent';
     else if (data.target === 'OPERATOR') userWhere.role = 'operator';
     else if (data.target === 'ADMIN') userWhere.role = 'admin';
+    else if (data.target === 'FINANCE_OP') userWhere.role = 'financial_operator';
     // If EVERYONE, leave userWhere empty to target all users
 
     const users = await this.prisma.profile.findMany({
@@ -14109,7 +14023,9 @@ export default class SystemBroadcastsController {
         message: data.content,
       });
     } else {
-      const targetRole = data.target.toLowerCase();
+      let targetRole = data.target.toLowerCase();
+      if (data.target === 'FINANCE_OP') targetRole = 'financial_operator';
+      
       this.notificationsGateway.sendToRole(targetRole, 'notification', {
         type: 'system_broadcast',
         title: data.title,
@@ -14386,7 +14302,7 @@ export class AglpService {
     return aglpTx;
   }
 
-  // Handle earning commission or rewards
+  // Handle earning commission or rewards (Direct Credit)
   async earnCommission(
     tx: Prisma.TransactionClient,
     profileId: string,
@@ -14397,7 +14313,7 @@ export class AglpService {
     const rate = this.getConversionRate();
     const amountAglp = amountEtb * rate;
 
-    // 1. Check for suspicious spikes (Transactional)
+    // 1. Check for suspicious spikes
     const thresholdConfig = this.configService.get<{ value: number }>(
       'alert_commission_spike_threshold',
       { value: 10000 },
@@ -14440,13 +14356,13 @@ export class AglpService {
       });
     }
 
-    // 2. Credit AGLP Balance
+    // 2. Direct Credit AGLP Balance
     await tx.profile.update({
       where: { id: profileId },
       data: { aglpBalance: { increment: amountAglp } },
     });
 
-    // 3. Log AGLP Earn Transaction
+    // 3. Log AGLP Earn Transaction as COMPLETED
     await tx.aglpTransaction.create({
       data: {
         profileId,
@@ -14460,7 +14376,7 @@ export class AglpService {
       },
     });
 
-    // 4. Write backwards compatible audit log
+    // 4. Audit log
     await tx.auditLog.create({
       data: {
         actorId: profileId,
@@ -14671,121 +14587,6 @@ export class AglpService {
     });
   }
 
-  // Handle locking commission in escrow (Pending)
-  async lockCommission(
-    tx: Prisma.TransactionClient,
-    profileId: string,
-    amountEtb: number,
-    referenceId: string,
-    reason: string,
-  ) {
-    const rate = this.getConversionRate();
-    const amountAglp = amountEtb * rate;
-
-    // Credit AGLP Pending (instead of balance)
-    await tx.profile.update({
-      where: { id: profileId },
-      data: { aglpPending: { increment: amountAglp } },
-    });
-
-    // Log AGLP Earn Transaction as PENDING
-    const aglpTx = await tx.aglpTransaction.create({
-      data: {
-        profileId,
-        type: AglpTransactionType.EARN,
-        amount: amountAglp,
-        etbEquivalent: amountEtb,
-        conversionRate: rate,
-        status: AglpTransactionStatus.PENDING,
-        referenceId,
-        referenceType: 'COMMISSION_ESCROW',
-      },
-    });
-
-    // Audit log
-    await tx.auditLog.create({
-      data: {
-        actorId: profileId,
-        action: 'COMMISSION_LOCKED',
-        targetTable: 'profiles',
-        targetId: profileId,
-        metadata: {
-          aglpTxId: aglpTx.id,
-          referenceId,
-          amount: amountAglp,
-          amountEtb,
-          reason: `${reason} (Awaiting Admin Release)`,
-        },
-      },
-    });
-
-    return aglpTx;
-  }
-
-  // Release commission from escrow to available balance
-  async releaseEscrow(tx: Prisma.TransactionClient, aglpTxId: string) {
-    const aglpTx = await tx.aglpTransaction.findUnique({
-      where: { id: aglpTxId },
-      include: { profile: true },
-    });
-
-    if (
-      !aglpTx ||
-      aglpTx.status !== AglpTransactionStatus.PENDING ||
-      aglpTx.type !== AglpTransactionType.EARN
-    ) {
-      throw new Error('Valid pending escrow transaction not found');
-    }
-
-    // Move from pending to balance
-    await tx.profile.update({
-      where: { id: aglpTx.profileId },
-      data: {
-        aglpPending: { decrement: aglpTx.amount },
-        aglpBalance: { increment: aglpTx.amount },
-      },
-    });
-
-    // Update transaction status
-    await tx.aglpTransaction.update({
-      where: { id: aglpTxId },
-      data: { status: AglpTransactionStatus.COMPLETED },
-    });
-
-    // Audit log
-    await tx.auditLog.create({
-      data: {
-        actorId: aglpTx.profileId,
-        action: 'COMMISSION_RELEASED',
-        targetTable: 'profiles',
-        targetId: aglpTx.profileId,
-        metadata: {
-          aglpTxId,
-          amount: aglpTx.amount,
-          reason: 'Escrow released by system (Terminal State reached)',
-        },
-      },
-    });
-  }
-
-  // Release commission for a specific match
-  async releaseCommissionByMatchId(
-    tx: Prisma.TransactionClient,
-    matchId: string,
-  ) {
-    const aglpTxs = await tx.aglpTransaction.findMany({
-      where: {
-        referenceId: matchId,
-        type: AglpTransactionType.EARN,
-        status: AglpTransactionStatus.PENDING,
-      },
-    });
-
-    for (const aglpTx of aglpTxs) {
-      await this.releaseEscrow(tx, aglpTx.id);
-    }
-  }
-
   // Allow agent to cancel their own PENDING withdrawal
   async cancelWithdrawal(
     tx: Prisma.TransactionClient,
@@ -14810,7 +14611,6 @@ export class AglpService {
       where: { id: requestedByProfileId },
       data: {
         aglpBalance: { increment: aglpTx.amount },
-        aglpWithdrawn: { decrement: aglpTx.amount },
       },
     });
 
@@ -15009,10 +14809,12 @@ export class AuthController {
   async login(
     @Body() body: { identifier: string; password: string },
     @Res({ passthrough: true }) res: Response,
+    @Req() req: any,
   ) {
     return await this.authService.login(
       { identifier: body.identifier, pass: body.password },
       res,
+      req,
     );
   }
 
@@ -15039,9 +14841,10 @@ export class AuthController {
   async register(
     @Body() body: RegisterDto,
     @Res({ passthrough: true }) res: Response,
+    @Req() req: any,
   ) {
     try {
-      return await this.authService.register(body, res);
+      return await this.authService.register(body, res, req);
     } catch (e: unknown) {
       const message = e instanceof Error ? e.message : 'Registration failed';
       throw new InternalServerErrorException(message);
@@ -15165,6 +14968,7 @@ export class AuthService {
   async login(
     credentials: { identifier: string; pass: string },
     res: Response,
+    req?: any,
   ) {
     console.log(
       `[AuthService] Attempting login for email: ${credentials.identifier}`,
@@ -15212,6 +15016,20 @@ export class AuthService {
       sameSite: 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
+
+    // Log successful login
+    void this.prisma.auditLog.create({
+      data: {
+        actorId: profile.id,
+        action: 'USER_LOGIN',
+        targetTable: 'profiles',
+        targetId: profile.id,
+        metadata: {
+          ip: req?.ip,
+          userAgent: req?.headers?.['user-agent'],
+        },
+      },
+    }).catch(err => console.error('[AuthService] Failed to log login:', err));
 
     return {
       user: {
@@ -15262,6 +15080,7 @@ export class AuthService {
       referralCode?: string;
     },
     res?: Response,
+    req?: any,
   ) {
     console.log(
       `[AuthService] Registering user: ${data.fullName}, Email: ${data.email}`,
@@ -15408,6 +15227,20 @@ export class AuthService {
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       });
     }
+
+    // Log successful registration
+    void this.prisma.auditLog.create({
+      data: {
+        actorId: newProfile.id,
+        action: 'USER_REGISTER',
+        targetTable: 'profiles',
+        targetId: newProfile.id,
+        metadata: {
+          ip: req?.ip,
+          userAgent: req?.headers?.['user-agent'],
+        },
+      },
+    }).catch(err => console.error('[AuthService] Failed to log registration:', err));
 
     return {
       message: 'Registration successful.',
@@ -15904,6 +15737,7 @@ export enum Action {
   VIEW_COMMISSION_EARNINGS = 'VIEW_COMMISSION_EARNINGS',
   REQUEST_PAYOUT = 'REQUEST_PAYOUT',
   VIEW_PAYOUT_HISTORY = 'VIEW_PAYOUT_HISTORY',
+  VIEW_REFERRAL_DETAILS = 'VIEW_REFERRAL_DETAILS',
 
   // --- Operator (Neutral Mediator) ---
   VIEW_QUEUE = 'VIEW_QUEUE',
@@ -15985,6 +15819,7 @@ export const PermissionMatrix: Record<string, Action[]> = {
     Action.REQUEST_PAYOUT,
     Action.VIEW_PAYOUT_HISTORY,
     Action.VIEW_BROADCASTS,
+    Action.VIEW_REFERRAL_DETAILS,
   ],
   operator: [
     Action.VIEW_QUEUE,
@@ -15996,11 +15831,14 @@ export const PermissionMatrix: Record<string, Action[]> = {
     Action.VIEW_ASSIGNED_REQUEST_DETAILS,
     Action.RESOLVE_DISPUTE,
     Action.ESCALATE_DISPUTE,
-    Action.APPROVE_PAYOUT,
-    Action.VIEW_FINANCIAL_REPORTS,
     Action.VIEW_BROADCASTS,
   ],
-  financial_operator: [Action.VERIFY_UPGRADE, Action.VIEW_BROADCASTS],
+  financial_operator: [
+    Action.VERIFY_UPGRADE,
+    Action.VIEW_BROADCASTS,
+    Action.APPROVE_PAYOUT,
+    Action.VIEW_FINANCIAL_REPORTS,
+  ],
   admin: [
     Action.PROPOSE_RESOLUTION,
     Action.FINALIZE_RESOLUTION,
@@ -16198,10 +16036,12 @@ import { Module, Global } from '@nestjs/common';
 import { ConfigService } from './config.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { RequestEventListener } from './events/request.events';
+import { UploadsController } from './uploads.controller';
 
 @Global()
 @Module({
   imports: [PrismaModule],
+  controllers: [UploadsController],
   providers: [ConfigService, RequestEventListener],
   exports: [ConfigService],
 })
@@ -16255,29 +16095,7 @@ export class ConfigService implements OnModuleInit {
         );
       }
 
-      if (!this.configs.has('COMMISSION_REAL_ESTATE_PRIMARY')) {
-        await this.set(
-          'COMMISSION_REAL_ESTATE_PRIMARY',
-          { value: 0.1 },
-          'Commission for primary agent on real estate fulfillment.',
-        );
-      }
 
-      if (!this.configs.has('COMMISSION_REAL_ESTATE_OVERRIDE')) {
-        await this.set(
-          'COMMISSION_REAL_ESTATE_OVERRIDE',
-          { value: 0.05 },
-          'Referral override commission on real estate fulfillment.',
-        );
-      }
-
-      if (!this.configs.has('COMMISSION_FURNITURE_PRIMARY')) {
-        await this.set(
-          'COMMISSION_FURNITURE_PRIMARY',
-          { value: 0.1 },
-          'Commission for primary agent on furniture fulfillment.',
-        );
-      }
 
       // --- ALERT ENGINE CONFIGS ---
       if (!this.configs.has('alert_bad_performance_limit')) {
@@ -16845,6 +16663,8 @@ export class AuditInterceptor implements NestInterceptor {
       method: string;
       url: string;
       body: unknown;
+      ip: string;
+      headers: Record<string, string>;
       user?: { id: string };
     }>();
     const { method, url, body, user } = request;
@@ -16887,6 +16707,8 @@ export class AuditInterceptor implements NestInterceptor {
                 targetId: targetIdFromContext,
                 metadata: {
                   requestBody: body as object,
+                  ip: request.ip,
+                  userAgent: request.headers['user-agent'],
                   response:
                     response && typeof response === 'object'
                       ? { ...response }
@@ -17138,6 +16960,77 @@ import { PrismaModule } from '../../prisma/prisma.module';
 export class RedisModule {}
 
 
+===== FILE: src\common\uploads.controller.ts =====
+
+import {
+  Controller,
+  Post,
+  Get,
+  Param,
+  Res,
+  UploadedFile,
+  UseInterceptors,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { PrismaService } from '../prisma/prisma.service';
+import * as express from 'express';
+
+interface MulterFile {
+  originalname: string;
+  mimetype: string;
+  buffer: Buffer;
+}
+
+@Controller('uploads')
+export class UploadsController {
+  constructor(private prisma: PrismaService) {}
+
+  @Post()
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadFile(@UploadedFile() file: MulterFile) {
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+
+    const attachment = await this.prisma.attachment.create({
+      data: {
+        fileName: file.originalname,
+        mimeType: file.mimetype,
+        content: file.buffer.toString('base64'),
+      },
+    });
+
+    // Return the URL to access this file
+    // In a real app, this would be the full public URL
+    return {
+      id: attachment.id,
+      url: `/uploads/${attachment.id}`,
+    };
+  }
+
+  @Get(':id')
+  async getFile(@Param('id') id: string, @Res() res: express.Response) {
+    const attachment = await this.prisma.attachment.findUnique({
+      where: { id },
+    });
+
+    if (!attachment) {
+      throw new NotFoundException('File not found');
+    }
+
+    const buffer = Buffer.from(attachment.content, 'base64');
+    res.set({
+      'Content-Type': attachment.mimeType,
+      'Content-Length': buffer.length,
+      'Content-Disposition': `inline; filename="${attachment.fileName}"`,
+    });
+    res.send(buffer);
+  }
+}
+
+
 ===== FILE: src\main.ts =====
 
 import * as dotenv from 'dotenv';
@@ -17238,656 +17131,6 @@ function processDirectory(dir) {
 processDirectory(rootDir);
 
 console.log(`Done: ${outputDir}`);
-
-===== FILE: src\mediation\mediation_combined\mediaton.txt =====
-
-
-
-===== FILE: combine.cjs =====
-
-const fs = require('fs');
-const path = require('path');
-
-const rootDir = process.cwd();
-const rootName = path.basename(rootDir);
-
-const outputDir = path.join(rootDir, `${rootName}_combined`);
-
-if (!fs.existsSync(outputDir)) {
-  fs.mkdirSync(outputDir);
-}
-
-const IGNORE_DIRS = new Set([
-  'node_modules', '.git', 'dist', 'build',
-  'ios', 'android', '.dart_tool',
-  `${rootName}_combined`
-]);
-
-const IGNORE_EXT = new Set([
-  '.png', '.jpg', '.jpeg', '.gif', '.webp',
-  '.mp4', '.mp3', '.zip', '.tar', '.gz', '.exe',
-  '.lock'
-]);
-
-function getOutputFileName(dir) {
-  const relative = path.relative(rootDir, dir);
-  if (!relative) return 'root.txt';
-  return relative.split(path.sep).join('__') + '.txt';
-}
-
-function processDirectory(dir) {
-  const fileName = getOutputFileName(dir);
-  const outputFile = path.join(outputDir, fileName);
-
-  fs.writeFileSync(outputFile, '');
-
-  const entries = fs.readdirSync(dir, { withFileTypes: true });
-  entries.sort((a, b) => a.name.localeCompare(b.name));
-
-  for (const entry of entries) {
-    const fullPath = path.join(dir, entry.name);
-
-    if (entry.isDirectory()) {
-      if (IGNORE_DIRS.has(entry.name)) continue;
-      processDirectory(fullPath);
-      continue;
-    }
-
-    const ext = path.extname(entry.name).toLowerCase();
-    if (IGNORE_EXT.has(ext)) continue;
-
-    if (entry.isFile()) {
-      try {
-        const content = fs.readFileSync(fullPath, 'utf-8');
-        const header = `\n\n===== FILE: ${entry.name} =====\n\n`;
-        fs.appendFileSync(outputFile, header + content);
-      } catch {}
-    }
-  }
-}
-
-processDirectory(rootDir);
-
-console.log(`Done: ${outputDir}`);
-
-===== FILE: mediation.controller.ts =====
-
-import {
-  Controller,
-  Post,
-  Patch,
-  Get,
-  Param,
-  Body,
-  Query,
-  Req,
-  UseGuards,
-} from '@nestjs/common';
-import { MediationService } from './mediation.service';
-import { RolesGuard, RequirePermission, JwtAuthGuard } from '../auth/guards';
-import { Action } from '../auth/permissions';
-import { FeedbackBundleState } from '@prisma/client';
-import type { AuthenticatedRequest } from '../auth/guards';
-
-@Controller('mediation')
-@UseGuards(JwtAuthGuard, RolesGuard)
-export class MediationController {
-  constructor(private readonly mediationService: MediationService) {}
-
-  @Post('transaction/:id/feedback')
-  @RequirePermission(
-    Action.SUBMIT_CUSTOMER_FEEDBACK,
-    Action.SUBMIT_AGENT_FEEDBACK,
-  )
-  async submitFeedback(
-    @Param('id') transactionId: string,
-    @Req() req: AuthenticatedRequest,
-    @Body() body: { content: string; rating: number; categories?: string[] },
-  ) {
-    const userId = req.user.id;
-    return this.mediationService.submitFeedback(
-      transactionId,
-      userId,
-      body.content,
-      body.rating,
-      body.categories,
-    );
-  }
-
-  @Patch('bundle/:id/propose')
-  @RequirePermission(Action.PROPOSE_RESOLUTION)
-  async proposeResolution(
-    @Param('id') bundleId: string,
-    @Req() req: AuthenticatedRequest,
-    @Body() body: { proposedText: string },
-  ) {
-    const userId = req.user.id;
-    return this.mediationService.proposeResolution(
-      bundleId,
-      userId,
-      body.proposedText,
-    );
-  }
-
-  @Post('proposal/:id/finalize')
-  @RequirePermission(Action.FINALIZE_RESOLUTION)
-  async finalizeResolution(
-    @Param('id') proposalId: string,
-    @Req() req: AuthenticatedRequest,
-    @Body() body: { approved: boolean; comment?: string },
-  ) {
-    const userId = req.user.id;
-    return this.mediationService.finalizeResolution(
-      proposalId,
-      userId,
-      body.approved,
-      body.comment,
-    );
-  }
-
-  @Post('bundle/:id/finalize')
-  @RequirePermission(Action.FINALIZE_RESOLUTION)
-  async finalizeBundle(
-    @Param('id') bundleId: string,
-    @Req() req: AuthenticatedRequest,
-    @Body() body: { resolutionText: string },
-  ) {
-    const userId = req.user.id;
-    return this.mediationService.finalizeBundleDirectly(
-      bundleId,
-      userId,
-      body.resolutionText,
-    );
-  }
-
-  @Get('bundles')
-  @RequirePermission(Action.PROPOSE_RESOLUTION)
-  async getBundles(@Query('state') state?: FeedbackBundleState) {
-    return this.mediationService.getBundles(state);
-  }
-}
-
-
-===== FILE: mediation.module.ts =====
-
-import { Module } from '@nestjs/common';
-import { BullModule } from '@nestjs/bullmq';
-import { MediationService } from './mediation.service';
-import { MediationController } from './mediation.controller';
-import { MediationProcessor } from './mediation.processor';
-import { CommonModule } from '../common/common.module';
-
-@Module({
-  imports: [
-    BullModule.registerQueue({
-      name: 'mediation',
-    }),
-    CommonModule,
-  ],
-  providers: [MediationService, MediationProcessor],
-  controllers: [MediationController],
-  exports: [MediationService],
-})
-export class MediationModule {}
-
-
-===== FILE: mediation.processor.ts =====
-
-import { Processor, WorkerHost } from '@nestjs/bullmq';
-import { Job } from 'bullmq';
-import { PrismaService } from '../prisma/prisma.service';
-import { FeedbackBundleState } from '@prisma/client';
-
-@Processor('mediation')
-export class MediationProcessor extends WorkerHost {
-  constructor(private prisma: PrismaService) {
-    super();
-  }
-
-  async process(job: Job<unknown, unknown, string>): Promise<unknown> {
-    if (job.name === 'feedback-timeout') {
-      await this.handleTimeout(job);
-    }
-    return undefined;
-  }
-
-  private async handleTimeout(job: Job) {
-    const { transactionId } = job.data as { transactionId: string };
-
-    const bundle = await this.prisma.feedbackBundle.findUnique({
-      where: { transactionId },
-    });
-
-    if (!bundle) return;
-
-    // Use string comparisons for states that might not be in the stale generated types
-    const state = bundle.state as string;
-
-    if (
-      state === 'WAITING_BOTH' ||
-      state === 'WAITING_AGENT' ||
-      state === 'WAITING_CUSTOMER'
-    ) {
-      const timedOutState = 'TIMED_OUT' as unknown as FeedbackBundleState;
-
-      // Define a local type for JSON history to satisfy strict Prisma types
-      type StateHistoryEntry = {
-        from: string;
-        to: string;
-        at: string;
-        by: string;
-        reason: string;
-      };
-
-      // Avoid 'unbound-method' by using a structural interface cast for the model access
-      interface FeedbackBundleModel {
-        update: (args: {
-          where: { transactionId: string };
-          data: {
-            state: FeedbackBundleState;
-            stateHistory: { push: unknown };
-          };
-        }) => Promise<unknown>;
-      }
-
-      await (
-        this.prisma.feedbackBundle as unknown as FeedbackBundleModel
-      ).update({
-        where: { transactionId },
-        data: {
-          state: timedOutState,
-          stateHistory: {
-            push: {
-              from: state,
-              to: 'TIMED_OUT',
-              at: new Date().toISOString(),
-              by: 'SYSTEM',
-              reason: '14-day feedback window expired',
-            } as StateHistoryEntry as unknown,
-          },
-        },
-      });
-    }
-  }
-}
-
-
-===== FILE: mediation.service.ts =====
-
-import {
-  Injectable,
-  BadRequestException,
-  NotFoundException,
-} from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { FeedbackBundleState, UserRole, RequestStatus } from '@prisma/client';
-import { InjectQueue } from '@nestjs/bullmq';
-import { Queue } from 'bullmq';
-
-import { ConfigService } from '../common/config.service';
-
-@Injectable()
-export class MediationService {
-  constructor(
-    private prisma: PrismaService,
-    private config: ConfigService,
-    @InjectQueue('mediation') private mediationQueue: Queue,
-  ) {}
-
-  async submitFeedback(
-    transactionId: string,
-    authorId: string,
-    content: string,
-    rating: number,
-    categories: string[] = [],
-  ) {
-    // 1. Validate transaction existence
-    const transaction = await this.prisma.transaction.findUnique({
-      where: { id: transactionId },
-      include: { feedbacks: true },
-    });
-
-    if (!transaction) throw new NotFoundException('Transaction not found');
-
-    // 2. Validate author and role
-    const author = await this.prisma.profile.findUnique({
-      where: { id: authorId },
-    });
-    if (!author) throw new NotFoundException('Author not found');
-
-    if (author.role !== UserRole.customer && author.role !== UserRole.agent) {
-      throw new BadRequestException(
-        'Only Customers and Agents can submit feedback',
-      );
-    }
-
-    // 3. Prevent duplicate feedback from the same author for this transaction
-    const existingFeedback = transaction.feedbacks.find(
-      (f) => f.authorId === authorId,
-    );
-    if (existingFeedback)
-      throw new BadRequestException(
-        'Feedback already submitted for this transaction',
-      );
-
-    // 4. Create feedback
-    const feedback = await this.prisma.feedback.create({
-      data: {
-        transactionId,
-        authorId,
-        content,
-        rating,
-        categories,
-      } as any,
-    });
-
-    // 5. Schedule timeout if this is the first feedback
-    if (transaction.feedbacks.length === 0) {
-      await this.mediationQueue.add(
-        'feedback-timeout',
-        { transactionId },
-        { delay: 14 * 24 * 60 * 60 * 1000 }, // 14 days
-      );
-    }
-
-    // 6. Check for Auto-Bundling
-    await this.checkAndBundle(transactionId);
-
-    return feedback;
-  }
-
-  private async checkAndBundle(transactionId: string) {
-    const feedbacks = await this.prisma.feedback.findMany({
-      where: { transactionId },
-      include: { author: true },
-    });
-
-    const hasCustomer = feedbacks.some(
-      (f) => f.author.role === UserRole.customer,
-    );
-    const hasAgent = feedbacks.some((f) => f.author.role === UserRole.agent);
-
-    if (hasCustomer && hasAgent) {
-      // Create or Update Bundle to BUNDLED status
-      await this.prisma.feedbackBundle.upsert({
-        where: { transactionId },
-        update: {
-          state: FeedbackBundleState.BUNDLED,
-          stateHistory: {
-            push: {
-              from: FeedbackBundleState.WAITING_BOTH,
-              to: FeedbackBundleState.BUNDLED,
-              at: new Date().toISOString(),
-              by: 'SYSTEM',
-              reason: 'Automatic bundling after both parties provided feedback',
-            },
-          },
-        },
-        create: {
-          transactionId,
-          state: FeedbackBundleState.BUNDLED,
-          stateHistory: [
-            {
-              from: FeedbackBundleState.WAITING_BOTH,
-              to: FeedbackBundleState.BUNDLED,
-              at: new Date().toISOString(),
-              by: 'SYSTEM',
-              reason: 'Initial automatic bundle creation',
-            },
-          ],
-        },
-      });
-    }
-  }
-
-  async proposeResolution(
-    bundleId: string,
-    adminId: string,
-    proposedText: string,
-  ) {
-    const bundle = await this.prisma.feedbackBundle.findUnique({
-      where: { id: bundleId },
-    });
-    if (!bundle) throw new NotFoundException('Bundle not found');
-
-    const proposal = await this.prisma.resolutionProposal.create({
-      data: {
-        bundleId,
-        proposedById: adminId,
-        proposedText,
-      },
-    });
-
-    await this.prisma.feedbackBundle.update({
-      where: { id: bundleId },
-      data: {
-        state: FeedbackBundleState.PROPOSED,
-        stateHistory: {
-          push: {
-            from: bundle.state,
-            to: FeedbackBundleState.PROPOSED,
-            at: new Date().toISOString(),
-            by: adminId,
-            reason: 'Admin proposed resolution',
-          },
-        },
-      },
-    });
-
-    return proposal;
-  }
-
-  async finalizeResolution(
-    proposalId: string,
-    actorId: string,
-    approved: boolean,
-    comment?: string,
-  ) {
-    const proposal = await this.prisma.resolutionProposal.findUnique({
-      where: { id: proposalId },
-      include: {
-        bundle: true,
-      },
-    });
-
-    if (!proposal) throw new NotFoundException('Proposal not found');
-
-    const transaction = await this.prisma.transaction.findUnique({
-      where: { id: proposal.bundle.transactionId },
-      include: { match: { include: { request: true } } },
-    });
-
-    if (!transaction)
-      throw new NotFoundException('Associated transaction not found');
-
-    const actor = await this.prisma.profile.findUnique({
-      where: { id: actorId },
-    });
-    if (!actor) throw new NotFoundException('Actor not found');
-
-    const isEscalated = transaction.match.request.status === RequestStatus.disputed;
-    const budget = transaction.match.request.budgetMax
-      ? Number(transaction.match.request.budgetMax)
-      : 0;
-    const riskThreshold = this.config.get<number>(
-      'high_risk_threshold_etb',
-      ConfigService.DEFAULT_RISK_THRESHOLD,
-    );
-    const isHighRisk = budget > riskThreshold;
-
-    if ((isEscalated || isHighRisk) && actor.role !== UserRole.super_admin) {
-      throw new BadRequestException(
-        'This case is escalated/high-risk and requires Super Admin finalization',
-      );
-    }
-
-    const final = await this.prisma.finalResolution.create({
-      data: {
-        proposalId,
-        approved,
-        comment,
-        finalizedById: actorId,
-      },
-    });
-
-    await this.prisma.feedbackBundle.update({
-      where: { id: proposal.bundleId },
-      data: {
-        state: approved
-          ? FeedbackBundleState.RESOLVED
-          : FeedbackBundleState.REJECTED,
-        stateHistory: {
-          push: {
-            from: proposal.bundle.state,
-            to: approved
-              ? FeedbackBundleState.RESOLVED
-              : FeedbackBundleState.REJECTED,
-            at: new Date().toISOString(),
-            by: actorId,
-            reason: comment || 'Final decision recorded',
-          },
-        },
-      },
-    });
-
-    return final;
-  }
-
-  async escalateToSuperAdmin(
-    bundleId: string,
-    adminId: string,
-    reason: string,
-  ) {
-    const bundle = await this.prisma.feedbackBundle.findUnique({
-      where: { id: bundleId },
-    });
-    if (!bundle) throw new NotFoundException('Bundle not found');
-
-    const transaction = await this.prisma.transaction.findUnique({
-      where: { id: bundle.transactionId },
-      include: { match: true },
-    });
-    if (!transaction) throw new NotFoundException('Transaction not found');
-
-
-
-    await this.prisma.feedbackBundle.update({
-      where: { id: bundleId },
-      data: {
-        stateHistory: {
-          push: {
-            from: bundle.state,
-            to: bundle.state,
-            at: new Date().toISOString(),
-            by: adminId,
-            reason: `Escalated to Super Admin: ${reason}`,
-          },
-        },
-      },
-    });
-
-    return { escalated: true };
-  }
-
-  async overrideResolution(
-    resolutionId: string,
-    superAdminId: string,
-    newApproved: boolean,
-    comment: string,
-  ) {
-    const resolution = await this.prisma.finalResolution.findUnique({
-      where: { id: resolutionId },
-      include: { proposal: { include: { bundle: true } } },
-    });
-
-    if (!resolution) throw new NotFoundException('Resolution not found');
-
-    const updated = await this.prisma.finalResolution.update({
-      where: { id: resolutionId },
-      data: {
-        approved: newApproved,
-        comment: `OVERRIDDEN by Super Admin: ${comment}`,
-        finalizedById: superAdminId,
-      },
-    });
-
-    if (newApproved !== resolution.approved) {
-      await this.prisma.feedbackBundle.update({
-        where: { id: resolution.proposal.bundleId },
-        data: {
-          state: newApproved
-            ? FeedbackBundleState.RESOLVED
-            : FeedbackBundleState.REJECTED,
-          stateHistory: {
-            push: {
-              from: resolution.proposal.bundle.state,
-              to: newApproved
-                ? FeedbackBundleState.RESOLVED
-                : FeedbackBundleState.REJECTED,
-              at: new Date().toISOString(),
-              by: superAdminId,
-              reason: `Resolution OVERRIDDEN: ${comment}`,
-            },
-          },
-        },
-      });
-    }
-
-    return updated;
-  }
-
-  async getBundles(state?: FeedbackBundleState) {
-    return this.prisma.feedbackBundle.findMany({
-      where: state ? { state } : {},
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      include: {
-        transaction: {
-          include: {
-            agent: true,
-            match: {
-              include: {
-                request: {
-                  include: {
-                    customer: true,
-                    zone: true,
-                  },
-                },
-              },
-            },
-            feedbacks: {
-              include: {
-                author: true,
-              },
-            },
-          },
-        },
-      } as any,
-      orderBy: { createdAt: 'desc' },
-    });
-  }
-
-  async finalizeBundleDirectly(
-    bundleId: string,
-    actorId: string,
-    resolutionText: string,
-  ) {
-    const proposal = await this.prisma.resolutionProposal.create({
-      data: {
-        bundleId,
-        proposedById: actorId,
-        proposedText: resolutionText,
-      },
-    });
-
-    return this.finalizeResolution(
-      proposal.id,
-      actorId,
-      true,
-      'Direct Admin Resolution',
-    );
-  }
-}
-
 
 ===== FILE: src\mediation\mediation.controller.ts =====
 
@@ -18123,9 +17366,9 @@ export class MediationService {
     // 1. Validate transaction existence with associated request
     const transaction = await this.prisma.transaction.findUnique({
       where: { id: transactionId },
-      include: { 
+      include: {
         feedbacks: true,
-        match: { include: { request: true } }
+        match: { include: { request: true } },
       },
     });
 
@@ -18168,7 +17411,7 @@ export class MediationService {
         content,
         rating,
         categories,
-      } as any,
+      },
     });
 
     // 5. Schedule timeout if this is the first feedback
@@ -18297,8 +17540,8 @@ export class MediationService {
 
     const isEscalated =
       transaction.match.request.status === RequestStatus.disputed;
-    const budget = transaction.match.request.budgetMax
-      ? Number(transaction.match.request.budgetMax)
+    const budget = transaction.match.request.budget
+      ? Number(transaction.match.request.budget)
       : 0;
     const riskThreshold = this.config.get<number>(
       'high_risk_threshold_etb',
@@ -18768,10 +18011,12 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service';
-import { RequestStatus } from '@prisma/client';
+import { RequestStatus, UpgradeRequestStatus, Prisma } from '@prisma/client';
 import { Logger, Inject } from '@nestjs/common';
 import { Redis } from 'ioredis';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { NotificationsGateway } from '../notifications/notifications.gateway';
+import { NotificationsService } from '../notifications/notifications.service';
 
 interface AssignmentJobData {
   requestId?: string;
@@ -18788,6 +18033,8 @@ export class AssignmentProcessor extends WorkerHost {
     private readonly prisma: PrismaService,
     @Inject('REDIS_CLIENT') private readonly redis: Redis,
     private readonly eventEmitter: EventEmitter2,
+    private readonly notificationsGateway: NotificationsGateway,
+    private readonly notificationsService: NotificationsService,
   ) {
     super();
   }
@@ -18893,7 +18140,7 @@ export class AssignmentProcessor extends WorkerHost {
               status: RequestStatus.pending,
               metadata: {
                 ...(typeof currentRequest?.metadata === 'object'
-                  ? (currentRequest.metadata as any)
+                  ? (currentRequest.metadata as Record<string, any>)
                   : {}),
                 agentTimeoutAt: new Date().toISOString(),
                 lastTimedOutAgentId: agentId,
@@ -18960,6 +18207,95 @@ export class AssignmentProcessor extends WorkerHost {
         }
       }
     }
+
+    if (job.name === 'upgrade-sweeper') {
+      await this.handleStaleUpgradeRequests();
+    }
+  }
+
+  private async handleStaleUpgradeRequests() {
+    this.logger.log('[AssignmentProcessor] Running Upgrade Sweeper...');
+
+    // Find requests older than 48 hours
+    const fortyEightHoursAgo = new Date(Date.now() - 48 * 60 * 60 * 1000);
+
+    const staleRequests = await this.prisma.upgradeRequest.findMany({
+      where: {
+        status: UpgradeRequestStatus.SUBMITTED,
+        createdAt: {
+          lt: fortyEightHoursAgo,
+        },
+      },
+    });
+
+    if (staleRequests.length === 0) {
+      return;
+    }
+
+    this.logger.log(
+      `[AssignmentProcessor] Found ${staleRequests.length} stale upgrade requests. Auto-rejecting...`,
+    );
+
+    let cleanedUpCount = 0;
+
+    for (const req of staleRequests) {
+      try {
+        await this.prisma.$transaction(async (tx) => {
+          // 1. Update status and internalNote
+          await tx.upgradeRequest.update({
+            where: { id: req.id },
+            data: {
+              status: UpgradeRequestStatus.REJECTED,
+              internalNote: 'Auto-rejected: No operator action within 48h.',
+            },
+          });
+
+          // 2. Create Audit Log
+          await tx.auditLog.create({
+            data: {
+              action: 'UPGRADE_AUTO_REJECTED',
+              targetTable: 'upgrade_requests',
+              targetId: req.id,
+              metadata: {
+                reason: 'No operator action within 48h',
+                previousStatus: req.status,
+              } as Prisma.InputJsonValue,
+            },
+          });
+
+          // 3. Create Notification record for agent
+          await tx.notification.create({
+            data: {
+              userId: req.agentId,
+              title: 'Upgrade Request Expired',
+              message:
+                'Your upgrade request has expired because it was not verified within 48 hours. Please submit a new request if needed.',
+              type: 'upgrade.rejected',
+              link: '/agent/upgrade',
+            },
+          });
+        });
+
+        // 4. Emit WebSocket notification
+        this.notificationsGateway.sendToUser(req.agentId, 'notification', {
+          title: 'Upgrade Request Expired',
+          message:
+            'Your upgrade request has expired because it was not verified within 48 hours.',
+          type: 'upgrade.rejected',
+        });
+
+        cleanedUpCount++;
+      } catch (error) {
+        this.logger.error(
+          `[AssignmentProcessor] Failed to auto-reject upgrade request ${req.id}:`,
+          error,
+        );
+      }
+    }
+
+    this.logger.log(
+      `[AssignmentProcessor] Successfully auto-rejected ${cleanedUpCount} stale upgrade requests.`,
+    );
   }
 }
 
@@ -19116,6 +18452,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { AssignmentProcessor } from './assignment.processor';
 import { RedisModule } from '../common/redis/redis.module';
 import { AglpModule } from '../aglp/aglp.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
@@ -19123,6 +18460,7 @@ import { AglpModule } from '../aglp/aglp.module';
     BullModule.registerQueue({ name: 'assignment-timeout' }),
     RedisModule,
     AglpModule,
+    NotificationsModule,
   ],
   providers: [RequestsService, AssignmentProcessor],
   controllers: [RequestsController],
@@ -19139,6 +18477,7 @@ import {
   ForbiddenException,
   BadRequestException,
   OnModuleInit,
+  Logger,
 } from '@nestjs/common';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
@@ -19148,10 +18487,15 @@ import { AglpService } from '../aglp/aglp.service';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 
+// Updated data instructions to expect a single budget number
 export interface CreateRequestDto {
   category: string;
   type?: 'real_estate' | 'furniture';
-  details: Record<string, any>;
+  details: {
+    description: string;
+    budget?: number; // Changed from budgetMin/Max to single budget
+    [key: string]: any;
+  };
   metadata?: Record<string, any>;
   locationZone: {
     kifleKetema: string;
@@ -19169,6 +18513,8 @@ interface RequestCreatedPayload {
 
 @Injectable()
 export class RequestsService implements OnModuleInit {
+  private readonly logger = new Logger(RequestsService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly eventEmitter: EventEmitter2,
@@ -19178,8 +18524,7 @@ export class RequestsService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    // Schedule a recurring sweeper job to prevent requests from getting stuck in "Pending Limbo"
-    // This runs every minute and re-triggers assignment for any unassigned pending requests.
+    // Routine system sweep for pending requests
     await this.timeoutQueue.add(
       'queue-sweeper',
       {},
@@ -19188,6 +18533,18 @@ export class RequestsService implements OnModuleInit {
         removeOnComplete: true,
         removeOnFail: true,
         jobId: 'global-queue-sweeper',
+      },
+    );
+
+    // Routine system sweep for stale upgrade requests
+    await this.timeoutQueue.add(
+      'upgrade-sweeper',
+      {},
+      {
+        repeat: { every: 10 * 60 * 1000 },
+        removeOnComplete: true,
+        removeOnFail: true,
+        jobId: 'global-upgrade-sweeper',
       },
     );
   }
@@ -19211,22 +18568,31 @@ export class RequestsService implements OnModuleInit {
     };
   }
 
-  // ── 1. Customer submits a request ────────────────────────────────────────
+  // 1. Logic for creating a new request
   async createRequest(customerId: string, dto: CreateRequestDto) {
+    // Convert input to number
+    const budget =
+      dto.details.budget !== undefined ? Number(dto.details.budget) : undefined;
+
+    // Simplified validation: only checking for positive numbers
+    if (budget !== undefined && budget < 0) {
+      throw new BadRequestException('Budget value must be a positive number');
+    }
+
     const zone = await this.prisma.zone.findFirst({
       where: { name: dto.locationZone.kifleKetema },
     });
 
     if (!zone) throw new BadRequestException('Invalid zone');
 
+    // Saving to the new single "budget" field
     const request = await this.prisma.request.create({
       data: {
         customerId,
         category: dto.category,
         type: dto.type || 'real_estate',
-        description: dto.details.description as string,
-        budgetMin: dto.details.budgetMin as number | undefined,
-        budgetMax: dto.details.budgetMax as number | undefined,
+        description: dto.details.description,
+        budget: budget,
         metadata: dto.metadata || {},
         zoneId: zone.id,
         woreda: dto.locationZone.woreda,
@@ -19236,13 +18602,13 @@ export class RequestsService implements OnModuleInit {
 
     this.eventEmitter.emit('request.created', request);
 
-    // Trigger instant assignment attempt
+    // Trigger instant assignment to an operator
     await this.assignToNextReadyOperator(request.id);
 
     return request;
   }
 
-  // ── New: Automated Push Logic ─────────────────────────────────────────────
+  // Logic for pushing a request to an available operator
   async assignToNextReadyOperator(requestId: string) {
     const request = await this.prisma.request.findUnique({
       where: { id: requestId },
@@ -19253,15 +18619,11 @@ export class RequestsService implements OnModuleInit {
       request.status !== RequestStatus.pending ||
       request.assignedOperatorId
     ) {
+      this.logger.debug(`[ASSIGN] Skipping ${requestId}: status=${request?.status}, alreadyAssigned=${!!request?.assignedOperatorId}`);
       return;
     }
 
-    // 2. Select operator using row-level locking to avoid race condition
-    // We want an operator who:
-    // - Is online
-    // - Has no pending assignments
-    // - Is the least recently assigned (fairness)
-    // We use FOR UPDATE SKIP LOCKED to ensure concurrency safety
+    // Select operator based on online status and current workload
     const operators = await this.prisma.$queryRaw<OperatorIdResult[]>`
       SELECT p.id 
       FROM profiles p
@@ -19277,11 +18639,12 @@ export class RequestsService implements OnModuleInit {
       FOR UPDATE SKIP LOCKED
     `;
 
+    this.logger.log(`[ASSIGN] request=${requestId} → found ${operators.length} eligible operator(s)`);
+
     const operatorId = operators[0]?.id;
     if (!operatorId) return;
 
     await this.prisma.$transaction(async (tx) => {
-      // Final check: Is the request still unassigned?
       const targetRequest = await tx.request.findUnique({
         where: { id: requestId },
       });
@@ -19310,6 +18673,7 @@ export class RequestsService implements OnModuleInit {
       );
     });
 
+    this.logger.log(`[ASSIGN] request=${requestId} → pushed to operator=${operatorId}`);
     this.eventEmitter.emit('request.pushed', { requestId, operatorId });
   }
 
@@ -19338,11 +18702,11 @@ export class RequestsService implements OnModuleInit {
     await this.handleOperatorReady();
   }
 
-  // ── 2. Operator views incoming queue (customer PII redacted) ─────────────
+  // Logic for viewing the list of unassigned requests
   async getOperatorQueue(filters?: { zoneId?: string }) {
     const whereClause: Prisma.RequestWhereInput = {
       status: RequestStatus.pending,
-      assignedOperatorId: null, // Only show unassigned/unpushed requests
+      assignedOperatorId: null,
     };
 
     if (filters?.zoneId) {
@@ -19361,7 +18725,7 @@ export class RequestsService implements OnModuleInit {
     });
   }
 
-  // ── 3. Operator assigns an eligible Agent ────────────────────────────────
+  // Logic for assigning an agent to a specific request
   async assignAgent(requestId: string, agentId: string, operatorId: string) {
     const request = await this.prisma.request.findUnique({
       where: { id: requestId },
@@ -19376,7 +18740,6 @@ export class RequestsService implements OnModuleInit {
       );
     }
 
-    // Authority Check: Only the assigned operator can assign an agent
     if (request.assignedOperatorId !== operatorId) {
       throw new ForbiddenException('This request is not assigned to you');
     }
@@ -19411,7 +18774,6 @@ export class RequestsService implements OnModuleInit {
       });
 
       if (existing) {
-        // If the match was previously rejected, reset it to assigned
         if (existing.status === 'rejected') {
           return tx.match.update({
             where: { id: existing.id },
@@ -19436,20 +18798,18 @@ export class RequestsService implements OnModuleInit {
 
     this.eventEmitter.emit('match.created', { match, agentId });
 
-    // Fallback: If agent doesn't accept/decline in 1 hour, reclaim to operator pool
     await this.timeoutQueue.add(
       'check-agent-timeout',
       { requestId, agentId, matchId: match.id },
       { delay: 60 * 60 * 1000, jobId: `agent-timeout-${match.id}` },
     );
 
-    // Trigger ready for next task
     await this.handleOperatorReady();
 
     return match;
   }
 
-  // ── 4. Generic request fetch with role-scoped visibility ──────────────────
+  // Logic for looking up a single request with privacy rules
   async getRequest(requestId: string, userId: string, role: UserRole) {
     const request = await this.prisma.request.findUnique({
       where: { id: requestId },
@@ -19489,7 +18849,7 @@ export class RequestsService implements OnModuleInit {
       if (activeMatch && activeMatch.status === 'assigned') {
         agentInfo = this.redact(
           { id: '', fullName: '', phone: '' },
-          'An agent has been assigned — details will be visible once they accept.',
+          'Details hidden until agent accepts.',
         );
       }
 
@@ -19512,16 +18872,15 @@ export class RequestsService implements OnModuleInit {
         ...request,
         customer: this.redact(
           request.customer,
-          'Customer PII is hidden until assignment.',
+          'Customer contact hidden until assignment.',
         ),
       };
     }
 
-    // Admins see everything
     return request;
   }
 
-  // ── 5. Eligible agents listing ───────────────────────────────────────────
+  // Logic for finding agents sorted by level and location
   async findEligibleAgents() {
     const agents = await this.prisma.profile.findMany({
       where: {
@@ -19559,7 +18918,7 @@ export class RequestsService implements OnModuleInit {
       });
   }
 
-  // ── 6. Customer history ──────────────────────────────────────────────────
+  // Logic for showing a customer their own requests
   async getCustomerRequests(customerId: string) {
     return this.prisma.request.findMany({
       where: { customerId },
@@ -19568,7 +18927,14 @@ export class RequestsService implements OnModuleInit {
         matches: {
           include: {
             agent: { select: { id: true, fullName: true, avatarUrl: true } },
-            transaction: { select: { id: true } },
+            transaction: {
+              select: {
+                id: true,
+                feedbacks: {
+                  select: { authorId: true },
+                },
+              },
+            },
           },
         },
       },
@@ -19576,6 +18942,7 @@ export class RequestsService implements OnModuleInit {
     });
   }
 
+  // Logic for marking work as done or raising a problem
   async confirmFulfillment(
     requestId: string,
     customerId: string,
@@ -19589,7 +18956,6 @@ export class RequestsService implements OnModuleInit {
     if (request.customerId !== customerId)
       throw new ForbiddenException('Not your request');
 
-    // Only allow confirmation if request is fulfilled (by agent)
     if (request.status !== RequestStatus.fulfilled) {
       throw new BadRequestException('Request is not in a confirmable state');
     }
@@ -19603,15 +18969,6 @@ export class RequestsService implements OnModuleInit {
             completedAt: new Date(),
           },
         });
-
-        // Release commissions for all matches of this request
-        const matches = await tx.match.findMany({
-          where: { requestId },
-        });
-
-        for (const match of matches) {
-          await this.aglpService.releaseCommissionByMatchId(tx, match.id);
-        }
       });
     } else {
       await this.prisma.request.update({
@@ -19628,7 +18985,7 @@ export class RequestsService implements OnModuleInit {
     return { success: true, status: confirmed ? 'completed' : 'disputed' };
   }
 
-  // Operator resolves a dispute by marking it fulfilled
+  // Logic for operators to settle a disagreement
   async resolveDispute(requestId: string, operatorId: string, note?: string) {
     const request = await this.prisma.request.findUnique({
       where: { id: requestId },
@@ -19658,15 +19015,6 @@ export class RequestsService implements OnModuleInit {
         include: { customer: true, matches: { include: { agent: true } } },
       });
 
-      // Release commissions for all matches of this request
-      const matches = await tx.match.findMany({
-        where: { requestId },
-      });
-
-      for (const match of matches) {
-        await this.aglpService.releaseCommissionByMatchId(tx, match.id);
-      }
-
       return req;
     });
 
@@ -19678,7 +19026,7 @@ export class RequestsService implements OnModuleInit {
     return updated;
   }
 
-  // Operator escalates a dispute to Admin
+  // Logic for sending a difficult case to high-level management
   async escalateDispute(requestId: string, operatorId: string, note?: string) {
     const request = await this.prisma.request.findUnique({
       where: { id: requestId },
@@ -19697,7 +19045,7 @@ export class RequestsService implements OnModuleInit {
         isEscalated: true,
         metadata: {
           ...currentMetadata,
-          escalationNote: note || 'No description provided by operator.',
+          escalationNote: note || 'No description provided.',
           escalatedAt: new Date().toISOString(),
           escalatedBy: operatorId,
         },
@@ -19712,7 +19060,7 @@ export class RequestsService implements OnModuleInit {
     return updated;
   }
 
-  // Operator voiding a dispute, returning it to the agent for a redo
+  // Logic for cancelling work and allowing the agent to try again
   async voidDispute(requestId: string, operatorId: string, note?: string) {
     const request = await this.prisma.request.findUnique({
       where: { id: requestId },
@@ -19734,7 +19082,7 @@ export class RequestsService implements OnModuleInit {
           metadata: {
             ...currentMetadata,
             needsRedo: true,
-            voidNote: note || 'Fulfillment voided. Redo required.',
+            voidNote: note || 'Redo required.',
             voidAt: new Date().toISOString(),
             voidBy: operatorId,
             resolvedAt: new Date().toISOString(),
@@ -19742,7 +19090,6 @@ export class RequestsService implements OnModuleInit {
         },
       });
 
-      // Reset the active match back to 'accepted' so the agent can resubmit
       await tx.match.updateMany({
         where: {
           requestId,
@@ -19764,9 +19111,8 @@ export class RequestsService implements OnModuleInit {
     return updated;
   }
 
-  // Fetch historical disputes for the audit dashboard
+  // Logic for viewing a history of all disagreements
   async getDisputeHistory() {
-    // We look for requests that are currently disputed OR have dispute resolution metadata
     return this.prisma.request.findMany({
       where: {
         OR: [
@@ -19800,7 +19146,7 @@ export class RequestsService implements OnModuleInit {
     });
   }
 
-  // Operator forces a request to complete (bypass customer)
+  // Logic for bypassing the customer and marking a request finished manually
   async forceComplete(requestId: string, operatorId: string, note?: string) {
     const request = await this.prisma.request.findUnique({
       where: { id: requestId },
@@ -19825,20 +19171,11 @@ export class RequestsService implements OnModuleInit {
             ...currentMetadata,
             forceCompletedAt: new Date().toISOString(),
             forceCompletedBy: operatorId,
-            forceCompletionNote: note || 'Manually confirmed by operator.',
+            forceCompletionNote: note || 'Manually confirmed.',
           },
         },
         include: { customer: true, matches: { include: { agent: true } } },
       });
-
-      // Release commissions for all matches of this request
-      const matches = await tx.match.findMany({
-        where: { requestId },
-      });
-
-      for (const match of matches) {
-        await this.aglpService.releaseCommissionByMatchId(tx, match.id);
-      }
 
       return req;
     });
@@ -19970,7 +19307,7 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
-import { MatchStatus, RequestStatus, Prisma } from '@prisma/client';
+import { MatchStatus, RequestStatus } from '@prisma/client';
 import { AglpService } from '../aglp/aglp.service';
 import { ConfigService } from '../common/config.service';
 
@@ -20016,14 +19353,13 @@ export class TransactionsService {
           data: { status: RequestStatus.assigned },
         });
 
-        // ── Create Transaction Record (Locked for Mediation/Feedback) ────
-        // This is necessary because feedback submission requires a transaction ID.
+        // Ensure a Transaction record is created for this match
         await tx.transaction.upsert({
           where: { matchId: matchId },
-          update: {}, // Already exists, do nothing
+          update: {},
           create: {
-            matchId,
-            amount: match.request.budgetMax || new Prisma.Decimal(0),
+            matchId: matchId,
+            amount: match.request.budget || 0,
             currency: 'ETB',
             status: 'pending',
           },
@@ -20209,70 +19545,11 @@ export class TransactionsService {
           data: { status: RequestStatus.fulfilled },
         });
 
-        // ── Commission Splitting Logic (Phase 2) ──────────────────────────
-        interface MatchWithRelations {
-          agent?: {
-            fullName: string;
-            referredById?: string;
-          };
-          request?: {
-            type: string;
-            category: string;
-            budgetMax?: number;
-            budgetMin?: number;
-          };
-        }
-
-        const res = matchResult as unknown as MatchWithRelations;
-        const budget = Number(
-          res.request?.budgetMax || res.request?.budgetMin || 0,
-        );
-
-        if (budget > 0) {
-          const type = res.request?.type || 'real_estate';
-          const category = res.request?.category || 'General';
-          const isRealEstate = type === 'real_estate';
-
-          // 1. Primary Agent Commission (Dynamic Rate)
-          const configKey = isRealEstate
-            ? 'COMMISSION_REAL_ESTATE_PRIMARY'
-            : 'COMMISSION_FURNITURE_PRIMARY';
-
-          const primaryCommissionConfig = this.configService.get<{
-            value: number;
-          }>(configKey, { value: 0.1 });
-          const primaryCommissionRate = primaryCommissionConfig.value || 0.1;
-          const primaryCommissionEtb = budget * primaryCommissionRate;
-
-          // ESCROW: Lock commission for sales
-          await this.aglpService.lockCommission(
-            tx,
-            agentId,
-            primaryCommissionEtb,
-            matchId,
-            `Primary commission for ${type} fulfillment: ${category}`,
-          );
-
-          // 2. Referral Override - Real Estate Only
-          if (isRealEstate && res.agent?.referredById) {
-            const overrideConfig = this.configService.get<{
-              value: number;
-            }>('COMMISSION_REAL_ESTATE_OVERRIDE', { value: 0.05 });
-            const referralCommissionRate = overrideConfig.value || 0.05;
-            const referralCommissionEtb = budget * referralCommissionRate;
-
-            // ESCROW: Lock referral override too (since it is sale-based)
-            await this.aglpService.lockCommission(
-              tx,
-              res.agent.referredById,
-              referralCommissionEtb,
-              matchId,
-              `Referral override commission from agent ${
-                res.agent.fullName || 'Unknown'
-              }`,
-            );
-          }
-        }
+        // Update transaction status to completed
+        await tx.transaction.update({
+          where: { matchId: matchId },
+          data: { status: 'completed' },
+        });
 
         return matchResult;
       },
@@ -20334,7 +19611,7 @@ export class TransactionsService {
           id: req.id,
           category: req.category,
           description: req.description,
-          budgetMax: req.budgetMax?.toString() || '0',
+          budget: req.budget?.toString() || '0',
           woreda: req.woreda,
           type: req.type,
           status: req.status,
@@ -20772,7 +20049,7 @@ import {
 import { UsersService } from './users.service';
 import { RolesGuard, RequirePermission, JwtAuthGuard } from '../auth/guards';
 import type { AuthenticatedRequest } from '../auth/guards';
-import { Action } from '../auth/permissions';
+import { Action, PermissionMatrix } from '../auth/permissions';
 import { UserRole } from '@prisma/client';
 
 @Controller('users')
@@ -20860,18 +20137,6 @@ export class UsersController {
     return this.usersService.updateTier(callerRole, agentId, body.tier);
   }
 
-  @Post('me/package')
-  async purchasePackage(
-    @Req() req: AuthenticatedRequest,
-    @Body() body: { tier: string; paymentMethod?: 'ETB' | 'AGLP' },
-  ) {
-    return this.usersService.purchasePackage(
-      req.user.id,
-      body.tier,
-      body.paymentMethod,
-    );
-  }
-
   @Patch(':id/suspend')
   @RequirePermission(Action.MANAGE_AGENTS) // Admin can manage agents
   async suspendUser(
@@ -20901,20 +20166,35 @@ export class UsersController {
   }
 
   @Get(':id/profile')
-  @RequirePermission(Action.VIEW_USER_DETAILS_ANY_ROLE)
   async getUserProfile(
     @Req() req: AuthenticatedRequest,
     @Param('id') userId: string,
   ) {
     const callerRole = req.user.role;
     const callerId = req.user.id;
+    const permissions = PermissionMatrix[callerRole] || [];
+
+    // Authorization logic
+    const hasBroadAccess = permissions.includes(
+      Action.VIEW_USER_DETAILS_ANY_ROLE,
+    );
+    const isReferrer = await this.usersService.isReferrerOf(callerId, userId);
+    const hasReferralAccess =
+      permissions.includes(Action.VIEW_REFERRAL_DETAILS) && isReferrer;
+
+    if (!hasBroadAccess && !hasReferralAccess && callerId !== userId) {
+      throw new ForbiddenException(
+        'You do not have permission to view this profile.',
+      );
+    }
 
     // Hierarchy Check: Admins may not view profiles at their own level or above
     if (callerRole === UserRole.admin) {
       const target = await this.usersService.getProfileRoleById(userId);
       if (
         target &&
-        (target.role === UserRole.admin || target.role === UserRole.super_admin) &&
+        (target.role === UserRole.admin ||
+          target.role === UserRole.super_admin) &&
         userId !== callerId
       ) {
         throw new ForbiddenException(
@@ -20985,7 +20265,22 @@ interface AuditLogMetadata {
   transactionId?: string;
   referenceId?: string;
   reason?: string;
+  ip?: string;
+  userAgent?: string;
   [key: string]: any;
+}
+
+export interface PerformanceStats {
+  missedAssignments: number;
+  warningCount: number;
+  acceptedCount?: number;
+  rejectedCount?: number;
+  completedCount?: number;
+  avgRating?: number;
+  assignmentCount?: number;
+  disputeResolutionCount?: number;
+  finalDecisionCount?: number;
+  proposalsCount?: number;
 }
 
 export const TierPriority: Record<string, number> = {
@@ -21035,13 +20330,98 @@ export class UsersService {
             operatorMatches: true,
             proposals: true,
             agentMatches: true,
+            finalResolutions: true,
           },
         },
       },
     });
 
     if (!profile) throw new NotFoundException('Profile not found');
-    return profile;
+
+    // Performance Data Aggregation
+    let performanceStats: PerformanceStats = {
+      missedAssignments: profile.missedAssignments,
+      warningCount: profile.warningCount,
+    };
+
+    if (profile.role === UserRole.agent) {
+      const matchStats = await this.prisma.match.groupBy({
+        by: ['status'],
+        where: { agentId: userId },
+        _count: true,
+      });
+
+      const statsMap = matchStats.reduce(
+        (acc, curr) => {
+          acc[curr.status] = curr._count;
+          return acc;
+        },
+        {} as Record<string, number>,
+      );
+
+      const ratingStats = await this.prisma.feedback.aggregate({
+        where: {
+          authorId: { not: userId },
+          transaction: { match: { agentId: userId } },
+        },
+        _avg: { rating: true },
+      });
+
+      performanceStats = {
+        ...performanceStats,
+        acceptedCount: statsMap['accepted'] || 0,
+        rejectedCount: statsMap['rejected'] || 0,
+        completedCount: statsMap['completed'] || 0,
+        avgRating: ratingStats._avg.rating || 0,
+      };
+    }
+
+    if (profile.role === UserRole.operator) {
+      performanceStats = {
+        ...performanceStats,
+        assignmentCount: profile._count.operatorMatches,
+        disputeResolutionCount: profile._count.proposals,
+      };
+    }
+
+    if (
+      profile.role === UserRole.admin ||
+      profile.role === UserRole.super_admin
+    ) {
+      performanceStats = {
+        ...performanceStats,
+        finalDecisionCount: profile._count.finalResolutions,
+        proposalsCount: profile._count.proposals,
+      };
+    }
+
+    // Fetch last login from audit logs
+    const lastLoginLog = await this.prisma.auditLog.findFirst({
+      where: {
+        actorId: userId,
+        action: 'USER_LOGIN',
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const loginMetadata =
+      (lastLoginLog?.metadata as unknown as AuditLogMetadata) || {};
+
+    return {
+      ...profile,
+      performanceStats,
+      lastLoginAt: lastLoginLog?.createdAt || null,
+      lastLoginIp: loginMetadata.ip || null,
+      lastLoginDevice: loginMetadata.userAgent || null,
+    };
+  }
+
+  async isReferrerOf(referrerId: string, targetId: string): Promise<boolean> {
+    const target = await this.prisma.profile.findUnique({
+      where: { id: targetId },
+      select: { referredById: true },
+    });
+    return target?.referredById === referrerId;
   }
 
   /**
@@ -21060,7 +20440,6 @@ export class UsersService {
       where: { id: userId },
       select: {
         aglpBalance: true,
-        aglpPending: true,
         aglpWithdrawn: true,
         tier: true,
         referrals: { select: { id: true } },
@@ -21137,6 +20516,7 @@ export class UsersService {
         createdAt: log.createdAt,
         metadata: {
           ...metadata,
+          amountAglp: metadata.amountAglp || metadata.amount || 0,
           transactionId: metadata.transactionId || metadata.aglpTxId || log.id,
         },
       };
@@ -21194,20 +20574,10 @@ export class UsersService {
       return sumLogs(dayLogs);
     }).reverse();
 
-    // Fetch dynamic totals from transactions for accuracy
     const pendingWithdrawalsSum = await this.prisma.aglpTransaction.aggregate({
       where: {
         profileId: userId,
         type: 'WITHDRAWAL',
-        status: 'PENDING',
-      },
-      _sum: { amount: true },
-    });
-
-    const pendingCommissionsSum = await this.prisma.aglpTransaction.aggregate({
-      where: {
-        profileId: userId,
-        type: 'EARN',
         status: 'PENDING',
       },
       _sum: { amount: true },
@@ -21224,16 +20594,16 @@ export class UsersService {
       },
     );
 
-    const dynamicPending =
-      (pendingCommissionsSum._sum.amount?.toNumber() || 0) +
-      (pendingWithdrawalsSum._sum.amount?.toNumber() || 0);
     const dynamicWithdrawn =
       completedWithdrawalsSum._sum.amount?.toNumber() || 0;
+    const dynamicPendingWithdrawals =
+      pendingWithdrawalsSum._sum.amount?.toNumber() || 0;
 
     return {
       balance: profile.aglpBalance.toNumber(),
       aglpAvailable: profile.aglpBalance.toNumber(),
-      aglpPending: dynamicPending,
+      aglpPending: dynamicPendingWithdrawals,
+      aglpPendingWithdrawals: dynamicPendingWithdrawals,
       aglpWithdrawn: dynamicWithdrawn,
       usedSlots,
       totalSlots,
@@ -21325,6 +20695,12 @@ export class UsersService {
         isActive: filters.isActive,
       },
       include: {
+        referredBy: {
+          select: {
+            id: true,
+            fullName: true,
+          },
+        },
         referralLink: true,
         package: true,
         agentZones: {
@@ -21530,7 +20906,11 @@ export class UsersService {
           });
 
           if (agent?.referredById) {
-            const referralCommissionRate = 0.1; // 10%
+            const referralCommissionConfig = this.configService.get<{
+              value: number;
+            }>('AGLP_COMMISSION_PACKAGE_REFERRAL', { value: 0.1 });
+            const referralCommissionRate =
+              referralCommissionConfig.value || 0.1;
             const referralCommissionEtb =
               Number(pkg.price) * referralCommissionRate;
 
@@ -21665,8 +21045,8 @@ export class UsersService {
       return this.aglpService.withdrawAglp(tx, userId, amountAglp, bankDetails);
     });
 
-    // Notify all online operators in real-time
-    this.notificationsGateway.sendToRole('operator', 'notification', {
+    // Notify only the financial operators in real-time
+    this.notificationsGateway.sendToRole('financial_operator', 'notification', {
       type: 'payout.requested',
       title: 'New Payout Request',
       message: `${agent?.fullName || 'An agent'} has requested a withdrawal of ${amountAglp.toLocaleString()} AGLP.`,
@@ -21751,10 +21131,6 @@ export class UsersService {
     return { code, link };
   }
 
-  /**
-   * Looks up a referrer by their referral code.
-   * Used during registration to attribute new users.
-   */
   /**
    * Updates the agent's business verification details.
    */
@@ -21964,7 +21340,7 @@ async function main() {
         customerId: customer.id,
         category: 'Real Estate',
         description: 'Test Verification Request',
-        budgetMax: new Prisma.Decimal(50000),
+        budget: new Prisma.Decimal(50000),
         status: RequestStatus.pending,
         zoneId: zone.id,
         woreda: '01',
@@ -22018,7 +21394,7 @@ async function main() {
         update: {},
         create: {
           matchId: match.id,
-          amount: request?.budgetMax || new Prisma.Decimal(0),
+          amount: request?.budget || new Prisma.Decimal(0),
           currency: 'ETB',
           status: 'pending',
         },

@@ -24,6 +24,9 @@ export declare class UsersService {
     constructor(prisma: PrismaService, aglpService: AglpService, configService: ConfigService, notificationsGateway: NotificationsGateway);
     getCurrentProfile(userId: string): Promise<{
         performanceStats: PerformanceStats;
+        lastLoginAt: Date | null;
+        lastLoginIp: string | null;
+        lastLoginDevice: string | null;
         agentZones: ({
             zone: {
                 id: string;
@@ -83,7 +86,6 @@ export declare class UsersService {
         referredById: string | null;
         createdAt: Date;
         aglpBalance: Prisma.Decimal;
-        aglpPending: Prisma.Decimal;
         aglpWithdrawn: Prisma.Decimal;
         referralCode: string | null;
         isOnline: boolean;
@@ -95,6 +97,7 @@ export declare class UsersService {
         tradeLicenseNumber: string | null;
         isVerified: boolean;
     }>;
+    isReferrerOf(referrerId: string, targetId: string): Promise<boolean>;
     getProfileRoleById(userId: string): Promise<{
         id: string;
         role: import(".prisma/client").$Enums.UserRole;
@@ -103,6 +106,7 @@ export declare class UsersService {
         balance: number;
         aglpAvailable: number;
         aglpPending: number;
+        aglpPendingWithdrawals: number;
         aglpWithdrawn: number;
         usedSlots: number;
         totalSlots: number;
@@ -125,13 +129,15 @@ export declare class UsersService {
             type: string;
             createdAt: Date;
             metadata: {
+                amountAglp: number;
                 transactionId: string;
                 amount?: number;
-                amountAglp?: number;
                 amountEtb?: number;
                 aglpTxId?: string;
                 referenceId?: string;
                 reason?: string;
+                ip?: string;
+                userAgent?: string;
             };
         }[];
     }>;
@@ -189,7 +195,6 @@ export declare class UsersService {
         referredById: string | null;
         createdAt: Date;
         aglpBalance: Prisma.Decimal;
-        aglpPending: Prisma.Decimal;
         aglpWithdrawn: Prisma.Decimal;
         referralCode: string | null;
         isOnline: boolean;
@@ -254,7 +259,6 @@ export declare class UsersService {
         referredById: string | null;
         createdAt: Date;
         aglpBalance: Prisma.Decimal;
-        aglpPending: Prisma.Decimal;
         aglpWithdrawn: Prisma.Decimal;
         referralCode: string | null;
         isOnline: boolean;
@@ -299,7 +303,6 @@ export declare class UsersService {
         referredById: string | null;
         createdAt: Date;
         aglpBalance: Prisma.Decimal;
-        aglpPending: Prisma.Decimal;
         aglpWithdrawn: Prisma.Decimal;
         referralCode: string | null;
         isOnline: boolean;
@@ -331,7 +334,6 @@ export declare class UsersService {
         referredById: string | null;
         createdAt: Date;
         aglpBalance: Prisma.Decimal;
-        aglpPending: Prisma.Decimal;
         aglpWithdrawn: Prisma.Decimal;
         referralCode: string | null;
         isOnline: boolean;

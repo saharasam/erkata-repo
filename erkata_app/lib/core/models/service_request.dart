@@ -18,6 +18,8 @@ class ServiceRequest {
   final String? completedAt;
   final String? assignedOperatorId;
   final String? assignedAgentName;
+  final String? transactionId;
+  final List<String> feedbackAuthorIds;
 
   ServiceRequest({
     required this.id,
@@ -35,13 +37,16 @@ class ServiceRequest {
     this.completedAt,
     this.assignedOperatorId,
     this.assignedAgentName,
+    this.transactionId,
+    this.feedbackAuthorIds = const [],
   });
 
   factory ServiceRequest.fromJson(Map<String, dynamic> json) {
     // Detect if this is a nested Match object (common in Agent API)
-    final bool isNestedMatch = json.containsKey('request') && json['request'] is Map;
-    final Map<String, dynamic> dataSource = isNestedMatch 
-        ? json['request'] as Map<String, dynamic> 
+    final bool isNestedMatch =
+        json.containsKey('request') && json['request'] is Map;
+    final Map<String, dynamic> dataSource = isNestedMatch
+        ? json['request'] as Map<String, dynamic>
         : json;
 
     // Handle nested customer if present
@@ -59,18 +64,13 @@ class ServiceRequest {
     final woreda = dataSource['woreda'] as String? ?? '';
 
     // Format budget
-    final rawMin = dataSource['budgetMin'];
-    final rawMax = dataSource['budgetMax'];
-    final min = rawMin != null ? num.tryParse(rawMin.toString()) : null;
-    final max = rawMax != null ? num.tryParse(rawMax.toString()) : null;
-    
+    final raw = dataSource['budget'];
     String budgetStr = 'Negotiable';
-    if (min != null && max != null) {
-      budgetStr = '${min.toInt()} - ${max.toInt()} ETB';
-    } else if (min != null) {
-      budgetStr = 'Min ${min.toInt()} ETB';
-    } else if (max != null) {
-      budgetStr = 'Max ${max.toInt()} ETB';
+    if (raw != null) {
+      final budgetNum = double.tryParse(raw.toString());
+      if (budgetNum != null && budgetNum > 0) {
+        budgetStr = NumberFormat('#,###', 'en_US').format(budgetNum) + ' ETB';
+      }
     }
 
     // Format date
@@ -85,7 +85,7 @@ class ServiceRequest {
 
     // Robust status parsing with Agent Match mapping
     RequestStatus status = RequestStatus.pending;
-    
+
     if (isNestedMatch) {
       // Mapping for Agents (Match Status -> UI Status)
       final matchStatus = json['status'] as String?;
@@ -117,16 +117,32 @@ class ServiceRequest {
       }
     }
 
-    // Extract assigned agent name if available
+    // Extract assigned agent name, transaction ID, and feedback info if available
     String? assignedAgent;
+    String? transactionId;
+    List<String> feedbackAuthorIds = [];
     final matches = dataSource['matches'] as List?;
     if (matches != null && matches.isNotEmpty && matches[0] is Map) {
-      final agent = matches[0]['agent'] as Map<String, dynamic>?;
+      final match = matches[0] as Map<String, dynamic>;
+      final agent = match['agent'] as Map<String, dynamic>?;
       assignedAgent = agent?['fullName'] as String?;
+
+      final transaction = match['transaction'] as Map<String, dynamic>?;
+      transactionId = transaction?['id'] as String?;
+
+      if (transaction != null && transaction['feedbacks'] is List) {
+        final feedbacks = transaction['feedbacks'] as List;
+        feedbackAuthorIds = feedbacks
+            .map((f) => f['authorId'] as String? ?? '')
+            .where((id) => id.isNotEmpty)
+            .toList();
+      }
     }
 
     return ServiceRequest(
-      id: json['id'] as String? ?? '', // Match ID for agents, Request ID for others
+      id:
+          json['id'] as String? ??
+          '', // Match ID for agents, Request ID for others
       type: dataSource['type'] == 'furniture'
           ? RequestType.furniture
           : RequestType.realEstate,
@@ -143,6 +159,8 @@ class ServiceRequest {
       completedAt: dataSource['completedAt'] as String?,
       assignedOperatorId: dataSource['assignedOperatorId'] as String?,
       assignedAgentName: assignedAgent,
+      transactionId: transactionId,
+      feedbackAuthorIds: feedbackAuthorIds,
     );
   }
 

@@ -14,14 +14,16 @@ class AgentBusinessVerificationScreen extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
     final user = authState.user;
-    
+
     final tinController = useTextEditingController(text: user?.tinNumber ?? '');
-    final licenseController = useTextEditingController(text: user?.tradeLicenseNumber ?? '');
+    final licenseController = useTextEditingController(
+      text: user?.tradeLicenseNumber ?? '',
+    );
     final isLoading = useState(false);
     final formKey = useMemoized(() => GlobalKey<FormState>());
 
-    // Note: In a real app, these fields might be at the root of the user object 
-    // depending on how the backend returns them. 
+    // Note: In a real app, these fields might be at the root of the user object
+    // depending on how the backend returns them.
     // We added them to the Profile model, so they should be available in user object.
 
     return Scaffold(
@@ -44,10 +46,14 @@ class AgentBusinessVerificationScreen extends HookConsumerWidget {
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.primaryContainer.withValues(alpha: 0.3),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.primary.withValues(alpha: 0.2),
                           ),
                         ),
                         child: Row(
@@ -62,7 +68,9 @@ class AgentBusinessVerificationScreen extends HookConsumerWidget {
                                 'Complete your business verification to unlock higher referral limits and priority assignments.',
                                 style: TextStyle(
                                   fontSize: 13,
-                                  color: Theme.of(context).colorScheme.onSurface,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
                                 ),
                               ),
                             ),
@@ -70,7 +78,7 @@ class AgentBusinessVerificationScreen extends HookConsumerWidget {
                         ),
                       ),
                       const SizedBox(height: 32),
-                      
+
                       Text(
                         'Business Details',
                         style: TextStyle(
@@ -80,7 +88,7 @@ class AgentBusinessVerificationScreen extends HookConsumerWidget {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      
+
                       TextFormField(
                         controller: tinController,
                         decoration: const InputDecoration(
@@ -90,10 +98,11 @@ class AgentBusinessVerificationScreen extends HookConsumerWidget {
                           border: OutlineInputBorder(),
                         ),
                         keyboardType: TextInputType.number,
-                        validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
+                        validator: (v) =>
+                            (v == null || v.isEmpty) ? 'Required' : null,
                       ),
                       const SizedBox(height: 20),
-                      
+
                       TextFormField(
                         controller: licenseController,
                         decoration: const InputDecoration(
@@ -102,10 +111,11 @@ class AgentBusinessVerificationScreen extends HookConsumerWidget {
                           prefixIcon: Icon(Icons.description_outlined),
                           border: OutlineInputBorder(),
                         ),
-                        validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
+                        validator: (v) =>
+                            (v == null || v.isEmpty) ? 'Required' : null,
                       ),
                       const SizedBox(height: 32),
-                      
+
                       Text(
                         'Documents (Coming Soon)',
                         style: TextStyle(
@@ -119,7 +129,10 @@ class AgentBusinessVerificationScreen extends HookConsumerWidget {
                         height: 120,
                         width: double.infinity,
                         decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                          color: Theme.of(context)
+                              .colorScheme
+                              .surfaceContainerHighest
+                              .withValues(alpha: 0.5),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
                             color: Theme.of(context).colorScheme.outlineVariant,
@@ -129,57 +142,88 @@ class AgentBusinessVerificationScreen extends HookConsumerWidget {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.cloud_upload_outlined, color: Colors.grey[400]),
+                            Icon(
+                              Icons.cloud_upload_outlined,
+                              color: Colors.grey[400],
+                            ),
                             const SizedBox(height: 8),
                             Text(
                               'Document upload is disabled in MVP',
-                              style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                              style: TextStyle(
+                                color: Colors.grey[500],
+                                fontSize: 12,
+                              ),
                             ),
                           ],
                         ),
                       ),
-                      
+
                       const SizedBox(height: 40),
-                      
+
                       SizedBox(
                         width: double.infinity,
                         height: 54,
                         child: ElevatedButton(
-                          onPressed: isLoading.value ? null : () async {
-                            if (formKey.currentState!.validate()) {
-                              isLoading.value = true;
-                              try {
-                                await ref.read(agentRepositoryProvider).updateBusinessProfile(
-                                  tinController.text,
-                                  licenseController.text,
-                                );
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('Business details updated!')),
-                                  );
-                                  context.pop();
-                                }
-                              } catch (e) {
-                                if (context.mounted) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('Error: ${e.toString()}')),
-                                  );
-                                }
-                              } finally {
-                                isLoading.value = false;
-                              }
-                            }
-                          },
+                          onPressed: isLoading.value
+                              ? null
+                              : () async {
+                                  if (formKey.currentState!.validate()) {
+                                    isLoading.value = true;
+                                    try {
+                                      await ref
+                                          .read(agentRepositoryProvider)
+                                          .updateBusinessProfile(
+                                            tinController.text,
+                                            licenseController.text,
+                                          );
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          const SnackBar(
+                                            content: Text(
+                                              'Business details updated!',
+                                            ),
+                                          ),
+                                        );
+                                        context.pop();
+                                      }
+                                    } catch (e) {
+                                      if (context.mounted) {
+                                        ScaffoldMessenger.of(
+                                          context,
+                                        ).showSnackBar(
+                                          SnackBar(
+                                            content: Text(
+                                              'Error: ${e.toString()}',
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    } finally {
+                                      isLoading.value = false;
+                                    }
+                                  }
+                                },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Theme.of(context).colorScheme.primary,
-                            foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                            backgroundColor: Theme.of(
+                              context,
+                            ).colorScheme.primary,
+                            foregroundColor: Theme.of(
+                              context,
+                            ).colorScheme.onPrimary,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          child: isLoading.value 
-                            ? const CircularProgressIndicator(color: Colors.white)
-                            : const Text('Save Details', style: TextStyle(fontWeight: FontWeight.bold)),
+                          child: isLoading.value
+                              ? const CircularProgressIndicator(
+                                  color: Colors.white,
+                                )
+                              : const Text(
+                                  'Save Details',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
                         ),
                       ),
                     ],

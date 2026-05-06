@@ -31,6 +31,7 @@ mixin _$UserProfile {
   String? get tradeLicenseNumber => throw _privateConstructorUsedError;
   bool? get isVerified => throw _privateConstructorUsedError;
   List<ReferralInfo>? get referrals => throw _privateConstructorUsedError;
+  String? get referralCode => throw _privateConstructorUsedError;
 
   /// Serializes this UserProfile to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -60,6 +61,7 @@ abstract class $UserProfileCopyWith<$Res> {
     String? tradeLicenseNumber,
     bool? isVerified,
     List<ReferralInfo>? referrals,
+    String? referralCode,
   });
 }
 
@@ -88,6 +90,7 @@ class _$UserProfileCopyWithImpl<$Res, $Val extends UserProfile>
     Object? tradeLicenseNumber = freezed,
     Object? isVerified = freezed,
     Object? referrals = freezed,
+    Object? referralCode = freezed,
   }) {
     return _then(
       _value.copyWith(
@@ -131,6 +134,10 @@ class _$UserProfileCopyWithImpl<$Res, $Val extends UserProfile>
                 ? _value.referrals
                 : referrals // ignore: cast_nullable_to_non_nullable
                       as List<ReferralInfo>?,
+            referralCode: freezed == referralCode
+                ? _value.referralCode
+                : referralCode // ignore: cast_nullable_to_non_nullable
+                      as String?,
           )
           as $Val,
     );
@@ -157,6 +164,7 @@ abstract class _$$UserProfileImplCopyWith<$Res>
     String? tradeLicenseNumber,
     bool? isVerified,
     List<ReferralInfo>? referrals,
+    String? referralCode,
   });
 }
 
@@ -184,6 +192,7 @@ class __$$UserProfileImplCopyWithImpl<$Res>
     Object? tradeLicenseNumber = freezed,
     Object? isVerified = freezed,
     Object? referrals = freezed,
+    Object? referralCode = freezed,
   }) {
     return _then(
       _$UserProfileImpl(
@@ -227,6 +236,10 @@ class __$$UserProfileImplCopyWithImpl<$Res>
             ? _value._referrals
             : referrals // ignore: cast_nullable_to_non_nullable
                   as List<ReferralInfo>?,
+        referralCode: freezed == referralCode
+            ? _value.referralCode
+            : referralCode // ignore: cast_nullable_to_non_nullable
+                  as String?,
       ),
     );
   }
@@ -246,6 +259,7 @@ class _$UserProfileImpl implements _UserProfile {
     this.tradeLicenseNumber,
     this.isVerified,
     final List<ReferralInfo>? referrals,
+    this.referralCode,
   }) : _referrals = referrals;
 
   factory _$UserProfileImpl.fromJson(Map<String, dynamic> json) =>
@@ -280,8 +294,11 @@ class _$UserProfileImpl implements _UserProfile {
   }
 
   @override
+  final String? referralCode;
+
+  @override
   String toString() {
-    return 'UserProfile(id: $id, email: $email, phone: $phone, fullName: $fullName, role: $role, tier: $tier, tinNumber: $tinNumber, tradeLicenseNumber: $tradeLicenseNumber, isVerified: $isVerified, referrals: $referrals)';
+    return 'UserProfile(id: $id, email: $email, phone: $phone, fullName: $fullName, role: $role, tier: $tier, tinNumber: $tinNumber, tradeLicenseNumber: $tradeLicenseNumber, isVerified: $isVerified, referrals: $referrals, referralCode: $referralCode)';
   }
 
   @override
@@ -305,7 +322,9 @@ class _$UserProfileImpl implements _UserProfile {
             const DeepCollectionEquality().equals(
               other._referrals,
               _referrals,
-            ));
+            ) &&
+            (identical(other.referralCode, referralCode) ||
+                other.referralCode == referralCode));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -322,6 +341,7 @@ class _$UserProfileImpl implements _UserProfile {
     tradeLicenseNumber,
     isVerified,
     const DeepCollectionEquality().hash(_referrals),
+    referralCode,
   );
 
   /// Create a copy of UserProfile
@@ -350,6 +370,7 @@ abstract class _UserProfile implements UserProfile {
     final String? tradeLicenseNumber,
     final bool? isVerified,
     final List<ReferralInfo>? referrals,
+    final String? referralCode,
   }) = _$UserProfileImpl;
 
   factory _UserProfile.fromJson(Map<String, dynamic> json) =
@@ -375,6 +396,8 @@ abstract class _UserProfile implements UserProfile {
   bool? get isVerified;
   @override
   List<ReferralInfo>? get referrals;
+  @override
+  String? get referralCode;
 
   /// Create a copy of UserProfile
   /// with the given fields replaced by the non-null parameter values.
@@ -394,6 +417,8 @@ mixin _$ReferralInfo {
   String get fullName => throw _privateConstructorUsedError;
   String get createdAt => throw _privateConstructorUsedError;
   String get role => throw _privateConstructorUsedError;
+  String? get tier => throw _privateConstructorUsedError;
+  Map<String, dynamic>? get package => throw _privateConstructorUsedError;
 
   /// Serializes this ReferralInfo to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -412,7 +437,14 @@ abstract class $ReferralInfoCopyWith<$Res> {
     $Res Function(ReferralInfo) then,
   ) = _$ReferralInfoCopyWithImpl<$Res, ReferralInfo>;
   @useResult
-  $Res call({String id, String fullName, String createdAt, String role});
+  $Res call({
+    String id,
+    String fullName,
+    String createdAt,
+    String role,
+    String? tier,
+    Map<String, dynamic>? package,
+  });
 }
 
 /// @nodoc
@@ -434,6 +466,8 @@ class _$ReferralInfoCopyWithImpl<$Res, $Val extends ReferralInfo>
     Object? fullName = null,
     Object? createdAt = null,
     Object? role = null,
+    Object? tier = freezed,
+    Object? package = freezed,
   }) {
     return _then(
       _value.copyWith(
@@ -453,6 +487,14 @@ class _$ReferralInfoCopyWithImpl<$Res, $Val extends ReferralInfo>
                 ? _value.role
                 : role // ignore: cast_nullable_to_non_nullable
                       as String,
+            tier: freezed == tier
+                ? _value.tier
+                : tier // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            package: freezed == package
+                ? _value.package
+                : package // ignore: cast_nullable_to_non_nullable
+                      as Map<String, dynamic>?,
           )
           as $Val,
     );
@@ -468,7 +510,14 @@ abstract class _$$ReferralInfoImplCopyWith<$Res>
   ) = __$$ReferralInfoImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({String id, String fullName, String createdAt, String role});
+  $Res call({
+    String id,
+    String fullName,
+    String createdAt,
+    String role,
+    String? tier,
+    Map<String, dynamic>? package,
+  });
 }
 
 /// @nodoc
@@ -489,6 +538,8 @@ class __$$ReferralInfoImplCopyWithImpl<$Res>
     Object? fullName = null,
     Object? createdAt = null,
     Object? role = null,
+    Object? tier = freezed,
+    Object? package = freezed,
   }) {
     return _then(
       _$ReferralInfoImpl(
@@ -508,6 +559,14 @@ class __$$ReferralInfoImplCopyWithImpl<$Res>
             ? _value.role
             : role // ignore: cast_nullable_to_non_nullable
                   as String,
+        tier: freezed == tier
+            ? _value.tier
+            : tier // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        package: freezed == package
+            ? _value._package
+            : package // ignore: cast_nullable_to_non_nullable
+                  as Map<String, dynamic>?,
       ),
     );
   }
@@ -521,7 +580,9 @@ class _$ReferralInfoImpl implements _ReferralInfo {
     required this.fullName,
     required this.createdAt,
     required this.role,
-  });
+    this.tier,
+    final Map<String, dynamic>? package,
+  }) : _package = package;
 
   factory _$ReferralInfoImpl.fromJson(Map<String, dynamic> json) =>
       _$$ReferralInfoImplFromJson(json);
@@ -534,10 +595,21 @@ class _$ReferralInfoImpl implements _ReferralInfo {
   final String createdAt;
   @override
   final String role;
+  @override
+  final String? tier;
+  final Map<String, dynamic>? _package;
+  @override
+  Map<String, dynamic>? get package {
+    final value = _package;
+    if (value == null) return null;
+    if (_package is EqualUnmodifiableMapView) return _package;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableMapView(value);
+  }
 
   @override
   String toString() {
-    return 'ReferralInfo(id: $id, fullName: $fullName, createdAt: $createdAt, role: $role)';
+    return 'ReferralInfo(id: $id, fullName: $fullName, createdAt: $createdAt, role: $role, tier: $tier, package: $package)';
   }
 
   @override
@@ -550,12 +622,22 @@ class _$ReferralInfoImpl implements _ReferralInfo {
                 other.fullName == fullName) &&
             (identical(other.createdAt, createdAt) ||
                 other.createdAt == createdAt) &&
-            (identical(other.role, role) || other.role == role));
+            (identical(other.role, role) || other.role == role) &&
+            (identical(other.tier, tier) || other.tier == tier) &&
+            const DeepCollectionEquality().equals(other._package, _package));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, id, fullName, createdAt, role);
+  int get hashCode => Object.hash(
+    runtimeType,
+    id,
+    fullName,
+    createdAt,
+    role,
+    tier,
+    const DeepCollectionEquality().hash(_package),
+  );
 
   /// Create a copy of ReferralInfo
   /// with the given fields replaced by the non-null parameter values.
@@ -577,6 +659,8 @@ abstract class _ReferralInfo implements ReferralInfo {
     required final String fullName,
     required final String createdAt,
     required final String role,
+    final String? tier,
+    final Map<String, dynamic>? package,
   }) = _$ReferralInfoImpl;
 
   factory _ReferralInfo.fromJson(Map<String, dynamic> json) =
@@ -590,6 +674,10 @@ abstract class _ReferralInfo implements ReferralInfo {
   String get createdAt;
   @override
   String get role;
+  @override
+  String? get tier;
+  @override
+  Map<String, dynamic>? get package;
 
   /// Create a copy of ReferralInfo
   /// with the given fields replaced by the non-null parameter values.

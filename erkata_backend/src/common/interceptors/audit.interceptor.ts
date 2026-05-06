@@ -17,6 +17,8 @@ export class AuditInterceptor implements NestInterceptor {
       method: string;
       url: string;
       body: unknown;
+      ip: string;
+      headers: Record<string, string>;
       user?: { id: string };
     }>();
     const { method, url, body, user } = request;
@@ -59,6 +61,8 @@ export class AuditInterceptor implements NestInterceptor {
                 targetId: targetIdFromContext,
                 metadata: {
                   requestBody: body as object,
+                  ip: request.ip,
+                  userAgent: request.headers['user-agent'],
                   response:
                     response && typeof response === 'object'
                       ? { ...response }

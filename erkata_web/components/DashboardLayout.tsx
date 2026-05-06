@@ -88,64 +88,10 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             <div className={`absolute bottom-[-20%] right-[-10%] w-[40%] h-[40%] ${(role === 'admin' || role === 'super_admin') ? 'bg-blue-100/40' : 'bg-teal-100/40'} rounded-full blur-[120px]`} />
         </div>
 
-        {/* Top Header */}
-        <header className="h-16 shrink-0 border-b border-white/40 bg-white/40 backdrop-blur-sm flex items-center justify-between px-4 lg:px-8 relative z-20">
-           {/* Navigation Controls */}
-           <div className="hidden lg:flex items-center gap-1 mr-2">
-              <button 
-                onClick={() => navigate(-1)}
-                className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-white/60 rounded-full transition-colors"
-                title="Go Back"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <button 
-                onClick={() => navigate(1)}
-                className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-white/60 rounded-full transition-colors"
-                title="Go Forward"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-           </div>
-
-           {/* Global Search / Breadcrumbs (Placeholder) */}
-           <div className="hidden lg:flex items-center px-4 py-2 bg-white/60 border border-white/50 rounded-full w-96 shadow-sm focus-within:ring-2 focus-within:ring-erkata-primary/20 transition-all">
-              <Search className="w-4 h-4 text-slate-400 mr-2" />
-              <input 
-                type="text" 
-                placeholder="Search requests, transactions, or customers..." 
-                className="bg-transparent border-none outline-none text-sm w-full placeholder:text-slate-400 text-slate-700"
-              />
-           </div>
-
-           {/* Top Right Actions */}
-           <div className="flex items-center gap-2 relative">
-              <div className="relative">
-                  <button 
-                    onClick={() => setShowNotifications(!showNotifications)}
-                    className={`p-2 rounded-full transition-colors relative ${showNotifications ? 'bg-white text-erkata-primary shadow-sm' : 'text-slate-400 hover:text-slate-600 hover:bg-white/60'}`}
-                  >
-                     <Bell className="w-5 h-5" />
-                     {unreadCount > 0 && (
-                        <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-500 rounded-full border-2 border-white text-[8px] flex items-center justify-center text-white font-bold">
-                           {unreadCount}
-                        </span>
-                     )}
-                  </button>
-                  <NotificationsPanel 
-                    isOpen={showNotifications} 
-                    onClose={() => setShowNotifications(false)} 
-                  />
-              </div>
-
-              <button 
-                onClick={handleSettingsClick}
-                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-white/60 rounded-full transition-colors"
-              >
-                 <Settings className="w-5 h-5" />
-              </button>
-           </div>
-        </header>
+        <NotificationsPanel 
+          isOpen={showNotifications} 
+          onClose={() => setShowNotifications(false)} 
+        />
 
         {/* Main Content Scrollable Area */}
         <main className={`flex-1 overflow-y-auto overflow-x-hidden ${role === 'super_admin' ? 'p-0' : 'p-4 lg:p-6'} scroll-smooth custom-scrollbar`}>

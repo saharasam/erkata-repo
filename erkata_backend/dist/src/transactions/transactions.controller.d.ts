@@ -21,7 +21,7 @@ export declare class TransactionsController {
             id: string;
             category: string;
             description: string;
-            budgetMax: string;
+            budget: string;
             woreda: string;
             type: string;
             status: import(".prisma/client").$Enums.RequestStatus;
@@ -72,7 +72,6 @@ export declare class TransactionsController {
                 referredById: string | null;
                 createdAt: Date;
                 aglpBalance: import("@prisma/client/runtime/library").Decimal;
-                aglpPending: import("@prisma/client/runtime/library").Decimal;
                 aglpWithdrawn: import("@prisma/client/runtime/library").Decimal;
                 referralCode: string | null;
                 isOnline: boolean;
@@ -97,7 +96,6 @@ export declare class TransactionsController {
             referredById: string | null;
             createdAt: Date;
             aglpBalance: import("@prisma/client/runtime/library").Decimal;
-            aglpPending: import("@prisma/client/runtime/library").Decimal;
             aglpWithdrawn: import("@prisma/client/runtime/library").Decimal;
             referralCode: string | null;
             isOnline: boolean;
@@ -118,9 +116,8 @@ export declare class TransactionsController {
             category: string;
             type: string;
             description: string;
-            budgetMin: import("@prisma/client/runtime/library").Decimal | null;
-            budgetMax: import("@prisma/client/runtime/library").Decimal | null;
             metadata: import("@prisma/client/runtime/library").JsonValue;
+            budget: import("@prisma/client/runtime/library").Decimal | null;
             woreda: string;
             assignedOperatorId: string | null;
             assignmentPushedAt: Date | null;
@@ -163,9 +160,8 @@ export declare class TransactionsController {
             category: string;
             type: string;
             description: string;
-            budgetMin: import("@prisma/client/runtime/library").Decimal | null;
-            budgetMax: import("@prisma/client/runtime/library").Decimal | null;
             metadata: import("@prisma/client/runtime/library").JsonValue;
+            budget: import("@prisma/client/runtime/library").Decimal | null;
             woreda: string;
             assignedOperatorId: string | null;
             assignmentPushedAt: Date | null;

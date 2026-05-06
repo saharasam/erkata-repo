@@ -44,7 +44,7 @@ const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ isOpen, onClose
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 10 }}
                         transition={{ type: "spring", duration: 0.3 }}
-                        className="absolute right-0 top-12 w-80 md:w-96 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden z-50 origin-top-right"
+                        className="fixed right-4 lg:right-8 top-4 lg:top-8 w-80 md:w-96 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden z-[100] origin-top-right"
                     >
                         <div className="p-4 border-b border-slate-50 flex items-center justify-between bg-white sticky top-0 z-10">
                             <h3 className="font-bold text-slate-800 flex items-center gap-2">

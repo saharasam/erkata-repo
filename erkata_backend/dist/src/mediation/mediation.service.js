@@ -33,7 +33,7 @@ let MediationService = class MediationService {
             where: { id: transactionId },
             include: {
                 feedbacks: true,
-                match: { include: { request: true } }
+                match: { include: { request: true } },
             },
         });
         if (!transaction)
@@ -157,8 +157,8 @@ let MediationService = class MediationService {
         if (!actor)
             throw new common_1.NotFoundException('Actor not found');
         const isEscalated = transaction.match.request.status === client_1.RequestStatus.disputed;
-        const budget = transaction.match.request.budgetMax
-            ? Number(transaction.match.request.budgetMax)
+        const budget = transaction.match.request.budget
+            ? Number(transaction.match.request.budget)
             : 0;
         const riskThreshold = this.config.get('high_risk_threshold_etb', config_service_1.ConfigService.DEFAULT_RISK_THRESHOLD);
         const isHighRisk = budget > riskThreshold;

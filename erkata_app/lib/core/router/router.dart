@@ -18,6 +18,7 @@ import '../../features/agent/screens/agent_history_screen.dart';
 import '../../features/agent/screens/agent_request_detail_screen.dart';
 import '../../features/agent/screens/agent_business_verification_screen.dart';
 import '../../features/agent/screens/agent_payout_settings_screen.dart';
+import '../../features/agent/screens/agent_referral_deep_dive_screen.dart';
 import '../../core/models/service_request.dart';
 import '../../features/auth/screens/otp_verification_screen.dart';
 import '../../core/components/scaffold_with_nav_bar.dart';
@@ -53,7 +54,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         if (authState.isFirstLaunch) {
           return '/request/new';
         }
-        
+
         // Otherwise, returning users (or those who explicitly abandoned intake) go to auth
         return '/auth';
       }
@@ -123,6 +124,20 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: 'referrals',
                 builder: (context, state) => const AgentReferralsScreen(),
+                routes: [
+                  GoRoute(
+                    path: ':userId/deep-dive',
+                    builder: (context, state) {
+                      final userId = state.pathParameters['userId']!;
+                      final extra = state.extra as Map<String, dynamic>?;
+                      final fullName = extra?['fullName'] ?? 'Agent';
+                      return AgentReferralDeepDiveScreen(
+                        userId: userId,
+                        fullName: fullName,
+                      );
+                    },
+                  ),
+                ],
               ),
               GoRoute(
                 path: 'profile',
@@ -163,7 +178,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/request/status',
             builder: (context, state) {
-              final req = state.extra as ServiceRequest;
+              final req = state.extra;
+              if (req is! ServiceRequest) {
+                return const ActivityScreen();
+              }
               return RequestStatusScreen(request: req);
             },
           ),
@@ -200,7 +218,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (context, state) {
               final extra = state.extra as Map<String, dynamic>;
               return FeedbackFormScreen(
-                requestId: extra['requestId'],
+                transactionId: extra['transactionId'],
                 recipientName: extra['recipientName'],
                 role: extra['role'],
               );

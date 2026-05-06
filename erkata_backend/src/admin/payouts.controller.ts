@@ -64,38 +64,7 @@ export class PayoutsController {
     });
   }
 
-  // ── ESCROW MANAGEMENT ──────────────────────────────────────────────────────
 
-  @Get('escrow')
-  @RequirePermission(Action.APPROVE_PAYOUT)
-  async getPendingEscrow() {
-    return this.prisma.aglpTransaction.findMany({
-      where: {
-        type: AglpTransactionType.EARN,
-        status: AglpTransactionStatus.PENDING,
-        referenceType: 'COMMISSION_ESCROW',
-      },
-      include: {
-        profile: {
-          select: {
-            id: true,
-            fullName: true,
-            email: true,
-            phone: true,
-          },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-  }
-
-  @Post(':id/release')
-  @RequirePermission(Action.APPROVE_PAYOUT)
-  async releaseEscrow(@Param('id') id: string) {
-    return this.prisma.$transaction(async (tx) => {
-      return this.aglpService.releaseEscrow(tx, id);
-    });
-  }
 
   // ── SUPER ADMIN OVERSIGHT ──────────────────────────────────────────────────
 

@@ -9,7 +9,6 @@ import '../state/auth_provider.dart';
 import '../data/models/login_request.dart';
 import '../data/models/register_request.dart';
 
-
 class AuthScreen extends HookConsumerWidget {
   const AuthScreen({super.key});
 
@@ -18,7 +17,7 @@ class AuthScreen extends HookConsumerWidget {
     // Read extra parameter to determine initial view
     final extra = GoRouterState.of(context).extra as Map<String, dynamic>?;
     final initialIsLogin = extra?['isLogin'] as bool? ?? true;
-    
+
     final isLogin = useState(initialIsLogin);
     final selectedRole = useState<UserRole>(UserRole.customer);
     final nameController = useTextEditingController();
@@ -49,7 +48,6 @@ class AuthScreen extends HookConsumerWidget {
       }
     });
 
-
     Future<void> handleSubmit() async {
       final email = phoneController.text.trim();
       final password = passwordController.text;
@@ -62,12 +60,9 @@ class AuthScreen extends HookConsumerWidget {
       }
 
       if (isLogin.value) {
-        await ref.read(authProvider.notifier).login(
-              LoginRequest(
-                identifier: email,
-                password: password,
-              ),
-            );
+        await ref
+            .read(authProvider.notifier)
+            .login(LoginRequest(identifier: email, password: password));
       } else {
         final name = nameController.text.trim();
         final confirmPassword = confirmPasswordController.text;
@@ -88,12 +83,16 @@ class AuthScreen extends HookConsumerWidget {
 
         if (password.length < 6) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Password must be at least 6 characters')),
+            const SnackBar(
+              content: Text('Password must be at least 6 characters'),
+            ),
           );
           return;
         }
 
-        await ref.read(authProvider.notifier).register(
+        await ref
+            .read(authProvider.notifier)
+            .register(
               RegisterRequest(
                 fullName: name,
                 email: email,

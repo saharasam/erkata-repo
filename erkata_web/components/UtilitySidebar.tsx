@@ -33,7 +33,7 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
 
   // Play distinct payout sound when a new payout.requested notification arrives
   useEffect(() => {
-    if (!socket || user?.role !== UserRole.OPERATOR) return;
+    if (!socket || (user?.role !== UserRole.OPERATOR && user?.role !== UserRole.FINANCIAL_OPERATOR)) return;
     const handleNotification = (n: any) => {
       if (n.type === 'payout.requested') {
         playPayoutSound();
@@ -58,14 +58,14 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
 
   const superAdminTools = [
     { id: 'analytics', icon: BarChart4, label: 'Analytics' },
-    { id: 'tiers', icon: Package, label: 'Tier Architecture' },
+    { id: 'tiers', icon: Package, label: 'Packages' },
     { id: 'disputes', icon: ShieldAlert, label: 'Disputes Audit', badge: disputeCount > 0 ? disputeCount : undefined },
     { id: 'upgrade-approvals', icon: ShieldCheck, label: 'Upgrade Approvals' },
     { id: 'admins', icon: User, label: 'Admin Management' },
-    { id: 'config', icon: Settings2, label: 'Config Flags' },
+    { id: 'config', icon: Settings2, label: 'Configurations' },
     { id: 'notices', icon: Megaphone, label: 'Broadcasts' },
-    { id: 'audit', icon: History, label: 'Audit Logs' },
-    { id: 'agents', icon: TrendingUp, label: 'Agent Oversight' },
+    { id: 'audit', icon: History, label: 'System Logs' },
+    { id: 'agents', icon: TrendingUp, label: 'Agent Management' },
     // { id: 'operators', icon: Users, label: 'Operator Oversight' },
   ];
 
@@ -105,6 +105,7 @@ const UtilitySidebar: React.FC<UtilitySidebarProps> = ({
 
   const financialOperatorTools = [
     { id: 'verifications', icon: ShieldCheck, label: 'Upgrade Verifications' },
+    { id: 'payouts', icon: Wallet, label: 'Pending Payouts', badge: payoutCount > 0 ? payoutCount : undefined },
     { id: 'notices', icon: Megaphone, label: 'Broadcasts' },
   ];
 

@@ -28,13 +28,12 @@ class AgentHistoryScreen extends ConsumerWidget {
               child: RefreshIndicator(
                 onRefresh: () => ref.read(agentJobsProvider.notifier).refresh(),
                 child: historyAsync.when(
-                  loading: () => const Center(child: CircularProgressIndicator()),
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
                   error: (err, stack) => Center(child: Text('Error: $err')),
                   data: (historyRequests) {
                     if (historyRequests.isEmpty) {
-                      return const Center(
-                        child: Text('No history found.'),
-                      );
+                      return const Center(child: Text('No history found.'));
                     }
 
                     return ListView.separated(

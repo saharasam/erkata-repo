@@ -60,7 +60,7 @@ const SuperAdminDashboard: React.FC = () => {
                         </p>
                     </div>
                     
-                    <div className="flex items-center gap-6">
+                    {/* <div className="flex items-center gap-6">
                         <div className="text-right">
                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Active Admins</p>
                              <p className="text-2xl font-black text-slate-900 leading-none">12</p>
@@ -70,7 +70,7 @@ const SuperAdminDashboard: React.FC = () => {
                              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Critical Tasks</p>
                              <p className="text-2xl font-black text-red-500 leading-none">03</p>
                         </div>
-                    </div>
+                    </div> */}
                 </header>
 
                 <div className="min-h-[70vh]">
@@ -85,7 +85,7 @@ const SuperAdminDashboard: React.FC = () => {
                              {currentView === 'analytics' && <SystemAnalytics />}
                              {currentView === 'tiers' && <PackageManagement />}
                              {currentView === 'disputes' && <DisputesAudit />}
-                             {currentView === 'upgrade-approvals' && <UpgradeApprovalsAudit />}
+                             {currentView === 'upgrade-approvals' && <UpgradeApprovalsAudit onViewDetails={handleViewDetails} />}
                              {currentView === 'admins' && <AdminManagement onViewDetails={handleViewDetails} />}
                              {currentView === 'agents' && <GlobalRightsOversight onViewDetails={handleViewDetails} />}
                              {currentView === 'user-details' && selectedUserId && (

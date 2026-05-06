@@ -49,6 +49,7 @@ export default class SystemBroadcastsController {
     if (user.role === 'admin') allowedTargets.push('ADMIN');
     if (user.role === 'operator') allowedTargets.push('OPERATOR');
     if (user.role === 'agent') allowedTargets.push('AGENT');
+    if (user.role === 'financial_operator') allowedTargets.push('FINANCE_OP');
 
     return await this.prisma.systemBroadcast.findMany({
       where: {
@@ -77,6 +78,7 @@ export default class SystemBroadcastsController {
     if (data.target === 'AGENT') userWhere.role = 'agent';
     else if (data.target === 'OPERATOR') userWhere.role = 'operator';
     else if (data.target === 'ADMIN') userWhere.role = 'admin';
+    else if (data.target === 'FINANCE_OP') userWhere.role = 'financial_operator';
     // If EVERYONE, leave userWhere empty to target all users
 
     const users = await this.prisma.profile.findMany({
@@ -105,7 +107,9 @@ export default class SystemBroadcastsController {
         message: data.content,
       });
     } else {
-      const targetRole = data.target.toLowerCase();
+      let targetRole = data.target.toLowerCase();
+      if (data.target === 'FINANCE_OP') targetRole = 'financial_operator';
+      
       this.notificationsGateway.sendToRole(targetRole, 'notification', {
         type: 'system_broadcast',
         title: data.title,

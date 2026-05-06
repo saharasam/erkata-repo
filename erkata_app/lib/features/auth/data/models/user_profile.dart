@@ -17,6 +17,7 @@ class UserProfile with _$UserProfile {
     String? tradeLicenseNumber,
     bool? isVerified,
     List<ReferralInfo>? referrals,
+    String? referralCode,
   }) = _UserProfile;
 
   factory UserProfile.fromJson(Map<String, dynamic> json) =>
@@ -30,6 +31,8 @@ class ReferralInfo with _$ReferralInfo {
     required String fullName,
     required String createdAt,
     required String role,
+    String? tier,
+    Map<String, dynamic>? package,
   }) = _ReferralInfo;
 
   factory ReferralInfo.fromJson(Map<String, dynamic> json) =>

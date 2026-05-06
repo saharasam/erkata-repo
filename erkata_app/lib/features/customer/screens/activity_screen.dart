@@ -249,27 +249,28 @@ class _RequestCard extends StatelessWidget {
                                 ),
                               ),
                               const SizedBox(width: 12),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: typeColor.withValues(alpha: 0.08),
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(
-                                    color: typeColor.withValues(alpha: 0.2),
+                              if (request.status == RequestStatus.pending)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: typeColor.withValues(alpha: 0.08),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: typeColor.withValues(alpha: 0.2),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    request.budget,
+                                    style: TextStyle(
+                                      color: typeColor,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w900,
+                                    ),
                                   ),
                                 ),
-                                child: Text(
-                                  request.budget,
-                                  style: TextStyle(
-                                    color: typeColor,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w900,
-                                  ),
-                                ),
-                              ),
                             ],
                           ),
                           const SizedBox(height: 16),

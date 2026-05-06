@@ -43,29 +43,7 @@ export class ConfigService implements OnModuleInit {
         );
       }
 
-      if (!this.configs.has('COMMISSION_REAL_ESTATE_PRIMARY')) {
-        await this.set(
-          'COMMISSION_REAL_ESTATE_PRIMARY',
-          { value: 0.1 },
-          'Commission for primary agent on real estate fulfillment.',
-        );
-      }
 
-      if (!this.configs.has('COMMISSION_REAL_ESTATE_OVERRIDE')) {
-        await this.set(
-          'COMMISSION_REAL_ESTATE_OVERRIDE',
-          { value: 0.05 },
-          'Referral override commission on real estate fulfillment.',
-        );
-      }
-
-      if (!this.configs.has('COMMISSION_FURNITURE_PRIMARY')) {
-        await this.set(
-          'COMMISSION_FURNITURE_PRIMARY',
-          { value: 0.1 },
-          'Commission for primary agent on furniture fulfillment.',
-        );
-      }
 
       // --- ALERT ENGINE CONFIGS ---
       if (!this.configs.has('alert_bad_performance_limit')) {

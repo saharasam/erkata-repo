@@ -10,7 +10,9 @@ class AgentJobsNotifier extends AsyncNotifier<List<ServiceRequest>> {
 
   Future<void> refresh() async {
     state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() => ref.read(agentRepositoryProvider).getMyJobs());
+    state = await AsyncValue.guard(
+      () => ref.read(agentRepositoryProvider).getMyJobs(),
+    );
   }
 
   Future<void> acceptJob(String id) async {
@@ -34,6 +36,7 @@ class AgentJobsNotifier extends AsyncNotifier<List<ServiceRequest>> {
   }
 }
 
-final agentJobsProvider = AsyncNotifierProvider<AgentJobsNotifier, List<ServiceRequest>>(() {
-  return AgentJobsNotifier();
-});
+final agentJobsProvider =
+    AsyncNotifierProvider<AgentJobsNotifier, List<ServiceRequest>>(() {
+      return AgentJobsNotifier();
+    });

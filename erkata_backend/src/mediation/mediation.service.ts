@@ -28,9 +28,9 @@ export class MediationService {
     // 1. Validate transaction existence with associated request
     const transaction = await this.prisma.transaction.findUnique({
       where: { id: transactionId },
-      include: { 
+      include: {
         feedbacks: true,
-        match: { include: { request: true } }
+        match: { include: { request: true } },
       },
     });
 
@@ -73,7 +73,7 @@ export class MediationService {
         content,
         rating,
         categories,
-      } as any,
+      },
     });
 
     // 5. Schedule timeout if this is the first feedback
@@ -202,8 +202,8 @@ export class MediationService {
 
     const isEscalated =
       transaction.match.request.status === RequestStatus.disputed;
-    const budget = transaction.match.request.budgetMax
-      ? Number(transaction.match.request.budgetMax)
+    const budget = transaction.match.request.budget
+      ? Number(transaction.match.request.budget)
       : 0;
     const riskThreshold = this.config.get<number>(
       'high_risk_threshold_etb',

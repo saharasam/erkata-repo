@@ -19,7 +19,11 @@ import api from '../../utils/api';
 import { useModal } from '../../contexts/ModalContext';
 import { useSocket } from '../../contexts/SocketContext';
 
-const UpgradeApprovalsAudit: React.FC = () => {
+interface UpgradeApprovalsAuditProps {
+  onViewDetails?: (userId: string) => void;
+}
+
+const UpgradeApprovalsAudit: React.FC<UpgradeApprovalsAuditProps> = ({ onViewDetails }) => {
   const { showAlert, showConfirm } = useModal();
   const { socket } = useSocket();
   const [requests, setRequests] = useState<any[]>([]);
@@ -209,6 +213,28 @@ const UpgradeApprovalsAudit: React.FC = () => {
                 <div className="w-10 h-10 bg-slate-900 text-white rounded-xl flex items-center justify-center">
                   <ShieldCheck className="w-5 h-5" />
                 </div>
+              </div>
+
+              <div 
+                onClick={() => onViewDetails?.(selectedRequest.agent?.id || selectedRequest.agentId)}
+                className="p-6 bg-indigo-50/50 hover:bg-indigo-100/50 rounded-[2rem] border border-indigo-100/50 flex items-center justify-between cursor-pointer transition-all group"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-indigo-100 group-hover:bg-indigo-600 group-hover:text-white transition-colors rounded-xl flex items-center justify-center text-indigo-900">
+                    <User className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-black text-slate-900 group-hover:text-indigo-900 transition-colors">{selectedRequest.agent?.fullName}</h4>
+                    <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                      Requesting {selectedRequest.targetTier}
+                    </p>
+                  </div>
+                </div>
+                {onViewDetails && (
+                  <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm group-hover:shadow-md transition-all">
+                    <ArrowRight className="w-4 h-4 text-indigo-600" />
+                  </div>
+                )}
               </div>
 
               <div className="space-y-6">

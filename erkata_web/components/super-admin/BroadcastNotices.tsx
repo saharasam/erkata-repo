@@ -83,15 +83,15 @@ const BroadcastNotices: React.FC = () => {
                             </div>
                             <div>
                                 <h3 className="text-xl font-black text-slate-900 tracking-tight">System-Wide Broadcast</h3>
-                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Global notification injection protocol</p>
+                                <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Global broadcast system</p>
                             </div>
                         </div>
                         
                         <div className="space-y-6 relative z-10">
                             <div>
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-3 ml-1">Protocol Target Audience</label>
-                                <div className="flex gap-2 p-1.5 bg-slate-50 rounded-[1.25rem] border border-slate-100">
-                                    {['EVERYONE', 'AGENT', 'OPERATOR', 'ADMIN'].map(t => (
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-3 ml-1">Target</label>
+                                <div className="flex gap-2 p-1.5 bg-slate-50 rounded-[1.25rem] border border-slate-100 flex-wrap">
+                                    {['EVERYONE', 'AGENT', 'OPERATOR', 'FINANCE_OP', 'ADMIN'].map(t => (
                                         <button 
                                             key={t}
                                             onClick={() => setTarget(t)}
@@ -108,25 +108,25 @@ const BroadcastNotices: React.FC = () => {
                             </div>
                             
                             <div>
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-3 ml-1">Notice Header</label>
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-3 ml-1">Subject </label>
                                 <div className="relative group">
                                     <Sparkles className="w-4 h-4 absolute right-4 top-1/2 -translate-y-1/2 text-slate-200 group-focus-within:text-indigo-500 transition-colors" />
                                     <input 
                                         type="text" 
                                         value={title}
                                         onChange={(e) => setTitle(e.target.value)}
-                                        placeholder="Enter the critical focus of this notice..."
+                                        placeholder="what is this notice about..."
                                         className="w-full bg-slate-50 border border-slate-100 outline-none rounded-2xl p-5 text-sm font-black placeholder:text-slate-300 focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all"
                                     />
                                 </div>
                             </div>
 
                             <div>
-                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-3 ml-1">Detailed Payload (Markdown Supported)</label>
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-3 ml-1">Message</label>
                                 <textarea 
                                     value={content}
                                     onChange={(e) => setContent(e.target.value)}
-                                    placeholder="Enter exhaustive details regarding this system-wide event..."
+                                    placeholder="Detailes about the notice..."
                                     className="w-full h-40 bg-slate-50 border border-slate-100 outline-none rounded-2xl p-5 text-sm font-medium placeholder:text-slate-300 focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all resize-none"
                                 />
                             </div>
@@ -181,7 +181,7 @@ const BroadcastNotices: React.FC = () => {
                                                     title: 'Terminate Broadcast Archive',
                                                     message: 'This operation will permanently erase this transmission from the global system history. This action cannot be rescinded.',
                                                     confirmText: 'Execute Deletion',
-                                                    type: 'danger'
+                                                    type: 'error'
                                                 });
                                                 if (confirmed) {
                                                     try {

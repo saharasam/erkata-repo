@@ -463,8 +463,8 @@ export class MediationService {
     if (!actor) throw new NotFoundException('Actor not found');
 
     const isEscalated = transaction.match.request.status === RequestStatus.disputed;
-    const budget = transaction.match.request.budgetMax
-      ? Number(transaction.match.request.budgetMax)
+    const budget = transaction.match.request.budget
+      ? Number(transaction.match.request.budget)
       : 0;
     const riskThreshold = this.config.get<number>(
       'high_risk_threshold_etb',

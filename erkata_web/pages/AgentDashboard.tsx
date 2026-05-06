@@ -165,7 +165,7 @@ const AgentDashboard: React.FC = () => {
       customerPhone: m.request.customer.phone,
       zone: m.request.zone?.name || 'Unknown',
       woreda: m.request.woreda || 'N/A',
-      budgetMax: m.request.budgetMax || '0',
+      budget: m.request.budget || '0',
       metadata: m.request.metadata || {},
       status: m.status // assigned, accepted, completed, rejected
     }));

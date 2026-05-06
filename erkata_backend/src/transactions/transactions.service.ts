@@ -8,7 +8,7 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
-import { MatchStatus, RequestStatus, Prisma } from '@prisma/client';
+import { MatchStatus, RequestStatus } from '@prisma/client';
 import { AglpService } from '../aglp/aglp.service';
 import { ConfigService } from '../common/config.service';
 
@@ -54,14 +54,13 @@ export class TransactionsService {
           data: { status: RequestStatus.assigned },
         });
 
-        // ── Create Transaction Record (Locked for Mediation/Feedback) ────
-        // This is necessary because feedback submission requires a transaction ID.
+        // Ensure a Transaction record is created for this match
         await tx.transaction.upsert({
           where: { matchId: matchId },
-          update: {}, // Already exists, do nothing
+          update: {},
           create: {
-            matchId,
-            amount: match.request.budgetMax || new Prisma.Decimal(0),
+            matchId: matchId,
+            amount: match.request.budget || 0,
             currency: 'ETB',
             status: 'pending',
           },
@@ -247,70 +246,11 @@ export class TransactionsService {
           data: { status: RequestStatus.fulfilled },
         });
 
-        // ── Commission Splitting Logic (Phase 2) ──────────────────────────
-        interface MatchWithRelations {
-          agent?: {
-            fullName: string;
-            referredById?: string;
-          };
-          request?: {
-            type: string;
-            category: string;
-            budgetMax?: number;
-            budgetMin?: number;
-          };
-        }
-
-        const res = matchResult as unknown as MatchWithRelations;
-        const budget = Number(
-          res.request?.budgetMax || res.request?.budgetMin || 0,
-        );
-
-        if (budget > 0) {
-          const type = res.request?.type || 'real_estate';
-          const category = res.request?.category || 'General';
-          const isRealEstate = type === 'real_estate';
-
-          // 1. Primary Agent Commission (Dynamic Rate)
-          const configKey = isRealEstate
-            ? 'COMMISSION_REAL_ESTATE_PRIMARY'
-            : 'COMMISSION_FURNITURE_PRIMARY';
-
-          const primaryCommissionConfig = this.configService.get<{
-            value: number;
-          }>(configKey, { value: 0.1 });
-          const primaryCommissionRate = primaryCommissionConfig.value || 0.1;
-          const primaryCommissionEtb = budget * primaryCommissionRate;
-
-          // ESCROW: Lock commission for sales
-          await this.aglpService.lockCommission(
-            tx,
-            agentId,
-            primaryCommissionEtb,
-            matchId,
-            `Primary commission for ${type} fulfillment: ${category}`,
-          );
-
-          // 2. Referral Override - Real Estate Only
-          if (isRealEstate && res.agent?.referredById) {
-            const overrideConfig = this.configService.get<{
-              value: number;
-            }>('COMMISSION_REAL_ESTATE_OVERRIDE', { value: 0.05 });
-            const referralCommissionRate = overrideConfig.value || 0.05;
-            const referralCommissionEtb = budget * referralCommissionRate;
-
-            // ESCROW: Lock referral override too (since it is sale-based)
-            await this.aglpService.lockCommission(
-              tx,
-              res.agent.referredById,
-              referralCommissionEtb,
-              matchId,
-              `Referral override commission from agent ${
-                res.agent.fullName || 'Unknown'
-              }`,
-            );
-          }
-        }
+        // Update transaction status to completed
+        await tx.transaction.update({
+          where: { matchId: matchId },
+          data: { status: 'completed' },
+        });
 
         return matchResult;
       },
@@ -372,7 +312,7 @@ export class TransactionsService {
           id: req.id,
           category: req.category,
           description: req.description,
-          budgetMax: req.budgetMax?.toString() || '0',
+          budget: req.budget?.toString() || '0',
           woreda: req.woreda,
           type: req.type,
           status: req.status,

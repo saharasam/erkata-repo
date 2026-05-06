@@ -400,11 +400,7 @@ class _ToggleTile extends StatelessWidget {
           fontSize: 12,
         ),
       ),
-      trailing: Switch.adaptive(
-        value: value,
-        onChanged: onChanged,
-        activeTrackColor: Theme.of(context).colorScheme.primary,
-      ),
+      trailing: Switch.adaptive(value: value, onChanged: onChanged),
     );
   }
 }

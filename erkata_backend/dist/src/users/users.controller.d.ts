@@ -53,7 +53,6 @@ export declare class UsersController {
         referredById: string | null;
         createdAt: Date;
         aglpBalance: import("@prisma/client/runtime/library").Decimal;
-        aglpPending: import("@prisma/client/runtime/library").Decimal;
         aglpWithdrawn: import("@prisma/client/runtime/library").Decimal;
         referralCode: string | null;
         isOnline: boolean;
@@ -67,6 +66,9 @@ export declare class UsersController {
     })[]>;
     getMe(req: AuthenticatedRequest): Promise<{
         performanceStats: import("./users.service").PerformanceStats;
+        lastLoginAt: Date | null;
+        lastLoginIp: string | null;
+        lastLoginDevice: string | null;
         agentZones: ({
             zone: {
                 id: string;
@@ -126,7 +128,6 @@ export declare class UsersController {
         referredById: string | null;
         createdAt: Date;
         aglpBalance: import("@prisma/client/runtime/library").Decimal;
-        aglpPending: import("@prisma/client/runtime/library").Decimal;
         aglpWithdrawn: import("@prisma/client/runtime/library").Decimal;
         referralCode: string | null;
         isOnline: boolean;
@@ -142,6 +143,7 @@ export declare class UsersController {
         balance: number;
         aglpAvailable: number;
         aglpPending: number;
+        aglpPendingWithdrawals: number;
         aglpWithdrawn: number;
         usedSlots: number;
         totalSlots: number;
@@ -164,13 +166,15 @@ export declare class UsersController {
             type: string;
             createdAt: Date;
             metadata: {
+                amountAglp: number;
                 transactionId: string;
                 amount?: number;
-                amountAglp?: number;
                 amountEtb?: number;
                 aglpTxId?: string;
                 referenceId?: string;
                 reason?: string;
+                ip?: string;
+                userAgent?: string;
             };
         }[];
     }>;
@@ -227,16 +231,6 @@ export declare class UsersController {
         referrerId: string;
         code: string;
     }>;
-    purchasePackage(req: AuthenticatedRequest, body: {
-        tier: string;
-        paymentMethod?: 'ETB' | 'AGLP';
-    }): Promise<{
-        id: string;
-        tier: import(".prisma/client").$Enums.Tier;
-        createdAt: Date;
-        referrerId: string;
-        code: string;
-    }>;
     suspendUser(req: AuthenticatedRequest, userId: string): Promise<{
         id: string;
         email: string;
@@ -250,7 +244,6 @@ export declare class UsersController {
         referredById: string | null;
         createdAt: Date;
         aglpBalance: import("@prisma/client/runtime/library").Decimal;
-        aglpPending: import("@prisma/client/runtime/library").Decimal;
         aglpWithdrawn: import("@prisma/client/runtime/library").Decimal;
         referralCode: string | null;
         isOnline: boolean;
@@ -275,7 +268,6 @@ export declare class UsersController {
         referredById: string | null;
         createdAt: Date;
         aglpBalance: import("@prisma/client/runtime/library").Decimal;
-        aglpPending: import("@prisma/client/runtime/library").Decimal;
         aglpWithdrawn: import("@prisma/client/runtime/library").Decimal;
         referralCode: string | null;
         isOnline: boolean;
@@ -303,7 +295,6 @@ export declare class UsersController {
         referredById: string | null;
         createdAt: Date;
         aglpBalance: import("@prisma/client/runtime/library").Decimal;
-        aglpPending: import("@prisma/client/runtime/library").Decimal;
         aglpWithdrawn: import("@prisma/client/runtime/library").Decimal;
         referralCode: string | null;
         isOnline: boolean;
@@ -317,6 +308,9 @@ export declare class UsersController {
     }>;
     getUserProfile(req: AuthenticatedRequest, userId: string): Promise<{
         performanceStats: import("./users.service").PerformanceStats;
+        lastLoginAt: Date | null;
+        lastLoginIp: string | null;
+        lastLoginDevice: string | null;
         agentZones: ({
             zone: {
                 id: string;
@@ -376,7 +370,6 @@ export declare class UsersController {
         referredById: string | null;
         createdAt: Date;
         aglpBalance: import("@prisma/client/runtime/library").Decimal;
-        aglpPending: import("@prisma/client/runtime/library").Decimal;
         aglpWithdrawn: import("@prisma/client/runtime/library").Decimal;
         referralCode: string | null;
         isOnline: boolean;
@@ -392,6 +385,7 @@ export declare class UsersController {
         balance: number;
         aglpAvailable: number;
         aglpPending: number;
+        aglpPendingWithdrawals: number;
         aglpWithdrawn: number;
         usedSlots: number;
         totalSlots: number;
@@ -414,13 +408,15 @@ export declare class UsersController {
             type: string;
             createdAt: Date;
             metadata: {
+                amountAglp: number;
                 transactionId: string;
                 amount?: number;
-                amountAglp?: number;
                 amountEtb?: number;
                 aglpTxId?: string;
                 referenceId?: string;
                 reason?: string;
+                ip?: string;
+                userAgent?: string;
             };
         }[];
     }>;

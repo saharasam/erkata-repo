@@ -118,7 +118,7 @@ export class AglpService {
     return aglpTx;
   }
 
-  // Handle earning commission or rewards
+  // Handle earning commission or rewards (Direct Credit)
   async earnCommission(
     tx: Prisma.TransactionClient,
     profileId: string,
@@ -129,7 +129,7 @@ export class AglpService {
     const rate = this.getConversionRate();
     const amountAglp = amountEtb * rate;
 
-    // 1. Check for suspicious spikes (Transactional)
+    // 1. Check for suspicious spikes
     const thresholdConfig = this.configService.get<{ value: number }>(
       'alert_commission_spike_threshold',
       { value: 10000 },
@@ -172,13 +172,13 @@ export class AglpService {
       });
     }
 
-    // 2. Credit AGLP Balance
+    // 2. Direct Credit AGLP Balance
     await tx.profile.update({
       where: { id: profileId },
       data: { aglpBalance: { increment: amountAglp } },
     });
 
-    // 3. Log AGLP Earn Transaction
+    // 3. Log AGLP Earn Transaction as COMPLETED
     await tx.aglpTransaction.create({
       data: {
         profileId,
@@ -192,7 +192,7 @@ export class AglpService {
       },
     });
 
-    // 4. Write backwards compatible audit log
+    // 4. Audit log
     await tx.auditLog.create({
       data: {
         actorId: profileId,
@@ -403,121 +403,6 @@ export class AglpService {
     });
   }
 
-  // Handle locking commission in escrow (Pending)
-  async lockCommission(
-    tx: Prisma.TransactionClient,
-    profileId: string,
-    amountEtb: number,
-    referenceId: string,
-    reason: string,
-  ) {
-    const rate = this.getConversionRate();
-    const amountAglp = amountEtb * rate;
-
-    // Credit AGLP Pending (instead of balance)
-    await tx.profile.update({
-      where: { id: profileId },
-      data: { aglpPending: { increment: amountAglp } },
-    });
-
-    // Log AGLP Earn Transaction as PENDING
-    const aglpTx = await tx.aglpTransaction.create({
-      data: {
-        profileId,
-        type: AglpTransactionType.EARN,
-        amount: amountAglp,
-        etbEquivalent: amountEtb,
-        conversionRate: rate,
-        status: AglpTransactionStatus.PENDING,
-        referenceId,
-        referenceType: 'COMMISSION_ESCROW',
-      },
-    });
-
-    // Audit log
-    await tx.auditLog.create({
-      data: {
-        actorId: profileId,
-        action: 'COMMISSION_LOCKED',
-        targetTable: 'profiles',
-        targetId: profileId,
-        metadata: {
-          aglpTxId: aglpTx.id,
-          referenceId,
-          amount: amountAglp,
-          amountEtb,
-          reason: `${reason} (Awaiting Admin Release)`,
-        },
-      },
-    });
-
-    return aglpTx;
-  }
-
-  // Release commission from escrow to available balance
-  async releaseEscrow(tx: Prisma.TransactionClient, aglpTxId: string) {
-    const aglpTx = await tx.aglpTransaction.findUnique({
-      where: { id: aglpTxId },
-      include: { profile: true },
-    });
-
-    if (
-      !aglpTx ||
-      aglpTx.status !== AglpTransactionStatus.PENDING ||
-      aglpTx.type !== AglpTransactionType.EARN
-    ) {
-      throw new Error('Valid pending escrow transaction not found');
-    }
-
-    // Move from pending to balance
-    await tx.profile.update({
-      where: { id: aglpTx.profileId },
-      data: {
-        aglpPending: { decrement: aglpTx.amount },
-        aglpBalance: { increment: aglpTx.amount },
-      },
-    });
-
-    // Update transaction status
-    await tx.aglpTransaction.update({
-      where: { id: aglpTxId },
-      data: { status: AglpTransactionStatus.COMPLETED },
-    });
-
-    // Audit log
-    await tx.auditLog.create({
-      data: {
-        actorId: aglpTx.profileId,
-        action: 'COMMISSION_RELEASED',
-        targetTable: 'profiles',
-        targetId: aglpTx.profileId,
-        metadata: {
-          aglpTxId,
-          amount: aglpTx.amount,
-          reason: 'Escrow released by system (Terminal State reached)',
-        },
-      },
-    });
-  }
-
-  // Release commission for a specific match
-  async releaseCommissionByMatchId(
-    tx: Prisma.TransactionClient,
-    matchId: string,
-  ) {
-    const aglpTxs = await tx.aglpTransaction.findMany({
-      where: {
-        referenceId: matchId,
-        type: AglpTransactionType.EARN,
-        status: AglpTransactionStatus.PENDING,
-      },
-    });
-
-    for (const aglpTx of aglpTxs) {
-      await this.releaseEscrow(tx, aglpTx.id);
-    }
-  }
-
   // Allow agent to cancel their own PENDING withdrawal
   async cancelWithdrawal(
     tx: Prisma.TransactionClient,
@@ -542,7 +427,6 @@ export class AglpService {
       where: { id: requestedByProfileId },
       data: {
         aglpBalance: { increment: aglpTx.amount },
-        aglpWithdrawn: { decrement: aglpTx.amount },
       },
     });
 

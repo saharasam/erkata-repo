@@ -13,7 +13,7 @@ export declare class AuthService {
     login(credentials: {
         identifier: string;
         pass: string;
-    }, res: Response): Promise<{
+    }, res: Response, req?: any): Promise<{
         user: {
             id: string;
             email: string;
@@ -39,7 +39,7 @@ export declare class AuthService {
         tier?: string;
         inviteToken?: string;
         referralCode?: string;
-    }, res?: Response): Promise<{
+    }, res?: Response, req?: any): Promise<{
         message: string;
         user: {
             id: string;

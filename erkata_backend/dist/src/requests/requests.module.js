@@ -15,6 +15,7 @@ const bullmq_1 = require("@nestjs/bullmq");
 const assignment_processor_1 = require("./assignment.processor");
 const redis_module_1 = require("../common/redis/redis.module");
 const aglp_module_1 = require("../aglp/aglp.module");
+const notifications_module_1 = require("../notifications/notifications.module");
 let RequestsModule = class RequestsModule {
 };
 exports.RequestsModule = RequestsModule;
@@ -25,6 +26,7 @@ exports.RequestsModule = RequestsModule = __decorate([
             bullmq_1.BullModule.registerQueue({ name: 'assignment-timeout' }),
             redis_module_1.RedisModule,
             aglp_module_1.AglpModule,
+            notifications_module_1.NotificationsModule,
         ],
         providers: [requests_service_1.RequestsService, assignment_processor_1.AssignmentProcessor],
         controllers: [requests_controller_1.RequestsController],

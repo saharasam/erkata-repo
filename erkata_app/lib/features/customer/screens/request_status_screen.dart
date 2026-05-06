@@ -8,6 +8,7 @@ import 'package:erkata_app/shared/widgets/erkata_screen_header.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:intl/intl.dart';
+import '../../auth/state/auth_provider.dart';
 import '../state/customer_requests_provider.dart';
 
 class RequestStatusScreen extends HookConsumerWidget {
@@ -18,67 +19,99 @@ class RequestStatusScreen extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isProcessing = useState(false);
+    final requestsState = ref.watch(customerRequestsProvider);
+    final authState = ref.watch(authProvider);
+    final currentUserId = authState.user?.id;
+
+    final activeRequest = requestsState.maybeWhen(
+      data: (list) =>
+          list.firstWhere((r) => r.id == request.id, orElse: () => request),
+      orElse: () => request,
+    );
+
+    final hasSubmittedFeedback =
+        currentUserId != null &&
+        activeRequest.feedbackAuthorIds.contains(currentUserId);
+
     final steps = [
       {
         'label': 'Request Submitted',
-        'date': formatStatusDate(request.createdAt),
+        'date': formatStatusDate(activeRequest.createdAt),
         'status': 'completed',
         'desc': 'Your request has been received.',
       },
       {
         'label': 'Routing to Operator',
-        'date': request.assignedOperatorId != null
-            ? formatStatusDate(request.assignmentPushedAt)
-            : (request.status == RequestStatus.pending ? 'In Progress' : 'Completed'),
-        'status': request.assignedOperatorId != null ? 'completed' : 'current',
-        'desc': request.assignedOperatorId != null
+        'date': activeRequest.assignedOperatorId != null
+            ? formatStatusDate(activeRequest.assignmentPushedAt)
+            : (activeRequest.status == RequestStatus.pending
+                  ? 'In Progress'
+                  : 'Completed'),
+        'status':
+            activeRequest.assignedOperatorId != null ? 'completed' : 'current',
+        'desc': activeRequest.assignedOperatorId != null
             ? 'An operator is coordinating your request.'
             : 'Waiting for an available operator.',
       },
       {
         'label': 'Agent Assignment',
-        'date': (request.assignedAgentName != null ||
-                request.status != RequestStatus.pending)
+        'date':
+            (activeRequest.assignedAgentName != null ||
+                activeRequest.status != RequestStatus.pending)
             ? 'Completed'
-            : (request.assignedOperatorId != null ? 'In Progress' : 'Pending'),
-        'status': (request.assignedAgentName != null ||
-                request.status != RequestStatus.pending)
+            : (activeRequest.assignedOperatorId != null
+                  ? 'In Progress'
+                  : 'Pending'),
+        'status':
+            (activeRequest.assignedAgentName != null ||
+                activeRequest.status != RequestStatus.pending)
             ? 'completed'
-            : (request.assignedOperatorId != null ? 'current' : 'pending'),
-        'desc': request.assignedAgentName != null
-            ? '${request.assignedAgentName} is handling your case.'
-            : (request.status != RequestStatus.pending
-                ? 'An agent has been assigned to your request.'
-                : 'Finding the best agent for your location.'),
+            : (activeRequest.assignedOperatorId != null
+                  ? 'current'
+                  : 'pending'),
+        'desc': activeRequest.assignedAgentName != null
+            ? '${activeRequest.assignedAgentName} is handling your case.'
+            : (activeRequest.status != RequestStatus.pending
+                  ? 'An agent has been assigned to your request.'
+                  : 'Finding the best agent for your location.'),
       },
       {
         'label': 'Fulfillment',
-        'date': request.status == RequestStatus.completed ||
-                request.status == RequestStatus.fulfilled ||
-                request.status == RequestStatus.disputed
+        'date':
+            activeRequest.status == RequestStatus.completed ||
+                activeRequest.status == RequestStatus.fulfilled ||
+                activeRequest.status == RequestStatus.disputed
             ? 'Processed'
-            : (request.status == RequestStatus.assigned
-                ? 'In Progress'
-                : 'Pending'),
-        'status': request.status == RequestStatus.completed ||
-                request.status == RequestStatus.fulfilled ||
-                request.status == RequestStatus.disputed
+            : (activeRequest.status == RequestStatus.assigned
+                  ? 'In Progress'
+                  : 'Pending'),
+        'status':
+            activeRequest.status == RequestStatus.completed ||
+                activeRequest.status == RequestStatus.fulfilled ||
+                activeRequest.status == RequestStatus.disputed
             ? 'completed'
-            : (request.status == RequestStatus.assigned ? 'current' : 'pending'),
-        'desc': request.status == RequestStatus.completed
+            : (activeRequest.status == RequestStatus.assigned
+                  ? 'current'
+                  : 'pending'),
+        'desc': activeRequest.status == RequestStatus.completed
             ? 'Service confirmed as successful.'
-            : (request.status == RequestStatus.fulfilled
-                ? 'Agent has marked the service as complete.'
-                : (request.status == RequestStatus.disputed
-                    ? 'Service reported as incomplete.'
-                    : 'Agent is fulfilling your request.')),
+            : (activeRequest.status == RequestStatus.fulfilled
+                  ? 'Agent has marked the service as complete.'
+                  : (activeRequest.status == RequestStatus.disputed
+                        ? 'Service reported as incomplete.'
+                        : 'Agent is fulfilling your request.')),
       },
-      if (request.status == RequestStatus.disputed || request.status == RequestStatus.completed)
+      if (activeRequest.status == RequestStatus.disputed ||
+          activeRequest.status == RequestStatus.completed)
         {
           'label': 'Resolution',
-          'date': request.status == RequestStatus.completed ? 'Settled' : 'Under Review',
-          'status': request.status == RequestStatus.completed ? 'completed' : 'current',
-          'desc': request.status == RequestStatus.completed
+          'date': activeRequest.status == RequestStatus.completed
+              ? 'Settled'
+              : 'Under Review',
+          'status': activeRequest.status == RequestStatus.completed
+              ? 'completed'
+              : 'current',
+          'desc': activeRequest.status == RequestStatus.completed
               ? 'Request finalized and closed.'
               : 'Our operator is reviewing your dispute report.',
         },
@@ -92,7 +125,7 @@ class RequestStatusScreen extends HookConsumerWidget {
             // Custom Header
             ErkataScreenHeader(
               title: 'Track Request',
-              subtitle: 'ID: #${request.id}',
+              subtitle: 'ID: #${activeRequest.id}',
               onActionTap: () {
                 if (context.canPop()) {
                   context.pop();
@@ -131,7 +164,7 @@ class RequestStatusScreen extends HookConsumerWidget {
                             children: [
                               Expanded(
                                 child: Text(
-                                  request.title,
+                                  activeRequest.title,
                                   style: const TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 18,
@@ -140,7 +173,7 @@ class RequestStatusScreen extends HookConsumerWidget {
                                 ),
                               ),
                               const SizedBox(width: 12),
-                              _StatusBadge(status: request.status),
+                              _StatusBadge(status: activeRequest.status),
                             ],
                           ),
                           const SizedBox(height: 12),
@@ -153,7 +186,7 @@ class RequestStatusScreen extends HookConsumerWidget {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                request.location,
+                                activeRequest.location,
                                 style: const TextStyle(
                                   color: AppColors.mediumGrey,
                                   fontSize: 14,
@@ -204,7 +237,11 @@ class RequestStatusScreen extends HookConsumerWidget {
                                           if (isCurrent || isCompleted)
                                             BoxShadow(
                                               color: AppColors.successGreen
-                                                  .withValues(alpha: isCurrent ? 0.4 : 0.1),
+                                                  .withValues(
+                                                    alpha: isCurrent
+                                                        ? 0.4
+                                                        : 0.1,
+                                                  ),
                                               blurRadius: isCurrent ? 12 : 4,
                                               offset: const Offset(0, 2),
                                             ),
@@ -228,12 +265,17 @@ class RequestStatusScreen extends HookConsumerWidget {
                                       Expanded(
                                         child: Container(
                                           width: 2,
-                                          margin: const EdgeInsets.symmetric(vertical: 4),
+                                          margin: const EdgeInsets.symmetric(
+                                            vertical: 4,
+                                          ),
                                           decoration: BoxDecoration(
-                                            color: isCompleted 
-                                                ? AppColors.successGreen.withValues(alpha: 0.3)
+                                            color: isCompleted
+                                                ? AppColors.successGreen
+                                                      .withValues(alpha: 0.3)
                                                 : AppColors.softGrey,
-                                            borderRadius: BorderRadius.circular(1),
+                                            borderRadius: BorderRadius.circular(
+                                              1,
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -245,10 +287,12 @@ class RequestStatusScreen extends HookConsumerWidget {
                                 child: Padding(
                                   padding: const EdgeInsets.only(bottom: 32),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
                                         children: [
                                           Text(
                                             step['label'] as String,
@@ -290,14 +334,16 @@ class RequestStatusScreen extends HookConsumerWidget {
 
                     const SizedBox(height: 16),
                     // Confirmation Section (Only for Fulfilled)
-                    if (request.status == RequestStatus.fulfilled) ...[
+                    if (activeRequest.status == RequestStatus.fulfilled) ...[
                       Container(
                         padding: const EdgeInsets.all(24),
                         decoration: BoxDecoration(
                           color: AppColors.brandPrimary.withValues(alpha: 0.05),
                           borderRadius: BorderRadius.circular(20),
                           border: Border.all(
-                            color: AppColors.brandPrimary.withValues(alpha: 0.1),
+                            color: AppColors.brandPrimary.withValues(
+                              alpha: 0.1,
+                            ),
                           ),
                         ),
                         child: Column(
@@ -337,23 +383,65 @@ class RequestStatusScreen extends HookConsumerWidget {
                                 // Dispute Button
                                 Expanded(
                                   child: OutlinedButton(
-                                    onPressed: isProcessing.value ? null : () async {
-                                      isProcessing.value = true;
-                                      try {
-                                        await ref.read(customerRequestsProvider.notifier).confirmFulfillment(request.id, false);
-                                      } finally {
-                                        isProcessing.value = false;
-                                      }
-                                    },
+                                    onPressed: isProcessing.value
+                                        ? null
+                                        : () async {
+                                            isProcessing.value = true;
+                                            try {
+                                              await ref
+                                                  .read(
+                                                    customerRequestsProvider
+                                                        .notifier,
+                                                  )
+                                                  .confirmFulfillment(
+                                                    activeRequest.id,
+                                                    false,
+                                                  );
+                                              if (context.mounted) {
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                      const SnackBar(
+                                                        content: Text(
+                                                          'Service reported as incomplete.',
+                                                        ),
+                                                        backgroundColor:
+                                                            AppColors.errorRed,
+                                                      ),
+                                                    );
+                                              }
+                                            } catch (e) {
+                                              if (context.mounted) {
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                      SnackBar(
+                                                        content: Text(
+                                                          'Error: ${e.toString()}',
+                                                        ),
+                                                      ),
+                                                    );
+                                              }
+                                            } finally {
+                                              isProcessing.value = false;
+                                            }
+                                          },
                                     style: OutlinedButton.styleFrom(
-                                      padding: const EdgeInsets.symmetric(vertical: 14),
-                                      side: const BorderSide(color: AppColors.errorRed),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 14,
+                                      ),
+                                      side: const BorderSide(
+                                        color: AppColors.errorRed,
+                                      ),
                                       foregroundColor: AppColors.errorRed,
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(14),
                                       ),
                                     ),
-                                    child: const Text('Dispute', style: TextStyle(fontWeight: FontWeight.bold)),
+                                    child: const Text(
+                                      'Dispute',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(width: 16),
@@ -361,26 +449,74 @@ class RequestStatusScreen extends HookConsumerWidget {
                                 Expanded(
                                   flex: 2,
                                   child: ElevatedButton(
-                                    onPressed: isProcessing.value ? null : () async {
-                                      isProcessing.value = true;
-                                      try {
-                                        await ref.read(customerRequestsProvider.notifier).confirmFulfillment(request.id, true);
-                                      } finally {
-                                        isProcessing.value = false;
-                                      }
-                                    },
+                                    onPressed: isProcessing.value
+                                        ? null
+                                        : () async {
+                                            isProcessing.value = true;
+                                            try {
+                                              await ref
+                                                  .read(
+                                                    customerRequestsProvider
+                                                        .notifier,
+                                                  )
+                                                  .confirmFulfillment(
+                                                    activeRequest.id,
+                                                    true,
+                                                  );
+                                              if (context.mounted) {
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                      const SnackBar(
+                                                        content: Text(
+                                                          'Service confirmed successfully!',
+                                                        ),
+                                                        backgroundColor:
+                                                            AppColors
+                                                                .successGreen,
+                                                      ),
+                                                    );
+                                              }
+                                            } catch (e) {
+                                              if (context.mounted) {
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(
+                                                      SnackBar(
+                                                        content: Text(
+                                                          'Error: ${e.toString()}',
+                                                        ),
+                                                      ),
+                                                    );
+                                              }
+                                            } finally {
+                                              isProcessing.value = false;
+                                            }
+                                          },
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: AppColors.successGreen,
                                       foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.symmetric(vertical: 14),
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 14,
+                                      ),
                                       elevation: 0,
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(14),
                                       ),
                                     ),
-                                    child: isProcessing.value 
-                                      ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                                      : const Text('Yes, it\'s done', style: TextStyle(fontWeight: FontWeight.bold)),
+                                    child: isProcessing.value
+                                        ? const SizedBox(
+                                            height: 20,
+                                            width: 20,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: Colors.white,
+                                            ),
+                                          )
+                                        : const Text(
+                                            'Yes, it\'s done',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
                                   ),
                                 ),
                               ],
@@ -393,42 +529,53 @@ class RequestStatusScreen extends HookConsumerWidget {
                     SizedBox(
                       width: double.infinity,
                       height: 56,
-                      child: request.status == RequestStatus.completed 
-                        ? ElevatedButton.icon(
-                            onPressed: () {
-                              context.push(
-                                '/feedback',
-                                extra: {
-                                  'requestId': request.id,
-                                  'recipientName': request.assignedAgentName ?? 'Assigned Agent',
-                                  'role': UserRole.customer,
-                                },
-                              );
-                            },
-                            icon: const Icon(Icons.star_outline, size: 20),
-                            label: const Text('Leave Feedback', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.brandPrimary,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
+                      child: activeRequest.status == RequestStatus.completed &&
+                              !hasSubmittedFeedback
+                          ? ElevatedButton.icon(
+                              onPressed: () {
+                                if (activeRequest.transactionId == null) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        'Cannot leave feedback: Transaction not found.',
+                                      ),
+                                    ),
+                                  );
+                                  return;
+                                }
+                                context.push(
+                                  '/feedback',
+                                  extra: {
+                                    'transactionId':
+                                        activeRequest.transactionId,
+                                    'recipientName':
+                                        activeRequest.assignedAgentName ??
+                                        'Assigned Agent',
+                                    'role': UserRole.customer,
+                                  },
+                                );
+                              },
+                              icon: const Icon(Icons.star_outline, size: 20),
+                              label: const Text(
+                                'Leave Feedback',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
                               ),
-                              elevation: 4,
-                              shadowColor: AppColors.brandPrimary.withValues(alpha: 0.3),
-                            ),
-                          )
-                        : OutlinedButton.icon(
-                            onPressed: () {},
-                            icon: const Icon(Icons.message_outlined, size: 18),
-                            label: const Text('Contact Agent', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                            style: OutlinedButton.styleFrom(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.brandPrimary,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                elevation: 4,
+                                shadowColor: AppColors.brandPrimary.withValues(
+                                  alpha: 0.3,
+                                ),
                               ),
-                              foregroundColor: AppColors.brandPrimary,
-                              side: BorderSide(color: AppColors.brandPrimary.withValues(alpha: 0.5), width: 1.5),
-                            ),
-                          ),
+                            )
+                          : const SizedBox(),
                     ),
                     const SizedBox(height: 40),
                   ],

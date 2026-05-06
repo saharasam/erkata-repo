@@ -62,8 +62,8 @@ let TransactionsService = class TransactionsService {
                 where: { matchId: matchId },
                 update: {},
                 create: {
-                    matchId,
-                    amount: match.request.budgetMax || new client_1.Prisma.Decimal(0),
+                    matchId: matchId,
+                    amount: match.request.budget || 0,
                     currency: 'ETB',
                     status: 'pending',
                 },
@@ -202,26 +202,10 @@ let TransactionsService = class TransactionsService {
                 where: { id: match.requestId },
                 data: { status: client_1.RequestStatus.fulfilled },
             });
-            const res = matchResult;
-            const budget = Number(res.request?.budgetMax || res.request?.budgetMin || 0);
-            if (budget > 0) {
-                const type = res.request?.type || 'real_estate';
-                const category = res.request?.category || 'General';
-                const isRealEstate = type === 'real_estate';
-                const configKey = isRealEstate
-                    ? 'COMMISSION_REAL_ESTATE_PRIMARY'
-                    : 'COMMISSION_FURNITURE_PRIMARY';
-                const primaryCommissionConfig = this.configService.get(configKey, { value: 0.1 });
-                const primaryCommissionRate = primaryCommissionConfig.value || 0.1;
-                const primaryCommissionEtb = budget * primaryCommissionRate;
-                await this.aglpService.lockCommission(tx, agentId, primaryCommissionEtb, matchId, `Primary commission for ${type} fulfillment: ${category}`);
-                if (isRealEstate && res.agent?.referredById) {
-                    const overrideConfig = this.configService.get('COMMISSION_REAL_ESTATE_OVERRIDE', { value: 0.05 });
-                    const referralCommissionRate = overrideConfig.value || 0.05;
-                    const referralCommissionEtb = budget * referralCommissionRate;
-                    await this.aglpService.lockCommission(tx, res.agent.referredById, referralCommissionEtb, matchId, `Referral override commission from agent ${res.agent.fullName || 'Unknown'}`);
-                }
-            }
+            await tx.transaction.update({
+                where: { matchId: matchId },
+                data: { status: 'completed' },
+            });
             return matchResult;
         }, { timeout: 15000 });
         this.eventEmitter.emit('match.completed', result);
@@ -268,7 +252,7 @@ let TransactionsService = class TransactionsService {
                     id: req.id,
                     category: req.category,
                     description: req.description,
-                    budgetMax: req.budgetMax?.toString() || '0',
+                    budget: req.budget?.toString() || '0',
                     woreda: req.woreda,
                     type: req.type,
                     status: req.status,

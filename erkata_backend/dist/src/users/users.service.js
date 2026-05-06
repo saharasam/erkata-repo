@@ -115,10 +115,28 @@ let UsersService = class UsersService {
                 proposalsCount: profile._count.proposals,
             };
         }
+        const lastLoginLog = await this.prisma.auditLog.findFirst({
+            where: {
+                actorId: userId,
+                action: 'USER_LOGIN',
+            },
+            orderBy: { createdAt: 'desc' },
+        });
+        const loginMetadata = lastLoginLog?.metadata || {};
         return {
             ...profile,
             performanceStats,
+            lastLoginAt: lastLoginLog?.createdAt || null,
+            lastLoginIp: loginMetadata.ip || null,
+            lastLoginDevice: loginMetadata.userAgent || null,
         };
+    }
+    async isReferrerOf(referrerId, targetId) {
+        const target = await this.prisma.profile.findUnique({
+            where: { id: targetId },
+            select: { referredById: true },
+        });
+        return target?.referredById === referrerId;
     }
     async getProfileRoleById(userId) {
         return this.prisma.profile.findUnique({
@@ -131,7 +149,6 @@ let UsersService = class UsersService {
             where: { id: userId },
             select: {
                 aglpBalance: true,
-                aglpPending: true,
                 aglpWithdrawn: true,
                 tier: true,
                 referrals: { select: { id: true } },
@@ -195,6 +212,7 @@ let UsersService = class UsersService {
                 createdAt: log.createdAt,
                 metadata: {
                     ...metadata,
+                    amountAglp: metadata.amountAglp || metadata.amount || 0,
                     transactionId: metadata.transactionId || metadata.aglpTxId || log.id,
                 },
             };
@@ -247,14 +265,6 @@ let UsersService = class UsersService {
             },
             _sum: { amount: true },
         });
-        const pendingCommissionsSum = await this.prisma.aglpTransaction.aggregate({
-            where: {
-                profileId: userId,
-                type: 'EARN',
-                status: 'PENDING',
-            },
-            _sum: { amount: true },
-        });
         const completedWithdrawalsSum = await this.prisma.aglpTransaction.aggregate({
             where: {
                 profileId: userId,
@@ -263,13 +273,13 @@ let UsersService = class UsersService {
             },
             _sum: { amount: true },
         });
-        const dynamicPending = (pendingCommissionsSum._sum.amount?.toNumber() || 0) +
-            (pendingWithdrawalsSum._sum.amount?.toNumber() || 0);
         const dynamicWithdrawn = completedWithdrawalsSum._sum.amount?.toNumber() || 0;
+        const dynamicPendingWithdrawals = pendingWithdrawalsSum._sum.amount?.toNumber() || 0;
         return {
             balance: profile.aglpBalance.toNumber(),
             aglpAvailable: profile.aglpBalance.toNumber(),
-            aglpPending: dynamicPending,
+            aglpPending: dynamicPendingWithdrawals,
+            aglpPendingWithdrawals: dynamicPendingWithdrawals,
             aglpWithdrawn: dynamicWithdrawn,
             usedSlots,
             totalSlots,
@@ -490,7 +500,8 @@ let UsersService = class UsersService {
                         select: { referredById: true, fullName: true },
                     });
                     if (agent?.referredById) {
-                        const referralCommissionRate = 0.1;
+                        const referralCommissionConfig = this.configService.get('AGLP_COMMISSION_PACKAGE_REFERRAL', { value: 0.1 });
+                        const referralCommissionRate = referralCommissionConfig.value || 0.1;
                         const referralCommissionEtb = Number(pkg.price) * referralCommissionRate;
                         await this.aglpService.earnCommission(tx, agent.referredById, referralCommissionEtb, agentId, `Referral commission for package purchase (${tierEnum}) by ${agent.fullName}`);
                     }
@@ -582,7 +593,7 @@ let UsersService = class UsersService {
         const result = await this.prisma.$transaction(async (tx) => {
             return this.aglpService.withdrawAglp(tx, userId, amountAglp, bankDetails);
         });
-        this.notificationsGateway.sendToRole('operator', 'notification', {
+        this.notificationsGateway.sendToRole('financial_operator', 'notification', {
             type: 'payout.requested',
             title: 'New Payout Request',
             message: `${agent?.fullName || 'An agent'} has requested a withdrawal of ${amountAglp.toLocaleString()} AGLP.`,

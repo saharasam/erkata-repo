@@ -175,7 +175,6 @@ model Profile {
   referredById      String?           @map("referred_by_id") @db.Uuid
   createdAt         DateTime          @default(now()) @map("created_at")
   aglpBalance       Decimal           @default(0) @map("aglp_balance") @db.Decimal(12, 2)
-  aglpPending       Decimal           @default(0) @map("aglp_pending") @db.Decimal(12, 2)
   aglpWithdrawn     Decimal           @default(0) @map("aglp_withdrawn") @db.Decimal(12, 2)
   referralCode      String?           @unique @map("referral_code")
   isOnline          Boolean           @default(false) @map("is_online")
@@ -228,9 +227,8 @@ model Request {
   category           String
   type               String              @default("real_estate")
   description        String
-  budgetMin          Decimal?            @map("budget_min") @db.Decimal(12, 2)
-  budgetMax          Decimal?            @map("budget_max") @db.Decimal(12, 2)
   metadata           Json                @default("{}")
+  budget             Decimal?            @db.Decimal(12, 2) // New consolidated field
   zoneId             String              @map("zone_id")
   woreda             String
   status             RequestStatus       @default(pending)
@@ -338,6 +336,16 @@ model UpgradeRequest {
   admin         Profile?             @relation("AdminApprovals", fields: [adminId], references: [id])
 
   @@map("upgrade_requests")
+}
+
+model Attachment {
+  id        String   @id @default(cuid())
+  fileName  String   @map("file_name")
+  mimeType  String   @map("mime_type")
+  content   String   // Storing Base64 data here
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("attachments")
 }
 
 enum AglpTransactionStatus {

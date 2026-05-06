@@ -38,7 +38,7 @@ async function main() {
                 customerId: customer.id,
                 category: 'Real Estate',
                 description: 'Test Verification Request',
-                budgetMax: new client_1.Prisma.Decimal(50000),
+                budget: new client_1.Prisma.Decimal(50000),
                 status: client_1.RequestStatus.pending,
                 zoneId: zone.id,
                 woreda: '01',
@@ -82,7 +82,7 @@ async function main() {
             update: {},
             create: {
                 matchId: match.id,
-                amount: request?.budgetMax || new client_1.Prisma.Decimal(0),
+                amount: request?.budget || new client_1.Prisma.Decimal(0),
                 currency: 'ETB',
                 status: 'pending',
             },

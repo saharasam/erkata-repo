@@ -153,7 +153,7 @@ const RequestIntakeFlow: React.FC<RequestIntakeFlowProps> = ({ onSuccess, onCanc
         details: {
           title: finalData.title,
           description: finalData.description,
-          budgetMax: parseFloat(finalData.budget) || undefined,
+          budget: parseFloat(finalData.budget) || undefined,
         },
         metadata: finalData.metadata,
         locationZone: {

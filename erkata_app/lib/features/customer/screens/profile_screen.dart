@@ -9,6 +9,18 @@ class ProfileScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authProvider);
+    final user = authState.user;
+
+    final initials =
+        user?.fullName
+            ?.split(' ')
+            .map((e) => e.isNotEmpty ? e[0] : '')
+            .take(2)
+            .join('')
+            .toUpperCase() ??
+        'U';
+
     final menuItems = [
       {
         'icon': Icons.person,
@@ -71,8 +83,9 @@ class ProfileScreen extends ConsumerWidget {
                     ),
                     boxShadow: [
                       BoxShadow(
-                        color:
-                            Theme.of(context).shadowColor.withValues(alpha: 0.1),
+                        color: Theme.of(
+                          context,
+                        ).shadowColor.withValues(alpha: 0.1),
                         blurRadius: 10,
                         offset: const Offset(0, 5),
                       ),
@@ -100,12 +113,13 @@ class ProfileScreen extends ConsumerWidget {
                             ),
                             child: Center(
                               child: Text(
-                                'A',
+                                initials,
                                 style: TextStyle(
                                   fontSize: 36,
                                   fontWeight: FontWeight.bold,
-                                  color:
-                                      Theme.of(context).colorScheme.onPrimary,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onPrimary,
                                 ),
                               ),
                             ),
@@ -121,16 +135,18 @@ class ProfileScreen extends ConsumerWidget {
                                   color: Theme.of(context).colorScheme.primary,
                                   shape: BoxShape.circle,
                                   border: Border.all(
-                                    color:
-                                        Theme.of(context).colorScheme.surface,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.surface,
                                     width: 4,
                                   ),
                                 ),
                                 child: Icon(
                                   Icons.settings,
                                   size: 14,
-                                  color:
-                                      Theme.of(context).colorScheme.onPrimary,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onPrimary,
                                 ),
                               ),
                             ),
@@ -139,7 +155,7 @@ class ProfileScreen extends ConsumerWidget {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'Abebe Kebede',
+                        user?.fullName ?? 'Unknown User',
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
@@ -147,7 +163,7 @@ class ProfileScreen extends ConsumerWidget {
                         ),
                       ),
                       Text(
-                        'abebe.k@example.com',
+                        user?.email ?? 'No email',
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                           fontSize: 14,
@@ -161,26 +177,26 @@ class ProfileScreen extends ConsumerWidget {
                             text: 'Verified User',
                             color:
                                 Theme.of(context).brightness == Brightness.dark
-                                    ? Colors.greenAccent
-                                    : AppColors.successGreen,
+                                ? Colors.greenAccent
+                                : AppColors.successGreen,
                             bgColor:
                                 Theme.of(context).brightness == Brightness.dark
-                                    ? AppColors.successGreenLight.withValues(
-                                      alpha: 0.1,
-                                    )
-                                    : AppColors.successGreenLight,
+                                ? AppColors.successGreenLight.withValues(
+                                    alpha: 0.1,
+                                  )
+                                : AppColors.successGreenLight,
                           ),
                           const SizedBox(width: 12),
                           _Badge(
                             text: 'Member since 2023',
                             color:
                                 Theme.of(context).brightness == Brightness.dark
-                                    ? Colors.grey[300]!
-                                    : AppColors.mediumGrey,
+                                ? Colors.grey[300]!
+                                : AppColors.mediumGrey,
                             bgColor:
                                 Theme.of(context).brightness == Brightness.dark
-                                    ? Colors.grey[800]!
-                                    : AppColors.lightGreySurface,
+                                ? Colors.grey[800]!
+                                : AppColors.lightGreySurface,
                           ), // gray-100
                         ],
                       ),
@@ -252,7 +268,13 @@ class ProfileScreen extends ConsumerWidget {
             left: 8,
             child: IconButton(
               icon: const Icon(Icons.arrow_back_rounded),
-              onPressed: () => context.pop(),
+              onPressed: () {
+                if (context.canPop()) {
+                  context.pop();
+                } else {
+                  context.go('/home');
+                }
+              },
               color: Theme.of(context).colorScheme.primary,
             ),
           ),

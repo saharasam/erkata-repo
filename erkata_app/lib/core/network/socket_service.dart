@@ -11,11 +11,13 @@ import '../providers/core_providers.dart';
 class SocketService {
   final TokenStorage _tokenStorage;
   socket_io.Socket? _socket;
-  final _notificationController = StreamController<Map<String, dynamic>>.broadcast();
+  final _notificationController =
+      StreamController<Map<String, dynamic>>.broadcast();
 
   SocketService(this._tokenStorage);
 
-  Stream<Map<String, dynamic>> get notifications => _notificationController.stream;
+  Stream<Map<String, dynamic>> get notifications =>
+      _notificationController.stream;
 
   bool get isConnected => _socket?.connected ?? false;
 
@@ -29,14 +31,15 @@ class SocketService {
     }
 
     debugPrint('[SocketService] Connecting to ${EnvConfig.baseUrl}...');
-    
-    _socket = socket_io.io(EnvConfig.baseUrl, 
+
+    _socket = socket_io.io(
+      EnvConfig.baseUrl,
       socket_io.OptionBuilder()
-        .setTransports(['websocket'])
-        .setAuth({'token': 'Bearer $token'})
-        .enableAutoConnect()
-        .enableReconnection()
-        .build()
+          .setTransports(['websocket'])
+          .setAuth({'token': 'Bearer $token'})
+          .enableAutoConnect()
+          .enableReconnection()
+          .build(),
     );
 
     _socket!.onConnect((_) {
@@ -66,7 +69,7 @@ class SocketService {
     _socket?.disconnect();
     _socket = null;
   }
-  
+
   void dispose() {
     _notificationController.close();
     disconnect();
@@ -76,7 +79,7 @@ class SocketService {
 final socketServiceProvider = Provider<SocketService>((ref) {
   final storage = ref.watch(tokenStorageProvider);
   final service = SocketService(storage);
-  
+
   // Watch auth state to connect/disconnect reactively
   ref.listen(authProvider, (previous, next) {
     if (next.isAuthenticated) {

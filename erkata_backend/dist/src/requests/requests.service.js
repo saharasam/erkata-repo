@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var RequestsService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RequestsService = void 0;
 const common_1 = require("@nestjs/common");
@@ -21,12 +22,13 @@ const redis_presence_service_1 = require("../common/redis/redis-presence.service
 const aglp_service_1 = require("../aglp/aglp.service");
 const bullmq_1 = require("@nestjs/bullmq");
 const bullmq_2 = require("bullmq");
-let RequestsService = class RequestsService {
+let RequestsService = RequestsService_1 = class RequestsService {
     prisma;
     eventEmitter;
     presence;
     aglpService;
     timeoutQueue;
+    logger = new common_1.Logger(RequestsService_1.name);
     constructor(prisma, eventEmitter, presence, aglpService, timeoutQueue) {
         this.prisma = prisma;
         this.eventEmitter = eventEmitter;
@@ -41,6 +43,12 @@ let RequestsService = class RequestsService {
             removeOnFail: true,
             jobId: 'global-queue-sweeper',
         });
+        await this.timeoutQueue.add('upgrade-sweeper', {}, {
+            repeat: { every: 10 * 60 * 1000 },
+            removeOnComplete: true,
+            removeOnFail: true,
+            jobId: 'global-upgrade-sweeper',
+        });
     }
     redact(user, message) {
         return {
@@ -52,6 +60,10 @@ let RequestsService = class RequestsService {
         };
     }
     async createRequest(customerId, dto) {
+        const budget = dto.details.budget !== undefined ? Number(dto.details.budget) : undefined;
+        if (budget !== undefined && budget < 0) {
+            throw new common_1.BadRequestException('Budget value must be a positive number');
+        }
         const zone = await this.prisma.zone.findFirst({
             where: { name: dto.locationZone.kifleKetema },
         });
@@ -63,8 +75,7 @@ let RequestsService = class RequestsService {
                 category: dto.category,
                 type: dto.type || 'real_estate',
                 description: dto.details.description,
-                budgetMin: dto.details.budgetMin,
-                budgetMax: dto.details.budgetMax,
+                budget: budget,
                 metadata: dto.metadata || {},
                 zoneId: zone.id,
                 woreda: dto.locationZone.woreda,
@@ -82,6 +93,7 @@ let RequestsService = class RequestsService {
         if (!request ||
             request.status !== client_1.RequestStatus.pending ||
             request.assignedOperatorId) {
+            this.logger.debug(`[ASSIGN] Skipping ${requestId}: status=${request?.status}, alreadyAssigned=${!!request?.assignedOperatorId}`);
             return;
         }
         const operators = await this.prisma.$queryRaw `
@@ -98,6 +110,7 @@ let RequestsService = class RequestsService {
       LIMIT 1
       FOR UPDATE SKIP LOCKED
     `;
+        this.logger.log(`[ASSIGN] request=${requestId} → found ${operators.length} eligible operator(s)`);
         const operatorId = operators[0]?.id;
         if (!operatorId)
             return;
@@ -121,6 +134,7 @@ let RequestsService = class RequestsService {
             });
             await this.timeoutQueue.add('check-timeout', { requestId, operatorId }, { delay: 5 * 60 * 1000, jobId: `timeout-${requestId}` });
         });
+        this.logger.log(`[ASSIGN] request=${requestId} → pushed to operator=${operatorId}`);
         this.eventEmitter.emit('request.pushed', { requestId, operatorId });
     }
     async handleOperatorReady() {
@@ -254,7 +268,7 @@ let RequestsService = class RequestsService {
             const activeMatch = request.matches[0];
             let agentInfo = activeMatch?.agent || null;
             if (activeMatch && activeMatch.status === 'assigned') {
-                agentInfo = this.redact({ id: '', fullName: '', phone: '' }, 'An agent has been assigned — details will be visible once they accept.');
+                agentInfo = this.redact({ id: '', fullName: '', phone: '' }, 'Details hidden until agent accepts.');
             }
             return {
                 ...request,
@@ -270,7 +284,7 @@ let RequestsService = class RequestsService {
             }
             return {
                 ...request,
-                customer: this.redact(request.customer, 'Customer PII is hidden until assignment.'),
+                customer: this.redact(request.customer, 'Customer contact hidden until assignment.'),
             };
         }
         return request;
@@ -318,7 +332,14 @@ let RequestsService = class RequestsService {
                 matches: {
                     include: {
                         agent: { select: { id: true, fullName: true, avatarUrl: true } },
-                        transaction: { select: { id: true } },
+                        transaction: {
+                            select: {
+                                id: true,
+                                feedbacks: {
+                                    select: { authorId: true },
+                                },
+                            },
+                        },
                     },
                 },
             },
@@ -345,12 +366,6 @@ let RequestsService = class RequestsService {
                         completedAt: new Date(),
                     },
                 });
-                const matches = await tx.match.findMany({
-                    where: { requestId },
-                });
-                for (const match of matches) {
-                    await this.aglpService.releaseCommissionByMatchId(tx, match.id);
-                }
             });
         }
         else {
@@ -391,12 +406,6 @@ let RequestsService = class RequestsService {
                 },
                 include: { customer: true, matches: { include: { agent: true } } },
             });
-            const matches = await tx.match.findMany({
-                where: { requestId },
-            });
-            for (const match of matches) {
-                await this.aglpService.releaseCommissionByMatchId(tx, match.id);
-            }
             return req;
         });
         await this.eventEmitter.emitAsync('request.resolved', {
@@ -422,7 +431,7 @@ let RequestsService = class RequestsService {
                 isEscalated: true,
                 metadata: {
                     ...currentMetadata,
-                    escalationNote: note || 'No description provided by operator.',
+                    escalationNote: note || 'No description provided.',
                     escalatedAt: new Date().toISOString(),
                     escalatedBy: operatorId,
                 },
@@ -454,7 +463,7 @@ let RequestsService = class RequestsService {
                     metadata: {
                         ...currentMetadata,
                         needsRedo: true,
-                        voidNote: note || 'Fulfillment voided. Redo required.',
+                        voidNote: note || 'Redo required.',
                         voidAt: new Date().toISOString(),
                         voidBy: operatorId,
                         resolvedAt: new Date().toISOString(),
@@ -532,17 +541,11 @@ let RequestsService = class RequestsService {
                         ...currentMetadata,
                         forceCompletedAt: new Date().toISOString(),
                         forceCompletedBy: operatorId,
-                        forceCompletionNote: note || 'Manually confirmed by operator.',
+                        forceCompletionNote: note || 'Manually confirmed.',
                     },
                 },
                 include: { customer: true, matches: { include: { agent: true } } },
             });
-            const matches = await tx.match.findMany({
-                where: { requestId },
-            });
-            for (const match of matches) {
-                await this.aglpService.releaseCommissionByMatchId(tx, match.id);
-            }
             return req;
         });
         await this.eventEmitter.emitAsync('request.completed', {
@@ -566,7 +569,7 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], RequestsService.prototype, "handleOperatorOnlineEvent", null);
-exports.RequestsService = RequestsService = __decorate([
+exports.RequestsService = RequestsService = RequestsService_1 = __decorate([
     (0, common_1.Injectable)(),
     __param(4, (0, bullmq_1.InjectQueue)('assignment-timeout')),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,

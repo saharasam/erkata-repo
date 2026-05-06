@@ -15,7 +15,7 @@ interface RequestCardProps {
     customerPhone?: string;
     zone?: string;
     woreda: string;
-    budgetMax?: string;
+    budget?: string;
     metadata?: Record<string, any>;
     status: 'assigned' | 'accepted' | 'completed' | 'rejected' | string;
   };
@@ -77,8 +77,8 @@ export const RequestCard = React.forwardRef<HTMLDivElement, RequestCardProps>(
     );
 
     const hasMetadata = metadataEntries.length > 0;
-    const formattedBudget = request.budgetMax && Number(request.budgetMax) > 0
-      ? `ETB ${Number(request.budgetMax).toLocaleString()}`
+    const formattedBudget = request.budget && Number(request.budget) > 0
+      ? `ETB ${Number(request.budget).toLocaleString()}`
       : null;
 
     const CategoryIcon = request.category === 'Furniture' ? LayoutGrid : Home;

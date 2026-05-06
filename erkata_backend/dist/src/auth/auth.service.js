@@ -76,7 +76,7 @@ let AuthService = class AuthService {
         }
         return sanitized.startsWith('+') ? sanitized : `+${sanitized}`;
     }
-    async login(credentials, res) {
+    async login(credentials, res, req) {
         console.log(`[AuthService] Attempting login for email: ${credentials.identifier}`);
         const profile = await this.prisma.profile.findUnique({
             where: { email: credentials.identifier },
@@ -107,6 +107,18 @@ let AuthService = class AuthService {
             sameSite: 'lax',
             maxAge: 7 * 24 * 60 * 60 * 1000,
         });
+        void this.prisma.auditLog.create({
+            data: {
+                actorId: profile.id,
+                action: 'USER_LOGIN',
+                targetTable: 'profiles',
+                targetId: profile.id,
+                metadata: {
+                    ip: req?.ip,
+                    userAgent: req?.headers?.['user-agent'],
+                },
+            },
+        }).catch(err => console.error('[AuthService] Failed to log login:', err));
         return {
             user: {
                 id: profile.id,
@@ -141,7 +153,7 @@ let AuthService = class AuthService {
         await Promise.resolve();
         return { message: 'Logged out' };
     }
-    async register(data, res) {
+    async register(data, res, req) {
         console.log(`[AuthService] Registering user: ${data.fullName}, Email: ${data.email}`);
         const existingUser = await this.prisma.profile.findUnique({
             where: { email: data.email },
@@ -239,6 +251,18 @@ let AuthService = class AuthService {
                 maxAge: 7 * 24 * 60 * 60 * 1000,
             });
         }
+        void this.prisma.auditLog.create({
+            data: {
+                actorId: newProfile.id,
+                action: 'USER_REGISTER',
+                targetTable: 'profiles',
+                targetId: newProfile.id,
+                metadata: {
+                    ip: req?.ip,
+                    userAgent: req?.headers?.['user-agent'],
+                },
+            },
+        }).catch(err => console.error('[AuthService] Failed to log registration:', err));
         return {
             message: 'Registration successful.',
             user: {

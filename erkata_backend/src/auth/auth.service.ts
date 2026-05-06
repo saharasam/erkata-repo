@@ -49,6 +49,7 @@ export class AuthService {
   async login(
     credentials: { identifier: string; pass: string },
     res: Response,
+    req?: any,
   ) {
     console.log(
       `[AuthService] Attempting login for email: ${credentials.identifier}`,
@@ -96,6 +97,20 @@ export class AuthService {
       sameSite: 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
+
+    // Log successful login
+    void this.prisma.auditLog.create({
+      data: {
+        actorId: profile.id,
+        action: 'USER_LOGIN',
+        targetTable: 'profiles',
+        targetId: profile.id,
+        metadata: {
+          ip: req?.ip,
+          userAgent: req?.headers?.['user-agent'],
+        },
+      },
+    }).catch(err => console.error('[AuthService] Failed to log login:', err));
 
     return {
       user: {
@@ -146,6 +161,7 @@ export class AuthService {
       referralCode?: string;
     },
     res?: Response,
+    req?: any,
   ) {
     console.log(
       `[AuthService] Registering user: ${data.fullName}, Email: ${data.email}`,
@@ -292,6 +308,20 @@ export class AuthService {
         maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
       });
     }
+
+    // Log successful registration
+    void this.prisma.auditLog.create({
+      data: {
+        actorId: newProfile.id,
+        action: 'USER_REGISTER',
+        targetTable: 'profiles',
+        targetId: newProfile.id,
+        metadata: {
+          ip: req?.ip,
+          userAgent: req?.headers?.['user-agent'],
+        },
+      },
+    }).catch(err => console.error('[AuthService] Failed to log registration:', err));
 
     return {
       message: 'Registration successful.',

@@ -294,89 +294,6 @@ let AglpService = class AglpService {
             },
         });
     }
-    async lockCommission(tx, profileId, amountEtb, referenceId, reason) {
-        const rate = this.getConversionRate();
-        const amountAglp = amountEtb * rate;
-        await tx.profile.update({
-            where: { id: profileId },
-            data: { aglpPending: { increment: amountAglp } },
-        });
-        const aglpTx = await tx.aglpTransaction.create({
-            data: {
-                profileId,
-                type: client_1.AglpTransactionType.EARN,
-                amount: amountAglp,
-                etbEquivalent: amountEtb,
-                conversionRate: rate,
-                status: client_1.AglpTransactionStatus.PENDING,
-                referenceId,
-                referenceType: 'COMMISSION_ESCROW',
-            },
-        });
-        await tx.auditLog.create({
-            data: {
-                actorId: profileId,
-                action: 'COMMISSION_LOCKED',
-                targetTable: 'profiles',
-                targetId: profileId,
-                metadata: {
-                    aglpTxId: aglpTx.id,
-                    referenceId,
-                    amount: amountAglp,
-                    amountEtb,
-                    reason: `${reason} (Awaiting Admin Release)`,
-                },
-            },
-        });
-        return aglpTx;
-    }
-    async releaseEscrow(tx, aglpTxId) {
-        const aglpTx = await tx.aglpTransaction.findUnique({
-            where: { id: aglpTxId },
-            include: { profile: true },
-        });
-        if (!aglpTx ||
-            aglpTx.status !== client_1.AglpTransactionStatus.PENDING ||
-            aglpTx.type !== client_1.AglpTransactionType.EARN) {
-            throw new Error('Valid pending escrow transaction not found');
-        }
-        await tx.profile.update({
-            where: { id: aglpTx.profileId },
-            data: {
-                aglpPending: { decrement: aglpTx.amount },
-                aglpBalance: { increment: aglpTx.amount },
-            },
-        });
-        await tx.aglpTransaction.update({
-            where: { id: aglpTxId },
-            data: { status: client_1.AglpTransactionStatus.COMPLETED },
-        });
-        await tx.auditLog.create({
-            data: {
-                actorId: aglpTx.profileId,
-                action: 'COMMISSION_RELEASED',
-                targetTable: 'profiles',
-                targetId: aglpTx.profileId,
-                metadata: {
-                    aglpTxId,
-                    amount: aglpTx.amount,
-                    reason: 'Escrow released by system (Terminal State reached)',
-                },
-            },
-        });
-    }
-    async releaseCommissionByMatchId(tx, matchId) {
-        const aglpTxs = await tx.aglpTransaction.findMany({
-            where: {
-                referenceId: matchId,
-                type: client_1.AglpTransactionType.EARN,
-                status: client_1.AglpTransactionStatus.PENDING,
-            },
-        });
-        for (const aglpTx of aglpTxs) {
-            await this.releaseEscrow(tx, aglpTx.id);
-        }
-    }
     async cancelWithdrawal(tx, aglpTxId, requestedByProfileId) {
         const aglpTx = await tx.aglpTransaction.findUnique({
             where: { id: aglpTxId },
@@ -391,7 +308,6 @@ let AglpService = class AglpService {
             where: { id: requestedByProfileId },
             data: {
                 aglpBalance: { increment: aglpTx.amount },
-                aglpWithdrawn: { decrement: aglpTx.amount },
             },
         });
         await tx.aglpTransaction.update({

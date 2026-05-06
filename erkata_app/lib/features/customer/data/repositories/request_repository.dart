@@ -24,7 +24,9 @@ class RequestRepository {
     try {
       final response = await _dio.get('/requests/my-requests');
       final list = response.data as List<dynamic>;
-      return list.map((e) => ServiceRequest.fromJson(e as Map<String, dynamic>)).toList();
+      return list
+          .map((e) => ServiceRequest.fromJson(e as Map<String, dynamic>))
+          .toList();
     } on DioException catch (e) {
       throw ErrorHandler.fromDioException(e);
     } catch (e) {
@@ -37,6 +39,28 @@ class RequestRepository {
       await _dio.post(
         '/requests/$requestId/confirm-fulfillment',
         data: {'confirmed': confirmed},
+      );
+    } on DioException catch (e) {
+      throw ErrorHandler.fromDioException(e);
+    } catch (e) {
+      throw Exception(e.toString());
+    }
+  }
+
+  Future<void> submitFeedback(
+    String transactionId, {
+    required String content,
+    required int rating,
+    List<String>? categories,
+  }) async {
+    try {
+      await _dio.post(
+        '/mediation/transaction/$transactionId/feedback',
+        data: {
+          'content': content,
+          'rating': rating,
+          'categories': categories ?? [],
+        },
       );
     } on DioException catch (e) {
       throw ErrorHandler.fromDioException(e);
