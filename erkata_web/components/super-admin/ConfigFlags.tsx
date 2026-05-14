@@ -310,6 +310,70 @@ const ConfigFlags: React.FC = () => {
                         </div>
                     </div>
                 </div>
+
+                {/* Upgrade Bank Details */}
+                <div className="lg:col-span-12">
+                    <div className="bg-slate-800 border border-slate-700 rounded-[2.5rem] p-10 overflow-hidden relative">
+                        <div className="absolute top-0 right-0 p-10 opacity-5">
+                            <Globe className="w-40 h-40 text-indigo-500" />
+                        </div>
+
+                        <div className="flex items-center justify-between mb-10 relative z-10">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-indigo-500/10 rounded-2xl">
+                                    <Globe className="w-6 h-6 text-indigo-500" />
+                                </div>
+                                <div>
+                                    <h5 className="font-black text-white text-xl tracking-tight">Upgrade Bank Repository</h5>
+                                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mt-1">Designated destination for package upgrades</p>
+                                </div>
+                            </div>
+                            <div className="px-4 py-1 bg-indigo-500/5 border border-indigo-500/20 rounded-full flex items-center gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+                                <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Financial Node</span>
+                            </div>
+                        </div>
+
+                        {(() => {
+                            const bankDetails = getConfigValue('BANK_DETAILS_UPGRADE', {
+                                bankName: 'REQUIRED',
+                                accountNumber: 'REQUIRED',
+                                accountHolder: 'REQUIRED'
+                            });
+
+                            return (
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10">
+                                    {[
+                                        { label: 'Bank Name', field: 'bankName', value: bankDetails.bankName },
+                                        { label: 'Account Number', field: 'accountNumber', value: bankDetails.accountNumber },
+                                        { label: 'Account Holder', field: 'accountHolder', value: bankDetails.accountHolder },
+                                    ].map((item) => (
+                                        <div key={item.field} className="bg-slate-900 border border-slate-700 rounded-3xl p-6 transition-all group">
+                                            <label className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-4 block px-1">
+                                                {item.label}
+                                            </label>
+                                            <div className="relative">
+                                                <input 
+                                                    type="text" 
+                                                    defaultValue={item.value}
+                                                    onBlur={(e) => {
+                                                        const newVal = e.target.value;
+                                                        if (newVal !== item.value) {
+                                                            const updatedDetails = { ...bankDetails, [item.field]: newVal };
+                                                            updateConfig('BANK_DETAILS_UPGRADE', updatedDetails);
+                                                        }
+                                                    }}
+                                                    className="w-full bg-slate-950/50 border border-slate-800 rounded-xl px-4 py-3 text-sm font-black text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/50 transition-all" 
+                                                />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            );
+                        })()}
+                    </div>
+                </div>
+
             </div>
 
             {/* Footer Status */}

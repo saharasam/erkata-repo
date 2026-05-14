@@ -108,36 +108,32 @@ export class RedisPresenceService implements OnModuleInit {
 
   async heartbeat(operatorId: string) {
     const key = `presence:operator:${operatorId}`;
-
-    // Check if they were already online in SQL
-    // To minimize SQL writes, we could cache this in Redis too, but let's keep it simple first
-    // and only sync when the key is *created* if we want to tracking "Login"
-    // However, the customer's requirement was: "Redis updates instantly. The main database does nothing."
-    // and "Redis sends one update when the threshold is crossed."
-
-    // We do need to handle the "Go Online" moment.
-    // If the key doesn't exist, it's their "first" heartbeat or they were offline.
     const exists = await this.redis.exists(key);
 
-    if (!exists) {
-      // First heartbeat or back from offline - Sync SQL to Online
-      try {
-        await this.prisma.profile.update({
-          where: { id: operatorId },
-          data: { isOnline: true, lastAssignmentAt: new Date() },
-        });
-        this.logger.log(
-          `[RedisPresenceService] Operator ${operatorId} marked as Online in SQL.`,
-        );
+    // Always ensure the DB reflects online status on every heartbeat.
+    // Previously this was only done when the Redis key didn't exist, which meant
+    // if the 30s key expired and the expiry handler set isOnline=false, the next
+    // heartbeat would NOT re-set it before the assignment query ran — causing
+    // the operator to be invisible to assignToNextReadyOperator.
+    try {
+      await this.prisma.profile.update({
+        where: { id: operatorId },
+        data: { isOnline: true },
+      });
+    } catch (err) {
+      this.logger.error(
+        `[RedisPresenceService] Failed to sync online status for ${operatorId}`,
+        err,
+      );
+    }
 
-        // Notify that operator is now ready for queue pushes
-        this.eventEmitter.emit('operator.online', { operatorId });
-      } catch (err) {
-        this.logger.error(
-          `[RedisPresenceService] Failed to sync online status for ${operatorId}`,
-          err,
-        );
-      }
+    if (!exists) {
+      // First heartbeat or back from offline — emit event so pending requests
+      // in the queue get pushed to this now-online operator.
+      this.logger.log(
+        `[RedisPresenceService] Operator ${operatorId} came online. Emitting operator.online.`,
+      );
+      this.eventEmitter.emit('operator.online', { operatorId });
     }
 
     await this.redis.set(key, '1', 'EX', 30);

@@ -52,8 +52,10 @@ const OperatorDashboard: React.FC = () => {
     const { socket } = useSocket();
 
     // Listen for real-time WebSocket push notifications
+    // NOTE: This listener is intentionally NOT gated by isOnline.
+    // Push notifications must be received regardless of the UI toggle state.
     useEffect(() => {
-        if (!socket || !isOnline) return;
+        if (!socket) return;
 
         const handleNotification = (notification: any) => {
             if (notification.type === 'request.pushed') {
@@ -69,7 +71,7 @@ const OperatorDashboard: React.FC = () => {
         return () => {
             socket.off('notification', handleNotification);
         };
-    }, [socket, isOnline, triggerCheck]);
+    }, [socket, triggerCheck]);
 
     // Fetch active transactions on mount
     useEffect(() => {

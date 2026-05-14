@@ -5,6 +5,7 @@ import {
   Prisma,
   AglpTransactionType,
   AglpTransactionStatus,
+  Profile,
 } from '@prisma/client';
 
 @Injectable()
@@ -13,6 +14,25 @@ export class AglpService {
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
   ) {}
+
+  /**
+   * Performs a Row-Level Lock (SELECT FOR UPDATE) on a profile.
+   * This is critical for preventing double-spend race conditions during balance updates.
+   */
+  private async lockProfile(
+    tx: Prisma.TransactionClient,
+    profileId: string,
+  ): Promise<Profile> {
+    const profiles = await tx.$queryRaw<Profile[]>`
+      SELECT * FROM profiles WHERE id = ${profileId}::uuid FOR UPDATE
+    `;
+
+    if (!profiles || profiles.length === 0) {
+      throw new Error('Profile not found for locking');
+    }
+
+    return profiles[0];
+  }
 
   getConversionRate(): number {
     const config = this.configService.get<{ rate: number }>(
@@ -34,6 +54,9 @@ export class AglpService {
   ) {
     const rate = this.getConversionRate();
     const amountAglp = amountEtb * rate;
+
+    // Locking is less critical for increments, but we lock to ensure consistency with the profile state
+    await this.lockProfile(tx, profileId);
 
     await tx.profile.update({
       where: { id: profileId },
@@ -79,8 +102,10 @@ export class AglpService {
     amountAglp: number,
     packageId: string,
   ) {
-    const profile = await tx.profile.findUnique({ where: { id: profileId } });
-    if (!profile || Number(profile.aglpBalance) < amountAglp) {
+    // LOCK ROW: Prevent concurrent spending or withdrawals during this transaction
+    const profile = await this.lockProfile(tx, profileId);
+
+    if (Number(profile.aglpBalance) < amountAglp) {
       throw new Error('Insufficient AGLP balance');
     }
 
@@ -220,8 +245,11 @@ export class AglpService {
       bankAccountHolder: string;
     },
   ) {
-    const profile = await tx.profile.findUnique({ where: { id: profileId } });
-    if (!profile || Number(profile.aglpBalance) < amountAglp) {
+    // LOCK ROW: Critical security measure.
+    // Prevents concurrent withdrawals from passing the balance check simultaneously.
+    const profile = await this.lockProfile(tx, profileId);
+
+    if (Number(profile.aglpBalance) < amountAglp) {
       throw new Error('Insufficient AGLP balance');
     }
 
@@ -315,7 +343,6 @@ export class AglpService {
   }
 
   // Handle AGLP withdrawal rejection (Refund)
-  // Handle AGLP withdrawal rejection (Refund)
   async rejectWithdrawal(
     tx: Prisma.TransactionClient,
     aglpTxId: string,
@@ -330,7 +357,10 @@ export class AglpService {
       throw new Error('Withdrawal transaction not found');
     }
 
-    // 1. Refund the AGLP to balance only (since it was never in aglpWithdrawn)
+    // Locking the profile to ensure balance consistency during refund
+    await this.lockProfile(tx, aglpTx.profileId);
+
+    // 1. Refund the AGLP to balance only
     await tx.profile.update({
       where: { id: aglpTx.profileId },
       data: {
@@ -373,6 +403,9 @@ export class AglpService {
     ) {
       throw new Error('Valid pending withdrawal transaction not found');
     }
+
+    // Lock profile
+    await this.lockProfile(tx, aglpTx.profileId);
 
     // 1. Update Profile: Mark money as officially withdrawn
     await tx.profile.update({
@@ -421,6 +454,9 @@ export class AglpService {
     ) {
       throw new Error('Cannot cancel this withdrawal');
     }
+
+    // Lock profile
+    await this.lockProfile(tx, requestedByProfileId);
 
     // Refund the AGLP
     await tx.profile.update({

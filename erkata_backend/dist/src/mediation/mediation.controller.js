@@ -18,6 +18,8 @@ const mediation_service_1 = require("./mediation.service");
 const guards_1 = require("../auth/guards");
 const permissions_1 = require("../auth/permissions");
 const client_1 = require("@prisma/client");
+const feedback_dto_1 = require("./dto/feedback.dto");
+const resolution_dto_1 = require("./dto/resolution.dto");
 let MediationController = class MediationController {
     mediationService;
     constructor(mediationService) {
@@ -51,7 +53,7 @@ __decorate([
     __param(1, (0, common_1.Req)()),
     __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:paramtypes", [String, Object, feedback_dto_1.FeedbackDto]),
     __metadata("design:returntype", Promise)
 ], MediationController.prototype, "submitFeedback", null);
 __decorate([
@@ -61,7 +63,7 @@ __decorate([
     __param(1, (0, common_1.Req)()),
     __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:paramtypes", [String, Object, resolution_dto_1.ResolutionDto]),
     __metadata("design:returntype", Promise)
 ], MediationController.prototype, "proposeResolution", null);
 __decorate([
@@ -71,7 +73,7 @@ __decorate([
     __param(1, (0, common_1.Req)()),
     __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:paramtypes", [String, Object, resolution_dto_1.FinalizeResolutionDto]),
     __metadata("design:returntype", Promise)
 ], MediationController.prototype, "finalizeResolution", null);
 __decorate([
@@ -81,7 +83,7 @@ __decorate([
     __param(1, (0, common_1.Req)()),
     __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:paramtypes", [String, Object, resolution_dto_1.FinalizeBundleDto]),
     __metadata("design:returntype", Promise)
 ], MediationController.prototype, "finalizeBundle", null);
 __decorate([

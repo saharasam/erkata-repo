@@ -26,12 +26,16 @@ let PayoutsController = class PayoutsController {
         this.prisma = prisma;
         this.aglpService = aglpService;
     }
-    async getPendingPayouts() {
+    async getPendingPayouts(limit, offset) {
+        const take = limit ? Number(limit) : 50;
+        const skip = offset ? Number(offset) : 0;
         return this.prisma.aglpTransaction.findMany({
             where: {
                 type: client_1.AglpTransactionType.WITHDRAWAL,
                 status: client_1.AglpTransactionStatus.PENDING,
             },
+            take,
+            skip,
             include: {
                 profile: {
                     select: {
@@ -58,13 +62,17 @@ let PayoutsController = class PayoutsController {
             return this.aglpService.rejectWithdrawal(tx, id, reason);
         });
     }
-    async getGlobalLedger(type, status, profileId) {
+    async getGlobalLedger(type, status, profileId, limit, offset) {
+        const take = limit ? Number(limit) : 50;
+        const skip = offset ? Number(offset) : 0;
         return this.prisma.aglpTransaction.findMany({
             where: {
                 type,
                 status,
                 profileId,
             },
+            take,
+            skip,
             include: {
                 profile: {
                     select: {
@@ -82,8 +90,10 @@ exports.PayoutsController = PayoutsController;
 __decorate([
     (0, common_1.Get)('pending'),
     (0, guards_1.RequirePermission)(permissions_1.Action.APPROVE_PAYOUT),
+    __param(0, (0, common_1.Query)('limit')),
+    __param(1, (0, common_1.Query)('offset')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [Number, Number]),
     __metadata("design:returntype", Promise)
 ], PayoutsController.prototype, "getPendingPayouts", null);
 __decorate([
@@ -109,8 +119,10 @@ __decorate([
     __param(0, (0, common_1.Query)('type')),
     __param(1, (0, common_1.Query)('status')),
     __param(2, (0, common_1.Query)('profileId')),
+    __param(3, (0, common_1.Query)('limit')),
+    __param(4, (0, common_1.Query)('offset')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, String]),
+    __metadata("design:paramtypes", [String, String, String, Number, Number]),
     __metadata("design:returntype", Promise)
 ], PayoutsController.prototype, "getGlobalLedger", null);
 exports.PayoutsController = PayoutsController = __decorate([

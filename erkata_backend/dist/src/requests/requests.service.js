@@ -164,8 +164,12 @@ let RequestsService = RequestsService_1 = class RequestsService {
         if (filters?.zoneId) {
             whereClause.zoneId = filters.zoneId;
         }
+        const take = filters?.limit ? Number(filters.limit) : 50;
+        const skip = filters?.offset ? Number(filters.offset) : 0;
         return await this.prisma.request.findMany({
             where: whereClause,
+            take,
+            skip,
             include: {
                 customer: {
                     select: { id: true, fullName: true, createdAt: true },
@@ -488,7 +492,9 @@ let RequestsService = RequestsService_1 = class RequestsService {
         });
         return updated;
     }
-    async getDisputeHistory() {
+    async getDisputeHistory(pagination) {
+        const take = pagination?.limit ? Number(pagination.limit) : 50;
+        const skip = pagination?.offset ? Number(pagination.offset) : 0;
         return this.prisma.request.findMany({
             where: {
                 OR: [
@@ -502,6 +508,8 @@ let RequestsService = RequestsService_1 = class RequestsService {
                     },
                 ],
             },
+            take,
+            skip,
             include: {
                 customer: {
                     select: { id: true, fullName: true, phone: true },

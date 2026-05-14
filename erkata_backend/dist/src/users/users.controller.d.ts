@@ -1,6 +1,8 @@
 import { UsersService } from './users.service';
 import type { AuthenticatedRequest } from '../auth/guards';
 import { UserRole } from '@prisma/client';
+import { WithdrawalDto } from './dto/withdrawal.dto';
+import { UpdateBusinessProfileDto } from './dto/update-business-profile.dto';
 export declare class UsersController {
     private readonly usersService;
     constructor(usersService: UsersService);
@@ -10,16 +12,16 @@ export declare class UsersController {
                 id: string;
                 createdAt: Date;
                 name: string;
-                type: string;
                 metadata: import("@prisma/client/runtime/library").JsonValue | null;
+                type: string;
             } | null;
         } & {
             id: string;
             zoneId: string | null;
             createdAt: Date;
             agentId: string;
-            woreda: string;
             kifleKetema: string;
+            woreda: string;
         })[];
         referredBy: {
             id: string;
@@ -43,6 +45,7 @@ export declare class UsersController {
     } & {
         id: string;
         email: string;
+        referralCode: string | null;
         passwordHash: string | null;
         fullName: string;
         phone: string;
@@ -54,7 +57,6 @@ export declare class UsersController {
         createdAt: Date;
         aglpBalance: import("@prisma/client/runtime/library").Decimal;
         aglpWithdrawn: import("@prisma/client/runtime/library").Decimal;
-        referralCode: string | null;
         isOnline: boolean;
         lastAssignmentAt: Date | null;
         missedAssignments: number;
@@ -74,16 +76,16 @@ export declare class UsersController {
                 id: string;
                 createdAt: Date;
                 name: string;
-                type: string;
                 metadata: import("@prisma/client/runtime/library").JsonValue | null;
+                type: string;
             } | null;
         } & {
             id: string;
             zoneId: string | null;
             createdAt: Date;
             agentId: string;
-            woreda: string;
             kifleKetema: string;
+            woreda: string;
         })[];
         referrals: {
             id: string;
@@ -118,6 +120,7 @@ export declare class UsersController {
         };
         id: string;
         email: string;
+        referralCode: string | null;
         passwordHash: string | null;
         fullName: string;
         phone: string;
@@ -129,7 +132,6 @@ export declare class UsersController {
         createdAt: Date;
         aglpBalance: import("@prisma/client/runtime/library").Decimal;
         aglpWithdrawn: import("@prisma/client/runtime/library").Decimal;
-        referralCode: string | null;
         isOnline: boolean;
         lastAssignmentAt: Date | null;
         missedAssignments: number;
@@ -186,16 +188,12 @@ export declare class UsersController {
         zoneLimit: number;
         displayName: string;
     }[]>;
-    requestWithdrawal(req: AuthenticatedRequest, body: {
-        amount: number;
-        bankName: string;
-        bankAccountNumber: string;
-        bankAccountHolder: string;
-    }): Promise<{
+    requestWithdrawal(req: AuthenticatedRequest, body: WithdrawalDto): Promise<{
         id: string;
         createdAt: Date;
-        status: import(".prisma/client").$Enums.AglpTransactionStatus;
         type: import(".prisma/client").$Enums.AglpTransactionType;
+        profileId: string;
+        status: import(".prisma/client").$Enums.AglpTransactionStatus;
         amount: import("@prisma/client/runtime/library").Decimal;
         etbEquivalent: import("@prisma/client/runtime/library").Decimal | null;
         conversionRate: import("@prisma/client/runtime/library").Decimal | null;
@@ -205,7 +203,6 @@ export declare class UsersController {
         bankAccountHolder: string | null;
         bankAccountNumber: string | null;
         bankName: string | null;
-        profileId: string;
     }>;
     generateReferralCode(req: AuthenticatedRequest): Promise<{
         code: string;
@@ -219,8 +216,8 @@ export declare class UsersController {
         zoneId: string | null;
         createdAt: Date;
         agentId: string;
-        woreda: string;
         kifleKetema: string;
+        woreda: string;
     }>;
     updateTier(req: AuthenticatedRequest, agentId: string, body: {
         tier: string;
@@ -234,6 +231,7 @@ export declare class UsersController {
     suspendUser(req: AuthenticatedRequest, userId: string): Promise<{
         id: string;
         email: string;
+        referralCode: string | null;
         passwordHash: string | null;
         fullName: string;
         phone: string;
@@ -245,7 +243,6 @@ export declare class UsersController {
         createdAt: Date;
         aglpBalance: import("@prisma/client/runtime/library").Decimal;
         aglpWithdrawn: import("@prisma/client/runtime/library").Decimal;
-        referralCode: string | null;
         isOnline: boolean;
         lastAssignmentAt: Date | null;
         missedAssignments: number;
@@ -258,6 +255,7 @@ export declare class UsersController {
     activateUser(req: AuthenticatedRequest, userId: string): Promise<{
         id: string;
         email: string;
+        referralCode: string | null;
         passwordHash: string | null;
         fullName: string;
         phone: string;
@@ -269,7 +267,6 @@ export declare class UsersController {
         createdAt: Date;
         aglpBalance: import("@prisma/client/runtime/library").Decimal;
         aglpWithdrawn: import("@prisma/client/runtime/library").Decimal;
-        referralCode: string | null;
         isOnline: boolean;
         lastAssignmentAt: Date | null;
         missedAssignments: number;
@@ -279,12 +276,10 @@ export declare class UsersController {
         tradeLicenseNumber: string | null;
         isVerified: boolean;
     }>;
-    updateBusinessProfile(req: AuthenticatedRequest, body: {
-        tinNumber: string;
-        tradeLicenseNumber: string;
-    }): Promise<{
+    updateBusinessProfile(req: AuthenticatedRequest, body: UpdateBusinessProfileDto): Promise<{
         id: string;
         email: string;
+        referralCode: string | null;
         passwordHash: string | null;
         fullName: string;
         phone: string;
@@ -296,7 +291,6 @@ export declare class UsersController {
         createdAt: Date;
         aglpBalance: import("@prisma/client/runtime/library").Decimal;
         aglpWithdrawn: import("@prisma/client/runtime/library").Decimal;
-        referralCode: string | null;
         isOnline: boolean;
         lastAssignmentAt: Date | null;
         missedAssignments: number;
@@ -316,16 +310,16 @@ export declare class UsersController {
                 id: string;
                 createdAt: Date;
                 name: string;
-                type: string;
                 metadata: import("@prisma/client/runtime/library").JsonValue | null;
+                type: string;
             } | null;
         } & {
             id: string;
             zoneId: string | null;
             createdAt: Date;
             agentId: string;
-            woreda: string;
             kifleKetema: string;
+            woreda: string;
         })[];
         referrals: {
             id: string;
@@ -360,6 +354,7 @@ export declare class UsersController {
         };
         id: string;
         email: string;
+        referralCode: string | null;
         passwordHash: string | null;
         fullName: string;
         phone: string;
@@ -371,7 +366,6 @@ export declare class UsersController {
         createdAt: Date;
         aglpBalance: import("@prisma/client/runtime/library").Decimal;
         aglpWithdrawn: import("@prisma/client/runtime/library").Decimal;
-        referralCode: string | null;
         isOnline: boolean;
         lastAssignmentAt: Date | null;
         missedAssignments: number;

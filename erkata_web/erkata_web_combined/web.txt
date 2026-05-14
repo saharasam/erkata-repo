@@ -1,7 +1,4 @@
-
-
 ===== FILE: App.tsx =====
-
 import React, { Suspense } from 'react';
 import { HashRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthProvider';
@@ -130,7 +127,6 @@ const App: React.FC = () => {
 export default App;
 
 ===== FILE: components\admin\AdminAgentList.tsx =====
-
 import React, { useState, useEffect } from 'react';
 import { Search, MapPin, Award, ShieldOff, ShieldCheck, Filter, ChevronDown, Zap, ShieldAlert, Heart, Users, Crown, Loader2 } from 'lucide-react';
 import api from '../../utils/api';
@@ -416,7 +412,6 @@ export default AdminAgentList;
 
 
 ===== FILE: components\admin\AdminInviteList.tsx =====
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Mail, 
@@ -585,7 +580,6 @@ export default AdminInviteList;
 
 
 ===== FILE: components\admin\AdminOperatorList.tsx =====
-
 import React, { useState, useEffect } from 'react';
 import api from '../../utils/api';
 import { Activity, Loader2, MapPin, UserPlus, ShieldCheck, ShieldOff, Search, ArrowUpRight } from 'lucide-react';
@@ -837,7 +831,6 @@ export default AdminOperatorList;
 
 
 ===== FILE: components\admin\AdminSidebar.tsx =====
-
 import React from 'react';
 import { Action } from '../../hooks/usePermissions';
 import { Can } from '../ui/Can';
@@ -895,7 +888,6 @@ const AdminSidebar: React.FC<AdminSidebarProps> = ({ currentView, onViewChange }
 export default AdminSidebar;
 
 ===== FILE: components\admin\EscalatedDisputes.tsx =====
-
 import React, { useState, useEffect } from 'react';
 import { AlertTriangle, FileText, CheckCircle2, Phone, User, ExternalLink, Loader2, X, MessageSquare, ShieldCheck, RotateCcw } from 'lucide-react';
 import api from '../../utils/api';
@@ -1218,7 +1210,6 @@ export default EscalatedDisputes;
 
 
 ===== FILE: components\admin\FinancialDesk.tsx =====
-
 import React from 'react';
 import { Wallet, CheckCircle, XCircle, Clock, ShieldAlert } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -1295,7 +1286,6 @@ const FinancialDesk: React.FC = () => {
 export default FinancialDesk;
 
 ===== FILE: components\admin\NetworkIntelligence.tsx =====
-
 import React from 'react';
 import { Network, TrendingUp, Users, AlertTriangle, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -1374,7 +1364,6 @@ const NetworkIntelligence: React.FC = () => {
 export default NetworkIntelligence;
 
 ===== FILE: components\admin\OperationsHub.tsx =====
-
 import React, { useState } from 'react';
 import { Activity, CheckCircle, Clock, AlertTriangle, TrendingUp } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -1536,7 +1525,6 @@ const OperationsHub: React.FC = () => {
 export default OperationsHub;
 
 ===== FILE: components\admin\PendingActions.tsx =====
-
 import React from 'react';
 import { AlertCircle, ArrowRight, UserPlus, FileText } from 'lucide-react';
 
@@ -1621,7 +1609,6 @@ export default PendingActions;
 
 
 ===== FILE: components\admin\ProposalHistory.tsx =====
-
 import React from 'react';
 import { FileText, CheckCircle, XCircle, Clock } from 'lucide-react';
 
@@ -1697,7 +1684,6 @@ export default ProposalHistory;
 
 
 ===== FILE: components\admin\SystemHealth.tsx =====
-
 import React from 'react';
 import { Activity, AlertCircle, Clock, Users } from 'lucide-react';
 
@@ -1753,7 +1739,6 @@ export default SystemHealth;
 
 
 ===== FILE: components\admin\ZoneCoverage.tsx =====
-
 import React from 'react';
 import { Map, AlertTriangle } from 'lucide-react';
 
@@ -1827,7 +1812,6 @@ export default ZoneCoverage;
 
 
 ===== FILE: components\agent\FocusBoard.tsx =====
-
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Filter, Briefcase } from 'lucide-react';
@@ -1980,7 +1964,6 @@ export default FocusBoard;
 
 
 ===== FILE: components\agent\NetworkView.tsx =====
-
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -2306,7 +2289,6 @@ export default NetworkView;
 
 
 ===== FILE: components\agent\PackageSelection.tsx =====
-
 // Import React and the useState hook for managing local state
 import React, { useState, useEffect } from 'react';
 
@@ -2713,7 +2695,6 @@ export default PackageSelection;
 
 
 ===== FILE: components\agent\PackagesView.tsx =====
-
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, Users, MapPin, Sparkles, Heart, ArrowUpCircle, AlertCircle, Link as LinkIcon, CheckCheck, Copy } from 'lucide-react';
@@ -2927,7 +2908,6 @@ export const PackagesView: React.FC<PackagesViewProps> = ({ finance, profile, on
 
 
 ===== FILE: components\agent\PayoutRequestModal.tsx =====
-
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Landmark, Wallet, X, CheckCircle2, Loader2, AlertCircle } from 'lucide-react';
@@ -3111,7 +3091,6 @@ export default PayoutRequestModal;
 
 
 ===== FILE: components\agent\ProfileView.tsx =====
-
 import React from 'react';
 import { 
   User, 
@@ -3227,7 +3206,6 @@ export default ProfileView;
 
 
 ===== FILE: components\agent\RequestCard.tsx =====
-
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Clock, CheckCircle, Share2, ChevronDown, MapPin, DollarSign, Home, LayoutGrid, Loader2 } from 'lucide-react';
@@ -3525,7 +3503,6 @@ export default RequestCard;
 
 
 ===== FILE: components\agent\TransferMatchModal.tsx =====
-
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Search, ArrowRight, ShieldCheck } from 'lucide-react';
@@ -3687,7 +3664,6 @@ export default TransferMatchModal;
 
 
 ===== FILE: components\agent\UpgradeFlowModals.tsx =====
-
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Landmark, Upload, CheckCircle2, X, AlertCircle, Loader2, Image as ImageIcon } from 'lucide-react';
@@ -3996,7 +3972,6 @@ export const UpgradeFlowModals: React.FC<UpgradeFlowModalsProps> = ({
 
 
 ===== FILE: components\agent\WalletSummary.tsx =====
-
 import React from 'react';
 import { 
   TrendingUp, 
@@ -4212,7 +4187,6 @@ export default WalletSummary;
 
 
 ===== FILE: components\CustomSelect.tsx =====
-
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Check } from 'lucide-react';
@@ -4328,7 +4302,6 @@ export default CustomSelect;
 
 
 ===== FILE: components\DashboardLayout.tsx =====
-
 import React, { ReactNode, useState } from 'react';
 import { X, ChevronRight, ChevronLeft, Bell, Search, Settings } from 'lucide-react';
 import UtilitySidebar from './UtilitySidebar';
@@ -4446,7 +4419,6 @@ export default DashboardLayout;
 
 
 ===== FILE: components\FeedbackForm.tsx =====
-
 import React, { useState } from 'react';
 import { Star, MessageSquare, AlertCircle, CheckCircle2, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -4633,7 +4605,6 @@ export default FeedbackForm;
 
 
 ===== FILE: components\financial\UpgradeVerificationsBoard.tsx =====
-
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -4946,7 +4917,6 @@ export default UpgradeVerificationsBoard;
 
 
 ===== FILE: components\Footer.tsx =====
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Instagram, Twitter, Linkedin, Facebook } from 'lucide-react';
@@ -5010,7 +4980,6 @@ const Footer: React.FC = () => {
 export default Footer;
 
 ===== FILE: components\FulfillmentConfirmation.tsx =====
-
 import React, { useState } from 'react';
 import api from '../utils/api';
 import { motion } from 'framer-motion';
@@ -5099,7 +5068,6 @@ export default FulfillmentConfirmation;
 
 
 ===== FILE: components\Navbar.tsx =====
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Menu, X, LayoutDashboard, LogOut, User as UserIcon } from 'lucide-react';
@@ -5302,7 +5270,6 @@ const Navbar: React.FC = () => {
 export default Navbar;
 
 ===== FILE: components\NotificationsPanel.tsx =====
-
 import React from 'react';
 import { Bell, Info, AlertTriangle, CheckCircle, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -5416,7 +5383,6 @@ export default NotificationsPanel;
 
 
 ===== FILE: components\operator\AgentAssignmentModal.tsx =====
-
 import React, { useState, useEffect } from 'react';
 import { Users, X, MapPin, Award, CheckCircle2, ChevronRight, Loader2, Clock } from 'lucide-react';
 import api from '../../utils/api';
@@ -5589,7 +5555,6 @@ export default AgentAssignmentModal;
 
 
 ===== FILE: components\operator\DisputesBoard.tsx =====
-
 import React, { useState, useEffect } from 'react';
 import api from '../../utils/api';
 import { 
@@ -6020,7 +5985,6 @@ export default DisputesBoard;
 
 
 ===== FILE: components\operator\FinancialDesk.tsx =====
-
 import React, { useState, useEffect } from 'react';
 import { Wallet, CheckCircle, XCircle, Clock, ShieldAlert, Landmark, User, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -6232,7 +6196,6 @@ export default FinancialDesk;
 
 
 ===== FILE: components\operator\OperatorSidebar.tsx =====
-
 import React from 'react';
 import { Action } from '../../hooks/usePermissions';
 import { Can } from '../ui/Can';
@@ -6284,7 +6247,6 @@ export default OperatorSidebar;
 
 
 ===== FILE: components\ProtectedRoute.tsx =====
-
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
@@ -6329,7 +6291,6 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
 
 
 ===== FILE: components\RequestIntakeFlow.tsx =====
-
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -6885,7 +6846,6 @@ export default RequestIntakeFlow;
 
 
 ===== FILE: components\SettingsView.tsx =====
-
 import React, { useState } from 'react';
 import { User, Bell, Shield, Mail, Lock, Phone, Globe, Moon } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
@@ -7171,7 +7131,6 @@ export default SettingsView;
 
 
 ===== FILE: components\shared\BroadcastInbox.tsx =====
-
 import React, { useState, useEffect } from 'react';
 import { Megaphone, Calendar, History, Search, Loader2, Sparkles, Bell, Inbox } from 'lucide-react';
 import api from '../../utils/api';
@@ -7334,7 +7293,6 @@ export default BroadcastInbox;
 
 
 ===== FILE: components\shared\UserDeepDive.tsx =====
-
 import React, { useState, useEffect } from 'react';
 import { 
   ArrowLeft, 
@@ -8080,7 +8038,6 @@ export default UserDeepDive;
 
 
 ===== FILE: components\StatusBadge.tsx =====
-
 import React from 'react';
 
 interface StatusBadgeProps {
@@ -8126,7 +8083,6 @@ export default StatusBadge;
 
 
 ===== FILE: components\super-admin\AdminManagement.tsx =====
-
 import React, { useState, useEffect } from 'react';
 import { 
   ShieldAlert, 
@@ -8406,7 +8362,6 @@ export default AdminManagement;
 
 
 ===== FILE: components\super-admin\AuditLog.tsx =====
-
 import React, { useState, useEffect } from 'react';
 import { 
     Search, Download, User, Clock, 
@@ -8677,7 +8632,6 @@ const AuditLog: React.FC = () => {
 export default AuditLog;
 
 ===== FILE: components\super-admin\BroadcastNotices.tsx =====
-
 import React, { useState, useEffect } from 'react';
 import { Megaphone, Users, Calendar, Send, History, Search, Trash2, ShieldAlert, Loader2, Sparkles } from 'lucide-react';
 import { useModal } from '../../contexts/ModalContext';
@@ -8920,7 +8874,6 @@ export default BroadcastNotices;
 
 
 ===== FILE: components\super-admin\ConfigFlags.tsx =====
-
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -9233,6 +9186,70 @@ const ConfigFlags: React.FC = () => {
                         </div>
                     </div>
                 </div>
+
+                {/* Upgrade Bank Details */}
+                <div className="lg:col-span-12">
+                    <div className="bg-slate-800 border border-slate-700 rounded-[2.5rem] p-10 overflow-hidden relative">
+                        <div className="absolute top-0 right-0 p-10 opacity-5">
+                            <Globe className="w-40 h-40 text-indigo-500" />
+                        </div>
+
+                        <div className="flex items-center justify-between mb-10 relative z-10">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-indigo-500/10 rounded-2xl">
+                                    <Globe className="w-6 h-6 text-indigo-500" />
+                                </div>
+                                <div>
+                                    <h5 className="font-black text-white text-xl tracking-tight">Upgrade Bank Repository</h5>
+                                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mt-1">Designated destination for package upgrades</p>
+                                </div>
+                            </div>
+                            <div className="px-4 py-1 bg-indigo-500/5 border border-indigo-500/20 rounded-full flex items-center gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+                                <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Financial Node</span>
+                            </div>
+                        </div>
+
+                        {(() => {
+                            const bankDetails = getConfigValue('BANK_DETAILS_UPGRADE', {
+                                bankName: 'REQUIRED',
+                                accountNumber: 'REQUIRED',
+                                accountHolder: 'REQUIRED'
+                            });
+
+                            return (
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10">
+                                    {[
+                                        { label: 'Bank Name', field: 'bankName', value: bankDetails.bankName },
+                                        { label: 'Account Number', field: 'accountNumber', value: bankDetails.accountNumber },
+                                        { label: 'Account Holder', field: 'accountHolder', value: bankDetails.accountHolder },
+                                    ].map((item) => (
+                                        <div key={item.field} className="bg-slate-900 border border-slate-700 rounded-3xl p-6 transition-all group">
+                                            <label className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-4 block px-1">
+                                                {item.label}
+                                            </label>
+                                            <div className="relative">
+                                                <input 
+                                                    type="text" 
+                                                    defaultValue={item.value}
+                                                    onBlur={(e) => {
+                                                        const newVal = e.target.value;
+                                                        if (newVal !== item.value) {
+                                                            const updatedDetails = { ...bankDetails, [item.field]: newVal };
+                                                            updateConfig('BANK_DETAILS_UPGRADE', updatedDetails);
+                                                        }
+                                                    }}
+                                                    className="w-full bg-slate-950/50 border border-slate-800 rounded-xl px-4 py-3 text-sm font-black text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/50 transition-all" 
+                                                />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            );
+                        })()}
+                    </div>
+                </div>
+
             </div>
 
             {/* Footer Status */}
@@ -9256,7 +9273,6 @@ export default ConfigFlags;
 
 
 ===== FILE: components\super-admin\DisputesAudit.tsx =====
-
 import React, { useState, useEffect } from 'react';
 import { 
   ShieldAlert, 
@@ -9510,7 +9526,6 @@ export default DisputesAudit;
 
 
 ===== FILE: components\super-admin\FinalResolutions.tsx =====
-
 import React, { useState, useEffect } from 'react';
 import { 
   CheckCircle2, 
@@ -9869,7 +9884,6 @@ export default FinalResolutions;
 
 
 ===== FILE: components\super-admin\GlobalRightsOversight.tsx =====
-
 import React, { useState, useEffect } from 'react';
 import { 
   TrendingUp, 
@@ -10331,7 +10345,6 @@ export default GlobalRightsOversight;
 
 
 ===== FILE: components\super-admin\OperatorOversight.tsx =====
-
 import React, { useState, useEffect } from 'react';
 import { 
   Users, 
@@ -10573,7 +10586,6 @@ export default OperatorOversight;
 
 
 ===== FILE: components\super-admin\PackageManagement.tsx =====
-
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Package, DollarSign, Users, Map, Info, Save, RotateCcw, TrendingUp, Sparkles, ShieldCheck, ChevronRight } from 'lucide-react';
@@ -10937,7 +10949,6 @@ export default PackageManagement;
 
 
 ===== FILE: components\super-admin\SystemAnalytics.tsx =====
-
 import React, { useState, useEffect } from 'react';
 import { 
     BarChart4, 
@@ -11164,7 +11175,6 @@ export default SystemAnalytics;
 
 
 ===== FILE: components\super-admin\UpgradeApprovalsAudit.tsx =====
-
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -11543,7 +11553,6 @@ export default UpgradeApprovalsAudit;
 
 
 ===== FILE: components\ui\Can.spec.tsx =====
-
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { Can } from './Can';
@@ -11594,7 +11603,6 @@ describe('Can Component', () => {
 
 
 ===== FILE: components\ui\Can.tsx =====
-
 import React from 'react';
 import { Action, usePermissions } from '../../hooks/usePermissions';
 
@@ -11624,7 +11632,6 @@ export const Can: React.FC<CanProps> = ({ perform, children, fallback = null }) 
 
 
 ===== FILE: components\ui\InvitePersonnelModal.tsx =====
-
 import React, { useState, useEffect, useRef } from 'react';
 import {
   UserPlus,
@@ -12062,7 +12069,6 @@ export default InvitePersonnelModal;
 
 
 ===== FILE: components\ui\Skeleton.tsx =====
-
 import React from 'react';
 import { motion } from 'framer-motion';
 
@@ -12101,7 +12107,6 @@ export default Skeleton;
 
 
 ===== FILE: components\UtilitySidebar.tsx =====
-
 import React, { useState, useEffect } from 'react';
 import { Calendar, StickyNote, MessageCircle, X, Globe, User, LogOut, ShieldCheck, Archive, ShieldAlert, Settings2, Megaphone, BarChart4, History, TrendingUp, Users, ChevronRight, ChevronLeft, MapPin, LayoutGrid, FileText, Package, Wallet, Network } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -12507,7 +12512,6 @@ export default UtilitySidebar;
 
 
 ===== FILE: contexts\AuthContext.ts =====
-
 import { createContext } from 'react';
 import { UserRole } from '../utils/constants';
 
@@ -12532,7 +12536,6 @@ export const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 
 ===== FILE: contexts\AuthProvider.tsx =====
-
 import React, { useState, useEffect, ReactNode } from 'react';
 import { jwtDecode } from 'jwt-decode';
 import api, { setAccessToken, setAuthReady } from '../utils/api';
@@ -12696,7 +12699,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
 
 ===== FILE: contexts\ModalContext.tsx =====
-
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertCircle, CheckCircle2, Info } from 'lucide-react';
@@ -12835,7 +12837,6 @@ export const useModal = () => {
 
 
 ===== FILE: contexts\NotificationContext.tsx =====
-
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { useSocket } from './SocketContext';
 import api from '../utils/api';
@@ -12966,7 +12967,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
 
 ===== FILE: contexts\SocketContext.tsx =====
-
 import { createContext, useContext } from 'react';
 import { Socket } from 'socket.io-client';
 
@@ -12984,7 +12984,6 @@ export const useSocket = () => useContext(SocketContext);
 
 
 ===== FILE: contexts\SocketProvider.tsx =====
-
 import React, { useState, useEffect, ReactNode } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuth } from '../hooks/useAuth';
@@ -13056,7 +13055,6 @@ export const SocketProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
 
 ===== FILE: hooks\useAdminAnalytics.ts =====
-
 import { useState, useEffect } from 'react';
 import api from '../utils/api';
 
@@ -13128,7 +13126,6 @@ export const useAdminAnalytics = (window: TimeWindow = 'all') => {
 };
 
 ===== FILE: hooks\useAuth.ts =====
-
 import { useContext } from 'react';
 import { AuthContext } from '../contexts/AuthContext';
 
@@ -13142,7 +13139,6 @@ export const useAuth = () => {
 
 
 ===== FILE: hooks\useHeartbeat.ts =====
-
 import { useEffect, useState, useRef, useCallback } from 'react';
 import api from '../utils/api';
 import { useAuth } from './useAuth';
@@ -13204,7 +13200,6 @@ export const useHeartbeat = (isOnline: boolean) => {
 
 
 ===== FILE: hooks\usePermissions.spec.ts =====
-
 import { renderHook } from "@testing-library/react";
 import { usePermissions, Action } from "./usePermissions";
 import { useAuth } from './useAuth';
@@ -13259,7 +13254,6 @@ describe("usePermissions", () => {
 
 
 ===== FILE: hooks\usePermissions.ts =====
-
 import { useAuth } from './useAuth';
 import { UserRole } from "../utils/constants";
 
@@ -13452,7 +13446,6 @@ export const usePermissions = () => {
 
 
 ===== FILE: index.css =====
-
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap");
 
 @tailwind base;
@@ -13554,7 +13547,6 @@ body {
 
 
 ===== FILE: index.html =====
-
 <!DOCTYPE html>
 <html lang="en" class="scroll-smooth">
   <head>
@@ -13621,7 +13613,6 @@ body {
 </html>
 
 ===== FILE: index.tsx =====
-
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
@@ -13640,7 +13631,6 @@ root.render(
 );
 
 ===== FILE: metadata.json =====
-
 {
   "name": "Erkata - Mediation Platform",
   "description": "Public landing page for Erkata, a hierarchical mediation platform in Ethiopia connecting requestors with verified agents via neutral operators.",
@@ -13648,7 +13638,6 @@ root.render(
 }
 
 ===== FILE: package-lock.json =====
-
 {
   "name": "erkata---mediation-platform",
   "version": "0.0.0",
@@ -19440,7 +19429,6 @@ root.render(
 
 
 ===== FILE: package.json =====
-
 {
   "name": "erkata---mediation-platform",
   "private": true,
@@ -19479,7 +19467,6 @@ root.render(
 
 
 ===== FILE: pages\About.tsx =====
-
 import React from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -19525,7 +19512,6 @@ export default About;
 
 
 ===== FILE: pages\AdminDashboard.tsx =====
-
 import React, { useState } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import SystemHealth from '../components/admin/SystemHealth';
@@ -19605,7 +19591,6 @@ const AdminDashboard: React.FC = () => {
 export default AdminDashboard;
 
 ===== FILE: pages\AgentDashboard.tsx =====
-
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
@@ -20015,7 +20000,6 @@ export default AgentDashboard;
 
 
 ===== FILE: pages\combine.cjs =====
-
 #!/usr/bin/env node
 
 const fs = require('fs');
@@ -20145,7 +20129,6 @@ function processAllFiles(dir, outputFile) {
 })();
 
 ===== FILE: pages\Contact.tsx =====
-
 import React from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -20252,7 +20235,6 @@ export default Contact;
 
 
 ===== FILE: pages\CustomerDashboard.tsx =====
-
 import React, { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import { useLocation } from 'react-router-dom';
@@ -20678,7 +20660,6 @@ export default CustomerDashboard;
 
 
 ===== FILE: pages\FinancialOperatorDashboard.tsx =====
-
 import React, { useState } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -20744,7 +20725,6 @@ export default FinancialOperatorDashboard;
 
 
 ===== FILE: pages\Landing.tsx =====
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { 
@@ -21222,7 +21202,6 @@ const Landing: React.FC = () => {
 export default Landing;
 
 ===== FILE: pages\Login.tsx =====
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, Phone, Lock, ShieldCheck, MessageSquare, Mail, User } from 'lucide-react';
@@ -21447,7 +21426,6 @@ const Login: React.FC = () => {
 export default Login;
 
 ===== FILE: pages\OperatorDashboard.spec.tsx =====
-
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import OperatorDashboard from './OperatorDashboard';
@@ -21569,7 +21547,6 @@ describe('OperatorDashboard Integration', () => {
 
 
 ===== FILE: pages\OperatorDashboard.tsx =====
-
 import React, { useState, useEffect, useMemo } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import { 
@@ -21624,8 +21601,10 @@ const OperatorDashboard: React.FC = () => {
     const { socket } = useSocket();
 
     // Listen for real-time WebSocket push notifications
+    // NOTE: This listener is intentionally NOT gated by isOnline.
+    // Push notifications must be received regardless of the UI toggle state.
     useEffect(() => {
-        if (!socket || !isOnline) return;
+        if (!socket) return;
 
         const handleNotification = (notification: any) => {
             if (notification.type === 'request.pushed') {
@@ -21641,7 +21620,7 @@ const OperatorDashboard: React.FC = () => {
         return () => {
             socket.off('notification', handleNotification);
         };
-    }, [socket, isOnline, triggerCheck]);
+    }, [socket, triggerCheck]);
 
     // Fetch active transactions on mount
     useEffect(() => {
@@ -22184,7 +22163,6 @@ export default OperatorDashboard;
 
 
 ===== FILE: pages\Privacy.tsx =====
-
 import React from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -22232,7 +22210,6 @@ export default Privacy;
 
 
 ===== FILE: pages\Register.tsx =====
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, User, Mail, Phone, Lock, CheckCircle2, ShieldCheck, Loader2, Shield, UserCheck } from 'lucide-react';
@@ -22662,7 +22639,6 @@ const Register: React.FC<RegisterProps> = ({ initialRole = 'customer' }) => {
 export default Register;
 
 ===== FILE: pages\RequestIntake.tsx =====
-
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -22740,7 +22716,6 @@ export default RequestIntake;
 
 
 ===== FILE: pages\SuperAdminDashboard.tsx =====
-
 import React, { useState } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import DisputesAudit from '../components/super-admin/DisputesAudit';
@@ -22857,7 +22832,6 @@ export default SuperAdminDashboard;
 
 
 ===== FILE: pages\Terms.tsx =====
-
 import React from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -22906,7 +22880,6 @@ export default Terms;
 
 
 ===== FILE: src\test\setup.ts =====
-
 import "@testing-library/jest-dom";
 import { vi } from "vitest";
 
@@ -22927,7 +22900,6 @@ Object.defineProperty(window, "matchMedia", {
 
 
 ===== FILE: tsconfig.json =====
-
 {
   "compilerOptions": {
     "target": "ES2022",
@@ -22963,7 +22935,6 @@ Object.defineProperty(window, "matchMedia", {
 }
 
 ===== FILE: utils\api.ts =====
-
 import axios from "axios";
 
 let accessToken = "";
@@ -23058,7 +23029,6 @@ export default api;
 
 
 ===== FILE: utils\constants.ts =====
-
 export enum UserRole {
   SUPER_ADMIN = "super_admin",
   ADMIN = "admin",
@@ -23070,7 +23040,6 @@ export enum UserRole {
 
 
 ===== FILE: utils\mockData.ts =====
-
 // Mock data for Agent and Operator dashboards
 
 export interface Request {
@@ -23348,7 +23317,6 @@ export const operatorZoneActivity: ZoneActivity[] = [
 
 
 ===== FILE: utils\sounds.ts =====
-
 /**
  * Sound utilities using the Web Audio API.
  * No audio files required — all tones are synthesized in the browser.
@@ -23422,7 +23390,6 @@ export function playPayoutSound() {
 
 
 ===== FILE: utils\verify_jwt_logic.mjs =====
-
 
 import axios from 'axios';
 
@@ -23516,7 +23483,6 @@ runTests().catch(console.error);
 
 
 ===== FILE: vite.config.ts =====
-
 import path from "path";
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
@@ -23547,7 +23513,6 @@ export default defineConfig(({ mode }) => {
 
 
 ===== FILE: vitest.config.ts =====
-
 /// <reference types="vitest" />
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";

@@ -21,6 +21,15 @@ let AglpService = class AglpService {
         this.prisma = prisma;
         this.configService = configService;
     }
+    async lockProfile(tx, profileId) {
+        const profiles = await tx.$queryRaw `
+      SELECT * FROM profiles WHERE id = ${profileId}::uuid FOR UPDATE
+    `;
+        if (!profiles || profiles.length === 0) {
+            throw new Error('Profile not found for locking');
+        }
+        return profiles[0];
+    }
     getConversionRate() {
         const config = this.configService.get('AGLP_TO_ETB_RATE', {
             rate: 1.0,
@@ -30,6 +39,7 @@ let AglpService = class AglpService {
     async depositEtb(tx, profileId, amountEtb, referenceId, referenceType = 'DEPOSIT') {
         const rate = this.getConversionRate();
         const amountAglp = amountEtb * rate;
+        await this.lockProfile(tx, profileId);
         await tx.profile.update({
             where: { id: profileId },
             data: { aglpBalance: { increment: amountAglp } },
@@ -63,8 +73,8 @@ let AglpService = class AglpService {
         return aglpTx;
     }
     async spendAglpForPackage(tx, profileId, amountAglp, packageId) {
-        const profile = await tx.profile.findUnique({ where: { id: profileId } });
-        if (!profile || Number(profile.aglpBalance) < amountAglp) {
+        const profile = await this.lockProfile(tx, profileId);
+        if (Number(profile.aglpBalance) < amountAglp) {
             throw new Error('Insufficient AGLP balance');
         }
         await tx.profile.update({
@@ -164,8 +174,8 @@ let AglpService = class AglpService {
         });
     }
     async withdrawAglp(tx, profileId, amountAglp, bankDetails) {
-        const profile = await tx.profile.findUnique({ where: { id: profileId } });
-        if (!profile || Number(profile.aglpBalance) < amountAglp) {
+        const profile = await this.lockProfile(tx, profileId);
+        if (Number(profile.aglpBalance) < amountAglp) {
             throw new Error('Insufficient AGLP balance');
         }
         const minAmount = this.configService.get('withdrawal_min_amount', 100);
@@ -238,6 +248,7 @@ let AglpService = class AglpService {
         if (!aglpTx || aglpTx.type !== client_1.AglpTransactionType.WITHDRAWAL) {
             throw new Error('Withdrawal transaction not found');
         }
+        await this.lockProfile(tx, aglpTx.profileId);
         await tx.profile.update({
             where: { id: aglpTx.profileId },
             data: {
@@ -271,6 +282,7 @@ let AglpService = class AglpService {
             aglpTx.status !== client_1.AglpTransactionStatus.PENDING) {
             throw new Error('Valid pending withdrawal transaction not found');
         }
+        await this.lockProfile(tx, aglpTx.profileId);
         await tx.profile.update({
             where: { id: aglpTx.profileId },
             data: {
@@ -304,6 +316,7 @@ let AglpService = class AglpService {
             aglpTx.status !== client_1.AglpTransactionStatus.PENDING) {
             throw new Error('Cannot cancel this withdrawal');
         }
+        await this.lockProfile(tx, requestedByProfileId);
         await tx.profile.update({
             where: { id: requestedByProfileId },
             data: {

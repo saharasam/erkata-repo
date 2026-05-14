@@ -10,9 +10,9 @@ export declare class UpgradesController {
         id: string;
         createdAt: Date;
         agentId: string;
-        operatorId: string | null;
         status: import(".prisma/client").$Enums.UpgradeRequestStatus;
         updatedAt: Date;
+        operatorId: string | null;
         currentTier: import(".prisma/client").$Enums.Tier;
         targetTier: import(".prisma/client").$Enums.Tier;
         proofUrl: string | null;
@@ -31,9 +31,9 @@ export declare class UpgradesController {
         id: string;
         createdAt: Date;
         agentId: string;
-        operatorId: string | null;
         status: import(".prisma/client").$Enums.UpgradeRequestStatus;
         updatedAt: Date;
+        operatorId: string | null;
         currentTier: import(".prisma/client").$Enums.Tier;
         targetTier: import(".prisma/client").$Enums.Tier;
         proofUrl: string | null;
@@ -55,9 +55,9 @@ export declare class UpgradesController {
         id: string;
         createdAt: Date;
         agentId: string;
-        operatorId: string | null;
         status: import(".prisma/client").$Enums.UpgradeRequestStatus;
         updatedAt: Date;
+        operatorId: string | null;
         currentTier: import(".prisma/client").$Enums.Tier;
         targetTier: import(".prisma/client").$Enums.Tier;
         proofUrl: string | null;
@@ -70,9 +70,9 @@ export declare class UpgradesController {
         id: string;
         createdAt: Date;
         agentId: string;
-        operatorId: string | null;
         status: import(".prisma/client").$Enums.UpgradeRequestStatus;
         updatedAt: Date;
+        operatorId: string | null;
         currentTier: import(".prisma/client").$Enums.Tier;
         targetTier: import(".prisma/client").$Enums.Tier;
         proofUrl: string | null;
@@ -85,9 +85,9 @@ export declare class UpgradesController {
         id: string;
         createdAt: Date;
         agentId: string;
-        operatorId: string | null;
         status: import(".prisma/client").$Enums.UpgradeRequestStatus;
         updatedAt: Date;
+        operatorId: string | null;
         currentTier: import(".prisma/client").$Enums.Tier;
         targetTier: import(".prisma/client").$Enums.Tier;
         proofUrl: string | null;
@@ -100,9 +100,9 @@ export declare class UpgradesController {
         id: string;
         createdAt: Date;
         agentId: string;
-        operatorId: string | null;
         status: import(".prisma/client").$Enums.UpgradeRequestStatus;
         updatedAt: Date;
+        operatorId: string | null;
         currentTier: import(".prisma/client").$Enums.Tier;
         targetTier: import(".prisma/client").$Enums.Tier;
         proofUrl: string | null;

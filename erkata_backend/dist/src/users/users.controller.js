@@ -18,6 +18,8 @@ const users_service_1 = require("./users.service");
 const guards_1 = require("../auth/guards");
 const permissions_1 = require("../auth/permissions");
 const client_1 = require("@prisma/client");
+const withdrawal_dto_1 = require("./dto/withdrawal.dto");
+const update_business_profile_dto_1 = require("./dto/update-business-profile.dto");
 let UsersController = class UsersController {
     usersService;
     constructor(usersService) {
@@ -128,7 +130,7 @@ __decorate([
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:paramtypes", [Object, withdrawal_dto_1.WithdrawalDto]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "requestWithdrawal", null);
 __decorate([
@@ -182,7 +184,7 @@ __decorate([
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:paramtypes", [Object, update_business_profile_dto_1.UpdateBusinessProfileDto]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "updateBusinessProfile", null);
 __decorate([

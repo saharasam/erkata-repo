@@ -112,6 +112,15 @@ let AdminConfigController = class AdminConfigController {
                 value: this.configService.get('alert_spike_min_threshold', 5),
                 description: 'Alert: Noise floor for spike detection.',
             },
+            {
+                key: 'BANK_DETAILS_UPGRADE',
+                value: this.configService.get('BANK_DETAILS_UPGRADE', {
+                    bankName: 'REQUIRED',
+                    accountNumber: 'REQUIRED',
+                    accountHolder: 'REQUIRED',
+                }),
+                description: 'Designated bank details for package upgrades.',
+            },
         ];
     }
     async updateConfig(req, body) {
@@ -130,6 +139,7 @@ let AdminConfigController = class AdminConfigController {
             'withdrawal_min_amount',
             'withdrawal_max_amount_daily',
             'withdrawal_fee_percentage',
+            'BANK_DETAILS_UPGRADE',
         ];
         if (superAdminKeys.includes(body.key) && req.user.role !== 'super_admin') {
             throw new common_1.ForbiddenException('Only Super Admin can modify platform economic policy');

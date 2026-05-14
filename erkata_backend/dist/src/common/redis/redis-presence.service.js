@@ -89,18 +89,18 @@ let RedisPresenceService = RedisPresenceService_1 = class RedisPresenceService {
     async heartbeat(operatorId) {
         const key = `presence:operator:${operatorId}`;
         const exists = await this.redis.exists(key);
+        try {
+            await this.prisma.profile.update({
+                where: { id: operatorId },
+                data: { isOnline: true },
+            });
+        }
+        catch (err) {
+            this.logger.error(`[RedisPresenceService] Failed to sync online status for ${operatorId}`, err);
+        }
         if (!exists) {
-            try {
-                await this.prisma.profile.update({
-                    where: { id: operatorId },
-                    data: { isOnline: true, lastAssignmentAt: new Date() },
-                });
-                this.logger.log(`[RedisPresenceService] Operator ${operatorId} marked as Online in SQL.`);
-                this.eventEmitter.emit('operator.online', { operatorId });
-            }
-            catch (err) {
-                this.logger.error(`[RedisPresenceService] Failed to sync online status for ${operatorId}`, err);
-            }
+            this.logger.log(`[RedisPresenceService] Operator ${operatorId} came online. Emitting operator.online.`);
+            this.eventEmitter.emit('operator.online', { operatorId });
         }
         await this.redis.set(key, '1', 'EX', 30);
     }

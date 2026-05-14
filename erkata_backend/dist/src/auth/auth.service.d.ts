@@ -1,6 +1,6 @@
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { InviteService } from './invite/invite.service';
 import { NotificationsGateway } from '../notifications/notifications.gateway';
 export declare class AuthService {
@@ -13,7 +13,7 @@ export declare class AuthService {
     login(credentials: {
         identifier: string;
         pass: string;
-    }, res: Response, req?: any): Promise<{
+    }, res: Response, req?: Request): Promise<{
         user: {
             id: string;
             email: string;
@@ -39,7 +39,7 @@ export declare class AuthService {
         tier?: string;
         inviteToken?: string;
         referralCode?: string;
-    }, res?: Response, req?: any): Promise<{
+    }, res?: Response, req?: Request): Promise<{
         message: string;
         user: {
             id: string;

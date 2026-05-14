@@ -34,6 +34,12 @@ let TransactionsService = class TransactionsService {
         this.configService = configService;
         this.timeoutQueue = timeoutQueue;
     }
+    async lockRequest(tx, requestId) {
+        const result = await tx.$queryRaw `
+      SELECT * FROM "requests" WHERE id = ${requestId} FOR UPDATE
+    `;
+        return result[0];
+    }
     async acceptAssignment(matchId, agentId) {
         const match = await this.prisma.match.findUnique({
             where: { id: matchId },
@@ -48,6 +54,12 @@ let TransactionsService = class TransactionsService {
             throw new common_1.BadRequestException(`Assignment is already "${match.status}" and cannot be accepted`);
         }
         const updated = await this.prisma.$transaction(async (tx) => {
+            const lockedRequest = await this.lockRequest(tx, match.requestId);
+            if (!lockedRequest)
+                throw new common_1.NotFoundException('Request not found');
+            if (lockedRequest.status !== client_1.RequestStatus.pending) {
+                throw new common_1.ConflictException(`This lead has already been claimed by another agent (Status: ${lockedRequest.status})`);
+            }
             const matchResult = await tx.match.update({
                 where: { id: matchId },
                 data: {
@@ -274,8 +286,12 @@ let TransactionsService = class TransactionsService {
         });
     }
     async getOperatorTransactions(query) {
+        const take = query?.limit ? Number(query.limit) : 50;
+        const skip = query?.offset ? Number(query.offset) : 0;
         return this.prisma.match.findMany({
             where: query?.status ? { status: query.status } : {},
+            take,
+            skip,
             include: {
                 agent: {
                     select: { id: true, fullName: true, phone: true },

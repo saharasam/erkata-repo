@@ -120,6 +120,15 @@ export class AdminConfigController {
         value: this.configService.get<number>('alert_spike_min_threshold', 5),
         description: 'Alert: Noise floor for spike detection.',
       },
+      {
+        key: 'BANK_DETAILS_UPGRADE',
+        value: this.configService.get('BANK_DETAILS_UPGRADE', {
+          bankName: 'REQUIRED',
+          accountNumber: 'REQUIRED',
+          accountHolder: 'REQUIRED',
+        }),
+        description: 'Designated bank details for package upgrades.',
+      },
     ];
   }
 
@@ -149,6 +158,7 @@ export class AdminConfigController {
       'withdrawal_min_amount',
       'withdrawal_max_amount_daily',
       'withdrawal_fee_percentage',
+      'BANK_DETAILS_UPGRADE',
     ];
 
     if (superAdminKeys.includes(body.key) && req.user.role !== 'super_admin') {

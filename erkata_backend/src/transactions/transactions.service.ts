@@ -3,12 +3,13 @@ import {
   NotFoundException,
   ForbiddenException,
   BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
-import { MatchStatus, RequestStatus } from '@prisma/client';
+import { MatchStatus, RequestStatus, Request, Prisma } from '@prisma/client';
 import { AglpService } from '../aglp/aglp.service';
 import { ConfigService } from '../common/config.service';
 
@@ -21,6 +22,16 @@ export class TransactionsService {
     private readonly configService: ConfigService,
     @InjectQueue('assignment-timeout') private readonly timeoutQueue: Queue,
   ) {}
+
+  private async lockRequest(
+    tx: Prisma.TransactionClient,
+    requestId: string,
+  ): Promise<Request | undefined> {
+    const result = await tx.$queryRaw<Request[]>`
+      SELECT * FROM "requests" WHERE id = ${requestId} FOR UPDATE
+    `;
+    return result[0];
+  }
 
   // ── Agent accepts the assignment ─────────────────────────────────────────
   async acceptAssignment(matchId: string, agentId: string) {
@@ -41,6 +52,17 @@ export class TransactionsService {
 
     const updated = await this.prisma.$transaction(
       async (tx) => {
+        // 1. Lock the parent request to prevent concurrent acceptances
+        const lockedRequest = await this.lockRequest(tx, match.requestId);
+        if (!lockedRequest) throw new NotFoundException('Request not found');
+
+        // 2. Verify the request is still pending
+        if (lockedRequest.status !== RequestStatus.pending) {
+          throw new ConflictException(
+            `This lead has already been claimed by another agent (Status: ${lockedRequest.status})`,
+          );
+        }
+
         const matchResult = await tx.match.update({
           where: { id: matchId },
           data: {
@@ -335,9 +357,18 @@ export class TransactionsService {
   }
 
   // ── Operator fetches managed transactions ──────────────────────────────
-  async getOperatorTransactions(query?: { status?: string }) {
+  async getOperatorTransactions(query?: {
+    status?: string;
+    limit?: number;
+    offset?: number;
+  }) {
+    const take = query?.limit ? Number(query.limit) : 50;
+    const skip = query?.offset ? Number(query.offset) : 0;
+
     return this.prisma.match.findMany({
       where: query?.status ? { status: query.status as MatchStatus } : {},
+      take,
+      skip,
       include: {
         agent: {
           select: { id: true, fullName: true, phone: true },

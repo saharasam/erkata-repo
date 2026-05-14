@@ -592,7 +592,7 @@ let UsersService = class UsersService {
         });
         const result = await this.prisma.$transaction(async (tx) => {
             return this.aglpService.withdrawAglp(tx, userId, amountAglp, bankDetails);
-        });
+        }, { isolationLevel: client_1.Prisma.TransactionIsolationLevel.Serializable });
         this.notificationsGateway.sendToRole('financial_operator', 'notification', {
             type: 'payout.requested',
             title: 'New Payout Request',

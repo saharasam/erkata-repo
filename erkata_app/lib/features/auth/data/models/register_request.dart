@@ -8,6 +8,7 @@ class RegisterRequest with _$RegisterRequest {
   const factory RegisterRequest({
     required String email,
     required String fullName,
+    required String phone,
     required String password,
     @Default('customer') String role,
     @Default('FREE') String tier,

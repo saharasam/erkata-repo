@@ -24,12 +24,20 @@ export class PayoutsController {
 
   @Get('pending')
   @RequirePermission(Action.APPROVE_PAYOUT)
-  async getPendingPayouts() {
+  async getPendingPayouts(
+    @Query('limit') limit?: number,
+    @Query('offset') offset?: number,
+  ) {
+    const take = limit ? Number(limit) : 50;
+    const skip = offset ? Number(offset) : 0;
+
     return this.prisma.aglpTransaction.findMany({
       where: {
         type: AglpTransactionType.WITHDRAWAL,
         status: AglpTransactionStatus.PENDING,
       },
+      take,
+      skip,
       include: {
         profile: {
           select: {
@@ -64,8 +72,6 @@ export class PayoutsController {
     });
   }
 
-
-
   // ── SUPER ADMIN OVERSIGHT ──────────────────────────────────────────────────
 
   @Get('ledger')
@@ -74,13 +80,20 @@ export class PayoutsController {
     @Query('type') type?: AglpTransactionType,
     @Query('status') status?: AglpTransactionStatus,
     @Query('profileId') profileId?: string,
+    @Query('limit') limit?: number,
+    @Query('offset') offset?: number,
   ) {
+    const take = limit ? Number(limit) : 50;
+    const skip = offset ? Number(offset) : 0;
+
     return this.prisma.aglpTransaction.findMany({
       where: {
         type,
         status,
         profileId,
       },
+      take,
+      skip,
       include: {
         profile: {
           select: {

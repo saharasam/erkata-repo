@@ -807,9 +807,17 @@ export class UsersService {
       select: { fullName: true, phone: true },
     });
 
-    const result = await this.prisma.$transaction(async (tx) => {
-      return this.aglpService.withdrawAglp(tx, userId, amountAglp, bankDetails);
-    });
+    const result = await this.prisma.$transaction(
+      async (tx) => {
+        return this.aglpService.withdrawAglp(
+          tx,
+          userId,
+          amountAglp,
+          bankDetails,
+        );
+      },
+      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+    );
 
     // Notify only the financial operators in real-time
     this.notificationsGateway.sendToRole('financial_operator', 'notification', {

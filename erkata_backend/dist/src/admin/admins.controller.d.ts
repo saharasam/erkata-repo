@@ -1,14 +1,15 @@
 import { PrismaService } from '../prisma/prisma.service';
 import { UsersService } from '../users/users.service';
-import { UserRole, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import type { AuthenticatedRequest } from '../auth/guards';
 import { InviteService } from '../auth/invite/invite.service';
+import { InviteDto } from './dto/invite.dto';
 export declare class AdminsController {
     private prisma;
     private inviteService;
     private usersService;
     constructor(prisma: PrismaService, inviteService: InviteService, usersService: UsersService);
-    getPersonnel(req: AuthenticatedRequest, role?: string): Promise<{
+    getPersonnel(req: AuthenticatedRequest, role?: string, limit?: number, offset?: number): Promise<{
         _count: {
             resolutionProposals: number;
             operatorMatches: number;
@@ -22,12 +23,7 @@ export declare class AdminsController {
         createdAt: Date;
         missedAssignments: number;
     }[]>;
-    createInvite(req: AuthenticatedRequest, body: {
-        email: string;
-        fullName: string;
-        phone: string;
-        role: UserRole;
-    }): Promise<{
+    createInvite(req: AuthenticatedRequest, body: InviteDto): Promise<{
         message: string;
         inviteUrl: string;
         invite: {
@@ -63,6 +59,7 @@ export declare class AdminsController {
     }): Promise<{
         id: string;
         email: string;
+        referralCode: string | null;
         passwordHash: string | null;
         fullName: string;
         phone: string;
@@ -74,7 +71,6 @@ export declare class AdminsController {
         createdAt: Date;
         aglpBalance: Prisma.Decimal;
         aglpWithdrawn: Prisma.Decimal;
-        referralCode: string | null;
         isOnline: boolean;
         lastAssignmentAt: Date | null;
         missedAssignments: number;

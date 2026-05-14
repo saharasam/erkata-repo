@@ -43,8 +43,6 @@ export class ConfigService implements OnModuleInit {
         );
       }
 
-
-
       // --- ALERT ENGINE CONFIGS ---
       if (!this.configs.has('alert_bad_performance_limit')) {
         await this.set(
@@ -115,9 +113,9 @@ export class ConfigService implements OnModuleInit {
         await this.set(
           'BANK_DETAILS_UPGRADE',
           {
-            bankName: 'Commercial Bank of Ethiopia',
-            accountNumber: '1000123456789',
-            accountHolder: 'Erkata Platform PLC',
+            bankName: 'REQUIRED',
+            accountNumber: 'REQUIRED',
+            accountHolder: 'REQUIRED',
           },
           'Designated bank details for package upgrades.',
         );

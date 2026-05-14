@@ -65,9 +65,9 @@ let ConfigService = class ConfigService {
             }
             if (!this.configs.has('BANK_DETAILS_UPGRADE')) {
                 await this.set('BANK_DETAILS_UPGRADE', {
-                    bankName: 'Commercial Bank of Ethiopia',
-                    accountNumber: '1000123456789',
-                    accountHolder: 'Erkata Platform PLC',
+                    bankName: 'REQUIRED',
+                    accountNumber: 'REQUIRED',
+                    accountHolder: 'REQUIRED',
                 }, 'Designated bank details for package upgrades.');
             }
         }

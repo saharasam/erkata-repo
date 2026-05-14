@@ -22,6 +22,7 @@ class AuthScreen extends HookConsumerWidget {
     final selectedRole = useState<UserRole>(UserRole.customer);
     final nameController = useTextEditingController();
     final phoneController = useTextEditingController();
+    final phoneSignUpController = useTextEditingController();
     final passwordController = useTextEditingController();
     final confirmPasswordController = useTextEditingController();
 
@@ -74,6 +75,14 @@ class AuthScreen extends HookConsumerWidget {
           return;
         }
 
+        final phone = phoneSignUpController.text.trim();
+        if (phone.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Phone number is required')),
+          );
+          return;
+        }
+
         if (password != confirmPassword) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Passwords do not match')),
@@ -96,6 +105,7 @@ class AuthScreen extends HookConsumerWidget {
               RegisterRequest(
                 fullName: name,
                 email: email,
+                phone: phone,
                 password: password,
                 role: selectedRole.value.name,
               ),
@@ -149,6 +159,14 @@ class AuthScreen extends HookConsumerWidget {
                         controller: nameController,
                         hint: 'Name',
                         icon: Icons.person_outline_rounded,
+                        isDark: isDark,
+                      ),
+                      const SizedBox(height: 14),
+                      _InputField(
+                        controller: phoneSignUpController,
+                        hint: 'Phone Number',
+                        icon: Icons.phone_outlined,
+                        keyboardType: TextInputType.phone,
                         isDark: isDark,
                       ),
                       const SizedBox(height: 14),

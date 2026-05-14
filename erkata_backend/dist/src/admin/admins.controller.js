@@ -20,6 +20,7 @@ const permissions_1 = require("../auth/permissions");
 const users_service_1 = require("../users/users.service");
 const client_1 = require("@prisma/client");
 const invite_service_1 = require("../auth/invite/invite.service");
+const invite_dto_1 = require("./dto/invite.dto");
 let AdminsController = class AdminsController {
     prisma;
     inviteService;
@@ -29,7 +30,7 @@ let AdminsController = class AdminsController {
         this.inviteService = inviteService;
         this.usersService = usersService;
     }
-    async getPersonnel(req, role) {
+    async getPersonnel(req, role, limit, offset) {
         const callerRole = req.user.role;
         const normalizedRole = role?.toLowerCase();
         const queryWhere = {};
@@ -58,8 +59,12 @@ let AdminsController = class AdminsController {
                 };
             }
         }
+        const take = limit ? Number(limit) : 50;
+        const skip = offset ? Number(offset) : 0;
         const profiles = await this.prisma.profile.findMany({
             where: queryWhere,
+            take,
+            skip,
             select: {
                 id: true,
                 fullName: true,
@@ -130,8 +135,10 @@ __decorate([
     (0, guards_1.Roles)('admin'),
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Query)('role')),
+    __param(2, (0, common_1.Query)('limit')),
+    __param(3, (0, common_1.Query)('offset')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:paramtypes", [Object, String, Number, Number]),
     __metadata("design:returntype", Promise)
 ], AdminsController.prototype, "getPersonnel", null);
 __decorate([
@@ -140,7 +147,7 @@ __decorate([
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:paramtypes", [Object, invite_dto_1.InviteDto]),
     __metadata("design:returntype", Promise)
 ], AdminsController.prototype, "createInvite", null);
 __decorate([

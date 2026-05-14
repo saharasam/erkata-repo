@@ -1,7 +1,4 @@
-
-
 ===== FILE: eslint.config.mjs =====
-
 // @ts-check
 import eslint from '@eslint/js';
 import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
@@ -21,9 +18,9 @@ export default tseslint.config(
         ...globals.node,
         ...globals.jest,
       },
-      sourceType: 'commonjs',
+      sourceType: 'module',
       parserOptions: {
-        projectService: true,
+        project: ['./tsconfig.json'],
         tsconfigRootDir: import.meta.dirname,
       },
     },
@@ -40,7 +37,6 @@ export default tseslint.config(
 
 
 ===== FILE: nest-cli.json =====
-
 {
   "$schema": "https://json.schemastore.org/nest-cli",
   "collection": "@nestjs/schematics",
@@ -52,7 +48,6 @@ export default tseslint.config(
 
 
 ===== FILE: package-lock.json =====
-
 {
   "name": "erkata_backend",
   "version": "0.0.1",
@@ -75,6 +70,8 @@ export default tseslint.config(
         "@nestjs/websockets": "^11.1.18",
         "bcrypt": "^6.0.0",
         "bullmq": "^5.69.3",
+        "class-transformer": "^0.5.1",
+        "class-validator": "^0.14.1",
         "cookie-parser": "^1.4.7",
         "dotenv": "^17.3.1",
         "ioredis": "^5.9.3",
@@ -3259,6 +3256,12 @@ export default tseslint.config(
         "@types/superagent": "^8.1.0"
       }
     },
+    "node_modules/@types/validator": {
+      "version": "13.15.10",
+      "resolved": "https://registry.npmjs.org/@types/validator/-/validator-13.15.10.tgz",
+      "integrity": "sha512-T8L6i7wCuyoK8A/ZeLYt1+q0ty3Zb9+qbSSvrIVitzT3YjZqkTZ40IbRsPanlB4h1QB3JVL1SYCdR6ngtFYcuA==",
+      "license": "MIT"
+    },
     "node_modules/@types/ws": {
       "version": "8.18.1",
       "resolved": "https://registry.npmjs.org/@types/ws/-/ws-8.18.1.tgz",
@@ -4587,6 +4590,23 @@ export default tseslint.config(
       "integrity": "sha512-4bHTS2YuzUvtoLjdy+98ykbNB5jS0+07EvFNXerqZQJ89F7DI6ET7OQo/HJuW6K0aVsKA9hj9/RVb2kQVOrPDQ==",
       "dev": true,
       "license": "MIT"
+    },
+    "node_modules/class-transformer": {
+      "version": "0.5.1",
+      "resolved": "https://registry.npmjs.org/class-transformer/-/class-transformer-0.5.1.tgz",
+      "integrity": "sha512-SQa1Ws6hUbfC98vKGxZH3KFY0Y1lm5Zm0SY8XX9zbK7FJCyVEac3ATW0RIpwzW+oOfmHE5PMPufDG9hCfoEOMw==",
+      "license": "MIT"
+    },
+    "node_modules/class-validator": {
+      "version": "0.14.4",
+      "resolved": "https://registry.npmjs.org/class-validator/-/class-validator-0.14.4.tgz",
+      "integrity": "sha512-AwNusCCam51q703dW82x95tOqQp6oC9HNUl724KxJJOfnKscI8dOloXFgyez7LbTTKWuRBA37FScqVbJEoq8Yw==",
+      "license": "MIT",
+      "dependencies": {
+        "@types/validator": "^13.15.3",
+        "libphonenumber-js": "^1.11.1",
+        "validator": "^13.15.22"
+      }
     },
     "node_modules/cli-cursor": {
       "version": "3.1.0",
@@ -7823,6 +7843,12 @@ export default tseslint.config(
         "node": ">= 0.8.0"
       }
     },
+    "node_modules/libphonenumber-js": {
+      "version": "1.12.43",
+      "resolved": "https://registry.npmjs.org/libphonenumber-js/-/libphonenumber-js-1.12.43.tgz",
+      "integrity": "sha512-5n+HnmkNpgZCfaNVxrTGZHr6Lhv3gd0UtbD5lrzun3T2YNyVvCuJz9vkap2E0YWZWU1XF+0XljYAkrAJBbwbrg==",
+      "license": "MIT"
+    },
     "node_modules/limiter": {
       "version": "1.1.5",
       "resolved": "https://registry.npmjs.org/limiter/-/limiter-1.1.5.tgz",
@@ -10937,6 +10963,15 @@ export default tseslint.config(
         "node": ">=10.12.0"
       }
     },
+    "node_modules/validator": {
+      "version": "13.15.35",
+      "resolved": "https://registry.npmjs.org/validator/-/validator-13.15.35.tgz",
+      "integrity": "sha512-TQ5pAGhd5whStmqWvYF4OjQROlmv9SMFVt37qoCBdqRffuuklWYQlCNnEs2ZaIBD1kZRNnikiZOS1eqgkar0iw==",
+      "license": "MIT",
+      "engines": {
+        "node": ">= 0.10"
+      }
+    },
     "node_modules/vary": {
       "version": "1.1.2",
       "resolved": "https://registry.npmjs.org/vary/-/vary-1.1.2.tgz",
@@ -11246,7 +11281,6 @@ export default tseslint.config(
 
 
 ===== FILE: package.json =====
-
 {
   "name": "erkata_backend",
   "version": "0.0.1",
@@ -11290,7 +11324,9 @@ export default tseslint.config(
     "pg": "^8.20.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
-    "socket.io": "^4.8.3"
+    "socket.io": "^4.8.3",
+    "class-validator": "^0.14.1",
+    "class-transformer": "^0.5.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
@@ -11349,7 +11385,6 @@ export default tseslint.config(
 
 
 ===== FILE: prisma\migrations\20260315175603_init_neon\migration.sql =====
-
 -- CreateEnum
 CREATE TYPE "UserRole" AS ENUM ('super_admin', 'admin', 'operator', 'agent', 'customer');
 
@@ -11659,7 +11694,6 @@ ALTER TABLE "invites" ADD CONSTRAINT "invites_created_by_id_fkey" FOREIGN KEY ("
 
 
 ===== FILE: prisma\migrations\20260321084901_aglp_currency_integration\migration.sql =====
-
 /*
   Warnings:
 
@@ -11726,7 +11760,6 @@ ALTER TABLE "aglp_transactions" ADD CONSTRAINT "aglp_transactions_profile_id_fke
 
 
 ===== FILE: prisma\migrations\20260401100438_add_fullname_and_phone_to_invite\migration.sql =====
-
 /*
   Warnings:
 
@@ -11740,7 +11773,6 @@ ADD COLUMN     "phone" TEXT NOT NULL;
 
 
 ===== FILE: prisma\migrations\20260404111151_push_assignment_fields\migration.sql =====
-
 -- AlterEnum
 ALTER TYPE "RequestStatus" ADD VALUE 'delivered';
 
@@ -11760,7 +11792,6 @@ ALTER TABLE "requests" ADD CONSTRAINT "requests_assigned_operator_id_fkey" FOREI
 
 
 ===== FILE: prisma\migrations\20260406204606_add_notifications_and_disputed\migration.sql =====
-
 -- AlterEnum
 ALTER TYPE "RequestStatus" ADD VALUE 'DISPUTED';
 
@@ -11783,13 +11814,11 @@ ALTER TABLE "notifications" ADD CONSTRAINT "notifications_user_id_fkey" FOREIGN 
 
 
 ===== FILE: prisma\migrations\20260408205435_add_completed_at_to_requests\migration.sql =====
-
 -- AlterTable
 ALTER TABLE "requests" ADD COLUMN     "completed_at" TIMESTAMP(3);
 
 
 ===== FILE: prisma\migrations\20260505141610_consolidate_budget_field\migration.sql =====
-
 /*
   Warnings:
 
@@ -12000,14 +12029,38 @@ ALTER TABLE "upgrade_requests" ADD CONSTRAINT "upgrade_requests_operator_id_fkey
 ALTER TABLE "upgrade_requests" ADD CONSTRAINT "upgrade_requests_admin_id_fkey" FOREIGN KEY ("admin_id") REFERENCES "profiles"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 
-===== FILE: prisma\migrations\migration_lock.toml =====
+===== FILE: prisma\migrations\20260508084247_move_attachments_to_url\migration.sql =====
+/*
+  Warnings:
 
+  - You are about to drop the column `content` on the `attachments` table. All the data in the column will be lost.
+  - Added the required column `url` to the `attachments` table without a default value. This is not possible if the table is not empty.
+
+*/
+-- AlterTable
+ALTER TABLE "attachments" DROP COLUMN "content",
+ADD COLUMN     "url" TEXT NOT NULL;
+
+
+===== FILE: prisma\migrations\20260508091128_move_attachments_to_url\migration.sql =====
+-- CreateTable
+CREATE TABLE "uploads" (
+    "id" TEXT NOT NULL,
+    "url" TEXT NOT NULL,
+    "mime_type" TEXT NOT NULL,
+    "file_name" TEXT NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "uploads_pkey" PRIMARY KEY ("id")
+);
+
+
+===== FILE: prisma\migrations\migration_lock.toml =====
 # Please do not edit this file manually
 # It should be added in your version-control system (i.e. Git)
 provider = "postgresql"
 
 ===== FILE: prisma\schema.prisma =====
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -12131,7 +12184,7 @@ model Match {
   requestId          String              @map("request_id")
   agentId            String              @map("agent_id") @db.Uuid
   operatorId         String?             @map("operator_id") @db.Uuid
-  status             String              @default("assigned") // assigned, accepted, rejected, completed
+  status             String              @default("assigned")
   assignedAt         DateTime            @default(now()) @map("created_at")
   agent              Profile             @relation("AgentMatches", fields: [agentId], references: [id])
   operator           Profile?            @relation("OperatorMatches", fields: [operatorId], references: [id])
@@ -12238,7 +12291,7 @@ model Request {
   type               String              @default("real_estate")
   description        String
   metadata           Json                @default("{}")
-  budget             Decimal?            @db.Decimal(12, 2) // New consolidated field
+  budget             Decimal?            @db.Decimal(12, 2)
   zoneId             String              @map("zone_id")
   woreda             String
   status             RequestStatus       @default(pending)
@@ -12262,13 +12315,11 @@ model ResolutionProposal {
   bundleId        String           @map("bundle_id")
   proposedById    String           @map("proposed_by_id") @db.Uuid
   proposedText    String           @map("proposed_text")
-  status          String           @default("pending") // pending, accepted, rejected, escalated
+  status          String           @default("pending")
   createdAt       DateTime         @default(now()) @map("created_at")
   finalResolution FinalResolution?
   bundle          FeedbackBundle   @relation(fields: [bundleId], references: [id])
   proposer        Profile          @relation(fields: [proposedById], references: [id])
-
-  // Retained matchId for legacy compatibility if needed, but primary link is bundle
   matchId         String?          @unique @map("match_id")
   match           Match?           @relation(fields: [matchId], references: [id])
 
@@ -12288,7 +12339,7 @@ model SystemBroadcast {
   id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   title     String
   content   String?
-  target    String // EVERYONE, AGENT, OPERATOR, ADMIN
+  target    String
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("system_broadcasts")
@@ -12303,7 +12354,7 @@ model Transaction {
   commissionAmount Decimal? @map("commission_amount") @db.Decimal(12, 2)
   platformFee      Decimal? @map("platform_fee") @db.Decimal(12, 2)
   agentEarnings    Decimal? @map("agent_earnings") @db.Decimal(12, 2)
-  status           String   @default("pending") // pending, completed, cancelled
+  status           String   @default("pending")
   paymentProofUrl  String?  @map("payment_proof_url")
   metadata         Json?
   createdAt        DateTime @default(now()) @map("created_at")
@@ -12352,7 +12403,7 @@ model Attachment {
   id        String   @id @default(cuid())
   fileName  String   @map("file_name")
   mimeType  String   @map("mime_type")
-  content   String   // Storing Base64 data here
+  url       String
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("attachments")
@@ -12433,9 +12484,7 @@ enum UserRole {
   customer
 }
 
-
 ===== FILE: prisma\seed.ts =====
-
 import { PrismaClient, UserRole } from '@prisma/client';
 
 async function main() {
@@ -12650,7 +12699,6 @@ main().catch((e) => {
 
 
 ===== FILE: prisma.config.ts =====
-
 import 'dotenv/config';
 // @ts-ignore
 import { defineConfig } from 'prisma/config';
@@ -12661,7 +12709,6 @@ export default defineConfig({
 
 
 ===== FILE: README.md =====
-
 <p align="center">
   <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
 </p>
@@ -12763,7 +12810,6 @@ Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
 
 
 ===== FILE: scripts\flush-requests.mjs =====
-
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -12819,8 +12865,8 @@ main();
 
 
 ===== FILE: src\admin\admin.module.ts =====
-
 import { Module } from '@nestjs/common';
+import { BullModule } from '@nestjs/bullmq';
 import { AdminConfigController } from './config.controller';
 import { AdminPackagesController } from './packages.controller';
 import { AuditLogsController } from './audit-logs.controller';
@@ -12835,9 +12881,17 @@ import { AglpModule } from '../aglp/aglp.module';
 import { InviteModule } from '../auth/invite/invite.module';
 import { UsersModule } from '../users/users.module';
 import { AlertsService } from './alerts.service';
+import { BroadcastProcessor } from './broadcast.processor';
 
 @Module({
-  imports: [CommonModule, PrismaModule, AglpModule, InviteModule, UsersModule],
+  imports: [
+    CommonModule,
+    PrismaModule,
+    AglpModule,
+    InviteModule,
+    UsersModule,
+    BullModule.registerQueue({ name: 'broadcast' }),
+  ],
   controllers: [
     AdminConfigController,
     AdminPackagesController,
@@ -12848,14 +12902,13 @@ import { AlertsService } from './alerts.service';
     PayoutsController,
     AlertsController,
   ],
-  providers: [AlertsService],
+  providers: [AlertsService, BroadcastProcessor],
   exports: [AlertsService],
 })
 export class AdminModule {}
 
 
 ===== FILE: src\admin\admins.controller.ts =====
-
 import {
   Controller,
   Get,
@@ -12882,6 +12935,7 @@ import { UsersService } from '../users/users.service';
 import { UserRole, Prisma } from '@prisma/client';
 import type { AuthenticatedRequest } from '../auth/guards';
 import { InviteService } from '../auth/invite/invite.service';
+import { InviteDto } from './dto/invite.dto';
 
 @Controller('admin/users')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -12897,6 +12951,8 @@ export class AdminsController {
   async getPersonnel(
     @Req() req: AuthenticatedRequest,
     @Query('role') role?: string,
+    @Query('limit') limit?: number,
+    @Query('offset') offset?: number,
   ) {
     const callerRole = req.user.role;
     const normalizedRole = role?.toLowerCase() as UserRole | undefined;
@@ -12931,8 +12987,13 @@ export class AdminsController {
       }
     }
 
+    const take = limit ? Number(limit) : 50;
+    const skip = offset ? Number(offset) : 0;
+
     const profiles = await this.prisma.profile.findMany({
       where: queryWhere,
+      take,
+      skip,
       select: {
         id: true,
         fullName: true,
@@ -12965,13 +13026,7 @@ export class AdminsController {
   @RequirePermission(Action.MANAGE_ADMINS, Action.MANAGE_OPERATORS)
   async createInvite(
     @Req() req: AuthenticatedRequest,
-    @Body()
-    body: {
-      email: string;
-      fullName: string;
-      phone: string;
-      role: UserRole;
-    },
+    @Body() body: InviteDto,
   ) {
     if (req.user.role === UserRole.admin && body.role === UserRole.agent) {
       throw new ForbiddenException(
@@ -13050,7 +13105,6 @@ export class AdminsController {
 
 
 ===== FILE: src\admin\alerts.controller.ts =====
-
 import { Controller, Get, UseGuards } from '@nestjs/common';
 import { AlertsService } from './alerts.service';
 import { JwtAuthGuard, RolesGuard, RequirePermission } from '../auth/guards';
@@ -13070,7 +13124,6 @@ export class AlertsController {
 
 
 ===== FILE: src\admin\alerts.service.ts =====
-
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConfigService } from '../common/config.service';
@@ -13273,7 +13326,6 @@ export class AlertsService {
 
 
 ===== FILE: src\admin\analytics.controller.spec.ts =====
-
 import { Test, TestingModule } from '@nestjs/testing';
 import AnalyticsController from './analytics.controller';
 import { PrismaService } from '../prisma/prisma.service';
@@ -13332,7 +13384,6 @@ describe('AnalyticsController', () => {
 
 
 ===== FILE: src\admin\analytics.controller.ts =====
-
 import { Controller, Get, UseGuards, Query } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { RolesGuard, RequirePermission, JwtAuthGuard } from '../auth/guards';
@@ -13526,7 +13577,6 @@ export default class AnalyticsController {
 
 
 ===== FILE: src\admin\audit-logs.controller.ts =====
-
 import { Controller, Get, UseGuards, Query } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard, RolesGuard, RequirePermission } from '../auth/guards';
@@ -13568,8 +13618,117 @@ export class AuditLogsController {
 }
 
 
-===== FILE: src\admin\config.controller.ts =====
+===== FILE: src\admin\broadcast.processor.ts =====
+import { Processor, WorkerHost } from '@nestjs/bullmq';
+import { Job } from 'bullmq';
+import { PrismaService } from '../prisma/prisma.service';
+import { Prisma } from '@prisma/client';
+import { Logger } from '@nestjs/common';
+import { NotificationsGateway } from '../notifications/notifications.gateway';
 
+interface BroadcastJobData {
+  broadcastId: string;
+  title: string;
+  content?: string;
+  target: string;
+}
+
+@Processor('broadcast')
+export class BroadcastProcessor extends WorkerHost {
+  private readonly logger = new Logger(BroadcastProcessor.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly notificationsGateway: NotificationsGateway,
+  ) {
+    super();
+  }
+
+  async process(job: Job<BroadcastJobData, any, string>): Promise<any> {
+    if (job.name === 'send-broadcast') {
+      const { title, content, target } = job.data;
+      this.logger.log(
+        `[BroadcastProcessor] Starting broadcast: ${title} (Target: ${target})`,
+      );
+
+      // 1. Identify target criteria
+      const userWhere: Prisma.ProfileWhereInput = {};
+      if (target === 'AGENT') userWhere.role = 'agent';
+      else if (target === 'OPERATOR') userWhere.role = 'operator';
+      else if (target === 'ADMIN') userWhere.role = 'admin';
+      else if (target === 'FINANCE_OP') userWhere.role = 'financial_operator';
+
+      // 2. Process in chunks to avoid OOM and DB limits
+      let cursor: string | undefined;
+      const chunkSize = 1000;
+      let totalProcessed = 0;
+
+      while (true) {
+        const users = await this.prisma.profile.findMany({
+          where: userWhere,
+          take: chunkSize,
+          skip: cursor ? 1 : 0,
+          cursor: cursor ? { id: cursor } : undefined,
+          select: { id: true },
+          orderBy: { id: 'asc' },
+        });
+
+        if (users.length === 0) break;
+
+        this.logger.log(
+          `[BroadcastProcessor] Processing chunk of ${users.length} users...`,
+        );
+
+        // Create individual notification records in batches
+        await this.prisma.notification.createMany({
+          data: users.map((u) => ({
+            userId: u.id,
+            title: `System Broadcast: ${title}`,
+            message: content || 'New system announcement published.',
+            type: 'SYSTEM_BROADCAST',
+            link: '/dashboard/notices',
+          })),
+          skipDuplicates: true,
+        });
+
+        totalProcessed += users.length;
+        cursor = users[users.length - 1].id;
+
+        // Yield to event loop to prevent starvation
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      }
+
+      // 3. Emit WebSocket events (one-time broadcast)
+      this.logger.log(
+        `[BroadcastProcessor] Emitting WebSocket broadcast to target...`,
+      );
+      if (target === 'EVERYONE') {
+        this.notificationsGateway.server.emit('notification', {
+          type: 'system_broadcast',
+          title,
+          message: content,
+        });
+      } else {
+        let targetRole = target.toLowerCase();
+        if (target === 'FINANCE_OP') targetRole = 'financial_operator';
+
+        this.notificationsGateway.sendToRole(targetRole, 'notification', {
+          type: 'system_broadcast',
+          title,
+          message: content,
+        });
+      }
+
+      this.logger.log(
+        `[BroadcastProcessor] Completed broadcast. Total users notified: ${totalProcessed}`,
+      );
+      return { totalProcessed };
+    }
+  }
+}
+
+
+===== FILE: src\admin\config.controller.ts =====
 import {
   Controller,
   Get,
@@ -13692,6 +13851,15 @@ export class AdminConfigController {
         value: this.configService.get<number>('alert_spike_min_threshold', 5),
         description: 'Alert: Noise floor for spike detection.',
       },
+      {
+        key: 'BANK_DETAILS_UPGRADE',
+        value: this.configService.get('BANK_DETAILS_UPGRADE', {
+          bankName: 'REQUIRED',
+          accountNumber: 'REQUIRED',
+          accountHolder: 'REQUIRED',
+        }),
+        description: 'Designated bank details for package upgrades.',
+      },
     ];
   }
 
@@ -13721,6 +13889,7 @@ export class AdminConfigController {
       'withdrawal_min_amount',
       'withdrawal_max_amount_daily',
       'withdrawal_fee_percentage',
+      'BANK_DETAILS_UPGRADE',
     ];
 
     if (superAdminKeys.includes(body.key) && req.user.role !== 'super_admin') {
@@ -13740,8 +13909,26 @@ export class AdminConfigController {
 }
 
 
-===== FILE: src\admin\packages.controller.ts =====
+===== FILE: src\admin\dto\invite.dto.ts =====
+import { IsEmail, IsEnum, IsString } from 'class-validator';
+import { UserRole } from '@prisma/client';
 
+export class InviteDto {
+  @IsEmail()
+  email: string;
+
+  @IsString()
+  fullName: string;
+
+  @IsString()
+  phone: string;
+
+  @IsEnum(UserRole)
+  role: UserRole;
+}
+
+
+===== FILE: src\admin\packages.controller.ts =====
 import {
   Controller,
   Get,
@@ -13813,7 +14000,6 @@ export class AdminPackagesController {
 
 
 ===== FILE: src\admin\payouts.controller.ts =====
-
 import {
   Controller,
   Get,
@@ -13840,12 +14026,20 @@ export class PayoutsController {
 
   @Get('pending')
   @RequirePermission(Action.APPROVE_PAYOUT)
-  async getPendingPayouts() {
+  async getPendingPayouts(
+    @Query('limit') limit?: number,
+    @Query('offset') offset?: number,
+  ) {
+    const take = limit ? Number(limit) : 50;
+    const skip = offset ? Number(offset) : 0;
+
     return this.prisma.aglpTransaction.findMany({
       where: {
         type: AglpTransactionType.WITHDRAWAL,
         status: AglpTransactionStatus.PENDING,
       },
+      take,
+      skip,
       include: {
         profile: {
           select: {
@@ -13880,8 +14074,6 @@ export class PayoutsController {
     });
   }
 
-
-
   // ── SUPER ADMIN OVERSIGHT ──────────────────────────────────────────────────
 
   @Get('ledger')
@@ -13890,13 +14082,20 @@ export class PayoutsController {
     @Query('type') type?: AglpTransactionType,
     @Query('status') status?: AglpTransactionStatus,
     @Query('profileId') profileId?: string,
+    @Query('limit') limit?: number,
+    @Query('offset') offset?: number,
   ) {
+    const take = limit ? Number(limit) : 50;
+    const skip = offset ? Number(offset) : 0;
+
     return this.prisma.aglpTransaction.findMany({
       where: {
         type,
         status,
         profileId,
       },
+      take,
+      skip,
       include: {
         profile: {
           select: {
@@ -13913,7 +14112,6 @@ export class PayoutsController {
 
 
 ===== FILE: src\admin\system-broadcasts.controller.ts =====
-
 import {
   Controller,
   Get,
@@ -13924,13 +14122,12 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard, RequirePermission } from '../auth/guards';
 import { Action } from '../auth/permissions';
-import { NotificationsGateway } from '../notifications/notifications.gateway';
-import { NotificationsService } from '../notifications/notifications.service';
 
 interface AuthenticatedRequest {
   user: {
@@ -13944,8 +14141,7 @@ interface AuthenticatedRequest {
 export default class SystemBroadcastsController {
   constructor(
     private prisma: PrismaService,
-    private notificationsGateway: NotificationsGateway,
-    private notificationsService: NotificationsService,
+    @InjectQueue('broadcast') private broadcastQueue: Queue,
   ) {}
 
   @Get()
@@ -13989,52 +14185,16 @@ export default class SystemBroadcastsController {
       },
     });
 
-    // 2. Identify target users
-    const userWhere: Prisma.ProfileWhereInput = {};
-    if (data.target === 'AGENT') userWhere.role = 'agent';
-    else if (data.target === 'OPERATOR') userWhere.role = 'operator';
-    else if (data.target === 'ADMIN') userWhere.role = 'admin';
-    else if (data.target === 'FINANCE_OP') userWhere.role = 'financial_operator';
-    // If EVERYONE, leave userWhere empty to target all users
-
-    const users = await this.prisma.profile.findMany({
-      where: userWhere,
-      select: { id: true, role: true },
+    // 2. Offload notification work to background queue
+    await this.broadcastQueue.add('send-broadcast', {
+      broadcastId: broadcast.id,
+      title: data.title,
+      content: data.content,
+      target: data.target,
     });
-
-    // 3. Create individual notification records
-    // We use a transactional batch for reliability
-    await this.prisma.notification.createMany({
-      data: users.map((u) => ({
-        userId: u.id,
-        title: `System Broadcast: ${data.title}`,
-        message: data.content || 'New system announcement published.',
-        type: 'SYSTEM_BROADCAST',
-        link: '/dashboard/notices', // Generic link to the notices tab
-      })),
-      skipDuplicates: true,
-    });
-
-    // 4. Emit WebSocket events
-    if (data.target === 'EVERYONE') {
-      this.notificationsGateway.server.emit('notification', {
-        type: 'system_broadcast',
-        title: data.title,
-        message: data.content,
-      });
-    } else {
-      let targetRole = data.target.toLowerCase();
-      if (data.target === 'FINANCE_OP') targetRole = 'financial_operator';
-      
-      this.notificationsGateway.sendToRole(targetRole, 'notification', {
-        type: 'system_broadcast',
-        title: data.title,
-        message: data.content,
-      });
-    }
 
     return {
-      message: 'Broadcast dispatched successfully',
+      message: 'Broadcast scheduled for distribution',
       broadcast,
     };
   }
@@ -14052,7 +14212,6 @@ export default class SystemBroadcastsController {
 
 
 ===== FILE: src\aglp\aglp.module.ts =====
-
 import { Module } from '@nestjs/common';
 import { AglpService } from './aglp.service';
 import { PrismaModule } from '../prisma/prisma.module';
@@ -14066,7 +14225,6 @@ export class AglpModule {}
 
 
 ===== FILE: src\aglp\aglp.service.spec.ts =====
-
 import { Test, TestingModule } from '@nestjs/testing';
 import { AglpService } from './aglp.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -14181,7 +14339,6 @@ describe('AglpService', () => {
 
 
 ===== FILE: src\aglp\aglp.service.ts =====
-
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '../common/config.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -14189,6 +14346,7 @@ import {
   Prisma,
   AglpTransactionType,
   AglpTransactionStatus,
+  Profile,
 } from '@prisma/client';
 
 @Injectable()
@@ -14197,6 +14355,25 @@ export class AglpService {
     private readonly prisma: PrismaService,
     private readonly configService: ConfigService,
   ) {}
+
+  /**
+   * Performs a Row-Level Lock (SELECT FOR UPDATE) on a profile.
+   * This is critical for preventing double-spend race conditions during balance updates.
+   */
+  private async lockProfile(
+    tx: Prisma.TransactionClient,
+    profileId: string,
+  ): Promise<Profile> {
+    const profiles = await tx.$queryRaw<Profile[]>`
+      SELECT * FROM profiles WHERE id = ${profileId}::uuid FOR UPDATE
+    `;
+
+    if (!profiles || profiles.length === 0) {
+      throw new Error('Profile not found for locking');
+    }
+
+    return profiles[0];
+  }
 
   getConversionRate(): number {
     const config = this.configService.get<{ rate: number }>(
@@ -14218,6 +14395,9 @@ export class AglpService {
   ) {
     const rate = this.getConversionRate();
     const amountAglp = amountEtb * rate;
+
+    // Locking is less critical for increments, but we lock to ensure consistency with the profile state
+    await this.lockProfile(tx, profileId);
 
     await tx.profile.update({
       where: { id: profileId },
@@ -14263,8 +14443,10 @@ export class AglpService {
     amountAglp: number,
     packageId: string,
   ) {
-    const profile = await tx.profile.findUnique({ where: { id: profileId } });
-    if (!profile || Number(profile.aglpBalance) < amountAglp) {
+    // LOCK ROW: Prevent concurrent spending or withdrawals during this transaction
+    const profile = await this.lockProfile(tx, profileId);
+
+    if (Number(profile.aglpBalance) < amountAglp) {
       throw new Error('Insufficient AGLP balance');
     }
 
@@ -14404,8 +14586,11 @@ export class AglpService {
       bankAccountHolder: string;
     },
   ) {
-    const profile = await tx.profile.findUnique({ where: { id: profileId } });
-    if (!profile || Number(profile.aglpBalance) < amountAglp) {
+    // LOCK ROW: Critical security measure.
+    // Prevents concurrent withdrawals from passing the balance check simultaneously.
+    const profile = await this.lockProfile(tx, profileId);
+
+    if (Number(profile.aglpBalance) < amountAglp) {
       throw new Error('Insufficient AGLP balance');
     }
 
@@ -14499,7 +14684,6 @@ export class AglpService {
   }
 
   // Handle AGLP withdrawal rejection (Refund)
-  // Handle AGLP withdrawal rejection (Refund)
   async rejectWithdrawal(
     tx: Prisma.TransactionClient,
     aglpTxId: string,
@@ -14514,7 +14698,10 @@ export class AglpService {
       throw new Error('Withdrawal transaction not found');
     }
 
-    // 1. Refund the AGLP to balance only (since it was never in aglpWithdrawn)
+    // Locking the profile to ensure balance consistency during refund
+    await this.lockProfile(tx, aglpTx.profileId);
+
+    // 1. Refund the AGLP to balance only
     await tx.profile.update({
       where: { id: aglpTx.profileId },
       data: {
@@ -14557,6 +14744,9 @@ export class AglpService {
     ) {
       throw new Error('Valid pending withdrawal transaction not found');
     }
+
+    // Lock profile
+    await this.lockProfile(tx, aglpTx.profileId);
 
     // 1. Update Profile: Mark money as officially withdrawn
     await tx.profile.update({
@@ -14606,6 +14796,9 @@ export class AglpService {
       throw new Error('Cannot cancel this withdrawal');
     }
 
+    // Lock profile
+    await this.lockProfile(tx, requestedByProfileId);
+
     // Refund the AGLP
     await tx.profile.update({
       where: { id: requestedByProfileId },
@@ -14639,7 +14832,6 @@ export class AglpService {
 
 
 ===== FILE: src\app.controller.spec.ts =====
-
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -14665,7 +14857,6 @@ describe('AppController', () => {
 
 
 ===== FILE: src\app.controller.ts =====
-
 import { Controller, Get } from '@nestjs/common';
 import { AppService } from './app.service';
 
@@ -14681,7 +14872,6 @@ export class AppController {
 
 
 ===== FILE: src\app.module.ts =====
-
 import { Module, NestModule, MiddlewareConsumer } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { AppController } from './app.controller';
@@ -14756,7 +14946,6 @@ export class AppModule implements NestModule {
 
 
 ===== FILE: src\app.service.ts =====
-
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
@@ -14768,7 +14957,6 @@ export class AppService {
 
 
 ===== FILE: src\auth\auth.controller.ts =====
-
 import {
   Controller,
   Post,
@@ -14786,16 +14974,7 @@ import type { AuthenticatedRequest } from './guards/authenticated-request.interf
 import { RedisPresenceService } from '../common/redis/redis-presence.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { UserRole, RequestStatus } from '@prisma/client';
-
-export interface RegisterDto {
-  email: string;
-  fullName: string;
-  phone: string;
-  password: string;
-  role?: string;
-  tier?: string;
-  inviteToken?: string;
-}
+import { RegisterDto } from './dto/register.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -14888,7 +15067,6 @@ export class AuthController {
 
 
 ===== FILE: src\auth\auth.module.ts =====
-
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
@@ -14910,13 +15088,12 @@ import { InviteModule } from './invite/invite.module';
   ],
   providers: [AuthService, JwtStrategy],
   controllers: [AuthController],
-  exports: [AuthService],
+  exports: [AuthService, JwtModule],
 })
 export class AuthModule {}
 
 
 ===== FILE: src\auth\auth.service.ts =====
-
 import {
   Injectable,
   UnauthorizedException,
@@ -15018,18 +15195,20 @@ export class AuthService {
     });
 
     // Log successful login
-    void this.prisma.auditLog.create({
-      data: {
-        actorId: profile.id,
-        action: 'USER_LOGIN',
-        targetTable: 'profiles',
-        targetId: profile.id,
-        metadata: {
-          ip: req?.ip,
-          userAgent: req?.headers?.['user-agent'],
+    void this.prisma.auditLog
+      .create({
+        data: {
+          actorId: profile.id,
+          action: 'USER_LOGIN',
+          targetTable: 'profiles',
+          targetId: profile.id,
+          metadata: {
+            ip: req?.ip,
+            userAgent: req?.headers?.['user-agent'],
+          },
         },
-      },
-    }).catch(err => console.error('[AuthService] Failed to log login:', err));
+      })
+      .catch((err) => console.error('[AuthService] Failed to log login:', err));
 
     return {
       user: {
@@ -15047,17 +15226,34 @@ export class AuthService {
   async refresh(refreshToken: string) {
     try {
       const payload = this.jwtService.verify<JwtPayload>(refreshToken);
-      const newPayload: JwtPayload = {
-        sub: payload.sub,
-        email: payload.email,
-        role: payload.role,
-        tier: payload.tier,
-      };
-      const newAccessToken = this.jwtService.sign(newPayload);
 
-      await Promise.resolve(); // satisfy async/await requirement
+      // Verify user in database to ensure they are still active and get latest roles/tier
+      const profile = await this.prisma.profile.findUnique({
+        where: { id: payload.sub },
+        select: {
+          id: true,
+          email: true,
+          role: true,
+          tier: true,
+          isActive: true,
+        },
+      });
+
+      if (!profile || !profile.isActive) {
+        throw new UnauthorizedException('User is inactive or no longer exists');
+      }
+
+      const newPayload: JwtPayload = {
+        sub: profile.id,
+        email: profile.email,
+        role: profile.role,
+        tier: profile.tier,
+      };
+
+      const newAccessToken = this.jwtService.sign(newPayload);
       return { accessToken: newAccessToken };
-    } catch {
+    } catch (err) {
+      if (err instanceof UnauthorizedException) throw err;
       throw new UnauthorizedException('Invalid refresh token');
     }
   }
@@ -15229,18 +15425,22 @@ export class AuthService {
     }
 
     // Log successful registration
-    void this.prisma.auditLog.create({
-      data: {
-        actorId: newProfile.id,
-        action: 'USER_REGISTER',
-        targetTable: 'profiles',
-        targetId: newProfile.id,
-        metadata: {
-          ip: req?.ip,
-          userAgent: req?.headers?.['user-agent'],
+    void this.prisma.auditLog
+      .create({
+        data: {
+          actorId: newProfile.id,
+          action: 'USER_REGISTER',
+          targetTable: 'profiles',
+          targetId: newProfile.id,
+          metadata: {
+            ip: req?.ip,
+            userAgent: req?.headers?.['user-agent'],
+          },
         },
-      },
-    }).catch(err => console.error('[AuthService] Failed to log registration:', err));
+      })
+      .catch((err) =>
+        console.error('[AuthService] Failed to log registration:', err),
+      );
 
     return {
       message: 'Registration successful.',
@@ -15258,8 +15458,46 @@ export class AuthService {
 }
 
 
-===== FILE: src\auth\guards\authenticated-request.interface.ts =====
+===== FILE: src\auth\dto\register.dto.ts =====
+import {
+  IsEmail,
+  IsEnum,
+  IsOptional,
+  IsString,
+  MinLength,
+} from 'class-validator';
+import { UserRole, Tier } from '@prisma/client';
 
+export class RegisterDto {
+  @IsEmail()
+  email: string;
+
+  @IsString()
+  @MinLength(3)
+  fullName: string;
+
+  @IsString()
+  phone: string;
+
+  @IsString()
+  @MinLength(8)
+  password: string;
+
+  @IsOptional()
+  @IsEnum(UserRole)
+  role?: UserRole;
+
+  @IsOptional()
+  @IsEnum(Tier)
+  tier?: Tier;
+
+  @IsOptional()
+  @IsString()
+  inviteToken?: string;
+}
+
+
+===== FILE: src\auth\guards\authenticated-request.interface.ts =====
 import { Request } from 'express';
 import { UserRole } from '@prisma/client';
 
@@ -15272,7 +15510,6 @@ export interface AuthenticatedRequest extends Request {
 
 
 ===== FILE: src\auth\guards\index.ts =====
-
 export * from './roles.guard';
 export * from './roles.decorator';
 export * from './require-permission.decorator';
@@ -15281,7 +15518,6 @@ export * from './authenticated-request.interface';
 
 
 ===== FILE: src\auth\guards\jwt-auth.guard.ts =====
-
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 
@@ -15318,7 +15554,6 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
 
 
 ===== FILE: src\auth\guards\require-permission.decorator.ts =====
-
 import { SetMetadata } from '@nestjs/common';
 import { Action } from '../permissions';
 
@@ -15327,7 +15562,6 @@ export const RequirePermission = (...actions: Action[]) =>
 
 
 ===== FILE: src\auth\guards\roles.decorator.ts =====
-
 import { SetMetadata } from '@nestjs/common';
 
 export const ROLES_KEY = 'roles';
@@ -15335,7 +15569,6 @@ export const Roles = (...roles: string[]) => SetMetadata(ROLES_KEY, roles);
 
 
 ===== FILE: src\auth\guards\roles.guard.ts =====
-
 import {
   Injectable,
   CanActivate,
@@ -15447,7 +15680,6 @@ export class RolesGuard implements CanActivate {
 
 
 ===== FILE: src\auth\invite\invite.controller.ts =====
-
 import { Controller, Get, Param } from '@nestjs/common';
 import { InviteService } from './invite.service';
 
@@ -15469,7 +15701,6 @@ export class InviteController {
 
 
 ===== FILE: src\auth\invite\invite.module.ts =====
-
 import { Module } from '@nestjs/common';
 import { InviteService } from './invite.service';
 import { InviteController } from './invite.controller';
@@ -15486,7 +15717,6 @@ export class InviteModule {}
 
 
 ===== FILE: src\auth\invite\invite.service.spec.ts =====
-
 import { Test, TestingModule } from '@nestjs/testing';
 import { InviteService } from './invite.service';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -15562,7 +15792,6 @@ describe('InviteService (Hierarchy)', () => {
 
 
 ===== FILE: src\auth\invite\invite.service.ts =====
-
 import {
   Injectable,
   NotFoundException,
@@ -15708,7 +15937,6 @@ export class InviteService {
 
 
 ===== FILE: src\auth\permissions.ts =====
-
 export enum Action {
   // --- Customer ---
   CREATE_REQUEST = 'CREATE_REQUEST',
@@ -15903,7 +16131,6 @@ export const PermissionMatrix: Record<string, Action[]> = {
 
 
 ===== FILE: src\auth\strategies\jwt.strategy.ts =====
-
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
@@ -15965,7 +16192,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
 
 ===== FILE: src\combine.js =====
-
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -16031,9 +16257,9 @@ processDirectory(rootDir);
 console.log('Done: output in /combined');
 
 ===== FILE: src\common\common.module.ts =====
-
 import { Module, Global } from '@nestjs/common';
 import { ConfigService } from './config.service';
+import { StorageService } from './storage.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { RequestEventListener } from './events/request.events';
 import { UploadsController } from './uploads.controller';
@@ -16042,14 +16268,13 @@ import { UploadsController } from './uploads.controller';
 @Module({
   imports: [PrismaModule],
   controllers: [UploadsController],
-  providers: [ConfigService, RequestEventListener],
-  exports: [ConfigService],
+  providers: [ConfigService, StorageService, RequestEventListener],
+  exports: [ConfigService, StorageService],
 })
 export class CommonModule {}
 
 
 ===== FILE: src\common\config.service.ts =====
-
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
@@ -16094,8 +16319,6 @@ export class ConfigService implements OnModuleInit {
           'Referral commission for package upgrades.',
         );
       }
-
-
 
       // --- ALERT ENGINE CONFIGS ---
       if (!this.configs.has('alert_bad_performance_limit')) {
@@ -16167,9 +16390,9 @@ export class ConfigService implements OnModuleInit {
         await this.set(
           'BANK_DETAILS_UPGRADE',
           {
-            bankName: 'Commercial Bank of Ethiopia',
-            accountNumber: '1000123456789',
-            accountHolder: 'Erkata Platform PLC',
+            bankName: 'REQUIRED',
+            accountNumber: 'REQUIRED',
+            accountHolder: 'REQUIRED',
           },
           'Designated bank details for package upgrades.',
         );
@@ -16222,7 +16445,6 @@ export class ConfigService implements OnModuleInit {
 
 
 ===== FILE: src\common\events\request.events.ts =====
-
 import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { NotificationsService } from '../../notifications/notifications.service';
@@ -16470,7 +16692,6 @@ export class RequestEventListener {
 
 
 ===== FILE: src\common\guards\lockdown.guard.ts =====
-
 import {
   Injectable,
   CanActivate,
@@ -16479,17 +16700,22 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '../config.service';
 import { UserRole } from '@prisma/client';
-import * as jwt from 'jsonwebtoken';
+import { JwtService } from '@nestjs/jwt';
 import { AuthenticatedRequest } from '../../auth/guards/authenticated-request.interface';
 
 interface JwtPayload {
-  id: string;
+  sub: string;
+  email: string;
   role: UserRole;
+  tier: string;
 }
 
 @Injectable()
 export class LockdownGuard implements CanActivate {
-  constructor(private readonly configService: ConfigService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly jwtService: JwtService,
+  ) {}
 
   canActivate(context: ExecutionContext): boolean {
     const isLockdown = this.configService.get<boolean>(
@@ -16511,7 +16737,8 @@ export class LockdownGuard implements CanActivate {
 
     const user = request.user;
 
-    // Bypass lockdown for Super Admins and Admins so they can manage the platform
+    // Bypass lockdown for Super Admins and Admins so they can manage the platform.
+    // This handles cases where JwtAuthGuard has already processed the request.
     if (
       user &&
       (user.role === UserRole.super_admin || user.role === UserRole.admin)
@@ -16519,13 +16746,15 @@ export class LockdownGuard implements CanActivate {
       return true;
     }
 
-    // If running as a global guard, JwtAuthGuard may not have run yet.
-    // Manually check for an admin token in the headers for emergency access.
-    const authHeader = request.headers.authorization;
+    // If running as a global guard, JwtAuthGuard may not have run yet for this cycle.
+    // We manually verify the token in the headers for emergency administrative access.
+    const authHeader = request.headers?.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.split(' ')[1];
       try {
-        const decoded = jwt.decode(token) as JwtPayload | null;
+        // SECURITY FIX: Using verify instead of decode to ensure cryptographic integrity.
+        // This prevents forged tokens from bypassing the platform lockdown.
+        const decoded = this.jwtService.verify<JwtPayload>(token);
         if (
           decoded &&
           (decoded.role === UserRole.super_admin ||
@@ -16534,7 +16763,7 @@ export class LockdownGuard implements CanActivate {
           return true;
         }
       } catch {
-        // Token invalid, proceed to common lockdown check
+        // Token invalid or expired, continue to block request.
       }
     }
 
@@ -16546,7 +16775,6 @@ export class LockdownGuard implements CanActivate {
 
 
 ===== FILE: src\common\interceptors\audit.interceptor.spec.ts =====
-
 import { AuditInterceptor } from './audit.interceptor';
 import { ExecutionContext, CallHandler } from '@nestjs/common';
 import { of } from 'rxjs';
@@ -16643,7 +16871,6 @@ describe('AuditInterceptor', () => {
 
 
 ===== FILE: src\common\interceptors\audit.interceptor.ts =====
-
 import {
   Injectable,
   NestInterceptor,
@@ -16730,7 +16957,6 @@ export class AuditInterceptor implements NestInterceptor {
 
 
 ===== FILE: src\common\interfaces\request-with-user.interface.ts =====
-
 import { Request } from 'express';
 import { UserRole } from '@prisma/client';
 
@@ -16748,7 +16974,6 @@ export interface RequestWithUser extends Request {
 
 
 ===== FILE: src\common\middleware\mock-user.middleware.ts =====
-
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 
@@ -16758,6 +16983,7 @@ export class MockUserMiddleware implements NestMiddleware {
     // Simulate different roles by changing the 'x-mock-role' header
     const roleHeader = req.headers['x-mock-role'] as string;
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     (req as any)['user'] = {
       id: 'mock-user-id',
       role: roleHeader || 'CUSTOMER',
@@ -16768,7 +16994,6 @@ export class MockUserMiddleware implements NestMiddleware {
 
 
 ===== FILE: src\common\redis\redis-presence.service.ts =====
-
 import { Injectable, OnModuleInit, Inject, Logger } from '@nestjs/common';
 import { Redis } from 'ioredis';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -16879,36 +17104,32 @@ export class RedisPresenceService implements OnModuleInit {
 
   async heartbeat(operatorId: string) {
     const key = `presence:operator:${operatorId}`;
-
-    // Check if they were already online in SQL
-    // To minimize SQL writes, we could cache this in Redis too, but let's keep it simple first
-    // and only sync when the key is *created* if we want to tracking "Login"
-    // However, the customer's requirement was: "Redis updates instantly. The main database does nothing."
-    // and "Redis sends one update when the threshold is crossed."
-
-    // We do need to handle the "Go Online" moment.
-    // If the key doesn't exist, it's their "first" heartbeat or they were offline.
     const exists = await this.redis.exists(key);
 
-    if (!exists) {
-      // First heartbeat or back from offline - Sync SQL to Online
-      try {
-        await this.prisma.profile.update({
-          where: { id: operatorId },
-          data: { isOnline: true, lastAssignmentAt: new Date() },
-        });
-        this.logger.log(
-          `[RedisPresenceService] Operator ${operatorId} marked as Online in SQL.`,
-        );
+    // Always ensure the DB reflects online status on every heartbeat.
+    // Previously this was only done when the Redis key didn't exist, which meant
+    // if the 30s key expired and the expiry handler set isOnline=false, the next
+    // heartbeat would NOT re-set it before the assignment query ran — causing
+    // the operator to be invisible to assignToNextReadyOperator.
+    try {
+      await this.prisma.profile.update({
+        where: { id: operatorId },
+        data: { isOnline: true },
+      });
+    } catch (err) {
+      this.logger.error(
+        `[RedisPresenceService] Failed to sync online status for ${operatorId}`,
+        err,
+      );
+    }
 
-        // Notify that operator is now ready for queue pushes
-        this.eventEmitter.emit('operator.online', { operatorId });
-      } catch (err) {
-        this.logger.error(
-          `[RedisPresenceService] Failed to sync online status for ${operatorId}`,
-          err,
-        );
-      }
+    if (!exists) {
+      // First heartbeat or back from offline — emit event so pending requests
+      // in the queue get pushed to this now-online operator.
+      this.logger.log(
+        `[RedisPresenceService] Operator ${operatorId} came online. Emitting operator.online.`,
+      );
+      this.eventEmitter.emit('operator.online', { operatorId });
     }
 
     await this.redis.set(key, '1', 'EX', 30);
@@ -16922,7 +17143,6 @@ export class RedisPresenceService implements OnModuleInit {
 
 
 ===== FILE: src\common\redis\redis.module.ts =====
-
 import { Module, Global } from '@nestjs/common';
 import Redis from 'ioredis';
 import { RedisPresenceService } from './redis-presence.service';
@@ -16960,8 +17180,59 @@ import { PrismaModule } from '../../prisma/prisma.module';
 export class RedisModule {}
 
 
-===== FILE: src\common\uploads.controller.ts =====
+===== FILE: src\common\storage.service.ts =====
+import { Injectable, Logger } from '@nestjs/common';
+import { randomUUID } from 'crypto';
+import { writeFile, mkdir } from 'fs/promises';
+import { join, extname } from 'path';
 
+/**
+ * StorageService handles file persistence.
+ * Currently configured for local filesystem storage to avoid external dependencies.
+ * Can be refactored to use S3 or Cloudinary by replacing the upload method.
+ **/
+@Injectable()
+export class StorageService {
+  private readonly logger = new Logger(StorageService.name);
+  private readonly uploadDir = join(process.cwd(), 'uploads');
+
+  constructor() {
+    // Ensure the upload directory exists
+    void this.ensureDirectoryExists();
+  }
+
+  private async ensureDirectoryExists() {
+    try {
+      await mkdir(this.uploadDir, { recursive: true });
+    } catch (error) {
+      this.logger.error('Could not create upload directory', error);
+    }
+  }
+
+  /**
+   * Saves a file buffer to the local filesystem and returns a relative URL.
+   * @param buffer The file content buffer
+   * @param originalName The original filename for extension extraction
+   */
+  async upload(buffer: Buffer, originalName: string): Promise<string> {
+    const fileId = randomUUID();
+    const extension = extname(originalName);
+    const fileName = `${fileId}${extension}`;
+    const filePath = join(this.uploadDir, fileName);
+
+    try {
+      await writeFile(filePath, buffer);
+      // Return a relative URL path that the API can resolve
+      return `/uploads/${fileName}`;
+    } catch (error) {
+      this.logger.error(`File upload failed: ${originalName}`, error);
+      throw new Error('Failed to save file to storage');
+    }
+  }
+}
+
+
+===== FILE: src\common\uploads.controller.ts =====
 import {
   Controller,
   Post,
@@ -16972,76 +17243,127 @@ import {
   UseInterceptors,
   BadRequestException,
   NotFoundException,
+  UseGuards,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { PrismaService } from '../prisma/prisma.service';
-import * as express from 'express';
+import { StorageService } from './storage.service';
+import { JwtAuthGuard } from '../auth/guards';
+import { Attachment } from '@prisma/client';
+import type { Response } from 'express';
+import { join } from 'path';
+import { createReadStream, existsSync } from 'fs';
+import { stat } from 'fs/promises';
 
 interface MulterFile {
   originalname: string;
   mimetype: string;
   buffer: Buffer;
+  size: number;
 }
 
 @Controller('uploads')
 export class UploadsController {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly storageService: StorageService,
+  ) {}
 
   @Post()
-  @UseInterceptors(FileInterceptor('file'))
+  @UseGuards(JwtAuthGuard)
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: {
+        fileSize: 5 * 1024 * 1024,
+      },
+      fileFilter: (req, file, cb) => {
+        if (!file.mimetype.match(/\/(jpg|jpeg|png|pdf)$/)) {
+          return cb(new BadRequestException('Unsupported file type'), false);
+        }
+        cb(null, true);
+      },
+    }),
+  )
   async uploadFile(@UploadedFile() file: MulterFile) {
     if (!file) {
       throw new BadRequestException('No file uploaded');
     }
 
-    const attachment = await this.prisma.attachment.create({
+    const relativeUrl = await this.storageService.upload(
+      file.buffer,
+      file.originalname,
+    );
+
+    const attachment: Attachment = await this.prisma.attachment.create({
       data: {
         fileName: file.originalname,
         mimeType: file.mimetype,
-        content: file.buffer.toString('base64'),
+        url: relativeUrl,
       },
     });
 
-    // Return the URL to access this file
-    // In a real app, this would be the full public URL
     return {
       id: attachment.id,
-      url: `/uploads/${attachment.id}`,
+      url: attachment.url,
+      fileName: attachment.fileName,
     };
   }
 
   @Get(':id')
-  async getFile(@Param('id') id: string, @Res() res: express.Response) {
-    const attachment = await this.prisma.attachment.findUnique({
-      where: { id },
-    });
+  async getFile(@Param('id') id: string, @Res() res: Response) {
+    const attachment: Attachment | null =
+      await this.prisma.attachment.findUnique({
+        where: { id },
+      });
 
     if (!attachment) {
-      throw new NotFoundException('File not found');
+      throw new NotFoundException('File metadata not found');
     }
 
-    const buffer = Buffer.from(attachment.content, 'base64');
-    res.set({
-      'Content-Type': attachment.mimeType,
-      'Content-Length': buffer.length,
-      'Content-Disposition': `inline; filename="${attachment.fileName}"`,
-    });
-    res.send(buffer);
+    const urlParts = attachment.url.split('/');
+    const fileName = urlParts[urlParts.length - 1];
+    const filePath = join(process.cwd(), 'uploads', fileName);
+
+    if (!existsSync(filePath)) {
+      throw new NotFoundException('Physical file not found on disk');
+    }
+
+    try {
+      const fileStat = await stat(filePath);
+
+      res.set({
+        'Content-Type': attachment.mimeType,
+        'Content-Length': fileStat.size,
+        'Content-Disposition': `inline; filename="${attachment.fileName}"`,
+      });
+
+      const stream = createReadStream(filePath);
+      stream.pipe(res);
+    } catch {
+      throw new BadRequestException('Error streaming file');
+    }
   }
 }
 
 
 ===== FILE: src\main.ts =====
-
 import * as dotenv from 'dotenv';
 dotenv.config();
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import cookieParser from 'cookie-parser';
 import { json, urlencoded } from 'express';
+import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true,
+      forbidNonWhitelisted: true,
+    }),
+  );
   app.use(json({ limit: '15mb' }));
   app.use(urlencoded({ extended: true, limit: '15mb' }));
   app.use(cookieParser());
@@ -17066,7 +17388,6 @@ bootstrap().catch((err) => {
 
 
 ===== FILE: src\mediation\combine.cjs =====
-
 const fs = require('fs');
 const path = require('path');
 
@@ -17132,8 +17453,56 @@ processDirectory(rootDir);
 
 console.log(`Done: ${outputDir}`);
 
-===== FILE: src\mediation\mediation.controller.ts =====
+===== FILE: src\mediation\dto\feedback.dto.ts =====
+import {
+  IsArray,
+  IsInt,
+  IsOptional,
+  IsString,
+  Max,
+  Min,
+} from 'class-validator';
 
+export class FeedbackDto {
+  @IsString()
+  content: string;
+
+  @IsInt()
+  @Min(1)
+  @Max(5)
+  rating: number;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  categories?: string[];
+}
+
+
+===== FILE: src\mediation\dto\resolution.dto.ts =====
+import { IsBoolean, IsOptional, IsString } from 'class-validator';
+
+export class ResolutionDto {
+  @IsString()
+  proposedText: string;
+}
+
+export class FinalizeResolutionDto {
+  @IsBoolean()
+  approved: boolean;
+
+  @IsOptional()
+  @IsString()
+  comment?: string;
+}
+
+export class FinalizeBundleDto {
+  @IsString()
+  resolutionText: string;
+}
+
+
+===== FILE: src\mediation\mediation.controller.ts =====
 import {
   Controller,
   Post,
@@ -17150,6 +17519,12 @@ import { RolesGuard, RequirePermission, JwtAuthGuard } from '../auth/guards';
 import { Action } from '../auth/permissions';
 import { FeedbackBundleState } from '@prisma/client';
 import type { AuthenticatedRequest } from '../auth/guards';
+import { FeedbackDto } from './dto/feedback.dto';
+import {
+  ResolutionDto,
+  FinalizeResolutionDto,
+  FinalizeBundleDto,
+} from './dto/resolution.dto';
 
 @Controller('mediation')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -17164,7 +17539,7 @@ export class MediationController {
   async submitFeedback(
     @Param('id') transactionId: string,
     @Req() req: AuthenticatedRequest,
-    @Body() body: { content: string; rating: number; categories?: string[] },
+    @Body() body: FeedbackDto,
   ) {
     const userId = req.user.id;
     return this.mediationService.submitFeedback(
@@ -17181,7 +17556,7 @@ export class MediationController {
   async proposeResolution(
     @Param('id') bundleId: string,
     @Req() req: AuthenticatedRequest,
-    @Body() body: { proposedText: string },
+    @Body() body: ResolutionDto,
   ) {
     const userId = req.user.id;
     return this.mediationService.proposeResolution(
@@ -17196,7 +17571,7 @@ export class MediationController {
   async finalizeResolution(
     @Param('id') proposalId: string,
     @Req() req: AuthenticatedRequest,
-    @Body() body: { approved: boolean; comment?: string },
+    @Body() body: FinalizeResolutionDto,
   ) {
     const userId = req.user.id;
     return this.mediationService.finalizeResolution(
@@ -17212,7 +17587,7 @@ export class MediationController {
   async finalizeBundle(
     @Param('id') bundleId: string,
     @Req() req: AuthenticatedRequest,
-    @Body() body: { resolutionText: string },
+    @Body() body: FinalizeBundleDto,
   ) {
     const userId = req.user.id;
     return this.mediationService.finalizeBundleDirectly(
@@ -17231,7 +17606,6 @@ export class MediationController {
 
 
 ===== FILE: src\mediation\mediation.module.ts =====
-
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { MediationService } from './mediation.service';
@@ -17254,7 +17628,6 @@ export class MediationModule {}
 
 
 ===== FILE: src\mediation\mediation.processor.ts =====
-
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service';
@@ -17335,7 +17708,6 @@ export class MediationProcessor extends WorkerHost {
 
 
 ===== FILE: src\mediation\mediation.service.ts =====
-
 import {
   Injectable,
   BadRequestException,
@@ -17722,7 +18094,6 @@ export class MediationService {
 
 
 ===== FILE: src\notifications\notifications.controller.ts =====
-
 import { Controller, Get, Patch, Param, Req, UseGuards } from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
 import { JwtAuthGuard } from '../auth/guards';
@@ -17751,7 +18122,6 @@ export class NotificationsController {
 
 
 ===== FILE: src\notifications\notifications.gateway.ts =====
-
 import {
   WebSocketGateway,
   WebSocketServer,
@@ -17882,7 +18252,6 @@ export class NotificationsGateway
 
 
 ===== FILE: src\notifications\notifications.module.ts =====
-
 import { Module, Global } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { NotificationsService } from './notifications.service';
@@ -17920,7 +18289,6 @@ export class NotificationsModule {}
 
 
 ===== FILE: src\notifications\notifications.service.ts =====
-
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Notification } from '@prisma/client';
@@ -17980,7 +18348,6 @@ export class NotificationsService {
 
 
 ===== FILE: src\prisma\prisma.module.ts =====
-
 import { Global, Module } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
 
@@ -17993,7 +18360,6 @@ export class PrismaModule {}
 
 
 ===== FILE: src\prisma\prisma.service.ts =====
-
 import 'dotenv/config';
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
@@ -18007,7 +18373,6 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
 
 
 ===== FILE: src\requests\assignment.processor.ts =====
-
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service';
@@ -18300,8 +18665,61 @@ export class AssignmentProcessor extends WorkerHost {
 }
 
 
-===== FILE: src\requests\requests.controller.ts =====
+===== FILE: src\requests\dto\create-request.dto.ts =====
+import {
+  IsEnum,
+  IsNumber,
+  IsObject,
+  IsOptional,
+  IsPositive,
+  IsString,
+  ValidateNested,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 
+export class RequestDetailsDto {
+  @IsString()
+  description: string;
+
+  @IsOptional()
+  @IsNumber()
+  @IsPositive()
+  budget?: number;
+
+  [key: string]: any;
+}
+
+export class LocationZoneDto {
+  @IsString()
+  kifleKetema: string;
+
+  @IsString()
+  woreda: string;
+}
+
+export class CreateRequestDto {
+  @IsString()
+  category: string;
+
+  @IsOptional()
+  @IsEnum(['real_estate', 'furniture'])
+  type?: 'real_estate' | 'furniture';
+
+  @ValidateNested()
+  @Type(() => RequestDetailsDto)
+  details: RequestDetailsDto;
+
+  @IsOptional()
+  @IsObject()
+  metadata?: Record<string, any>;
+
+  @ValidateNested()
+  @Type(() => LocationZoneDto)
+  locationZone: LocationZoneDto;
+}
+
+
+===== FILE: src\requests\requests.controller.ts =====
 import {
   Controller,
   Post,
@@ -18313,7 +18731,8 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { RequestsService, type CreateRequestDto } from './requests.service';
+import { RequestsService } from './requests.service';
+import { CreateRequestDto } from './dto/create-request.dto';
 import { Action } from '../auth/permissions';
 import { JwtAuthGuard, RolesGuard, RequirePermission } from '../auth/guards';
 import type { RequestWithUser } from '../common/interfaces/request-with-user.interface';
@@ -18333,8 +18752,12 @@ export class RequestsController {
 
   @Get('queue')
   @RequirePermission(Action.VIEW_QUEUE)
-  getQueue(@Query('zoneId') zoneId: string) {
-    return this.requestsService.getOperatorQueue({ zoneId });
+  getQueue(
+    @Query('zoneId') zoneId?: string,
+    @Query('limit') limit?: number,
+    @Query('offset') offset?: number,
+  ) {
+    return this.requestsService.getOperatorQueue({ zoneId, limit, offset });
   }
 
   // Customer views their own request history
@@ -18355,8 +18778,11 @@ export class RequestsController {
   // Fetch all historical disputes (Resolved/Escalated) for Admin Audit
   @Get('admin/dispute-history')
   @RequirePermission(Action.VIEW_SYSTEM_STATISTICS) // This action fits global administration permissions
-  getDisputeHistory() {
-    return this.requestsService.getDisputeHistory();
+  getDisputeHistory(
+    @Query('limit') limit?: number,
+    @Query('offset') offset?: number,
+  ) {
+    return this.requestsService.getDisputeHistory({ limit, offset });
   }
 
   // Operator fetching their pushed request details
@@ -18443,7 +18869,6 @@ export class RequestsController {
 
 
 ===== FILE: src\requests\requests.module.ts =====
-
 import { Module } from '@nestjs/common';
 import { RequestsService } from './requests.service';
 import { RequestsController } from './requests.controller';
@@ -18470,7 +18895,6 @@ export class RequestsModule {}
 
 
 ===== FILE: src\requests\requests.service.ts =====
-
 import {
   Injectable,
   NotFoundException,
@@ -18487,21 +18911,7 @@ import { AglpService } from '../aglp/aglp.service';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 
-// Updated data instructions to expect a single budget number
-export interface CreateRequestDto {
-  category: string;
-  type?: 'real_estate' | 'furniture';
-  details: {
-    description: string;
-    budget?: number; // Changed from budgetMin/Max to single budget
-    [key: string]: any;
-  };
-  metadata?: Record<string, any>;
-  locationZone: {
-    kifleKetema: string;
-    woreda: string;
-  };
-}
+import { CreateRequestDto } from './dto/create-request.dto';
 
 interface OperatorIdResult {
   id: string;
@@ -18619,7 +19029,9 @@ export class RequestsService implements OnModuleInit {
       request.status !== RequestStatus.pending ||
       request.assignedOperatorId
     ) {
-      this.logger.debug(`[ASSIGN] Skipping ${requestId}: status=${request?.status}, alreadyAssigned=${!!request?.assignedOperatorId}`);
+      this.logger.debug(
+        `[ASSIGN] Skipping ${requestId}: status=${request?.status}, alreadyAssigned=${!!request?.assignedOperatorId}`,
+      );
       return;
     }
 
@@ -18639,7 +19051,9 @@ export class RequestsService implements OnModuleInit {
       FOR UPDATE SKIP LOCKED
     `;
 
-    this.logger.log(`[ASSIGN] request=${requestId} → found ${operators.length} eligible operator(s)`);
+    this.logger.log(
+      `[ASSIGN] request=${requestId} → found ${operators.length} eligible operator(s)`,
+    );
 
     const operatorId = operators[0]?.id;
     if (!operatorId) return;
@@ -18673,7 +19087,9 @@ export class RequestsService implements OnModuleInit {
       );
     });
 
-    this.logger.log(`[ASSIGN] request=${requestId} → pushed to operator=${operatorId}`);
+    this.logger.log(
+      `[ASSIGN] request=${requestId} → pushed to operator=${operatorId}`,
+    );
     this.eventEmitter.emit('request.pushed', { requestId, operatorId });
   }
 
@@ -18703,7 +19119,11 @@ export class RequestsService implements OnModuleInit {
   }
 
   // Logic for viewing the list of unassigned requests
-  async getOperatorQueue(filters?: { zoneId?: string }) {
+  async getOperatorQueue(filters?: {
+    zoneId?: string;
+    limit?: number;
+    offset?: number;
+  }) {
     const whereClause: Prisma.RequestWhereInput = {
       status: RequestStatus.pending,
       assignedOperatorId: null,
@@ -18713,8 +19133,13 @@ export class RequestsService implements OnModuleInit {
       whereClause.zoneId = filters.zoneId;
     }
 
+    const take = filters?.limit ? Number(filters.limit) : 50;
+    const skip = filters?.offset ? Number(filters.offset) : 0;
+
     return await this.prisma.request.findMany({
       where: whereClause,
+      take,
+      skip,
       include: {
         customer: {
           select: { id: true, fullName: true, createdAt: true },
@@ -19112,7 +19537,10 @@ export class RequestsService implements OnModuleInit {
   }
 
   // Logic for viewing a history of all disagreements
-  async getDisputeHistory() {
+  async getDisputeHistory(pagination?: { limit?: number; offset?: number }) {
+    const take = pagination?.limit ? Number(pagination.limit) : 50;
+    const skip = pagination?.offset ? Number(pagination.offset) : 0;
+
     return this.prisma.request.findMany({
       where: {
         OR: [
@@ -19126,6 +19554,8 @@ export class RequestsService implements OnModuleInit {
           },
         ],
       },
+      take,
+      skip,
       include: {
         customer: {
           select: { id: true, fullName: true, phone: true },
@@ -19191,8 +19621,17 @@ export class RequestsService implements OnModuleInit {
 }
 
 
-===== FILE: src\transactions\transactions.controller.ts =====
+===== FILE: src\transactions\dto\transfer.dto.ts =====
+import { IsString, IsUUID } from 'class-validator';
 
+export class TransferDto {
+  @IsString()
+  @IsUUID('4')
+  toAgentId: string;
+}
+
+
+===== FILE: src\transactions\transactions.controller.ts =====
 import {
   Controller,
   Patch,
@@ -19208,6 +19647,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/guards/roles.decorator';
 import { UserRole } from '@prisma/client';
+import { TransferDto } from './dto/transfer.dto';
 
 interface RequestWithUser {
   user: {
@@ -19245,15 +19685,15 @@ export class TransactionsController {
   // Agent transfers the assignment to a referral
   @Patch(':id/transfer')
   @Roles(UserRole.agent)
-  transfer(
+  async transfer(
     @Param('id') id: string,
-    @Body('toAgentId') toAgentId: string,
+    @Body() body: TransferDto,
     @Req() req: RequestWithUser,
   ) {
     return this.transactionsService.transferAssignment(
       id,
       req.user.id,
-      toAgentId,
+      body.toAgentId,
     );
   }
 
@@ -19267,14 +19707,21 @@ export class TransactionsController {
   // Operator fetches all active matches/transactions
   @Get()
   @Roles(UserRole.operator, UserRole.admin, UserRole.super_admin)
-  getAll(@Query('status') status?: string) {
-    return this.transactionsService.getOperatorTransactions({ status });
+  getAll(
+    @Query('status') status?: string,
+    @Query('limit') limit?: number,
+    @Query('offset') offset?: number,
+  ) {
+    return this.transactionsService.getOperatorTransactions({
+      status,
+      limit,
+      offset,
+    });
   }
 }
 
 
 ===== FILE: src\transactions\transactions.module.ts =====
-
 import { Module } from '@nestjs/common';
 import { TransactionsService } from './transactions.service';
 import { TransactionsController } from './transactions.controller';
@@ -19296,18 +19743,18 @@ export class TransactionsModule {}
 
 
 ===== FILE: src\transactions\transactions.service.ts =====
-
 import {
   Injectable,
   NotFoundException,
   ForbiddenException,
   BadRequestException,
+  ConflictException,
 } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../prisma/prisma.service';
-import { MatchStatus, RequestStatus } from '@prisma/client';
+import { MatchStatus, RequestStatus, Request, Prisma } from '@prisma/client';
 import { AglpService } from '../aglp/aglp.service';
 import { ConfigService } from '../common/config.service';
 
@@ -19320,6 +19767,16 @@ export class TransactionsService {
     private readonly configService: ConfigService,
     @InjectQueue('assignment-timeout') private readonly timeoutQueue: Queue,
   ) {}
+
+  private async lockRequest(
+    tx: Prisma.TransactionClient,
+    requestId: string,
+  ): Promise<Request | undefined> {
+    const result = await tx.$queryRaw<Request[]>`
+      SELECT * FROM "requests" WHERE id = ${requestId} FOR UPDATE
+    `;
+    return result[0];
+  }
 
   // ── Agent accepts the assignment ─────────────────────────────────────────
   async acceptAssignment(matchId: string, agentId: string) {
@@ -19340,6 +19797,17 @@ export class TransactionsService {
 
     const updated = await this.prisma.$transaction(
       async (tx) => {
+        // 1. Lock the parent request to prevent concurrent acceptances
+        const lockedRequest = await this.lockRequest(tx, match.requestId);
+        if (!lockedRequest) throw new NotFoundException('Request not found');
+
+        // 2. Verify the request is still pending
+        if (lockedRequest.status !== RequestStatus.pending) {
+          throw new ConflictException(
+            `This lead has already been claimed by another agent (Status: ${lockedRequest.status})`,
+          );
+        }
+
         const matchResult = await tx.match.update({
           where: { id: matchId },
           data: {
@@ -19634,9 +20102,18 @@ export class TransactionsService {
   }
 
   // ── Operator fetches managed transactions ──────────────────────────────
-  async getOperatorTransactions(query?: { status?: string }) {
+  async getOperatorTransactions(query?: {
+    status?: string;
+    limit?: number;
+    offset?: number;
+  }) {
+    const take = query?.limit ? Number(query.limit) : 50;
+    const skip = query?.offset ? Number(query.offset) : 0;
+
     return this.prisma.match.findMany({
       where: query?.status ? { status: query.status as MatchStatus } : {},
+      take,
+      skip,
       include: {
         agent: {
           select: { id: true, fullName: true, phone: true },
@@ -19657,7 +20134,6 @@ export class TransactionsService {
 
 
 ===== FILE: src\upgrades\upgrades.controller.ts =====
-
 import {
   Controller,
   Get,
@@ -19758,7 +20234,6 @@ export class UpgradesController {
 
 
 ===== FILE: src\upgrades\upgrades.module.ts =====
-
 import { Module } from '@nestjs/common';
 import { UpgradesService } from './upgrades.service';
 import { UpgradesController } from './upgrades.controller';
@@ -19776,7 +20251,6 @@ export class UpgradesModule {}
 
 
 ===== FILE: src\upgrades\upgrades.service.ts =====
-
 import {
   Injectable,
   NotFoundException,
@@ -20030,8 +20504,38 @@ export class UpgradesService {
 }
 
 
-===== FILE: src\users\users.controller.ts =====
+===== FILE: src\users\dto\update-business-profile.dto.ts =====
+import { IsString } from 'class-validator';
 
+export class UpdateBusinessProfileDto {
+  @IsString()
+  tinNumber: string;
+
+  @IsString()
+  tradeLicenseNumber: string;
+}
+
+
+===== FILE: src\users\dto\withdrawal.dto.ts =====
+import { IsNumber, IsPositive, IsString } from 'class-validator';
+
+export class WithdrawalDto {
+  @IsNumber()
+  @IsPositive()
+  amount: number;
+
+  @IsString()
+  bankName: string;
+
+  @IsString()
+  bankAccountNumber: string;
+
+  @IsString()
+  bankAccountHolder: string;
+}
+
+
+===== FILE: src\users\users.controller.ts =====
 import {
   Controller,
   Get,
@@ -20051,6 +20555,8 @@ import { RolesGuard, RequirePermission, JwtAuthGuard } from '../auth/guards';
 import type { AuthenticatedRequest } from '../auth/guards';
 import { Action, PermissionMatrix } from '../auth/permissions';
 import { UserRole } from '@prisma/client';
+import { WithdrawalDto } from './dto/withdrawal.dto';
+import { UpdateBusinessProfileDto } from './dto/update-business-profile.dto';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -20089,13 +20595,7 @@ export class UsersController {
   @Post('me/withdraw')
   async requestWithdrawal(
     @Req() req: AuthenticatedRequest,
-    @Body()
-    body: {
-      amount: number;
-      bankName: string;
-      bankAccountNumber: string;
-      bankAccountHolder: string;
-    },
+    @Body() body: WithdrawalDto,
   ) {
     return this.usersService.requestWithdrawal(req.user.id, body.amount, {
       bankName: body.bankName,
@@ -20160,7 +20660,7 @@ export class UsersController {
   @Patch('me/business')
   async updateBusinessProfile(
     @Req() req: AuthenticatedRequest,
-    @Body() body: { tinNumber: string; tradeLicenseNumber: string },
+    @Body() body: UpdateBusinessProfileDto,
   ) {
     return this.usersService.updateBusinessProfile(req.user.id, body);
   }
@@ -20215,7 +20715,6 @@ export class UsersController {
 
 
 ===== FILE: src\users\users.module.ts =====
-
 import { Module } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
@@ -20231,7 +20730,6 @@ export class UsersModule {}
 
 
 ===== FILE: src\users\users.service.ts =====
-
 import {
   Injectable,
   NotFoundException,
@@ -21041,9 +21539,17 @@ export class UsersService {
       select: { fullName: true, phone: true },
     });
 
-    const result = await this.prisma.$transaction(async (tx) => {
-      return this.aglpService.withdrawAglp(tx, userId, amountAglp, bankDetails);
-    });
+    const result = await this.prisma.$transaction(
+      async (tx) => {
+        return this.aglpService.withdrawAglp(
+          tx,
+          userId,
+          amountAglp,
+          bankDetails,
+        );
+      },
+      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+    );
 
     // Notify only the financial operators in real-time
     this.notificationsGateway.sendToRole('financial_operator', 'notification', {
@@ -21161,7 +21667,6 @@ export class UsersService {
 
 
 ===== FILE: tmp\check_prisma.ts =====
-
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 console.log(
@@ -21172,7 +21677,6 @@ process.exit(0);
 
 
 ===== FILE: tmp\migrate_statuses.ts =====
-
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -21236,7 +21740,6 @@ main()
 
 
 ===== FILE: tsconfig.build.json =====
-
 {
   "extends": "./tsconfig.json",
   "exclude": [
@@ -21255,7 +21758,6 @@ main()
 
 
 ===== FILE: tsconfig.json =====
-
 {
   "compilerOptions": {
     "module": "nodenext",
@@ -21289,7 +21791,6 @@ main()
 
 
 ===== FILE: Verification & Tests\verify_agent_flow.ts =====
-
 import { PrismaClient, Prisma, RequestStatus } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -21444,7 +21945,6 @@ main()
 
 
 ===== FILE: Verification & Tests\verify_aglp.ts =====
-
 import {
   PrismaClient,
   AglpTransactionType,
@@ -21568,7 +22068,6 @@ verifyAglp();
 
 
 ===== FILE: Verification & Tests\verify_invite_gate.ts =====
-
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -21691,7 +22190,6 @@ verify()
 
 
 ===== FILE: Verification & Tests\verify_v3_escrow.ts =====
-
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();

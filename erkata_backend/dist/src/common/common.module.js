@@ -9,6 +9,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CommonModule = void 0;
 const common_1 = require("@nestjs/common");
 const config_service_1 = require("./config.service");
+const storage_service_1 = require("./storage.service");
 const prisma_module_1 = require("../prisma/prisma.module");
 const request_events_1 = require("./events/request.events");
 const uploads_controller_1 = require("./uploads.controller");
@@ -20,8 +21,8 @@ exports.CommonModule = CommonModule = __decorate([
     (0, common_1.Module)({
         imports: [prisma_module_1.PrismaModule],
         controllers: [uploads_controller_1.UploadsController],
-        providers: [config_service_1.ConfigService, request_events_1.RequestEventListener],
-        exports: [config_service_1.ConfigService],
+        providers: [config_service_1.ConfigService, storage_service_1.StorageService, request_events_1.RequestEventListener],
+        exports: [config_service_1.ConfigService, storage_service_1.StorageService],
     })
 ], CommonModule);
 //# sourceMappingURL=common.module.js.map

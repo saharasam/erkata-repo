@@ -1,4 +1,5 @@
 import { TransactionsService } from './transactions.service';
+import { TransferDto } from './dto/transfer.dto';
 interface RequestWithUser {
     user: {
         id: string;
@@ -40,21 +41,21 @@ export declare class TransactionsController {
     }[]>;
     accept(id: string, req: RequestWithUser): Promise<{
         id: string;
-        requestId: string;
         agentId: string;
-        operatorId: string | null;
         status: string;
+        requestId: string;
+        operatorId: string | null;
         assignedAt: Date;
     }>;
     decline(id: string, req: RequestWithUser): Promise<{
         message: string;
     }>;
-    transfer(id: string, toAgentId: string, req: RequestWithUser): Promise<{
+    transfer(id: string, body: TransferDto, req: RequestWithUser): Promise<{
         id: string;
-        requestId: string;
         agentId: string;
-        operatorId: string | null;
         status: string;
+        requestId: string;
+        operatorId: string | null;
         assignedAt: Date;
     }>;
     complete(id: string, req: RequestWithUser): Promise<{
@@ -62,6 +63,7 @@ export declare class TransactionsController {
             referredBy: {
                 id: string;
                 email: string;
+                referralCode: string | null;
                 passwordHash: string | null;
                 fullName: string;
                 phone: string;
@@ -73,7 +75,6 @@ export declare class TransactionsController {
                 createdAt: Date;
                 aglpBalance: import("@prisma/client/runtime/library").Decimal;
                 aglpWithdrawn: import("@prisma/client/runtime/library").Decimal;
-                referralCode: string | null;
                 isOnline: boolean;
                 lastAssignmentAt: Date | null;
                 missedAssignments: number;
@@ -86,6 +87,7 @@ export declare class TransactionsController {
         } & {
             id: string;
             email: string;
+            referralCode: string | null;
             passwordHash: string | null;
             fullName: string;
             phone: string;
@@ -97,7 +99,6 @@ export declare class TransactionsController {
             createdAt: Date;
             aglpBalance: import("@prisma/client/runtime/library").Decimal;
             aglpWithdrawn: import("@prisma/client/runtime/library").Decimal;
-            referralCode: string | null;
             isOnline: boolean;
             lastAssignmentAt: Date | null;
             missedAssignments: number;
@@ -111,28 +112,28 @@ export declare class TransactionsController {
             id: string;
             zoneId: string;
             createdAt: Date;
-            status: import(".prisma/client").$Enums.RequestStatus;
-            customerId: string;
-            category: string;
-            type: string;
-            description: string;
             metadata: import("@prisma/client/runtime/library").JsonValue;
-            budget: import("@prisma/client/runtime/library").Decimal | null;
             woreda: string;
-            assignedOperatorId: string | null;
+            type: string;
+            status: import(".prisma/client").$Enums.RequestStatus;
+            description: string;
+            category: string;
+            budget: import("@prisma/client/runtime/library").Decimal | null;
             assignmentPushedAt: Date | null;
             completedAt: Date | null;
             isEscalated: boolean;
+            customerId: string;
+            assignedOperatorId: string | null;
         };
     } & {
         id: string;
-        requestId: string;
         agentId: string;
-        operatorId: string | null;
         status: string;
+        requestId: string;
+        operatorId: string | null;
         assignedAt: Date;
     }>;
-    getAll(status?: string): Promise<({
+    getAll(status?: string, limit?: number, offset?: number): Promise<({
         agent: {
             id: string;
             fullName: string;
@@ -143,8 +144,8 @@ export declare class TransactionsController {
                 id: string;
                 createdAt: Date;
                 name: string;
-                type: string;
                 metadata: import("@prisma/client/runtime/library").JsonValue | null;
+                type: string;
             };
             customer: {
                 id: string;
@@ -155,25 +156,25 @@ export declare class TransactionsController {
             id: string;
             zoneId: string;
             createdAt: Date;
-            status: import(".prisma/client").$Enums.RequestStatus;
-            customerId: string;
-            category: string;
-            type: string;
-            description: string;
             metadata: import("@prisma/client/runtime/library").JsonValue;
-            budget: import("@prisma/client/runtime/library").Decimal | null;
             woreda: string;
-            assignedOperatorId: string | null;
+            type: string;
+            status: import(".prisma/client").$Enums.RequestStatus;
+            description: string;
+            category: string;
+            budget: import("@prisma/client/runtime/library").Decimal | null;
             assignmentPushedAt: Date | null;
             completedAt: Date | null;
             isEscalated: boolean;
+            customerId: string;
+            assignedOperatorId: string | null;
         };
     } & {
         id: string;
-        requestId: string;
         agentId: string;
-        operatorId: string | null;
         status: string;
+        requestId: string;
+        operatorId: string | null;
         assignedAt: Date;
     })[]>;
 }

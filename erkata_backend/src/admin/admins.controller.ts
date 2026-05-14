@@ -24,6 +24,7 @@ import { UsersService } from '../users/users.service';
 import { UserRole, Prisma } from '@prisma/client';
 import type { AuthenticatedRequest } from '../auth/guards';
 import { InviteService } from '../auth/invite/invite.service';
+import { InviteDto } from './dto/invite.dto';
 
 @Controller('admin/users')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -39,6 +40,8 @@ export class AdminsController {
   async getPersonnel(
     @Req() req: AuthenticatedRequest,
     @Query('role') role?: string,
+    @Query('limit') limit?: number,
+    @Query('offset') offset?: number,
   ) {
     const callerRole = req.user.role;
     const normalizedRole = role?.toLowerCase() as UserRole | undefined;
@@ -73,8 +76,13 @@ export class AdminsController {
       }
     }
 
+    const take = limit ? Number(limit) : 50;
+    const skip = offset ? Number(offset) : 0;
+
     const profiles = await this.prisma.profile.findMany({
       where: queryWhere,
+      take,
+      skip,
       select: {
         id: true,
         fullName: true,
@@ -107,13 +115,7 @@ export class AdminsController {
   @RequirePermission(Action.MANAGE_ADMINS, Action.MANAGE_OPERATORS)
   async createInvite(
     @Req() req: AuthenticatedRequest,
-    @Body()
-    body: {
-      email: string;
-      fullName: string;
-      phone: string;
-      role: UserRole;
-    },
+    @Body() body: InviteDto,
   ) {
     if (req.user.role === UserRole.admin && body.role === UserRole.agent) {
       throw new ForbiddenException(

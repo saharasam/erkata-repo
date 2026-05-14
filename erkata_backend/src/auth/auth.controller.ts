@@ -15,16 +15,7 @@ import type { AuthenticatedRequest } from './guards/authenticated-request.interf
 import { RedisPresenceService } from '../common/redis/redis-presence.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { UserRole, RequestStatus } from '@prisma/client';
-
-export interface RegisterDto {
-  email: string;
-  fullName: string;
-  phone: string;
-  password: string;
-  role?: string;
-  tier?: string;
-  inviteToken?: string;
-}
+import { RegisterDto } from './dto/register.dto';
 
 @Controller('auth')
 export class AuthController {

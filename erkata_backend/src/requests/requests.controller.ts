@@ -9,7 +9,8 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { RequestsService, type CreateRequestDto } from './requests.service';
+import { RequestsService } from './requests.service';
+import { CreateRequestDto } from './dto/create-request.dto';
 import { Action } from '../auth/permissions';
 import { JwtAuthGuard, RolesGuard, RequirePermission } from '../auth/guards';
 import type { RequestWithUser } from '../common/interfaces/request-with-user.interface';
@@ -29,8 +30,12 @@ export class RequestsController {
 
   @Get('queue')
   @RequirePermission(Action.VIEW_QUEUE)
-  getQueue(@Query('zoneId') zoneId: string) {
-    return this.requestsService.getOperatorQueue({ zoneId });
+  getQueue(
+    @Query('zoneId') zoneId?: string,
+    @Query('limit') limit?: number,
+    @Query('offset') offset?: number,
+  ) {
+    return this.requestsService.getOperatorQueue({ zoneId, limit, offset });
   }
 
   // Customer views their own request history
@@ -51,8 +56,11 @@ export class RequestsController {
   // Fetch all historical disputes (Resolved/Escalated) for Admin Audit
   @Get('admin/dispute-history')
   @RequirePermission(Action.VIEW_SYSTEM_STATISTICS) // This action fits global administration permissions
-  getDisputeHistory() {
-    return this.requestsService.getDisputeHistory();
+  getDisputeHistory(
+    @Query('limit') limit?: number,
+    @Query('offset') offset?: number,
+  ) {
+    return this.requestsService.getDisputeHistory({ limit, offset });
   }
 
   // Operator fetching their pushed request details

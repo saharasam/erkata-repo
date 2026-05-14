@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { BullModule } from '@nestjs/bullmq';
 import { AdminConfigController } from './config.controller';
 import { AdminPackagesController } from './packages.controller';
 import { AuditLogsController } from './audit-logs.controller';
@@ -13,9 +14,17 @@ import { AglpModule } from '../aglp/aglp.module';
 import { InviteModule } from '../auth/invite/invite.module';
 import { UsersModule } from '../users/users.module';
 import { AlertsService } from './alerts.service';
+import { BroadcastProcessor } from './broadcast.processor';
 
 @Module({
-  imports: [CommonModule, PrismaModule, AglpModule, InviteModule, UsersModule],
+  imports: [
+    CommonModule,
+    PrismaModule,
+    AglpModule,
+    InviteModule,
+    UsersModule,
+    BullModule.registerQueue({ name: 'broadcast' }),
+  ],
   controllers: [
     AdminConfigController,
     AdminPackagesController,
@@ -26,7 +35,7 @@ import { AlertsService } from './alerts.service';
     PayoutsController,
     AlertsController,
   ],
-  providers: [AlertsService],
+  providers: [AlertsService, BroadcastProcessor],
   exports: [AlertsService],
 })
 export class AdminModule {}

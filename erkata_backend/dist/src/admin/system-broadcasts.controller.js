@@ -13,20 +13,18 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const common_1 = require("@nestjs/common");
+const bullmq_1 = require("@nestjs/bullmq");
+const bullmq_2 = require("bullmq");
 const prisma_service_1 = require("../prisma/prisma.service");
 const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const guards_1 = require("../auth/guards");
 const permissions_1 = require("../auth/permissions");
-const notifications_gateway_1 = require("../notifications/notifications.gateway");
-const notifications_service_1 = require("../notifications/notifications.service");
 let SystemBroadcastsController = class SystemBroadcastsController {
     prisma;
-    notificationsGateway;
-    notificationsService;
-    constructor(prisma, notificationsGateway, notificationsService) {
+    broadcastQueue;
+    constructor(prisma, broadcastQueue) {
         this.prisma = prisma;
-        this.notificationsGateway = notificationsGateway;
-        this.notificationsService = notificationsService;
+        this.broadcastQueue = broadcastQueue;
     }
     async getBroadcasts(req) {
         const user = req.user;
@@ -59,48 +57,14 @@ let SystemBroadcastsController = class SystemBroadcastsController {
                 target: data.target,
             },
         });
-        const userWhere = {};
-        if (data.target === 'AGENT')
-            userWhere.role = 'agent';
-        else if (data.target === 'OPERATOR')
-            userWhere.role = 'operator';
-        else if (data.target === 'ADMIN')
-            userWhere.role = 'admin';
-        else if (data.target === 'FINANCE_OP')
-            userWhere.role = 'financial_operator';
-        const users = await this.prisma.profile.findMany({
-            where: userWhere,
-            select: { id: true, role: true },
+        await this.broadcastQueue.add('send-broadcast', {
+            broadcastId: broadcast.id,
+            title: data.title,
+            content: data.content,
+            target: data.target,
         });
-        await this.prisma.notification.createMany({
-            data: users.map((u) => ({
-                userId: u.id,
-                title: `System Broadcast: ${data.title}`,
-                message: data.content || 'New system announcement published.',
-                type: 'SYSTEM_BROADCAST',
-                link: '/dashboard/notices',
-            })),
-            skipDuplicates: true,
-        });
-        if (data.target === 'EVERYONE') {
-            this.notificationsGateway.server.emit('notification', {
-                type: 'system_broadcast',
-                title: data.title,
-                message: data.content,
-            });
-        }
-        else {
-            let targetRole = data.target.toLowerCase();
-            if (data.target === 'FINANCE_OP')
-                targetRole = 'financial_operator';
-            this.notificationsGateway.sendToRole(targetRole, 'notification', {
-                type: 'system_broadcast',
-                title: data.title,
-                message: data.content,
-            });
-        }
         return {
-            message: 'Broadcast dispatched successfully',
+            message: 'Broadcast scheduled for distribution',
             broadcast,
         };
     }
@@ -138,9 +102,9 @@ __decorate([
 SystemBroadcastsController = __decorate([
     (0, common_1.Controller)('admin/broadcasts'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, guards_1.RolesGuard),
+    __param(1, (0, bullmq_1.InjectQueue)('broadcast')),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        notifications_gateway_1.NotificationsGateway,
-        notifications_service_1.NotificationsService])
+        bullmq_2.Queue])
 ], SystemBroadcastsController);
 exports.default = SystemBroadcastsController;
 //# sourceMappingURL=system-broadcasts.controller.js.map

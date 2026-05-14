@@ -19,6 +19,7 @@ const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
 const roles_guard_1 = require("../auth/guards/roles.guard");
 const roles_decorator_1 = require("../auth/guards/roles.decorator");
 const client_1 = require("@prisma/client");
+const transfer_dto_1 = require("./dto/transfer.dto");
 let TransactionsController = class TransactionsController {
     transactionsService;
     constructor(transactionsService) {
@@ -33,14 +34,18 @@ let TransactionsController = class TransactionsController {
     decline(id, req) {
         return this.transactionsService.declineAssignment(id, req.user.id);
     }
-    transfer(id, toAgentId, req) {
-        return this.transactionsService.transferAssignment(id, req.user.id, toAgentId);
+    async transfer(id, body, req) {
+        return this.transactionsService.transferAssignment(id, req.user.id, body.toAgentId);
     }
     complete(id, req) {
         return this.transactionsService.markComplete(id, req.user.id);
     }
-    getAll(status) {
-        return this.transactionsService.getOperatorTransactions({ status });
+    getAll(status, limit, offset) {
+        return this.transactionsService.getOperatorTransactions({
+            status,
+            limit,
+            offset,
+        });
     }
 };
 exports.TransactionsController = TransactionsController;
@@ -74,11 +79,11 @@ __decorate([
     (0, common_1.Patch)(':id/transfer'),
     (0, roles_decorator_1.Roles)(client_1.UserRole.agent),
     __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Body)('toAgentId')),
+    __param(1, (0, common_1.Body)()),
     __param(2, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, Object]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:paramtypes", [String, transfer_dto_1.TransferDto, Object]),
+    __metadata("design:returntype", Promise)
 ], TransactionsController.prototype, "transfer", null);
 __decorate([
     (0, common_1.Patch)(':id/complete'),
@@ -93,8 +98,10 @@ __decorate([
     (0, common_1.Get)(),
     (0, roles_decorator_1.Roles)(client_1.UserRole.operator, client_1.UserRole.admin, client_1.UserRole.super_admin),
     __param(0, (0, common_1.Query)('status')),
+    __param(1, (0, common_1.Query)('limit')),
+    __param(2, (0, common_1.Query)('offset')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, Number, Number]),
     __metadata("design:returntype", void 0)
 ], TransactionsController.prototype, "getAll", null);
 exports.TransactionsController = TransactionsController = __decorate([

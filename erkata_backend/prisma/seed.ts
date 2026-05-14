@@ -3,6 +3,9 @@ import { PrismaClient, UserRole } from '@prisma/client';
 async function main() {
   const prisma = new PrismaClient();
 
+  const superAdminEmail =
+    process.env.SUPER_ADMIN_EMAIL || 'superadmin@erkata.com';
+
   const testUsers = [
     {
       id: '11111111-1111-1111-1111-111111111111',
@@ -31,7 +34,7 @@ async function main() {
     },
     {
       id: '55555555-5555-5555-5555-555555555555',
-      email: 'superadmin@erkata.com',
+      email: superAdminEmail,
       fullName: 'Super Admin',
       role: 'super_admin' as UserRole,
     },

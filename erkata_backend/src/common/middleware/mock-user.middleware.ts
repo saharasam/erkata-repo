@@ -7,6 +7,7 @@ export class MockUserMiddleware implements NestMiddleware {
     // Simulate different roles by changing the 'x-mock-role' header
     const roleHeader = req.headers['x-mock-role'] as string;
 
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     (req as any)['user'] = {
       id: 'mock-user-id',
       role: roleHeader || 'CUSTOMER',

@@ -107,7 +107,8 @@ let AuthService = class AuthService {
             sameSite: 'lax',
             maxAge: 7 * 24 * 60 * 60 * 1000,
         });
-        void this.prisma.auditLog.create({
+        void this.prisma.auditLog
+            .create({
             data: {
                 actorId: profile.id,
                 action: 'USER_LOGIN',
@@ -118,7 +119,8 @@ let AuthService = class AuthService {
                     userAgent: req?.headers?.['user-agent'],
                 },
             },
-        }).catch(err => console.error('[AuthService] Failed to log login:', err));
+        })
+            .catch((err) => console.error('[AuthService] Failed to log login:', err));
         return {
             user: {
                 id: profile.id,
@@ -134,17 +136,31 @@ let AuthService = class AuthService {
     async refresh(refreshToken) {
         try {
             const payload = this.jwtService.verify(refreshToken);
+            const profile = await this.prisma.profile.findUnique({
+                where: { id: payload.sub },
+                select: {
+                    id: true,
+                    email: true,
+                    role: true,
+                    tier: true,
+                    isActive: true,
+                },
+            });
+            if (!profile || !profile.isActive) {
+                throw new common_1.UnauthorizedException('User is inactive or no longer exists');
+            }
             const newPayload = {
-                sub: payload.sub,
-                email: payload.email,
-                role: payload.role,
-                tier: payload.tier,
+                sub: profile.id,
+                email: profile.email,
+                role: profile.role,
+                tier: profile.tier,
             };
             const newAccessToken = this.jwtService.sign(newPayload);
-            await Promise.resolve();
             return { accessToken: newAccessToken };
         }
-        catch {
+        catch (err) {
+            if (err instanceof common_1.UnauthorizedException)
+                throw err;
             throw new common_1.UnauthorizedException('Invalid refresh token');
         }
     }
@@ -163,13 +179,7 @@ let AuthService = class AuthService {
         }
         let finalRole = (data.role || 'customer').toLowerCase();
         console.log(`[AuthService] Initial finalRole from data.role: ${data.role}, normalized to: ${finalRole}`);
-        const superAdminEmail = process.env.SUPER_ADMIN_EMAIL;
-        if (superAdminEmail &&
-            data.email.toLowerCase() === superAdminEmail.toLowerCase()) {
-            console.log(`[AuthService] Matching Super Admin email found. Granting super_admin role.`);
-            finalRole = 'super_admin';
-        }
-        else if (data.inviteToken) {
+        if (data.inviteToken) {
             const invite = await this.inviteService.validateInvite(data.inviteToken, data.email);
             console.log(`[AuthService] Valid invite token provided. Changing role from ${finalRole} to ${invite.role}`);
             finalRole = String(invite.role);
@@ -180,7 +190,7 @@ let AuthService = class AuthService {
         else {
             console.log(`[AuthService] Handling non-administrative role: ${finalRole}`);
             if (finalRole !== 'customer' && finalRole !== 'agent') {
-                console.warn(`[AuthService] Role ${finalRole} is not customer or agent. Defaulting to customer.`);
+                console.warn(`[AuthService] Role ${finalRole} is not allowed without an invite. Defaulting to customer.`);
                 finalRole = 'customer';
             }
         }
@@ -251,7 +261,8 @@ let AuthService = class AuthService {
                 maxAge: 7 * 24 * 60 * 60 * 1000,
             });
         }
-        void this.prisma.auditLog.create({
+        void this.prisma.auditLog
+            .create({
             data: {
                 actorId: newProfile.id,
                 action: 'USER_REGISTER',
@@ -262,7 +273,8 @@ let AuthService = class AuthService {
                     userAgent: req?.headers?.['user-agent'],
                 },
             },
-        }).catch(err => console.error('[AuthService] Failed to log registration:', err));
+        })
+            .catch((err) => console.error('[AuthService] Failed to log registration:', err));
         return {
             message: 'Registration successful.',
             user: {

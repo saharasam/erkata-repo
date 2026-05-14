@@ -11,6 +11,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AdminModule = void 0;
 const common_1 = require("@nestjs/common");
+const bullmq_1 = require("@nestjs/bullmq");
 const config_controller_1 = require("./config.controller");
 const packages_controller_1 = require("./packages.controller");
 const audit_logs_controller_1 = require("./audit-logs.controller");
@@ -25,12 +26,20 @@ const aglp_module_1 = require("../aglp/aglp.module");
 const invite_module_1 = require("../auth/invite/invite.module");
 const users_module_1 = require("../users/users.module");
 const alerts_service_1 = require("./alerts.service");
+const broadcast_processor_1 = require("./broadcast.processor");
 let AdminModule = class AdminModule {
 };
 exports.AdminModule = AdminModule;
 exports.AdminModule = AdminModule = __decorate([
     (0, common_1.Module)({
-        imports: [common_module_1.CommonModule, prisma_module_1.PrismaModule, aglp_module_1.AglpModule, invite_module_1.InviteModule, users_module_1.UsersModule],
+        imports: [
+            common_module_1.CommonModule,
+            prisma_module_1.PrismaModule,
+            aglp_module_1.AglpModule,
+            invite_module_1.InviteModule,
+            users_module_1.UsersModule,
+            bullmq_1.BullModule.registerQueue({ name: 'broadcast' }),
+        ],
         controllers: [
             config_controller_1.AdminConfigController,
             packages_controller_1.AdminPackagesController,
@@ -41,7 +50,7 @@ exports.AdminModule = AdminModule = __decorate([
             payouts_controller_1.PayoutsController,
             alerts_controller_1.AlertsController,
         ],
-        providers: [alerts_service_1.AlertsService],
+        providers: [alerts_service_1.AlertsService, broadcast_processor_1.BroadcastProcessor],
         exports: [alerts_service_1.AlertsService],
     })
 ], AdminModule);

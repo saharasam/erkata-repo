@@ -3,15 +3,7 @@ import type { Response } from 'express';
 import type { AuthenticatedRequest } from './guards/authenticated-request.interface';
 import { RedisPresenceService } from '../common/redis/redis-presence.service';
 import { PrismaService } from '../prisma/prisma.service';
-export interface RegisterDto {
-    email: string;
-    fullName: string;
-    phone: string;
-    password: string;
-    role?: string;
-    tier?: string;
-    inviteToken?: string;
-}
+import { RegisterDto } from './dto/register.dto';
 export declare class AuthController {
     private readonly authService;
     private readonly presence;

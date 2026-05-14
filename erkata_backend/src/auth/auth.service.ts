@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
-import { Response } from 'express';
+import { Request, Response } from 'express'; // Added Request import
 import { InviteService } from './invite/invite.service';
 import * as bcrypt from 'bcrypt';
 import { UserRole, Tier } from '@prisma/client';
@@ -49,7 +49,7 @@ export class AuthService {
   async login(
     credentials: { identifier: string; pass: string },
     res: Response,
-    req?: any,
+    req?: Request, // Changed any to Request
   ) {
     console.log(
       `[AuthService] Attempting login for email: ${credentials.identifier}`,
@@ -99,18 +99,20 @@ export class AuthService {
     });
 
     // Log successful login
-    void this.prisma.auditLog.create({
-      data: {
-        actorId: profile.id,
-        action: 'USER_LOGIN',
-        targetTable: 'profiles',
-        targetId: profile.id,
-        metadata: {
-          ip: req?.ip,
-          userAgent: req?.headers?.['user-agent'],
+    void this.prisma.auditLog
+      .create({
+        data: {
+          actorId: profile.id,
+          action: 'USER_LOGIN',
+          targetTable: 'profiles',
+          targetId: profile.id,
+          metadata: {
+            ip: req?.ip,
+            userAgent: req?.headers?.['user-agent'],
+          },
         },
-      },
-    }).catch(err => console.error('[AuthService] Failed to log login:', err));
+      })
+      .catch((err) => console.error('[AuthService] Failed to log login:', err));
 
     return {
       user: {
@@ -128,17 +130,34 @@ export class AuthService {
   async refresh(refreshToken: string) {
     try {
       const payload = this.jwtService.verify<JwtPayload>(refreshToken);
-      const newPayload: JwtPayload = {
-        sub: payload.sub,
-        email: payload.email,
-        role: payload.role,
-        tier: payload.tier,
-      };
-      const newAccessToken = this.jwtService.sign(newPayload);
 
-      await Promise.resolve(); // satisfy async/await requirement
+      // Verify user in database to ensure they are still active and get latest roles/tier
+      const profile = await this.prisma.profile.findUnique({
+        where: { id: payload.sub },
+        select: {
+          id: true,
+          email: true,
+          role: true,
+          tier: true,
+          isActive: true,
+        },
+      });
+
+      if (!profile || !profile.isActive) {
+        throw new UnauthorizedException('User is inactive or no longer exists');
+      }
+
+      const newPayload: JwtPayload = {
+        sub: profile.id,
+        email: profile.email,
+        role: profile.role,
+        tier: profile.tier,
+      };
+
+      const newAccessToken = this.jwtService.sign(newPayload);
       return { accessToken: newAccessToken };
-    } catch {
+    } catch (err) {
+      if (err instanceof UnauthorizedException) throw err;
       throw new UnauthorizedException('Invalid refresh token');
     }
   }
@@ -161,7 +180,7 @@ export class AuthService {
       referralCode?: string;
     },
     res?: Response,
-    req?: any,
+    req?: Request, // Changed any to Request
   ) {
     console.log(
       `[AuthService] Registering user: ${data.fullName}, Email: ${data.email}`,
@@ -180,19 +199,8 @@ export class AuthService {
       `[AuthService] Initial finalRole from data.role: ${data.role}, normalized to: ${finalRole}`,
     );
 
-    // 1. Check if this is the Super Admin from ENV
-    const superAdminEmail = process.env.SUPER_ADMIN_EMAIL;
-    if (
-      superAdminEmail &&
-      data.email.toLowerCase() === superAdminEmail.toLowerCase()
-    ) {
-      console.log(
-        `[AuthService] Matching Super Admin email found. Granting super_admin role.`,
-      );
-      finalRole = 'super_admin';
-    }
-    // 2. Validate invite token if present
-    else if (data.inviteToken) {
+    // 1. Validate invite token if present (Required for administrative roles)
+    if (data.inviteToken) {
       const invite = await this.inviteService.validateInvite(
         data.inviteToken,
         data.email,
@@ -210,9 +218,11 @@ export class AuthService {
       console.log(
         `[AuthService] Handling non-administrative role: ${finalRole}`,
       );
+      // Logic for public registration (No token provided)
+      // Only allow 'customer' or 'agent' roles for public signups
       if (finalRole !== 'customer' && finalRole !== 'agent') {
         console.warn(
-          `[AuthService] Role ${finalRole} is not customer or agent. Defaulting to customer.`,
+          `[AuthService] Role ${finalRole} is not allowed without an invite. Defaulting to customer.`,
         );
         finalRole = 'customer';
       }
@@ -310,18 +320,22 @@ export class AuthService {
     }
 
     // Log successful registration
-    void this.prisma.auditLog.create({
-      data: {
-        actorId: newProfile.id,
-        action: 'USER_REGISTER',
-        targetTable: 'profiles',
-        targetId: newProfile.id,
-        metadata: {
-          ip: req?.ip,
-          userAgent: req?.headers?.['user-agent'],
+    void this.prisma.auditLog
+      .create({
+        data: {
+          actorId: newProfile.id,
+          action: 'USER_REGISTER',
+          targetTable: 'profiles',
+          targetId: newProfile.id,
+          metadata: {
+            ip: req?.ip,
+            userAgent: req?.headers?.['user-agent'],
+          },
         },
-      },
-    }).catch(err => console.error('[AuthService] Failed to log registration:', err));
+      })
+      .catch((err) =>
+        console.error('[AuthService] Failed to log registration:', err),
+      );
 
     return {
       message: 'Registration successful.',

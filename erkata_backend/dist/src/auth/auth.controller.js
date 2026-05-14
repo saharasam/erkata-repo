@@ -19,6 +19,7 @@ const jwt_auth_guard_1 = require("./guards/jwt-auth.guard");
 const redis_presence_service_1 = require("../common/redis/redis-presence.service");
 const prisma_service_1 = require("../prisma/prisma.service");
 const client_1 = require("@prisma/client");
+const register_dto_1 = require("./dto/register.dto");
 let AuthController = class AuthController {
     authService;
     presence;
@@ -106,7 +107,7 @@ __decorate([
     __param(1, (0, common_1.Res)({ passthrough: true })),
     __param(2, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object, Object]),
+    __metadata("design:paramtypes", [register_dto_1.RegisterDto, Object, Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "register", null);
 __decorate([

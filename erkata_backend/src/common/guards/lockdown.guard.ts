@@ -6,17 +6,22 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '../config.service';
 import { UserRole } from '@prisma/client';
-import * as jwt from 'jsonwebtoken';
+import { JwtService } from '@nestjs/jwt';
 import { AuthenticatedRequest } from '../../auth/guards/authenticated-request.interface';
 
 interface JwtPayload {
-  id: string;
+  sub: string;
+  email: string;
   role: UserRole;
+  tier: string;
 }
 
 @Injectable()
 export class LockdownGuard implements CanActivate {
-  constructor(private readonly configService: ConfigService) {}
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly jwtService: JwtService,
+  ) {}
 
   canActivate(context: ExecutionContext): boolean {
     const isLockdown = this.configService.get<boolean>(
@@ -38,7 +43,8 @@ export class LockdownGuard implements CanActivate {
 
     const user = request.user;
 
-    // Bypass lockdown for Super Admins and Admins so they can manage the platform
+    // Bypass lockdown for Super Admins and Admins so they can manage the platform.
+    // This handles cases where JwtAuthGuard has already processed the request.
     if (
       user &&
       (user.role === UserRole.super_admin || user.role === UserRole.admin)
@@ -46,13 +52,15 @@ export class LockdownGuard implements CanActivate {
       return true;
     }
 
-    // If running as a global guard, JwtAuthGuard may not have run yet.
-    // Manually check for an admin token in the headers for emergency access.
-    const authHeader = request.headers.authorization;
+    // If running as a global guard, JwtAuthGuard may not have run yet for this cycle.
+    // We manually verify the token in the headers for emergency administrative access.
+    const authHeader = request.headers?.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.split(' ')[1];
       try {
-        const decoded = jwt.decode(token) as JwtPayload | null;
+        // SECURITY FIX: Using verify instead of decode to ensure cryptographic integrity.
+        // This prevents forged tokens from bypassing the platform lockdown.
+        const decoded = this.jwtService.verify<JwtPayload>(token);
         if (
           decoded &&
           (decoded.role === UserRole.super_admin ||
@@ -61,7 +69,7 @@ export class LockdownGuard implements CanActivate {
           return true;
         }
       } catch {
-        // Token invalid, proceed to common lockdown check
+        // Token invalid or expired, continue to block request.
       }
     }
 

@@ -1,6 +1,5 @@
+import { Queue } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service';
-import { NotificationsGateway } from '../notifications/notifications.gateway';
-import { NotificationsService } from '../notifications/notifications.service';
 interface AuthenticatedRequest {
     user: {
         id: string;
@@ -9,9 +8,8 @@ interface AuthenticatedRequest {
 }
 export default class SystemBroadcastsController {
     private prisma;
-    private notificationsGateway;
-    private notificationsService;
-    constructor(prisma: PrismaService, notificationsGateway: NotificationsGateway, notificationsService: NotificationsService);
+    private broadcastQueue;
+    constructor(prisma: PrismaService, broadcastQueue: Queue);
     getBroadcasts(req: AuthenticatedRequest): Promise<{
         id: string;
         createdAt: Date;

@@ -14,21 +14,7 @@ import { AglpService } from '../aglp/aglp.service';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 
-// Updated data instructions to expect a single budget number
-export interface CreateRequestDto {
-  category: string;
-  type?: 'real_estate' | 'furniture';
-  details: {
-    description: string;
-    budget?: number; // Changed from budgetMin/Max to single budget
-    [key: string]: any;
-  };
-  metadata?: Record<string, any>;
-  locationZone: {
-    kifleKetema: string;
-    woreda: string;
-  };
-}
+import { CreateRequestDto } from './dto/create-request.dto';
 
 interface OperatorIdResult {
   id: string;
@@ -146,7 +132,9 @@ export class RequestsService implements OnModuleInit {
       request.status !== RequestStatus.pending ||
       request.assignedOperatorId
     ) {
-      this.logger.debug(`[ASSIGN] Skipping ${requestId}: status=${request?.status}, alreadyAssigned=${!!request?.assignedOperatorId}`);
+      this.logger.debug(
+        `[ASSIGN] Skipping ${requestId}: status=${request?.status}, alreadyAssigned=${!!request?.assignedOperatorId}`,
+      );
       return;
     }
 
@@ -166,7 +154,9 @@ export class RequestsService implements OnModuleInit {
       FOR UPDATE SKIP LOCKED
     `;
 
-    this.logger.log(`[ASSIGN] request=${requestId} → found ${operators.length} eligible operator(s)`);
+    this.logger.log(
+      `[ASSIGN] request=${requestId} → found ${operators.length} eligible operator(s)`,
+    );
 
     const operatorId = operators[0]?.id;
     if (!operatorId) return;
@@ -200,7 +190,9 @@ export class RequestsService implements OnModuleInit {
       );
     });
 
-    this.logger.log(`[ASSIGN] request=${requestId} → pushed to operator=${operatorId}`);
+    this.logger.log(
+      `[ASSIGN] request=${requestId} → pushed to operator=${operatorId}`,
+    );
     this.eventEmitter.emit('request.pushed', { requestId, operatorId });
   }
 
@@ -230,7 +222,11 @@ export class RequestsService implements OnModuleInit {
   }
 
   // Logic for viewing the list of unassigned requests
-  async getOperatorQueue(filters?: { zoneId?: string }) {
+  async getOperatorQueue(filters?: {
+    zoneId?: string;
+    limit?: number;
+    offset?: number;
+  }) {
     const whereClause: Prisma.RequestWhereInput = {
       status: RequestStatus.pending,
       assignedOperatorId: null,
@@ -240,8 +236,13 @@ export class RequestsService implements OnModuleInit {
       whereClause.zoneId = filters.zoneId;
     }
 
+    const take = filters?.limit ? Number(filters.limit) : 50;
+    const skip = filters?.offset ? Number(filters.offset) : 0;
+
     return await this.prisma.request.findMany({
       where: whereClause,
+      take,
+      skip,
       include: {
         customer: {
           select: { id: true, fullName: true, createdAt: true },
@@ -639,7 +640,10 @@ export class RequestsService implements OnModuleInit {
   }
 
   // Logic for viewing a history of all disagreements
-  async getDisputeHistory() {
+  async getDisputeHistory(pagination?: { limit?: number; offset?: number }) {
+    const take = pagination?.limit ? Number(pagination.limit) : 50;
+    const skip = pagination?.offset ? Number(pagination.offset) : 0;
+
     return this.prisma.request.findMany({
       where: {
         OR: [
@@ -653,6 +657,8 @@ export class RequestsService implements OnModuleInit {
           },
         ],
       },
+      take,
+      skip,
       include: {
         customer: {
           select: { id: true, fullName: true, phone: true },

@@ -14,6 +14,12 @@ import { RolesGuard, RequirePermission, JwtAuthGuard } from '../auth/guards';
 import { Action } from '../auth/permissions';
 import { FeedbackBundleState } from '@prisma/client';
 import type { AuthenticatedRequest } from '../auth/guards';
+import { FeedbackDto } from './dto/feedback.dto';
+import {
+  ResolutionDto,
+  FinalizeResolutionDto,
+  FinalizeBundleDto,
+} from './dto/resolution.dto';
 
 @Controller('mediation')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -28,7 +34,7 @@ export class MediationController {
   async submitFeedback(
     @Param('id') transactionId: string,
     @Req() req: AuthenticatedRequest,
-    @Body() body: { content: string; rating: number; categories?: string[] },
+    @Body() body: FeedbackDto,
   ) {
     const userId = req.user.id;
     return this.mediationService.submitFeedback(
@@ -45,7 +51,7 @@ export class MediationController {
   async proposeResolution(
     @Param('id') bundleId: string,
     @Req() req: AuthenticatedRequest,
-    @Body() body: { proposedText: string },
+    @Body() body: ResolutionDto,
   ) {
     const userId = req.user.id;
     return this.mediationService.proposeResolution(
@@ -60,7 +66,7 @@ export class MediationController {
   async finalizeResolution(
     @Param('id') proposalId: string,
     @Req() req: AuthenticatedRequest,
-    @Body() body: { approved: boolean; comment?: string },
+    @Body() body: FinalizeResolutionDto,
   ) {
     const userId = req.user.id;
     return this.mediationService.finalizeResolution(
@@ -76,7 +82,7 @@ export class MediationController {
   async finalizeBundle(
     @Param('id') bundleId: string,
     @Req() req: AuthenticatedRequest,
-    @Body() body: { resolutionText: string },
+    @Body() body: FinalizeBundleDto,
   ) {
     const userId = req.user.id;
     return this.mediationService.finalizeBundleDirectly(

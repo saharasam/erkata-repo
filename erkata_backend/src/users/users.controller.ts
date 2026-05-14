@@ -17,6 +17,8 @@ import { RolesGuard, RequirePermission, JwtAuthGuard } from '../auth/guards';
 import type { AuthenticatedRequest } from '../auth/guards';
 import { Action, PermissionMatrix } from '../auth/permissions';
 import { UserRole } from '@prisma/client';
+import { WithdrawalDto } from './dto/withdrawal.dto';
+import { UpdateBusinessProfileDto } from './dto/update-business-profile.dto';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -55,13 +57,7 @@ export class UsersController {
   @Post('me/withdraw')
   async requestWithdrawal(
     @Req() req: AuthenticatedRequest,
-    @Body()
-    body: {
-      amount: number;
-      bankName: string;
-      bankAccountNumber: string;
-      bankAccountHolder: string;
-    },
+    @Body() body: WithdrawalDto,
   ) {
     return this.usersService.requestWithdrawal(req.user.id, body.amount, {
       bankName: body.bankName,
@@ -126,7 +122,7 @@ export class UsersController {
   @Patch('me/business')
   async updateBusinessProfile(
     @Req() req: AuthenticatedRequest,
-    @Body() body: { tinNumber: string; tradeLicenseNumber: string },
+    @Body() body: UpdateBusinessProfileDto,
   ) {
     return this.usersService.updateBusinessProfile(req.user.id, body);
   }

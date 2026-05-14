@@ -24,6 +24,14 @@ export declare class AdminConfigController {
             value: number;
         };
         description: string;
+    } | {
+        key: string;
+        value: {
+            bankName: string;
+            accountNumber: string;
+            accountHolder: string;
+        };
+        description: string;
     })[];
     updateConfig(req: Request & {
         user: {

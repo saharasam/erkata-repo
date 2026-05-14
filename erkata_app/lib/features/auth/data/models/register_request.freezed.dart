@@ -23,6 +23,7 @@ RegisterRequest _$RegisterRequestFromJson(Map<String, dynamic> json) {
 mixin _$RegisterRequest {
   String get email => throw _privateConstructorUsedError;
   String get fullName => throw _privateConstructorUsedError;
+  String get phone => throw _privateConstructorUsedError;
   String get password => throw _privateConstructorUsedError;
   String get role => throw _privateConstructorUsedError;
   String get tier => throw _privateConstructorUsedError;
@@ -47,6 +48,7 @@ abstract class $RegisterRequestCopyWith<$Res> {
   $Res call({
     String email,
     String fullName,
+    String phone,
     String password,
     String role,
     String tier,
@@ -70,6 +72,7 @@ class _$RegisterRequestCopyWithImpl<$Res, $Val extends RegisterRequest>
   $Res call({
     Object? email = null,
     Object? fullName = null,
+    Object? phone = null,
     Object? password = null,
     Object? role = null,
     Object? tier = null,
@@ -83,6 +86,10 @@ class _$RegisterRequestCopyWithImpl<$Res, $Val extends RegisterRequest>
             fullName: null == fullName
                 ? _value.fullName
                 : fullName // ignore: cast_nullable_to_non_nullable
+                      as String,
+            phone: null == phone
+                ? _value.phone
+                : phone // ignore: cast_nullable_to_non_nullable
                       as String,
             password: null == password
                 ? _value.password
@@ -114,6 +121,7 @@ abstract class _$$RegisterRequestImplCopyWith<$Res>
   $Res call({
     String email,
     String fullName,
+    String phone,
     String password,
     String role,
     String tier,
@@ -136,6 +144,7 @@ class __$$RegisterRequestImplCopyWithImpl<$Res>
   $Res call({
     Object? email = null,
     Object? fullName = null,
+    Object? phone = null,
     Object? password = null,
     Object? role = null,
     Object? tier = null,
@@ -149,6 +158,10 @@ class __$$RegisterRequestImplCopyWithImpl<$Res>
         fullName: null == fullName
             ? _value.fullName
             : fullName // ignore: cast_nullable_to_non_nullable
+                  as String,
+        phone: null == phone
+            ? _value.phone
+            : phone // ignore: cast_nullable_to_non_nullable
                   as String,
         password: null == password
             ? _value.password
@@ -173,6 +186,7 @@ class _$RegisterRequestImpl implements _RegisterRequest {
   const _$RegisterRequestImpl({
     required this.email,
     required this.fullName,
+    required this.phone,
     required this.password,
     this.role = 'customer',
     this.tier = 'FREE',
@@ -186,6 +200,8 @@ class _$RegisterRequestImpl implements _RegisterRequest {
   @override
   final String fullName;
   @override
+  final String phone;
+  @override
   final String password;
   @override
   @JsonKey()
@@ -196,7 +212,7 @@ class _$RegisterRequestImpl implements _RegisterRequest {
 
   @override
   String toString() {
-    return 'RegisterRequest(email: $email, fullName: $fullName, password: $password, role: $role, tier: $tier)';
+    return 'RegisterRequest(email: $email, fullName: $fullName, phone: $phone, password: $password, role: $role, tier: $tier)';
   }
 
   @override
@@ -207,6 +223,7 @@ class _$RegisterRequestImpl implements _RegisterRequest {
             (identical(other.email, email) || other.email == email) &&
             (identical(other.fullName, fullName) ||
                 other.fullName == fullName) &&
+            (identical(other.phone, phone) || other.phone == phone) &&
             (identical(other.password, password) ||
                 other.password == password) &&
             (identical(other.role, role) || other.role == role) &&
@@ -216,7 +233,7 @@ class _$RegisterRequestImpl implements _RegisterRequest {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode =>
-      Object.hash(runtimeType, email, fullName, password, role, tier);
+      Object.hash(runtimeType, email, fullName, phone, password, role, tier);
 
   /// Create a copy of RegisterRequest
   /// with the given fields replaced by the non-null parameter values.
@@ -239,6 +256,7 @@ abstract class _RegisterRequest implements RegisterRequest {
   const factory _RegisterRequest({
     required final String email,
     required final String fullName,
+    required final String phone,
     required final String password,
     final String role,
     final String tier,
@@ -251,6 +269,8 @@ abstract class _RegisterRequest implements RegisterRequest {
   String get email;
   @override
   String get fullName;
+  @override
+  String get phone;
   @override
   String get password;
   @override

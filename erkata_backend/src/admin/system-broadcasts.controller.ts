@@ -8,13 +8,12 @@ import {
   UseGuards,
   Request,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard, RequirePermission } from '../auth/guards';
 import { Action } from '../auth/permissions';
-import { NotificationsGateway } from '../notifications/notifications.gateway';
-import { NotificationsService } from '../notifications/notifications.service';
 
 interface AuthenticatedRequest {
   user: {
@@ -28,8 +27,7 @@ interface AuthenticatedRequest {
 export default class SystemBroadcastsController {
   constructor(
     private prisma: PrismaService,
-    private notificationsGateway: NotificationsGateway,
-    private notificationsService: NotificationsService,
+    @InjectQueue('broadcast') private broadcastQueue: Queue,
   ) {}
 
   @Get()
@@ -73,52 +71,16 @@ export default class SystemBroadcastsController {
       },
     });
 
-    // 2. Identify target users
-    const userWhere: Prisma.ProfileWhereInput = {};
-    if (data.target === 'AGENT') userWhere.role = 'agent';
-    else if (data.target === 'OPERATOR') userWhere.role = 'operator';
-    else if (data.target === 'ADMIN') userWhere.role = 'admin';
-    else if (data.target === 'FINANCE_OP') userWhere.role = 'financial_operator';
-    // If EVERYONE, leave userWhere empty to target all users
-
-    const users = await this.prisma.profile.findMany({
-      where: userWhere,
-      select: { id: true, role: true },
+    // 2. Offload notification work to background queue
+    await this.broadcastQueue.add('send-broadcast', {
+      broadcastId: broadcast.id,
+      title: data.title,
+      content: data.content,
+      target: data.target,
     });
-
-    // 3. Create individual notification records
-    // We use a transactional batch for reliability
-    await this.prisma.notification.createMany({
-      data: users.map((u) => ({
-        userId: u.id,
-        title: `System Broadcast: ${data.title}`,
-        message: data.content || 'New system announcement published.',
-        type: 'SYSTEM_BROADCAST',
-        link: '/dashboard/notices', // Generic link to the notices tab
-      })),
-      skipDuplicates: true,
-    });
-
-    // 4. Emit WebSocket events
-    if (data.target === 'EVERYONE') {
-      this.notificationsGateway.server.emit('notification', {
-        type: 'system_broadcast',
-        title: data.title,
-        message: data.content,
-      });
-    } else {
-      let targetRole = data.target.toLowerCase();
-      if (data.target === 'FINANCE_OP') targetRole = 'financial_operator';
-      
-      this.notificationsGateway.sendToRole(targetRole, 'notification', {
-        type: 'system_broadcast',
-        title: data.title,
-        message: data.content,
-      });
-    }
 
     return {
-      message: 'Broadcast dispatched successfully',
+      message: 'Broadcast scheduled for distribution',
       broadcast,
     };
   }

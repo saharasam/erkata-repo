@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.RequestsController = void 0;
 const common_1 = require("@nestjs/common");
 const requests_service_1 = require("./requests.service");
+const create_request_dto_1 = require("./dto/create-request.dto");
 const permissions_1 = require("../auth/permissions");
 const guards_1 = require("../auth/guards");
 let RequestsController = class RequestsController {
@@ -26,8 +27,8 @@ let RequestsController = class RequestsController {
         const user = req.user;
         return this.requestsService.createRequest(user.id, dto);
     }
-    getQueue(zoneId) {
-        return this.requestsService.getOperatorQueue({ zoneId });
+    getQueue(zoneId, limit, offset) {
+        return this.requestsService.getOperatorQueue({ zoneId, limit, offset });
     }
     getMyRequests(req) {
         const user = req.user;
@@ -36,8 +37,8 @@ let RequestsController = class RequestsController {
     findEligibleAgents() {
         return this.requestsService.findEligibleAgents();
     }
-    getDisputeHistory() {
-        return this.requestsService.getDisputeHistory();
+    getDisputeHistory(limit, offset) {
+        return this.requestsService.getDisputeHistory({ limit, offset });
     }
     getRequest(id, req) {
         const user = req.user;
@@ -73,15 +74,17 @@ __decorate([
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:paramtypes", [Object, create_request_dto_1.CreateRequestDto]),
     __metadata("design:returntype", void 0)
 ], RequestsController.prototype, "createRequest", null);
 __decorate([
     (0, common_1.Get)('queue'),
     (0, guards_1.RequirePermission)(permissions_1.Action.VIEW_QUEUE),
     __param(0, (0, common_1.Query)('zoneId')),
+    __param(1, (0, common_1.Query)('limit')),
+    __param(2, (0, common_1.Query)('offset')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, Number, Number]),
     __metadata("design:returntype", void 0)
 ], RequestsController.prototype, "getQueue", null);
 __decorate([
@@ -102,8 +105,10 @@ __decorate([
 __decorate([
     (0, common_1.Get)('admin/dispute-history'),
     (0, guards_1.RequirePermission)(permissions_1.Action.VIEW_SYSTEM_STATISTICS),
+    __param(0, (0, common_1.Query)('limit')),
+    __param(1, (0, common_1.Query)('offset')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [Number, Number]),
     __metadata("design:returntype", void 0)
 ], RequestsController.prototype, "getDisputeHistory", null);
 __decorate([
