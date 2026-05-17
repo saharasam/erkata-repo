@@ -20,13 +20,16 @@ const transactions_module_1 = require("./transactions/transactions.module");
 const mediation_module_1 = require("./mediation/mediation.module");
 const core_1 = require("@nestjs/core");
 const audit_interceptor_1 = require("./common/interceptors/audit.interceptor");
+const cache_control_interceptor_1 = require("./common/interceptors/cache-control.interceptor");
 const lockdown_guard_1 = require("./common/guards/lockdown.guard");
+const csrf_guard_1 = require("./common/guards/csrf.guard");
 const common_module_1 = require("./common/common.module");
 const admin_module_1 = require("./admin/admin.module");
 const aglp_module_1 = require("./aglp/aglp.module");
 const redis_module_1 = require("./common/redis/redis.module");
 const notifications_module_1 = require("./notifications/notifications.module");
 const upgrades_module_1 = require("./upgrades/upgrades.module");
+const throttler_1 = require("@nestjs/throttler");
 let AppModule = class AppModule {
     configure(consumer) {
         consumer
@@ -50,6 +53,12 @@ exports.AppModule = AppModule = __decorate([
             transactions_module_1.TransactionsModule,
             mediation_module_1.MediationModule,
             notifications_module_1.NotificationsModule,
+            throttler_1.ThrottlerModule.forRoot([
+                {
+                    ttl: 60000,
+                    limit: 100,
+                },
+            ]),
             bullmq_1.BullModule.forRoot({
                 connection: {
                     host: process.env.REDIS_HOST || 'localhost',
@@ -70,8 +79,20 @@ exports.AppModule = AppModule = __decorate([
                 useClass: audit_interceptor_1.AuditInterceptor,
             },
             {
+                provide: core_1.APP_INTERCEPTOR,
+                useClass: cache_control_interceptor_1.CacheControlInterceptor,
+            },
+            {
+                provide: core_1.APP_GUARD,
+                useClass: throttler_1.ThrottlerGuard,
+            },
+            {
                 provide: core_1.APP_GUARD,
                 useClass: lockdown_guard_1.LockdownGuard,
+            },
+            {
+                provide: core_1.APP_GUARD,
+                useClass: csrf_guard_1.CsrfGuard,
             },
         ],
     })

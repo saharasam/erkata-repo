@@ -20,19 +20,21 @@ const permissions_1 = require("../auth/permissions");
 const client_1 = require("@prisma/client");
 const withdrawal_dto_1 = require("./dto/withdrawal.dto");
 const update_business_profile_dto_1 = require("./dto/update-business-profile.dto");
+const update_profile_dto_1 = require("./dto/update-profile.dto");
+const change_password_dto_1 = require("./dto/change-password.dto");
 let UsersController = class UsersController {
     usersService;
     constructor(usersService) {
         this.usersService = usersService;
     }
     async getUsers(req, role, isActive) {
-        return this.usersService.findAll(req.user.role, {
+        return this.usersService.findAll(req.user.id, req.user.role, {
             role,
             isActive: isActive === 'true' ? true : isActive === 'false' ? false : undefined,
         });
     }
     async getMe(req) {
-        return this.usersService.getCurrentProfile(req.user.id);
+        return this.usersService.getCurrentProfile(req.user.id, req.user.id, req.user.role);
     }
     async getFinance(req) {
         return this.usersService.getFinanceSummary(req.user.id);
@@ -49,6 +51,15 @@ let UsersController = class UsersController {
     }
     async generateReferralCode(req) {
         return this.usersService.generateReferralCode(req.user.id);
+    }
+    async updateMe(req, body) {
+        return this.usersService.updateProfile(req.user.id, body);
+    }
+    async changePassword(req, dto) {
+        return this.usersService.changePassword(req.user.id, dto);
+    }
+    async updateAvatar(req, body) {
+        return this.usersService.updateAvatar(req.user.id, body.avatarUrl ?? null);
     }
     async assignZone(req, agentId, body) {
         const callerRole = req.user.role;
@@ -88,7 +99,7 @@ let UsersController = class UsersController {
                 throw new common_1.ForbiddenException('Admins are not authorized to view profiles at admin level or above.');
             }
         }
-        return this.usersService.getCurrentProfile(userId);
+        return this.usersService.getCurrentProfile(userId, callerId, callerRole);
     }
     async getUserFinance(userId) {
         return this.usersService.getFinanceSummary(userId);
@@ -141,6 +152,33 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], UsersController.prototype, "generateReferralCode", null);
+__decorate([
+    (0, common_1.Patch)('me'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, update_profile_dto_1.UpdateProfileDto]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "updateMe", null);
+__decorate([
+    (0, common_1.Patch)('me/password'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, change_password_dto_1.ChangePasswordDto]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "changePassword", null);
+__decorate([
+    (0, common_1.Patch)('me/avatar'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "updateAvatar", null);
 __decorate([
     (0, common_1.Post)('agent/:id/zones'),
     (0, guards_1.RequirePermission)(permissions_1.Action.ASSIGN_ZONES),

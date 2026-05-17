@@ -20,6 +20,7 @@ const roles_guard_1 = require("../auth/guards/roles.guard");
 const roles_decorator_1 = require("../auth/guards/roles.decorator");
 const client_1 = require("@prisma/client");
 const transfer_dto_1 = require("./dto/transfer.dto");
+const pagination_dto_1 = require("../common/dto/pagination.dto");
 let TransactionsController = class TransactionsController {
     transactionsService;
     constructor(transactionsService) {
@@ -40,11 +41,11 @@ let TransactionsController = class TransactionsController {
     complete(id, req) {
         return this.transactionsService.markComplete(id, req.user.id);
     }
-    getAll(status, limit, offset) {
+    getAll(query, status) {
         return this.transactionsService.getOperatorTransactions({
             status,
-            limit,
-            offset,
+            limit: query.limit,
+            offset: query.offset,
         });
     }
 };
@@ -97,11 +98,10 @@ __decorate([
 __decorate([
     (0, common_1.Get)(),
     (0, roles_decorator_1.Roles)(client_1.UserRole.operator, client_1.UserRole.admin, client_1.UserRole.super_admin),
-    __param(0, (0, common_1.Query)('status')),
-    __param(1, (0, common_1.Query)('limit')),
-    __param(2, (0, common_1.Query)('offset')),
+    __param(0, (0, common_1.Query)()),
+    __param(1, (0, common_1.Query)('status')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Number, Number]),
+    __metadata("design:paramtypes", [pagination_dto_1.PaginationDto, String]),
     __metadata("design:returntype", void 0)
 ], TransactionsController.prototype, "getAll", null);
 exports.TransactionsController = TransactionsController = __decorate([

@@ -16,7 +16,7 @@ import {
   Shield,
   MessageSquare
 } from 'lucide-react';
-import api from '../../utils/api';
+import api, { getAssetUrl } from '../../utils/api';
 import { useModal } from '../../contexts/ModalContext';
 import { useSocket } from '../../contexts/SocketContext';
 
@@ -229,7 +229,7 @@ const UpgradeVerificationsBoard: React.FC = () => {
                     onClick={() => setFullPreview(selectedRequest.proofUrl)}
                     className="aspect-video bg-slate-100 rounded-2xl overflow-hidden border border-slate-100 group relative cursor-pointer"
                   >
-                    <img src={selectedRequest.proofUrl} alt="Proof" className="w-full h-full object-cover" />
+                    <img src={getAssetUrl(selectedRequest.proofUrl)} alt="Proof" className="w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                        <p className="text-white text-[10px] font-black uppercase tracking-widest">Click to Expand</p>
                     </div>
@@ -291,7 +291,7 @@ const UpgradeVerificationsBoard: React.FC = () => {
             className="relative max-w-5xl w-full h-full flex items-center justify-center"
             onClick={(e) => e.stopPropagation()}
           >
-            <img src={fullPreview} alt="Full Proof" className="max-w-full max-h-full object-contain rounded-3xl shadow-2xl" />
+            <img src={getAssetUrl(fullPreview)} alt="Full Proof" className="max-w-full max-h-full object-contain rounded-3xl shadow-2xl" />
             <button 
               onClick={() => setFullPreview(null)}
               className="absolute top-0 right-0 -mt-12 text-white/60 hover:text-white transition-colors"

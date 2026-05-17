@@ -76,7 +76,7 @@ let RequestsService = RequestsService_1 = class RequestsService {
                 type: dto.type || 'real_estate',
                 description: dto.details.description,
                 budget: budget,
-                metadata: dto.metadata || {},
+                metadata: dto.metadata ? { ...dto.metadata } : {},
                 zoneId: zone.id,
                 woreda: dto.locationZone.woreda,
                 status: client_1.RequestStatus.pending,
@@ -274,8 +274,10 @@ let RequestsService = RequestsService_1 = class RequestsService {
             if (activeMatch && activeMatch.status === 'assigned') {
                 agentInfo = this.redact({ id: '', fullName: '', phone: '' }, 'Details hidden until agent accepts.');
             }
+            const requestData = { ...request };
+            delete requestData.matches;
             return {
-                ...request,
+                ...requestData,
                 customer: request.customer,
                 match: activeMatch ? { ...activeMatch, agent: agentInfo } : null,
             };
@@ -291,14 +293,21 @@ let RequestsService = RequestsService_1 = class RequestsService {
                 customer: this.redact(request.customer, 'Customer contact hidden until assignment.'),
             };
         }
+        if (role === client_1.UserRole.agent) {
+            const isMatched = request.matches.some((m) => m.agentId === userId);
+            if (!isMatched) {
+                throw new common_1.ForbiddenException('You are not assigned to this request and cannot view its details.');
+            }
+        }
         return request;
     }
-    async findEligibleAgents() {
+    async findEligibleAgents(zoneId) {
+        const whereClause = {
+            role: client_1.UserRole.agent,
+            isActive: true,
+        };
         const agents = await this.prisma.profile.findMany({
-            where: {
-                role: client_1.UserRole.agent,
-                isActive: true,
-            },
+            where: whereClause,
             include: {
                 agentZones: {
                     include: { zone: { select: { id: true, name: true } } },
@@ -329,7 +338,7 @@ let RequestsService = RequestsService_1 = class RequestsService {
         });
     }
     async getCustomerRequests(customerId) {
-        return this.prisma.request.findMany({
+        const requests = await this.prisma.request.findMany({
             where: { customerId },
             include: {
                 zone: true,
@@ -348,6 +357,27 @@ let RequestsService = RequestsService_1 = class RequestsService {
                 },
             },
             orderBy: { createdAt: 'desc' },
+        });
+        return requests.map((request) => {
+            const activeMatch = request.matches[0];
+            if (activeMatch && activeMatch.status === 'assigned') {
+                const redactedAgent = this.redact({
+                    id: activeMatch.agent.id,
+                    fullName: activeMatch.agent.fullName,
+                    phone: '',
+                    avatarUrl: activeMatch.agent.avatarUrl,
+                }, 'Verifying Agent...');
+                return {
+                    ...request,
+                    matches: [
+                        {
+                            ...activeMatch,
+                            agent: redactedAgent,
+                        },
+                    ],
+                };
+            }
+            return request;
         });
     }
     async confirmFulfillment(requestId, customerId, confirmed) {

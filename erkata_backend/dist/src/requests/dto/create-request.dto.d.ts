@@ -1,7 +1,16 @@
 export declare class RequestDetailsDto {
+    title: string;
     description: string;
     budget?: number;
-    [key: string]: any;
+}
+export declare class RequestMetadataDto {
+    intent?: string;
+    constructionStatus?: string;
+    bedrooms?: string;
+    bankLoan?: string;
+    customization?: string;
+    targetRoom?: string;
+    paymentPlan?: string;
 }
 export declare class LocationZoneDto {
     kifleKetema: string;
@@ -11,6 +20,6 @@ export declare class CreateRequestDto {
     category: string;
     type?: 'real_estate' | 'furniture';
     details: RequestDetailsDto;
-    metadata?: Record<string, any>;
+    metadata?: RequestMetadataDto;
     locationZone: LocationZoneDto;
 }

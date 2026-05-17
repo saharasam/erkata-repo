@@ -19,6 +19,7 @@ const guards_1 = require("../auth/guards");
 const permissions_1 = require("../auth/permissions");
 const client_1 = require("@prisma/client");
 const aglp_service_1 = require("../aglp/aglp.service");
+const pagination_dto_1 = require("../common/dto/pagination.dto");
 let PayoutsController = class PayoutsController {
     prisma;
     aglpService;
@@ -26,9 +27,9 @@ let PayoutsController = class PayoutsController {
         this.prisma = prisma;
         this.aglpService = aglpService;
     }
-    async getPendingPayouts(limit, offset) {
-        const take = limit ? Number(limit) : 50;
-        const skip = offset ? Number(offset) : 0;
+    async getPendingPayouts(query) {
+        const take = query.limit;
+        const skip = query.offset;
         return this.prisma.aglpTransaction.findMany({
             where: {
                 type: client_1.AglpTransactionType.WITHDRAWAL,
@@ -62,9 +63,9 @@ let PayoutsController = class PayoutsController {
             return this.aglpService.rejectWithdrawal(tx, id, reason);
         });
     }
-    async getGlobalLedger(type, status, profileId, limit, offset) {
-        const take = limit ? Number(limit) : 50;
-        const skip = offset ? Number(offset) : 0;
+    async getGlobalLedger(query, type, status, profileId) {
+        const take = query.limit;
+        const skip = query.offset;
         return this.prisma.aglpTransaction.findMany({
             where: {
                 type,
@@ -90,10 +91,9 @@ exports.PayoutsController = PayoutsController;
 __decorate([
     (0, common_1.Get)('pending'),
     (0, guards_1.RequirePermission)(permissions_1.Action.APPROVE_PAYOUT),
-    __param(0, (0, common_1.Query)('limit')),
-    __param(1, (0, common_1.Query)('offset')),
+    __param(0, (0, common_1.Query)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Number]),
+    __metadata("design:paramtypes", [pagination_dto_1.PaginationDto]),
     __metadata("design:returntype", Promise)
 ], PayoutsController.prototype, "getPendingPayouts", null);
 __decorate([
@@ -116,13 +116,12 @@ __decorate([
 __decorate([
     (0, common_1.Get)('ledger'),
     (0, guards_1.RequirePermission)(permissions_1.Action.MODIFY_GOVERNANCE),
-    __param(0, (0, common_1.Query)('type')),
-    __param(1, (0, common_1.Query)('status')),
-    __param(2, (0, common_1.Query)('profileId')),
-    __param(3, (0, common_1.Query)('limit')),
-    __param(4, (0, common_1.Query)('offset')),
+    __param(0, (0, common_1.Query)()),
+    __param(1, (0, common_1.Query)('type')),
+    __param(2, (0, common_1.Query)('status')),
+    __param(3, (0, common_1.Query)('profileId')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, String, Number, Number]),
+    __metadata("design:paramtypes", [pagination_dto_1.PaginationDto, String, String, String]),
     __metadata("design:returntype", Promise)
 ], PayoutsController.prototype, "getGlobalLedger", null);
 exports.PayoutsController = PayoutsController = __decorate([

@@ -8,8 +8,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 const Login: React.FC = () => {
   const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
   const [hasDraft, setHasDraft] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { login, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -23,12 +23,11 @@ const Login: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-
-    const result = await login(identifier, password);
-    
-    if (!result.success) {
-      setError(result.error || 'Invalid credentials. Check your email and password.');
+    setIsSubmitting(true);
+    try {
+      await login(identifier, password);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -140,26 +139,7 @@ const Login: React.FC = () => {
               )}
             </AnimatePresence>
 
-            {error && (
-              <motion.div 
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm"
-              >
-                {error}
-              </motion.div>
-            )}
 
-            <motion.div variants={itemVariants} className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-xs font-bold text-blue-900 mb-2">Demo Credentials:</p>
-              <div className="text-xs text-blue-700 space-y-1">
-                <p><strong>Agent:</strong> 0911000001 / agent123</p>
-                <p><strong>Operator:</strong> 0911000002 / operator123</p>
-                <p><strong>Customer:</strong> 0911000003 / customer123</p>
-                <p><strong>Admin:</strong> admin@erkata.com / admin123</p>
-                <p><strong>Super Admin:</strong> superadmin@erkata.com / superadmin123</p>
-              </div>
-            </motion.div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <motion.div variants={itemVariants} className="space-y-2">
@@ -200,9 +180,10 @@ const Login: React.FC = () => {
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.99 }}
                 type="submit" 
-                className="w-full bg-erkata-primary text-white font-medium text-lg py-5 rounded-full shadow-xl shadow-erkata-primary/20 hover:bg-black hover:shadow-2xl transition-all duration-300 mt-4"
+                disabled={isSubmitting}
+                className={`w-full text-white font-medium text-lg py-5 rounded-full shadow-xl shadow-erkata-primary/20 transition-all duration-300 mt-4 ${isSubmitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-erkata-primary hover:bg-black hover:shadow-2xl'}`}
               >
-                Access Account
+                {isSubmitting ? 'Verifying...' : 'Access Account'}
               </motion.button>
             </form>
 

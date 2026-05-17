@@ -14,6 +14,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthController = void 0;
 const common_1 = require("@nestjs/common");
+const throttler_1 = require("@nestjs/throttler");
 const auth_service_1 = require("./auth.service");
 const jwt_auth_guard_1 = require("./guards/jwt-auth.guard");
 const redis_presence_service_1 = require("../common/redis/redis-presence.service");
@@ -32,25 +33,19 @@ let AuthController = class AuthController {
     async login(body, res, req) {
         return await this.authService.login({ identifier: body.identifier, pass: body.password }, res, req);
     }
-    async refresh(req) {
-        const cookies = req.cookies;
-        const refreshToken = cookies?.['refreshToken'];
+    async refresh(req, res) {
+        const { cookies } = req;
+        const refreshToken = cookies?.refreshToken;
         if (!refreshToken) {
             throw new common_1.UnauthorizedException('Refresh token missing');
         }
-        return await this.authService.refresh(refreshToken);
+        return await this.authService.refresh(refreshToken, res);
     }
     async logout(res) {
         return await this.authService.logout(res);
     }
     async register(body, res, req) {
-        try {
-            return await this.authService.register(body, res, req);
-        }
-        catch (e) {
-            const message = e instanceof Error ? e.message : 'Registration failed';
-            throw new common_1.InternalServerErrorException(message);
-        }
+        return await this.authService.register(body, res, req);
     }
     async heartbeat(req) {
         const user = req.user;
@@ -76,10 +71,15 @@ let AuthController = class AuthController {
             requestId,
         };
     }
+    async getMe(req) {
+        const user = req.user;
+        return await this.authService.getMe(user.id);
+    }
 };
 exports.AuthController = AuthController;
 __decorate([
     (0, common_1.Post)('login'),
+    (0, throttler_1.Throttle)({ default: { limit: 5, ttl: 60000 } }),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Res)({ passthrough: true })),
     __param(2, (0, common_1.Req)()),
@@ -90,8 +90,9 @@ __decorate([
 __decorate([
     (0, common_1.Post)('refresh'),
     __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Res)({ passthrough: true })),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "refresh", null);
 __decorate([
@@ -103,6 +104,7 @@ __decorate([
 ], AuthController.prototype, "logout", null);
 __decorate([
     (0, common_1.Post)('register'),
+    (0, throttler_1.Throttle)({ default: { limit: 3, ttl: 60000 } }),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Res)({ passthrough: true })),
     __param(2, (0, common_1.Req)()),
@@ -118,6 +120,15 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "heartbeat", null);
+__decorate([
+    (0, common_1.Get)('me'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Header)('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate'),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "getMe", null);
 exports.AuthController = AuthController = __decorate([
     (0, common_1.Controller)('auth'),
     __metadata("design:paramtypes", [auth_service_1.AuthService,

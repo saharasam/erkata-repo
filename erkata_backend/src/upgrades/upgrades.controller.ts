@@ -7,8 +7,14 @@ import {
   Param,
   UseGuards,
   Req,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { fromBuffer } from 'file-type';
 import { UpgradesService } from './upgrades.service';
+import { StorageService } from '../common/storage.service';
 import { ConfigService } from '../common/config.service';
 import { JwtAuthGuard, RolesGuard, RequirePermission } from '../auth/guards';
 import type { AuthenticatedRequest } from '../auth/guards';
@@ -21,6 +27,7 @@ export class UpgradesController {
   constructor(
     private readonly upgradesService: UpgradesService,
     private readonly configService: ConfigService,
+    private readonly storageService: StorageService,
   ) {}
 
   @Get('active')
@@ -54,12 +61,47 @@ export class UpgradesController {
   }
 
   @Patch(':id/proof')
+  @UseInterceptors(
+    FileInterceptor('proof', {
+      limits: { fileSize: 10 * 1024 * 1024 }, // Strict 10MB limit
+      fileFilter: (req, file, cb) => {
+        if (!file.mimetype.match(/^image\/(jpeg|png|webp)$/)) {
+          return cb(
+            new BadRequestException(
+              'Invalid file type. Only JPEG, PNG, and WebP are allowed.',
+            ),
+            false,
+          );
+        }
+        cb(null, true);
+      },
+    }),
+  )
   async uploadProof(
     @Req() req: AuthenticatedRequest,
     @Param('id') id: string,
-    @Body() body: { proofUrl: string },
+    @UploadedFile() file: Express.Multer.File,
   ) {
-    return this.upgradesService.uploadProof(id, req.user.id, body.proofUrl);
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+
+    // CRITICAL: Magic Bytes Validation
+    const fileInfo = await fromBuffer(file.buffer);
+    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
+
+    if (!fileInfo || !allowedMimeTypes.includes(fileInfo.mime)) {
+      throw new BadRequestException(
+        'Malicious or corrupted file detected. Magic bytes do not match expected image formats.',
+      );
+    }
+
+    const relativeUrl = await this.storageService.upload(
+      file.buffer,
+      file.originalname,
+    );
+
+    return this.upgradesService.uploadProof(id, req.user.id, relativeUrl);
   }
 
   @Patch(':id/verify')

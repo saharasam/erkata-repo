@@ -360,17 +360,26 @@ class _NavBarItem extends StatelessWidget {
 
 
 ===== FILE: lib\core\config\env_config.dart =====
-import 'package:flutter/foundation.dart';
+// Removed unused import
 
 /// Centralised environment configuration.
 class EnvConfig {
   EnvConfig._();
 
-  /// Android emulator uses 10.0.2.2 to reach host localhost.
-  static const _devBase = 'http://192.168.1.3:3000';
-  static const _prodBase = 'https://api.erkata.com';
+  /// API Base URL provided at build time via --dart-define=API_BASE_URL=...
+  /// Defaults to local machine IP for physical device testing, or 10.0.2.2 for emulator.
+  static const String _defaultBaseUrl = 'http://192.168.1.3:3000';
+  static const String baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: _defaultBaseUrl,
+  );
 
-  static String get baseUrl => kDebugMode ? _devBase : _prodBase;
+  /// SSL Pinning Fingerprint (SHA-256)
+  /// Provided at build time via --dart-define=SSL_FINGERPRINT=...
+  static const String sslFingerprint = String.fromEnvironment(
+    'SSL_FINGERPRINT',
+    defaultValue: '', // Default empty (disable pinning if not provided)
+  );
 
   static const Duration connectTimeout = Duration(seconds: 15);
   static const Duration receiveTimeout = Duration(seconds: 30);
@@ -401,9 +410,9 @@ List<LocationOption> get kKifleKetemas => [
   ),
   LocationOption(value: 'arada', label: 'Arada', weredas: ['Piazza', '4 Kilo']),
   LocationOption(
-    value: 'lideta',
-    label: 'Lideta',
-    weredas: ['Mexico', 'Lideta Condominium'],
+    value: 'nifas_silk',
+    label: 'Nifas Silk',
+    weredas: ['Lafto', 'Sarbet', 'Jemo'],
   ),
 ];
 
@@ -688,7 +697,7 @@ class ServiceRequest {
     if (raw != null) {
       final budgetNum = double.tryParse(raw.toString());
       if (budgetNum != null && budgetNum > 0) {
-        budgetStr = NumberFormat('#,###', 'en_US').format(budgetNum) + ' ETB';
+        budgetStr = '${NumberFormat('#,###', 'en_US').format(budgetNum)} ETB';
       }
     }
 
@@ -758,6 +767,26 @@ class ServiceRequest {
       }
     }
 
+    // 🛡️ PII Masking Logic (Data Minimization)
+    // Only reveal full details if the request is "Accepted" (Assigned in UI) or further.
+    // For Agents, "Incoming" (Pending) should be masked.
+    String? rawName = customer?['fullName'] as String?;
+    String? rawPhone = customer?['phone'] as String?;
+
+    if (isNestedMatch && status == RequestStatus.pending) {
+      if (rawName != null && rawName.length > 2) {
+        final parts = rawName.split(' ');
+        rawName = parts.map((p) {
+          if (p.length <= 1) return p;
+          return '${p[0]}${'*' * (p.length - 1)}';
+        }).join(' ');
+      }
+      if (rawPhone != null && rawPhone.length > 4) {
+        rawPhone =
+            '${rawPhone.substring(0, rawPhone.length - 4)}****';
+      }
+    }
+
     return ServiceRequest(
       id:
           json['id'] as String? ??
@@ -771,8 +800,8 @@ class ServiceRequest {
       location: '$zoneName${woreda.isNotEmpty ? ", Woreda $woreda" : ""}',
       budget: budgetStr,
       description: dataSource['description'] as String?,
-      customerName: customer?['fullName'] as String?,
-      customerPhone: customer?['phone'] as String?,
+      customerName: rawName,
+      customerPhone: rawPhone,
       createdAt: dataSource['createdAt'] as String?,
       assignmentPushedAt: json['assignedAt'] as String?,
       completedAt: dataSource['completedAt'] as String?,
@@ -818,10 +847,13 @@ enum ViewState {
 
 
 ===== FILE: lib\core\network\api_client.dart =====
+import 'dart:io';
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:flutter/foundation.dart';
+import 'package:http_certificate_pinning/http_certificate_pinning.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../config/env_config.dart';
@@ -857,6 +889,21 @@ class ApiClient {
       ),
     );
 
+    // SSL Pinning Enforcement (Production only)
+    if (!kDebugMode && EnvConfig.sslFingerprint.isNotEmpty) {
+      dio.httpClientAdapter = IOHttpClientAdapter(
+        createHttpClient: () {
+          final client = HttpClient();
+          // Note: This is a basic setup. http_certificate_pinning 
+          // provides a more robust background check.
+          return client;
+        },
+      );
+      
+      // Run an initial pinning check
+      await _enforceSslPinning();
+    }
+
     // Cookie persistence for the httpOnly refresh token
     final appDocDir = await getApplicationDocumentsDirectory();
     final cookieJar = PersistCookieJar(
@@ -869,6 +916,7 @@ class ApiClient {
       dio: dio,
       tokenStorage: _tokenStorage,
       baseUrl: EnvConfig.baseUrl,
+      cookieJar: cookieJar,
     );
     dio.interceptors.add(authInterceptor);
 
@@ -884,6 +932,30 @@ class ApiClient {
     }
   }
 
+  Future<void> _enforceSslPinning() async {
+    if (kDebugMode || EnvConfig.sslFingerprint.isEmpty) return;
+    
+    try {
+      await HttpCertificatePinning.check(
+        serverURL: EnvConfig.baseUrl,
+        sha: SHA.SHA256,
+        allowedSHAFingerprints: [EnvConfig.sslFingerprint],
+        timeout: 10,
+      );
+      debugPrint('✅ SSL Pinning Verified');
+    } catch (e) {
+      debugPrint('❌ SSL Pinning Failed: $e');
+      // In production, we might want to throw or set a global error state
+      throw Exception('Security breach: Certificate pinning failed.');
+    }
+  }
+
+  static String getAssetUrl(String path) {
+    if (path.startsWith('http')) return path;
+    final cleanPath = path.startsWith('/') ? path.substring(1) : path;
+    return '${EnvConfig.baseUrl}/$cleanPath';
+  }
+
   void dispose() {
     authInterceptor.dispose();
     dio.close();
@@ -894,6 +966,8 @@ class ApiClient {
 ===== FILE: lib\core\network\auth_interceptor.dart =====
 import 'dart:async';
 import 'package:dio/dio.dart';
+import 'package:dio_cookie_manager/dio_cookie_manager.dart';
+import 'package:cookie_jar/cookie_jar.dart';
 import '../storage/token_storage.dart';
 
 /// Dio interceptor that:
@@ -904,6 +978,7 @@ class AuthInterceptor extends QueuedInterceptorsWrapper {
   final Dio _dio;
   final TokenStorage _tokenStorage;
   final String _baseUrl;
+  final CookieJar _cookieJar;
 
   /// Stream that emits when the session is irrecoverably expired.
   /// The [AuthNotifier] listens to this to force logout.
@@ -916,9 +991,11 @@ class AuthInterceptor extends QueuedInterceptorsWrapper {
     required Dio dio,
     required TokenStorage tokenStorage,
     required String baseUrl,
+    required CookieJar cookieJar,
   }) : _dio = dio,
        _tokenStorage = tokenStorage,
-       _baseUrl = baseUrl;
+       _baseUrl = baseUrl,
+       _cookieJar = cookieJar;
 
   @override
   void onRequest(
@@ -929,7 +1006,29 @@ class AuthInterceptor extends QueuedInterceptorsWrapper {
     if (token != null && token.isNotEmpty) {
       options.headers['Authorization'] = 'Bearer $token';
     }
+
+    // Inject CSRF token for mutation requests
+    final mutationMethods = ['POST', 'PUT', 'PATCH', 'DELETE'];
+    if (mutationMethods.contains(options.method.toUpperCase())) {
+      final csrfToken = await _tokenStorage.getCsrfToken();
+      if (csrfToken != null && csrfToken.isNotEmpty) {
+        options.headers['X-CSRF-Token'] = csrfToken;
+      }
+    }
+
     handler.next(options);
+  }
+
+  @override
+  void onResponse(Response response, ResponseInterceptorHandler handler) async {
+    // Extract CSRF token if present in the response body (from login/register/refresh)
+    if (response.data is Map<String, dynamic>) {
+      final csrfToken = response.data['csrfToken'] as String?;
+      if (csrfToken != null && csrfToken.isNotEmpty) {
+        await _tokenStorage.saveCsrfToken(csrfToken);
+      }
+    }
+    handler.next(response);
   }
 
   @override
@@ -949,27 +1048,45 @@ class AuthInterceptor extends QueuedInterceptorsWrapper {
     try {
       // Attempt silent refresh using a raw Dio (no interceptor loop)
       final refreshDio = Dio(BaseOptions(baseUrl: _baseUrl));
-      // Copy cookies from the main Dio instance
-      // The cookie manager on _dio will include the httpOnly refresh cookie
+      
+      // Attach the same cookie jar so the refresh token is sent AND the new CSRF cookie is saved
+      refreshDio.interceptors.add(CookieManager(_cookieJar));
+      
+      // Get current CSRF token for the refresh mutation
+      final currentCsrfToken = await _tokenStorage.getCsrfToken();
+      final headers = Map<String, dynamic>.from(err.requestOptions.headers);
+      if (currentCsrfToken != null && currentCsrfToken.isNotEmpty) {
+        headers['X-CSRF-Token'] = currentCsrfToken;
+      }
+
       final refreshResponse = await refreshDio.post(
         '/auth/refresh',
         options: Options(
-          headers: err.requestOptions.headers,
+          headers: headers,
           extra: {'withCredentials': true},
         ),
       );
 
-      if (refreshResponse.statusCode == 200 ||
-          refreshResponse.statusCode == 201) {
-        final newAccessToken =
-            refreshResponse.data['accessToken'] as String? ?? '';
+      if ((refreshResponse.statusCode == 200 ||
+              refreshResponse.statusCode == 201) &&
+          refreshResponse.data is Map<String, dynamic>) {
+        final data = refreshResponse.data as Map<String, dynamic>;
+        final newAccessToken = data['accessToken'] as String? ?? '';
+        final newCsrfToken = data['csrfToken'] as String? ?? '';
 
         if (newAccessToken.isNotEmpty) {
           await _tokenStorage.saveAccessToken(newAccessToken);
 
-          // Retry the original request with the new token
+          if (newCsrfToken.isNotEmpty) {
+            await _tokenStorage.saveCsrfToken(newCsrfToken);
+          }
+
+          // Retry the original request with the new tokens
           final retryOptions = err.requestOptions;
           retryOptions.headers['Authorization'] = 'Bearer $newAccessToken';
+          if (newCsrfToken.isNotEmpty) {
+            retryOptions.headers['X-CSRF-Token'] = newCsrfToken;
+          }
 
           final response = await _dio.fetch(retryOptions);
           return handler.resolve(response);
@@ -1144,6 +1261,9 @@ import '../../shared/screens/privacy_screen.dart';
 import '../../features/auth/screens/splash_screen.dart';
 import '../../shared/screens/terms_screen.dart';
 import '../../shared/screens/feedback_form_screen.dart';
+import '../../features/customer/screens/personal_info_screen.dart';
+import '../../features/customer/screens/preferences_screen.dart';
+import '../../features/customer/screens/security_settings_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -1324,6 +1444,18 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const PrivacyScreen(),
           ),
           GoRoute(
+            path: '/profile/personal',
+            builder: (context, state) => const PersonalInformationScreen(),
+          ),
+          GoRoute(
+            path: '/profile/preferences',
+            builder: (context, state) => const PreferencesScreen(),
+          ),
+          GoRoute(
+            path: '/profile/security',
+            builder: (context, state) => const SecuritySettingsScreen(),
+          ),
+          GoRoute(
             path: '/terms',
             builder: (context, state) => const TermsScreen(),
           ),
@@ -1350,6 +1482,39 @@ final routerProvider = Provider<GoRouter>((ref) {
 });
 
 
+===== FILE: lib\core\services\security_service.dart =====
+import 'dart:io';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_jailbreak_detection/flutter_jailbreak_detection.dart';
+
+/// Centralized service for device integrity and security checks.
+class SecurityService {
+  /// Returns true if the device is rooted or jailbroken.
+  /// 
+  /// On simulators, this might return false positives depending on the OS.
+  static Future<bool> isDeviceCompromised() async {
+    // Skip check in debug mode for easier development if desired, 
+    // but recommended to keep for testing.
+    if (kDebugMode && !Platform.isAndroid && !Platform.isIOS) {
+      return false;
+    }
+
+    try {
+      bool jailbroken = await FlutterJailbreakDetection.jailbroken;
+      bool developerMode = await FlutterJailbreakDetection.developerMode;
+      
+      // We block if jailbroken. Developer mode might be allowed 
+      // depending on security policy (INSA usually prefers blocking it too).
+      return jailbroken || developerMode;
+    } catch (e) {
+      // If detection fails, assume safe or log error.
+      debugPrint('Security check failed: $e');
+      return false;
+    }
+  }
+}
+
+
 ===== FILE: lib\core\storage\token_storage.dart =====
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -1364,6 +1529,9 @@ class TokenStorage {
   static const _keyUserFullName = 'user_full_name';
   static const _keyUserEmail = 'user_email';
   static const _keyHasLaunched = 'has_launched';
+  static const _keyCsrfToken = 'csrf_token';
+  static const _keyAvatarUrl = 'avatar_url';
+  static const _keyPhone = 'user_phone';
 
   final FlutterSecureStorage _storage;
 
@@ -1401,6 +1569,8 @@ class TokenStorage {
     String? tier,
     String? fullName,
     String? email,
+    String? avatarUrl,
+    String? phone,
   }) async {
     await Future.wait([
       _storage.write(key: _keyUserId, value: userId),
@@ -1409,11 +1579,19 @@ class TokenStorage {
       if (fullName != null)
         _storage.write(key: _keyUserFullName, value: fullName),
       if (email != null) _storage.write(key: _keyUserEmail, value: email),
+      if (avatarUrl != null)
+        _storage.write(key: _keyAvatarUrl, value: avatarUrl)
+      else
+        _storage.delete(key: _keyAvatarUrl),
+      if (phone != null) _storage.write(key: _keyPhone, value: phone),
     ]);
   }
 
   Future<void> saveAccessToken(String token) =>
       _storage.write(key: _keyAccessToken, value: token);
+
+  Future<void> saveCsrfToken(String token) =>
+      _storage.write(key: _keyCsrfToken, value: token);
 
   // ──────── Read ────────
 
@@ -1423,6 +1601,9 @@ class TokenStorage {
   Future<String?> getUserTier() => _storage.read(key: _keyUserTier);
   Future<String?> getUserFullName() => _storage.read(key: _keyUserFullName);
   Future<String?> getUserEmail() => _storage.read(key: _keyUserEmail);
+  Future<String?> getCsrfToken() => _storage.read(key: _keyCsrfToken);
+  Future<String?> getAvatarUrl() => _storage.read(key: _keyAvatarUrl);
+  Future<String?> getPhone() => _storage.read(key: _keyPhone);
 
   Future<bool> isFirstLaunch() async {
     final value = await _storage.read(key: _keyHasLaunched);
@@ -1806,7 +1987,7 @@ class FinanceSummary {
 
 ===== FILE: lib\features\agent\data\repositories\agent_repository.dart =====
 import 'dart:io';
-import 'dart:convert';
+// Removed unused import
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
@@ -2030,13 +2211,18 @@ class AgentRepository {
 
   Future<void> submitProof(String requestId, File imageFile) async {
     try {
-      final bytes = await imageFile.readAsBytes();
-      final ext = imageFile.path.toLowerCase();
-      final mime = ext.endsWith('.png') ? 'image/png' : 'image/jpeg';
-      final base64Data = 'data:$mime;base64,${base64Encode(bytes)}';
+      final fileName = p.basename(imageFile.path);
+      final formData = FormData.fromMap({
+        'proof': await MultipartFile.fromFile(
+          imageFile.path,
+          filename: fileName,
+        ),
+      });
+
       await _dio.patch(
         '/upgrades/$requestId/proof',
-        data: {'proofUrl': base64Data},
+        data: formData,
+        options: Options(contentType: 'multipart/form-data'),
       );
     } on DioException catch (e) {
       throw ErrorHandler.fromDioException(e);
@@ -4550,6 +4736,12 @@ class AgentProfileScreen extends ConsumerWidget {
 
     final menuItems = [
       {
+        'icon': Icons.person,
+        'label': 'Personal Information',
+        'sub': 'Edit your details',
+        'route': '/profile/personal',
+      },
+      {
         'icon': Icons.history,
         'label': 'History',
         'sub': 'View past requests',
@@ -4559,25 +4751,31 @@ class AgentProfileScreen extends ConsumerWidget {
         'icon': Icons.business,
         'label': 'Business Verification',
         'sub': 'Verify your business details',
-        'route': null,
+        'route': '/agent/business',
       },
       {
         'icon': Icons.account_balance_wallet,
         'label': 'Payout Settings',
         'sub': 'Manage your bank accounts',
-        'route': null,
+        'route': '/agent/payout',
       },
       {
         'icon': Icons.notifications,
         'label': 'Notifications',
         'sub': 'Manage alerts',
         'route': '/agent/settings',
-      }, // Linking to settings for now
+      },
       {
         'icon': Icons.security,
         'label': 'Security & Privacy',
         'sub': 'Password, 2FA',
-        'route': '/agent/settings',
+        'route': '/profile/security',
+      },
+      {
+        'icon': Icons.settings,
+        'label': 'App Preferences',
+        'sub': 'Language, Theme',
+        'route': '/profile/preferences',
       },
       {
         'icon': Icons.help_outline,
@@ -4654,20 +4852,25 @@ class AgentProfileScreen extends ConsumerWidget {
                           Positioned(
                             bottom: 0,
                             right: 0,
-                            child: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.primary,
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Theme.of(context).colorScheme.surface,
-                                  width: 4,
+                            child: GestureDetector(
+                              onTap: () => context.push('/profile/personal'),
+                              child: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Theme.of(context).colorScheme.surface,
+                                    width: 4,
+                                  ),
                                 ),
-                              ),
-                              child: Icon(
-                                Icons.edit,
-                                size: 14,
-                                color: Theme.of(context).colorScheme.onPrimary,
+                                child: Icon(
+                                  Icons.edit,
+                                  size: 14,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onPrimary,
+                                ),
                               ),
                             ),
                           ),
@@ -6292,16 +6495,23 @@ class AgentRequestDetailScreen extends HookConsumerWidget {
                                     child: Divider(height: 1),
                                   ),
                                   GestureDetector(
-                                    onTap: () =>
-                                        _makePhoneCall(req.customerPhone!),
+                                    onTap: req.status == RequestStatus.pending
+                                        ? null
+                                        : () => _makePhoneCall(req.customerPhone!),
                                     child: _MinimalDetailRow(
                                       icon: Icons.phone,
                                       label: 'Contact',
                                       value: req.customerPhone!,
-                                      valueColor: Theme.of(
-                                        context,
-                                      ).colorScheme.primary,
-                                      isActionable: true,
+                                      valueColor: req.status ==
+                                              RequestStatus.pending
+                                          ? Theme.of(context)
+                                              .colorScheme
+                                              .onSurfaceVariant
+                                          : Theme.of(context)
+                                              .colorScheme
+                                              .primary,
+                                      isActionable: req.status !=
+                                          RequestStatus.pending,
                                     ),
                                   ),
                                 ],
@@ -8541,6 +8751,7 @@ class UserProfile with _$UserProfile {
     String? fullName,
     String? role,
     String? tier,
+    String? avatarUrl,
     String? tinNumber,
     String? tradeLicenseNumber,
     bool? isVerified,
@@ -8598,6 +8809,7 @@ mixin _$UserProfile {
   String? get fullName => throw _privateConstructorUsedError;
   String? get role => throw _privateConstructorUsedError;
   String? get tier => throw _privateConstructorUsedError;
+  String? get avatarUrl => throw _privateConstructorUsedError;
   String? get tinNumber => throw _privateConstructorUsedError;
   String? get tradeLicenseNumber => throw _privateConstructorUsedError;
   bool? get isVerified => throw _privateConstructorUsedError;
@@ -8628,6 +8840,7 @@ abstract class $UserProfileCopyWith<$Res> {
     String? fullName,
     String? role,
     String? tier,
+    String? avatarUrl,
     String? tinNumber,
     String? tradeLicenseNumber,
     bool? isVerified,
@@ -8657,6 +8870,7 @@ class _$UserProfileCopyWithImpl<$Res, $Val extends UserProfile>
     Object? fullName = freezed,
     Object? role = freezed,
     Object? tier = freezed,
+    Object? avatarUrl = freezed,
     Object? tinNumber = freezed,
     Object? tradeLicenseNumber = freezed,
     Object? isVerified = freezed,
@@ -8688,6 +8902,10 @@ class _$UserProfileCopyWithImpl<$Res, $Val extends UserProfile>
             tier: freezed == tier
                 ? _value.tier
                 : tier // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            avatarUrl: freezed == avatarUrl
+                ? _value.avatarUrl
+                : avatarUrl // ignore: cast_nullable_to_non_nullable
                       as String?,
             tinNumber: freezed == tinNumber
                 ? _value.tinNumber
@@ -8731,6 +8949,7 @@ abstract class _$$UserProfileImplCopyWith<$Res>
     String? fullName,
     String? role,
     String? tier,
+    String? avatarUrl,
     String? tinNumber,
     String? tradeLicenseNumber,
     bool? isVerified,
@@ -8759,6 +8978,7 @@ class __$$UserProfileImplCopyWithImpl<$Res>
     Object? fullName = freezed,
     Object? role = freezed,
     Object? tier = freezed,
+    Object? avatarUrl = freezed,
     Object? tinNumber = freezed,
     Object? tradeLicenseNumber = freezed,
     Object? isVerified = freezed,
@@ -8790,6 +9010,10 @@ class __$$UserProfileImplCopyWithImpl<$Res>
         tier: freezed == tier
             ? _value.tier
             : tier // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        avatarUrl: freezed == avatarUrl
+            ? _value.avatarUrl
+            : avatarUrl // ignore: cast_nullable_to_non_nullable
                   as String?,
         tinNumber: freezed == tinNumber
             ? _value.tinNumber
@@ -8826,6 +9050,7 @@ class _$UserProfileImpl implements _UserProfile {
     this.fullName,
     this.role,
     this.tier,
+    this.avatarUrl,
     this.tinNumber,
     this.tradeLicenseNumber,
     this.isVerified,
@@ -8849,6 +9074,8 @@ class _$UserProfileImpl implements _UserProfile {
   @override
   final String? tier;
   @override
+  final String? avatarUrl;
+  @override
   final String? tinNumber;
   @override
   final String? tradeLicenseNumber;
@@ -8869,7 +9096,7 @@ class _$UserProfileImpl implements _UserProfile {
 
   @override
   String toString() {
-    return 'UserProfile(id: $id, email: $email, phone: $phone, fullName: $fullName, role: $role, tier: $tier, tinNumber: $tinNumber, tradeLicenseNumber: $tradeLicenseNumber, isVerified: $isVerified, referrals: $referrals, referralCode: $referralCode)';
+    return 'UserProfile(id: $id, email: $email, phone: $phone, fullName: $fullName, role: $role, tier: $tier, avatarUrl: $avatarUrl, tinNumber: $tinNumber, tradeLicenseNumber: $tradeLicenseNumber, isVerified: $isVerified, referrals: $referrals, referralCode: $referralCode)';
   }
 
   @override
@@ -8884,6 +9111,8 @@ class _$UserProfileImpl implements _UserProfile {
                 other.fullName == fullName) &&
             (identical(other.role, role) || other.role == role) &&
             (identical(other.tier, tier) || other.tier == tier) &&
+            (identical(other.avatarUrl, avatarUrl) ||
+                other.avatarUrl == avatarUrl) &&
             (identical(other.tinNumber, tinNumber) ||
                 other.tinNumber == tinNumber) &&
             (identical(other.tradeLicenseNumber, tradeLicenseNumber) ||
@@ -8908,6 +9137,7 @@ class _$UserProfileImpl implements _UserProfile {
     fullName,
     role,
     tier,
+    avatarUrl,
     tinNumber,
     tradeLicenseNumber,
     isVerified,
@@ -8937,6 +9167,7 @@ abstract class _UserProfile implements UserProfile {
     final String? fullName,
     final String? role,
     final String? tier,
+    final String? avatarUrl,
     final String? tinNumber,
     final String? tradeLicenseNumber,
     final bool? isVerified,
@@ -8959,6 +9190,8 @@ abstract class _UserProfile implements UserProfile {
   String? get role;
   @override
   String? get tier;
+  @override
+  String? get avatarUrl;
   @override
   String? get tinNumber;
   @override
@@ -9276,6 +9509,7 @@ _$UserProfileImpl _$$UserProfileImplFromJson(Map<String, dynamic> json) =>
       fullName: json['fullName'] as String?,
       role: json['role'] as String?,
       tier: json['tier'] as String?,
+      avatarUrl: json['avatarUrl'] as String?,
       tinNumber: json['tinNumber'] as String?,
       tradeLicenseNumber: json['tradeLicenseNumber'] as String?,
       isVerified: json['isVerified'] as bool?,
@@ -9293,6 +9527,7 @@ Map<String, dynamic> _$$UserProfileImplToJson(_$UserProfileImpl instance) =>
       'fullName': instance.fullName,
       'role': instance.role,
       'tier': instance.tier,
+      'avatarUrl': instance.avatarUrl,
       'tinNumber': instance.tinNumber,
       'tradeLicenseNumber': instance.tradeLicenseNumber,
       'isVerified': instance.isVerified,
@@ -9338,6 +9573,10 @@ abstract class AuthRepository {
   Future<String> refreshToken();
   Future<void> logout();
   Future<UserProfile> getProfile();
+  Future<UserProfile> updateProfile(Map<String, dynamic> data);
+  Future<void> changePassword(String currentPassword, String newPassword);
+  Future<void> updateAvatar(String? avatarUrl);
+  Future<String> uploadImage(String filePath);
 }
 
 /// Concrete implementation hitting the NestJS backend.
@@ -9406,6 +9645,63 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       final response = await _dio.get('/users/me');
       return UserProfile.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw ErrorHandler.fromDioException(e);
+    } catch (e) {
+      throw UnknownException(message: e.toString());
+    }
+  }
+
+  @override
+  Future<UserProfile> updateProfile(Map<String, dynamic> data) async {
+    try {
+      final response = await _dio.patch('/users/me', data: data);
+      return UserProfile.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw ErrorHandler.fromDioException(e);
+    } catch (e) {
+      throw UnknownException(message: e.toString());
+    }
+  }
+
+  @override
+  Future<void> changePassword(
+    String currentPassword,
+    String newPassword,
+  ) async {
+    try {
+      await _dio.patch(
+        '/users/me/password',
+        data: {'currentPassword': currentPassword, 'newPassword': newPassword},
+      );
+    } on DioException catch (e) {
+      throw ErrorHandler.fromDioException(e);
+    } catch (e) {
+      throw UnknownException(message: e.toString());
+    }
+  }
+
+  @override
+  Future<void> updateAvatar(String? avatarUrl) async {
+    try {
+      await _dio.patch('/users/me/avatar', data: {'avatarUrl': avatarUrl});
+    } on DioException catch (e) {
+      throw ErrorHandler.fromDioException(e);
+    } catch (e) {
+      throw UnknownException(message: e.toString());
+    }
+  }
+
+  @override
+  Future<String> uploadImage(String filePath) async {
+    try {
+      final fileName = filePath.split('/').last;
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(filePath, filename: fileName),
+      });
+
+      final response = await _dio.post('/uploads', data: formData);
+      return response.data['url'] as String;
     } on DioException catch (e) {
       throw ErrorHandler.fromDioException(e);
     } catch (e) {
@@ -10297,11 +10593,14 @@ class _BackButton extends StatelessWidget {
 
 
 ===== FILE: lib\features\auth\screens\splash_screen.dart =====
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lottie/lottie.dart';
 import '../../../core/theme/colors.dart';
+import '../../../core/services/security_service.dart';
 import '../state/auth_provider.dart';
 
 class SplashScreen extends HookConsumerWidget {
@@ -10327,9 +10626,18 @@ class SplashScreen extends HookConsumerWidget {
           ),
         );
 
-    // 🔹 4. Hydrate auth state from secure storage
+    // 🔹 4. Security & Hydration
     useEffect(() {
       Future.microtask(() async {
+        // 🛡️ Security Check
+        final isCompromised = await SecurityService.isDeviceCompromised();
+        if (isCompromised && !kDebugMode) {
+          if (context.mounted) {
+            _showSecurityAlert(context);
+          }
+          return;
+        }
+
         // ApiClient is already initialized in main() — just hydrate auth state
         await ref.read(authProvider.notifier).hydrate();
       });
@@ -10394,6 +10702,38 @@ class SplashScreen extends HookConsumerWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showSecurityAlert(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => PopScope(
+        canPop: false,
+        child: AlertDialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Row(
+            children: [
+              Icon(Icons.security_rounded, color: Colors.red),
+              SizedBox(width: 12),
+              Text('Security Alert'),
+            ],
+          ),
+          content: const Text(
+            'This application cannot run on a compromised device (Rooted/Jailbroken) '
+            'due to security compliance requirements. Please use a secure device.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => exit(0),
+              child:
+                  const Text('Exit App', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -10738,11 +11078,103 @@ class AuthNotifier extends StateNotifier<AuthState> {
         tier: profile.tier,
         fullName: profile.fullName,
         email: profile.email,
+        avatarUrl: profile.avatarUrl,
+        phone: profile.phone,
       );
 
       state = state.copyWith(user: profile);
     } catch (e) {
       // If refresh fails, we keep the old data for now
+    }
+  }
+
+  /// Updates the current user's profile information.
+  Future<void> updateProfile({String? fullName, String? phone}) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final data = <String, dynamic>{};
+      if (fullName != null) data['fullName'] = fullName;
+      if (phone != null) data['phone'] = phone;
+
+      final updatedProfile = await _repo.updateProfile(data);
+
+      await _tokenStorage.saveUserProfile(
+        userId: updatedProfile.id,
+        role: updatedProfile.role ?? 'customer',
+        tier: updatedProfile.tier,
+        fullName: updatedProfile.fullName,
+        email: updatedProfile.email,
+        avatarUrl: updatedProfile.avatarUrl,
+        phone: updatedProfile.phone,
+      );
+
+      state = state.copyWith(user: updatedProfile, isLoading: false);
+    } on AppException catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: e.message);
+      rethrow;
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Failed to update profile',
+      );
+      rethrow;
+    }
+  }
+
+  /// Changes the user's password.
+  Future<void> changePassword(String currentPassword, String newPassword) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      await _repo.changePassword(currentPassword, newPassword);
+      state = state.copyWith(isLoading: false);
+    } on AppException catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: e.message);
+      rethrow;
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Failed to change password',
+      );
+      rethrow;
+    }
+  }
+
+  /// Uploads a new avatar and updates the profile.
+  Future<void> uploadAvatar(String filePath) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final url = await _repo.uploadImage(filePath);
+      await _repo.updateAvatar(url);
+      await refreshProfile();
+      state = state.copyWith(isLoading: false);
+    } on AppException catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: e.message);
+      rethrow;
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Failed to upload avatar',
+      );
+      rethrow;
+    }
+  }
+
+  /// Removes the user's avatar.
+  Future<void> deleteAvatar() async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      await _repo.updateAvatar(null);
+      await refreshProfile();
+      state = state.copyWith(isLoading: false);
+    } on AppException catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: e.message);
+      rethrow;
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Failed to remove avatar',
+      );
+      rethrow;
     }
   }
 
@@ -10767,6 +11199,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
       fullName: await _tokenStorage.getUserFullName(),
       role: await _tokenStorage.getUserRole(),
       tier: await _tokenStorage.getUserTier(),
+      avatarUrl: await _tokenStorage.getAvatarUrl(),
+      phone: await _tokenStorage.getPhone(),
     );
   }
 
@@ -12099,6 +12533,471 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 }
 
 
+===== FILE: lib\features\customer\screens\personal_info_screen.dart =====
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
+import '../../auth/state/auth_provider.dart';
+import '../../../shared/widgets/erkata_screen_header.dart';
+import '../../../core/network/api_client.dart';
+
+class PersonalInformationScreen extends ConsumerStatefulWidget {
+  const PersonalInformationScreen({super.key});
+
+  @override
+  ConsumerState<PersonalInformationScreen> createState() =>
+      _PersonalInformationScreenState();
+}
+
+class _PersonalInformationScreenState
+    extends ConsumerState<PersonalInformationScreen> {
+  final _formKey = GlobalKey<FormState>();
+  late TextEditingController _nameController;
+  late TextEditingController _phoneController;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final user = ref.read(authProvider).user;
+    _nameController = TextEditingController(text: user?.fullName);
+    _phoneController = TextEditingController(text: user?.phone);
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _phoneController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 70,
+    );
+
+    if (pickedFile != null) {
+      try {
+        await ref.read(authProvider.notifier).uploadAvatar(pickedFile.path);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Avatar updated successfully')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Failed to upload avatar: $e')),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _handleSave() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isSaving = true);
+    try {
+      await ref.read(authProvider.notifier).updateProfile(
+            fullName: _nameController.text.trim(),
+            phone: _phoneController.text.trim(),
+          );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Profile updated successfully')),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Update failed: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final authState = ref.watch(authProvider);
+    final user = authState.user;
+    final avatarUrl = user?.avatarUrl;
+
+    return Scaffold(
+      body: SafeArea(
+        child: Column(
+          children: [
+            const ErkataScreenHeader(
+              title: 'Personal Info',
+              subtitle: 'Update your contact details',
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    children: [
+                      // Avatar Section
+                      Center(
+                        child: Stack(
+                          children: [
+                            Container(
+                              width: 120,
+                              height: 120,
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                                  width: 4,
+                                ),
+                                image: avatarUrl != null
+                                    ? DecorationImage(
+                                        image: NetworkImage(ApiClient.getAssetUrl(avatarUrl)),
+                                        fit: BoxFit.cover,
+                                      )
+                                    : null,
+                              ),
+                              child: avatarUrl == null
+                                  ? Icon(
+                                      Icons.person,
+                                      size: 60,
+                                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.5),
+                                    )
+                                  : null,
+                            ),
+                            Positioned(
+                              bottom: 0,
+                              right: 0,
+                              child: GestureDetector(
+                                onTap: _pickImage,
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).colorScheme.primary,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: Colors.white, width: 2),
+                                  ),
+                                  child: const Icon(
+                                    Icons.camera_alt,
+                                    size: 20,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+
+                      // Form Fields
+                      TextFormField(
+                        controller: _nameController,
+                        decoration: InputDecoration(
+                          labelText: 'Full Name',
+                          prefixIcon: const Icon(Icons.person_outline),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your name';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                      TextFormField(
+                        controller: _phoneController,
+                        keyboardType: TextInputType.phone,
+                        decoration: InputDecoration(
+                          labelText: 'Phone Number',
+                          prefixIcon: const Icon(Icons.phone_outlined),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your phone number';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 20),
+                      TextFormField(
+                        initialValue: user?.email,
+                        readOnly: true,
+                        decoration: InputDecoration(
+                          labelText: 'Email Address',
+                          prefixIcon: const Icon(Icons.email_outlined),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Email cannot be changed',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+
+                      const SizedBox(height: 40),
+
+                      // Save Button
+                      SizedBox(
+                        width: double.infinity,
+                        height: 56,
+                        child: ElevatedButton(
+                          onPressed: _isSaving ? null : _handleSave,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Theme.of(context).colorScheme.primary,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: _isSaving
+                              ? const SizedBox(
+                                  height: 24,
+                                  width: 24,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text(
+                                  'Save Changes',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                        ),
+                      ),
+
+                      if (avatarUrl != null) ...[
+                        const SizedBox(height: 16),
+                        TextButton.icon(
+                          onPressed: () => ref.read(authProvider.notifier).deleteAvatar(),
+                          icon: const Icon(Icons.delete_outline, color: Colors.red),
+                          label: const Text(
+                            'Remove Avatar',
+                            style: TextStyle(color: Colors.red),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+===== FILE: lib\features\customer\screens\preferences_screen.dart =====
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/theme/theme_provider.dart';
+import '../../../shared/widgets/erkata_screen_header.dart';
+
+class PreferencesScreen extends ConsumerWidget {
+  const PreferencesScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeProvider);
+
+    return Scaffold(
+      body: SafeArea(
+        child: Column(
+          children: [
+            const ErkataScreenHeader(
+              title: 'Preferences',
+              subtitle: 'Customize your app experience',
+            ),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.all(24),
+                children: [
+                  _SectionHeader(title: 'App Appearance'),
+                  const SizedBox(height: 12),
+                  _PreferenceCard(
+                    child: Column(
+                      children: [
+                        _ToggleTile(
+                          title: 'Dark Mode',
+                          subtitle: 'Switch to a dark color scheme',
+                          value: themeMode == ThemeMode.dark,
+                          onChanged: (v) {
+                            ref.read(themeProvider.notifier).toggleTheme();
+                          },
+                          icon: Icons.dark_mode_outlined,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  _SectionHeader(title: 'Language'),
+                  const SizedBox(height: 12),
+                  _PreferenceCard(
+                    child: Column(
+                      children: [
+                        _LanguageTile(
+                          title: 'English',
+                          isSelected: true, // Mocked for now
+                          onTap: () {},
+                        ),
+                        const Divider(height: 1),
+                        _LanguageTile(
+                          title: 'Amharic (አማርኛ)',
+                          isSelected: false,
+                          onTap: () {},
+                        ),
+                        const Divider(height: 1),
+                        _LanguageTile(
+                          title: 'Oromiffa',
+                          isSelected: false,
+                          onTap: () {},
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  const _SectionHeader({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      title,
+      style: const TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.bold,
+        letterSpacing: 0.5,
+        color: Colors.grey,
+      ),
+    );
+  }
+}
+
+class _PreferenceCard extends StatelessWidget {
+  final Widget child;
+  const _PreferenceCard({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: child,
+      ),
+    );
+  }
+}
+
+class _ToggleTile extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+  final IconData icon;
+
+  const _ToggleTile({
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.onChanged,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      leading: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.primaryContainer,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, color: Theme.of(context).colorScheme.primary),
+      ),
+      title: Text(
+        title,
+        style: const TextStyle(fontWeight: FontWeight.bold),
+      ),
+      subtitle: Text(subtitle),
+      trailing: Switch.adaptive(value: value, onChanged: onChanged),
+    );
+  }
+}
+
+class _LanguageTile extends StatelessWidget {
+  final String title;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _LanguageTile({
+    required this.title,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      onTap: onTap,
+      title: Text(
+        title,
+        style: TextStyle(
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        ),
+      ),
+      trailing: isSelected
+          ? Icon(Icons.check_circle, color: Theme.of(context).colorScheme.primary)
+          : null,
+    );
+  }
+}
+
+
 ===== FILE: lib\features\customer\screens\profile_screen.dart =====
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12128,7 +13027,7 @@ class ProfileScreen extends ConsumerWidget {
         'icon': Icons.person,
         'label': 'Personal Information',
         'sub': 'Edit your details',
-        'route': '/settings',
+        'route': '/profile/personal',
       },
       {
         'icon': Icons.notifications,
@@ -12140,13 +13039,13 @@ class ProfileScreen extends ConsumerWidget {
         'icon': Icons.security,
         'label': 'Security & Privacy',
         'sub': 'Password, 2FA',
-        'route': '/privacy',
+        'route': '/profile/security',
       },
       {
         'icon': Icons.settings,
         'label': 'Preferences',
         'sub': 'Language, Theme',
-        'route': '/settings',
+        'route': '/profile/preferences',
       },
       {
         'icon': Icons.help_outline,
@@ -14342,11 +15241,214 @@ class _StatusBadge extends StatelessWidget {
 }
 
 
+===== FILE: lib\features\customer\screens\security_settings_screen.dart =====
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../auth/state/auth_provider.dart';
+import '../../../shared/widgets/erkata_screen_header.dart';
+
+class SecuritySettingsScreen extends ConsumerStatefulWidget {
+  const SecuritySettingsScreen({super.key});
+
+  @override
+  ConsumerState<SecuritySettingsScreen> createState() =>
+      _SecuritySettingsScreenState();
+}
+
+class _SecuritySettingsScreenState extends ConsumerState<SecuritySettingsScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _currentPasswordController = TextEditingController();
+  final _newPasswordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+  bool _isSaving = false;
+  bool _obscureCurrent = true;
+  bool _obscureNew = true;
+  bool _obscureConfirm = true;
+
+  @override
+  void dispose() {
+    _currentPasswordController.dispose();
+    _newPasswordController.dispose();
+    _confirmPasswordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleUpdate() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isSaving = true);
+    try {
+      await ref.read(authProvider.notifier).changePassword(
+            _currentPasswordController.text,
+            _newPasswordController.text,
+          );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Password updated successfully')),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update password: $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: SafeArea(
+        child: Column(
+          children: [
+            const ErkataScreenHeader(
+              title: 'Security',
+              subtitle: 'Manage your password and protection',
+            ),
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Change Password',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Ensure your account is using a long, random password to stay secure.',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                      const SizedBox(height: 32),
+
+                      TextFormField(
+                        controller: _currentPasswordController,
+                        obscureText: _obscureCurrent,
+                        decoration: InputDecoration(
+                          labelText: 'Current Password',
+                          prefixIcon: const Icon(Icons.lock_outline),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscureCurrent ? Icons.visibility_off : Icons.visibility,
+                            ),
+                            onPressed: () => setState(() => _obscureCurrent = !_obscureCurrent),
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Required';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 20),
+
+                      TextFormField(
+                        controller: _newPasswordController,
+                        obscureText: _obscureNew,
+                        decoration: InputDecoration(
+                          labelText: 'New Password',
+                          prefixIcon: const Icon(Icons.vpn_key_outlined),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscureNew ? Icons.visibility_off : Icons.visibility,
+                            ),
+                            onPressed: () => setState(() => _obscureNew = !_obscureNew),
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) return 'Required';
+                          if (value.length < 8) return 'Minimum 8 characters';
+                          // Add complexity regex if needed to match backend
+                          final regex = RegExp(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).{8,}$');
+                          if (!regex.hasMatch(value)) {
+                            return 'Must include uppercase, number, and symbol';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 20),
+
+                      TextFormField(
+                        controller: _confirmPasswordController,
+                        obscureText: _obscureConfirm,
+                        decoration: InputDecoration(
+                          labelText: 'Confirm New Password',
+                          prefixIcon: const Icon(Icons.check_circle_outline),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscureConfirm ? Icons.visibility_off : Icons.visibility,
+                            ),
+                            onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
+                          ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        validator: (value) {
+                          if (value != _newPasswordController.text) {
+                            return 'Passwords do not match';
+                          }
+                          return null;
+                        },
+                      ),
+
+                      const SizedBox(height: 40),
+
+                      SizedBox(
+                        width: double.infinity,
+                        height: 56,
+                        child: ElevatedButton(
+                          onPressed: _isSaving ? null : _handleUpdate,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.black87,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                          child: _isSaving
+                              ? const CircularProgressIndicator(color: Colors.white)
+                              : const Text(
+                                  'Update Password',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
 ===== FILE: lib\features\customer\screens\settings_screen.dart =====
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/theme/colors.dart';
-import '../../../core/theme/theme_provider.dart';
 import '../../../shared/widgets/erkata_screen_header.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -14364,13 +15466,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _requestUpdates = true;
   bool _paymentAlerts = true;
   bool _promotionalMessages = false;
-
-  // Security
-  bool _twoFactorAuth = false;
-  bool _biometricLogin = false;
-
-  // Preferences
-  String _selectedLanguage = 'English';
 
   @override
   Widget build(BuildContext context) {
@@ -14397,21 +15492,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           icon: Icons.person_outline,
                           title: 'Personal Information',
                           subtitle: 'Name, email, phone number',
-                          onTap: () {},
+                          onTap: () => context.push('/profile/personal'),
                         ),
                         const Divider(height: 1),
                         _SettingsTile(
-                          icon: Icons.location_on_outlined,
-                          title: 'Address',
-                          subtitle: 'Update your location',
-                          onTap: () {},
+                          icon: Icons.lock_outline,
+                          title: 'Password & Security',
+                          subtitle: 'Update your password',
+                          onTap: () => context.push('/profile/security'),
                         ),
                         const Divider(height: 1),
                         _SettingsTile(
-                          icon: Icons.camera_alt_outlined,
-                          title: 'Profile Photo',
-                          subtitle: 'Change your avatar',
-                          onTap: () {},
+                          icon: Icons.tune_outlined,
+                          title: 'App Preferences',
+                          subtitle: 'Language, Theme',
+                          onTap: () => context.push('/profile/preferences'),
                         ),
                       ],
                     ),
@@ -14478,104 +15573,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
                     // Security
                     _SectionHeader(
-                      title: 'Security',
+                      title: 'Privacy',
                       icon: Icons.shield_outlined,
                     ),
-                    const SizedBox(height: 12),
-                    _SettingsCard(
-                      children: [
-                        _SettingsTile(
-                          icon: Icons.lock_outline,
-                          title: 'Change Password',
-                          subtitle: 'Update your password',
-                          onTap: () {},
-                        ),
-                        const Divider(height: 1),
-                        _ToggleTile(
-                          title: 'Two-Factor Authentication',
-                          subtitle: 'Add extra security to your account',
-                          value: _twoFactorAuth,
-                          onChanged: (v) => setState(() => _twoFactorAuth = v),
-                        ),
-                        const Divider(height: 1),
-                        _ToggleTile(
-                          title: 'Biometric Login',
-                          subtitle: 'Use fingerprint or face to login',
-                          value: _biometricLogin,
-                          onChanged: (v) => setState(() => _biometricLogin = v),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 28),
-
-                    // Preferences
-                    _SectionHeader(title: 'Preferences', icon: Icons.tune),
-                    const SizedBox(height: 12),
-                    _SettingsCard(
-                      children: [
-                        ListTile(
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 4,
-                          ),
-                          leading: Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.surfaceContainerHighest,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Icon(
-                              Icons.language,
-                              size: 20,
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                          title: const Text(
-                            'Language',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                            ),
-                          ),
-                          trailing: DropdownButton<String>(
-                            value: _selectedLanguage,
-                            underline: const SizedBox.shrink(),
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.onSurface,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                            ),
-                            items: ['English', 'Amharic'].map((lang) {
-                              return DropdownMenuItem(
-                                value: lang,
-                                child: Text(lang),
-                              );
-                            }).toList(),
-                            onChanged: (v) =>
-                                setState(() => _selectedLanguage = v!),
-                          ),
-                        ),
-                        const Divider(height: 1),
-                        _ToggleTile(
-                          title: 'Dark Mode',
-                          subtitle: 'Switch to dark theme',
-                          value: ref.watch(themeProvider) == ThemeMode.dark,
-                          onChanged: (v) {
-                            ref.read(themeProvider.notifier).toggleTheme();
-                          },
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 28),
-
-                    // Legal
-                    _SectionHeader(title: 'Legal', icon: Icons.gavel),
                     const SizedBox(height: 12),
                     _SettingsCard(
                       children: [
@@ -14583,17 +15583,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           icon: Icons.description_outlined,
                           title: 'Terms of Service',
                           subtitle: 'Read our terms',
-                          onTap: () => Navigator.pushNamed(context, '/terms'),
+                          onTap: () => context.push('/terms'),
                         ),
                         const Divider(height: 1),
                         _SettingsTile(
                           icon: Icons.privacy_tip_outlined,
                           title: 'Privacy Policy',
                           subtitle: 'How we handle your data',
-                          onTap: () => Navigator.pushNamed(context, '/privacy'),
+                          onTap: () => context.push('/privacy'),
                         ),
                       ],
                     ),
+
 
                     const SizedBox(height: 100),
                   ],
@@ -16958,6 +17959,8 @@ dependencies:
   url_launcher: ^6.3.2
   image_picker: ^1.2.2
   path: ^1.9.1
+  flutter_jailbreak_detection: ^1.1.1
+  http_certificate_pinning: ^3.0.1
 
 dev_dependencies:
   flutter_test:

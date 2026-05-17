@@ -1,52 +1,47 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 import api from '../utils/api';
 import { 
-  FileText, 
-  TrendingUp, 
-  Users, 
-  MapPin, 
-  User, 
-  Bell,
-  CheckCircle,
-  PlayCircle,
-  Upload,
-  ArrowUpRight,
-  Clock,
-  Briefcase,
-  Filter,
-  MoreHorizontal,
-  Shield,
-  ShieldAlert,
-  ChevronLeft,
-  ChevronRight,
-  ShieldCheck,
-  ArrowDownRight,
   Loader2
 } from 'lucide-react';
-import { 
-  agentEarnings as mockEarnings, 
-  agentReferrals as mockReferrals 
-} from '../utils/mockData';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useModal } from '../contexts/ModalContext';
 import { Can } from '../components/ui/Can';
 import { Action } from '../hooks/usePermissions';
 import { useSocket } from '../contexts/SocketContext';
-
-import WalletSummary from '../components/agent/WalletSummary';
-import ProfileView from '../components/agent/ProfileView';
-import { PackageSelection } from '../components/agent/PackageSelection';
-import { PackagesView } from '../components/agent/PackagesView';
-import { NetworkView } from '../components/agent/NetworkView';
-import { FocusBoard } from '../components/agent/FocusBoard';
 import { Skeleton } from '../components/ui/Skeleton';
-import TransferMatchModal from '../components/agent/TransferMatchModal';
-import PayoutRequestModal from '../components/agent/PayoutRequestModal';
-import BroadcastInbox from '../components/shared/BroadcastInbox';
+import AccessDenied from '../components/ui/AccessDenied';
+import ViewNotFound from '../components/ui/ViewNotFound';
+
+// Lazy load components
+const WalletSummary = lazy(() => import('../components/agent/WalletSummary'));
+const ProfileView = lazy(() => import('../components/agent/ProfileView'));
+const PackageSelection = lazy(() => import('../components/agent/PackageSelection'));
+const PackagesView = lazy(() => import('../components/agent/PackagesView'));
+const NetworkView = lazy(() => import('../components/agent/NetworkView'));
+const FocusBoard = lazy(() => import('../components/agent/FocusBoard'));
+const BroadcastInbox = lazy(() => import('../components/shared/BroadcastInbox'));
+const TransferMatchModal = lazy(() => import('../components/agent/TransferMatchModal'));
+const PayoutRequestModal = lazy(() => import('../components/agent/PayoutRequestModal'));
 
 type DashboardView = 'focus' | 'earnings' | 'network' | 'packages' | 'profile' | 'notices';
+const VALID_VIEWS: string[] = ['focus', 'earnings', 'network', 'packages', 'profile', 'notices'];
+
+const LoadingFallback = () => (
+    <div className="flex items-center justify-center h-[50vh]">
+        <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+    </div>
+);
+
+const VIEWS_REGISTRY: Record<string, { component: React.ComponentType<any>; permission: Action }> = {
+    'focus': { component: FocusBoard, permission: Action.VIEW_ASSIGNED_REQUEST_DETAILS },
+    'earnings': { component: WalletSummary, permission: Action.VIEW_OWN_FINANCES },
+    'packages': { component: PackagesView, permission: Action.VIEW_UPGRADES },
+    'network': { component: NetworkView, permission: Action.VIEW_REFERRALS },
+    'profile': { component: ProfileView, permission: Action.VIEW_BROADCASTS }, // Shared anchor
+    'notices': { component: BroadcastInbox, permission: Action.VIEW_BROADCASTS },
+};
 
 const DashboardSkeleton: React.FC = () => (
   <div className="max-w-6xl mx-auto space-y-8 animate-pulse pt-4">
@@ -82,10 +77,40 @@ const AgentDashboard: React.FC = () => {
   const { showConfirm, showAlert } = useModal();
   const [searchParams, setSearchParams] = useSearchParams();
   const view = (searchParams.get('view') as DashboardView) || 'focus';
+  
   const [profile, setProfile] = useState<any>(null);
   const [finance, setFinance] = useState<any>(null);
+  const [requests, setRequests] = useState<any[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [hasSkippedPackageSelection, setHasSkippedPackageSelection] = useState(false);
+  const [transferringJobId, setTransferringJobId] = useState<string | null>(null);
+  const [isPayoutModalOpen, setIsPayoutModalOpen] = useState(false);
+  const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
+
+  // Strict URL Parameter Validation
+  useEffect(() => {
+    if (searchParams.has('view') && !VALID_VIEWS.includes(searchParams.get('view')!)) {
+        setSearchParams({ view: 'focus' }, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
+  const mapBackendJobsToUi = (matches: any[]): any[] => {
+    return matches.map(m => ({
+      id: m.id,
+      transactionId: m.transaction?.id,
+      submittedDate: new Date(m.assignedAt).toLocaleDateString(),
+      submittedTime: new Date(m.assignedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      requirementSummary: `${m.request.category}: ${m.request.description || 'No description provided'}`,
+      category: m.request.category,
+      customerName: m.request.customer.fullName,
+      customerPhone: m.request.customer.phone,
+      zone: m.request.zone?.name || 'Unknown',
+      woreda: m.request.woreda || 'N/A',
+      budget: m.request.budget || '0',
+      metadata: m.request.metadata || {},
+      status: m.status // assigned, accepted, completed, rejected
+    }));
+  };
 
   const fetchData = async () => {
     try {
@@ -152,25 +177,6 @@ const AgentDashboard: React.FC = () => {
     }
   }, [socket]);
 
-
-  const mapBackendJobsToUi = (matches: any[]): any[] => {
-    return matches.map(m => ({
-      id: m.id,
-      transactionId: m.transaction?.id,
-      submittedDate: new Date(m.assignedAt).toLocaleDateString(),
-      submittedTime: new Date(m.assignedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      requirementSummary: `${m.request.category}: ${m.request.description || 'No description provided'}`,
-      category: m.request.category,
-      customerName: m.request.customer.fullName,
-      customerPhone: m.request.customer.phone,
-      zone: m.request.zone?.name || 'Unknown',
-      woreda: m.request.woreda || 'N/A',
-      budget: m.request.budget || '0',
-      metadata: m.request.metadata || {},
-      status: m.status // assigned, accepted, completed, rejected
-    }));
-  };
-
   const setView = (newView: DashboardView) => {
     setSearchParams(prev => {
       const p = new URLSearchParams(prev);
@@ -179,21 +185,12 @@ const AgentDashboard: React.FC = () => {
     });
   };
 
-  const [requests, setRequests] = useState<any[]>([]);
-  const [transferringJobId, setTransferringJobId] = useState<string | null>(null);
-  const [isPayoutModalOpen, setIsPayoutModalOpen] = useState(false);
-  const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
-
   const addProcessingId = (id: string) => setProcessingIds(prev => new Set(prev).add(id));
   const removeProcessingId = (id: string) => setProcessingIds(prev => {
     const next = new Set(prev);
     next.delete(id);
     return next;
   });
-
-  const handleTransferClick = (jobId: string) => {
-    setTransferringJobId(jobId);
-  };
 
   const handleDecline = async (jobId: string) => {
     const confirmed = await showConfirm({
@@ -209,9 +206,6 @@ const AgentDashboard: React.FC = () => {
         await api.patch(`/transactions/${jobId}/decline`);
         setRequests(prev => prev.filter(req => req.id !== jobId));
         showAlert({ title: 'Success', message: 'Assignment declined.', type: 'success' });
-      } catch (error) {
-        console.error('Failed to decline job:', error);
-        showAlert({ title: 'Error', message: 'Failed to decline assignment.', type: 'error' });
       } finally {
         removeProcessingId(jobId);
       }
@@ -222,26 +216,19 @@ const AgentDashboard: React.FC = () => {
     try {
       addProcessingId(jobId);
       await api.patch(`/transactions/${jobId}/accept`);
-      
-      // Perform a silent refresh of specifically the jobs to get un-redacted customer details
       const jobsRes = await api.get('/transactions/my-jobs');
       setRequests(mapBackendJobsToUi(jobsRes.data));
-
       showAlert({
         title: 'Assignment Accepted',
         message: 'Customer details have been unlocked. You can now start the fulfillment.',
         type: 'success'
       });
-    } catch (error) {
-       console.error('Failed to accept job:', error);
-       showAlert({ title: 'Error', message: 'Failed to accept assignment.', type: 'error' });
     } finally {
       removeProcessingId(jobId);
     }
   };
 
   const handlePayoutRequest = async () => {
-    // Refresh finance before opening to ensure the balance is current
     try {
       const financeRes = await api.get(`/users/me/finance?t=${Date.now()}`);
       setFinance(financeRes.data);
@@ -259,17 +246,12 @@ const AgentDashboard: React.FC = () => {
         message: 'Your request has been sent to the operator for manual transfer.',
         type: 'success'
       });
-      // Refresh finance data
       const financeRes = await api.get('/users/me/finance');
       setFinance(financeRes.data);
     } catch (error) {
        console.error('Failed to request payout:', error);
-       throw error; // Re-throw to be caught by modal's error handler
+       throw error;
     }
-  };
-
-  const handleStart = (requestId: string) => {
-    console.log(`Started fulfillment for request ${requestId}`);
   };
 
   const handleCompleteClick = async (jobId: string, transactionId: string, customerName: string) => {
@@ -291,16 +273,51 @@ const AgentDashboard: React.FC = () => {
         await api.patch(`/transactions/${jobId}/complete`);
         await fetchData();
         showAlert({ title: 'Success', message: 'Job marked as complete. Waiting for customer confirmation.', type: 'success' });
-      } catch (error) {
-        console.error('Failed to complete job:', error);
-        showAlert({ title: 'Error', message: 'Failed to mark job as complete.', type: 'error' });
       } finally {
         removeProcessingId(jobId);
       }
     }
   };
 
+  const renderContent = () => {
+    const viewConfig = VIEWS_REGISTRY[view];
+    if (!viewConfig) return <ViewNotFound />;
 
+    const Component = viewConfig.component;
+    let props: any = {};
+    
+    switch (view) {
+        case 'focus':
+            props = { 
+                requests, 
+                onAccept: handleAccept, 
+                onComplete: handleCompleteClick, 
+                onTransfer: (id: string) => setTransferringJobId(id), 
+                onDecline: handleDecline,
+                hasReferrals: !!profile?.referrals?.length,
+                processingIds 
+            };
+            break;
+        case 'earnings':
+            props = { finance, onPayoutRequest: handlePayoutRequest };
+            break;
+        case 'packages':
+            props = { finance, profile, onUpgradeComplete: fetchData };
+            break;
+        case 'network':
+            props = { profile, finance, onNavigateToPackages: () => setView('packages') };
+            break;
+        case 'profile':
+            props = { profile };
+            break;
+    }
+
+    return (
+        <Can perform={viewConfig.permission} fallback={<AccessDenied />}>
+            <Component {...props} />
+        </Can>
+    );
+  };
 
   if (isLoadingData && !profile) {
     return (
@@ -324,7 +341,9 @@ const AgentDashboard: React.FC = () => {
             </div>
             <span className="text-lg font-black tracking-tight text-slate-800">erkata</span>
         </div>
-        <PackageSelection onComplete={fetchData} onSkip={() => setHasSkippedPackageSelection(true)} />
+        <Suspense fallback={<LoadingFallback />}>
+            <PackageSelection onComplete={fetchData} onSkip={() => setHasSkippedPackageSelection(true)} />
+        </Suspense>
       </div>
     );
   }
@@ -343,62 +362,28 @@ const AgentDashboard: React.FC = () => {
           exit={{ opacity: 0, x: -20 }}
           transition={{ duration: 0.3 }}
         >
-          {view === 'focus' && (
-             <FocusBoard 
-                requests={requests} 
-                onAccept={handleAccept} 
-                onComplete={handleCompleteClick}
-                onTransfer={handleTransferClick}
-                onDecline={handleDecline}
-                hasReferrals={!!profile?.referrals?.length}
-                processingIds={processingIds}
-             />
-          )}
-
-          {view === 'earnings' && (
-            <WalletSummary finance={finance} onPayoutRequest={handlePayoutRequest} />
-          )}
-
-          {view === 'profile' && (
-            <ProfileView profile={profile} />
-          )}
-
-          {view === 'packages' && profile && finance && (
-             <PackagesView 
-                finance={finance} 
-                profile={profile} 
-                onUpgradeComplete={fetchData} 
-             />
-          )}
-
-          {view === 'network' && (
-             <NetworkView 
-                profile={profile} 
-                finance={finance} 
-                onNavigateToPackages={() => setView('packages')} 
-             />
-          )}
-
-          {view === 'notices' && (
-             <BroadcastInbox />
-          )}
+            <Suspense fallback={<LoadingFallback />}>
+                {renderContent()}
+            </Suspense>
         </motion.div>
       </AnimatePresence>
 
-      <TransferMatchModal
-        isOpen={!!transferringJobId}
-        onClose={() => setTransferringJobId(null)}
-        matchId={transferringJobId || ''}
-        referrals={profile?.referrals || []}
-        onSuccess={fetchData}
-      />
+      <Suspense fallback={null}>
+        <TransferMatchModal
+            isOpen={!!transferringJobId}
+            onClose={() => setTransferringJobId(null)}
+            matchId={transferringJobId || ''}
+            referrals={profile?.referrals || []}
+            onSuccess={fetchData}
+        />
 
-      <PayoutRequestModal 
-        isOpen={isPayoutModalOpen}
-        onClose={() => setIsPayoutModalOpen(false)}
-        availableBalance={parseFloat(finance?.aglpAvailable || '0')}
-        onSubmit={handlePayoutSubmit}
-      />
+        <PayoutRequestModal 
+            isOpen={isPayoutModalOpen}
+            onClose={() => setIsPayoutModalOpen(false)}
+            availableBalance={parseFloat(finance?.aglpAvailable || '0')}
+            onSubmit={handlePayoutSubmit}
+        />
+      </Suspense>
     </DashboardLayout>
   );
 };

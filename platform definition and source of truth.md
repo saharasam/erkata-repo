@@ -26,7 +26,7 @@ System responsibilities:
 
 - Request routing (operator → agent)
 - Agent prioritization (package-based)
-- Controlled referral commission tracking (1-level MLM)
+- Controlled referral commission tracking (Package upgrades only)
 - Wallet accounting (AGLP-based)
 - Performance monitoring and enforcement
 - Dispute signaling and escalation
@@ -46,7 +46,7 @@ Responsibilities:
 
 - Define global system rules:
   - Package pricing and structure
-  - Commission rates (referrals + transactions)
+  - Commission rates (referrals)
   - AGLP ↔ ETB conversion rate
   - Withdrawal policies
 - Control system access:
@@ -131,8 +131,7 @@ Capabilities:
 
 Earnings:
 
-- Referral commissions
-- Downline activity commissions
+- Referral commissions (Package upgrades only)
 
 Not paid by platform for fulfillment.
 
@@ -259,13 +258,13 @@ Example structure:
 
 Actual structure
 
-| Package       | Compensation     | Referral Slots | Geographic Access |
-| ------------- | ---------------- | -------------- | ----------------- |
-| Free          | None             | 3              | 1 zone            |
-| Peace         | Direct + 1st gen | 7              | 2 zones           |
-| Love          | Direct + 1st gen | 16             | 3 zones           |
-| Unity         | Direct + 1st gen | 23             | 5 zones           |
-| Abundant Life | Direct + 1st gen | 31             | Unlimited         |
+| Package       | Compensation      | Referral Slots | Geographic Access |
+| ------------- | ----------------- | -------------- | ----------------- |
+| Free          | None              | 3              | 1 zone            |
+| Peace         | Package Referrals | 7              | 2 zones           |
+| Love          | Package Referrals | 16             | 3 zones           |
+| Unity         | Package Referrals | 23             | 5 zones           |
+| Abundant Life | Package Referrals | 31             | Unlimited         |
 ---
 
 # 6. Referral System (MVP Constraint)
@@ -276,7 +275,6 @@ Actual structure
 Agents earn commission when:
 
 1. Referred agent buys package
-2. Referred agent fulfills a request
 
 
 Note: MLM is **restricted to first-generation referrals only**.
@@ -290,8 +288,7 @@ Note: MLM is **restricted to first-generation referrals only**.
 
 Agents earn from:
 
-- Referral commissions
-- Downline fulfillment activity
+- Referral commissions (Package upgrades only)
 
 Agents do NOT earn from platform for completing requests.
 
@@ -698,7 +695,6 @@ This creates a **compliance pressure system**.
 Referring agent earns commission when:
 
 1. Referred agent **purchases a package**
-2. Referred agent **completes a request**
 
 ---
 
@@ -712,8 +708,7 @@ Referring agent earns commission when:
 
 ### 7.1 Revenue Sources for Agents
 
-- Referral commissions
-- Downline activity commissions
+- Referral commissions (Package upgrades only)
 
 **Important Constraint:**
 

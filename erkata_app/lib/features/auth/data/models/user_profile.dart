@@ -13,6 +13,7 @@ class UserProfile with _$UserProfile {
     String? fullName,
     String? role,
     String? tier,
+    String? avatarUrl,
     String? tinNumber,
     String? tradeLicenseNumber,
     bool? isVerified,

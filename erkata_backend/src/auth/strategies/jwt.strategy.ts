@@ -23,8 +23,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     email: string;
     role?: string;
     tier?: string;
+    tokenType?: string;
   }) {
     const userId = payload.sub;
+
+    if (payload.tokenType !== 'access') {
+      throw new UnauthorizedException(
+        'Invalid token type: Only access tokens are allowed',
+      );
+    }
 
     if (!userId) {
       throw new UnauthorizedException('Invalid token: sub missing');

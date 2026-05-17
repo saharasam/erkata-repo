@@ -60,13 +60,10 @@ export class AuditInterceptor implements NestInterceptor {
                 targetTable,
                 targetId: targetIdFromContext,
                 metadata: {
-                  requestBody: body as object,
+                  requestBody: this.redact(body),
                   ip: request.ip,
                   userAgent: request.headers['user-agent'],
-                  response:
-                    response && typeof response === 'object'
-                      ? { ...response }
-                      : null,
+                  response: response ? this.redact(response) : null,
                 },
               },
             });
@@ -79,5 +76,46 @@ export class AuditInterceptor implements NestInterceptor {
         })();
       }),
     );
+  }
+
+  private redact(data: any): any {
+    if (!data || typeof data !== 'object') return data;
+
+    const sensitiveKeys = [
+      'password',
+      'currentPassword',
+      'oldPassword',
+      'newPassword',
+      'pass',
+      'token',
+      'refreshToken',
+      'csrfToken',
+      'tinNumber',
+      'tradeLicenseNumber',
+      'phone',
+      'accountNumber',
+      'bankAccountNumber',
+      'bankAccountHolder',
+      'email',
+      'fullName',
+      'customerName',
+      'avatarUrl',
+    ];
+
+    if (Array.isArray(data)) {
+      return data.map((item) => this.redact(item));
+    }
+
+    const redacted = { ...data };
+    for (const key in redacted) {
+      if (
+        sensitiveKeys.some((sk) => key.toLowerCase().includes(sk.toLowerCase()))
+      ) {
+        redacted[key] = '[REDACTED]';
+      } else if (typeof redacted[key] === 'object') {
+        redacted[key] = this.redact(redacted[key]);
+      }
+    }
+    return redacted;
   }
 }

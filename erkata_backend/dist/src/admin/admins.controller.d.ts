@@ -4,12 +4,13 @@ import { Prisma } from '@prisma/client';
 import type { AuthenticatedRequest } from '../auth/guards';
 import { InviteService } from '../auth/invite/invite.service';
 import { InviteDto } from './dto/invite.dto';
+import { PaginationDto } from '../common/dto/pagination.dto';
 export declare class AdminsController {
     private prisma;
     private inviteService;
     private usersService;
     constructor(prisma: PrismaService, inviteService: InviteService, usersService: UsersService);
-    getPersonnel(req: AuthenticatedRequest, role?: string, limit?: number, offset?: number): Promise<{
+    getPersonnel(req: AuthenticatedRequest, query: PaginationDto, role?: string): Promise<{
         _count: {
             resolutionProposals: number;
             operatorMatches: number;
@@ -59,7 +60,6 @@ export declare class AdminsController {
     }): Promise<{
         id: string;
         email: string;
-        referralCode: string | null;
         passwordHash: string | null;
         fullName: string;
         phone: string;
@@ -71,6 +71,7 @@ export declare class AdminsController {
         createdAt: Date;
         aglpBalance: Prisma.Decimal;
         aglpWithdrawn: Prisma.Decimal;
+        referralCode: string | null;
         isOnline: boolean;
         lastAssignmentAt: Date | null;
         missedAssignments: number;

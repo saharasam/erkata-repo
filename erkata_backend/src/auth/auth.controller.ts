@@ -1,15 +1,17 @@
 import {
   Controller,
+  Get,
   Post,
   Body,
   Res,
   Req,
-  UnauthorizedException,
-  InternalServerErrorException,
+  Header,
   UseGuards,
+  UnauthorizedException,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
-import type { Response } from 'express';
+import type { Response, Request } from 'express';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import type { AuthenticatedRequest } from './guards/authenticated-request.interface';
 import { RedisPresenceService } from '../common/redis/redis-presence.service';
@@ -26,10 +28,11 @@ export class AuthController {
   ) {}
 
   @Post('login')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   async login(
     @Body() body: { identifier: string; password: string },
     @Res({ passthrough: true }) res: Response,
-    @Req() req: any,
+    @Req() req: Request,
   ) {
     return await this.authService.login(
       { identifier: body.identifier, pass: body.password },
@@ -39,17 +42,20 @@ export class AuthController {
   }
 
   @Post('refresh')
-  async refresh(@Req() req: any) {
-    const cookies = (
-      req as unknown as {
-        cookies?: Record<string, string>;
-      }
-    ).cookies;
-    const refreshToken = cookies?.['refreshToken'];
+  async refresh(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { cookies } = req as Request & {
+      cookies?: { refreshToken?: string };
+    };
+    const refreshToken = cookies?.refreshToken;
+
     if (!refreshToken) {
       throw new UnauthorizedException('Refresh token missing');
     }
-    return await this.authService.refresh(refreshToken);
+
+    return await this.authService.refresh(refreshToken, res);
   }
 
   @Post('logout')
@@ -58,17 +64,13 @@ export class AuthController {
   }
 
   @Post('register')
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   async register(
     @Body() body: RegisterDto,
     @Res({ passthrough: true }) res: Response,
-    @Req() req: any,
+    @Req() req: Request,
   ) {
-    try {
-      return await this.authService.register(body, res, req);
-    } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : 'Registration failed';
-      throw new InternalServerErrorException(message);
-    }
+    return await this.authService.register(body, res, req);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -103,5 +105,15 @@ export class AuthController {
       assignmentFound,
       requestId,
     };
+  }
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  @Header(
+    'Cache-Control',
+    'no-store, no-cache, must-revalidate, proxy-revalidate',
+  )
+  async getMe(@Req() req: AuthenticatedRequest) {
+    const user = req.user;
+    return await this.authService.getMe(user.id);
   }
 }

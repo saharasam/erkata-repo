@@ -13,8 +13,8 @@ export default class SystemBroadcastsController {
     getBroadcasts(req: AuthenticatedRequest): Promise<{
         id: string;
         createdAt: Date;
-        content: string | null;
         title: string;
+        content: string | null;
         target: string;
     }[]>;
     createBroadcast(data: {
@@ -26,8 +26,8 @@ export default class SystemBroadcastsController {
         broadcast: {
             id: string;
             createdAt: Date;
-            content: string | null;
             title: string;
+            content: string | null;
             target: string;
         };
     }>;

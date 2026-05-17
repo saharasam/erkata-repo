@@ -21,9 +21,9 @@ List<LocationOption> get kKifleKetemas => [
   ),
   LocationOption(value: 'arada', label: 'Arada', weredas: ['Piazza', '4 Kilo']),
   LocationOption(
-    value: 'lideta',
-    label: 'Lideta',
-    weredas: ['Mexico', 'Lideta Condominium'],
+    value: 'nifas_silk',
+    label: 'Nifas Silk',
+    weredas: ['Lafto', 'Sarbet', 'Jemo'],
   ),
 ];
 

@@ -14,16 +14,21 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UpgradesController = void 0;
 const common_1 = require("@nestjs/common");
+const platform_express_1 = require("@nestjs/platform-express");
+const file_type_1 = require("file-type");
 const upgrades_service_1 = require("./upgrades.service");
+const storage_service_1 = require("../common/storage.service");
 const config_service_1 = require("../common/config.service");
 const guards_1 = require("../auth/guards");
 const permissions_1 = require("../auth/permissions");
 let UpgradesController = class UpgradesController {
     upgradesService;
     configService;
-    constructor(upgradesService, configService) {
+    storageService;
+    constructor(upgradesService, configService, storageService) {
         this.upgradesService = upgradesService;
         this.configService = configService;
+        this.storageService = storageService;
     }
     async getMyActiveRequest(req) {
         return this.upgradesService.getActiveRequestForUser(req.user.id);
@@ -40,8 +45,17 @@ let UpgradesController = class UpgradesController {
     async createRequest(req, body) {
         return this.upgradesService.createRequest(req.user.id, body.targetTier);
     }
-    async uploadProof(req, id, body) {
-        return this.upgradesService.uploadProof(id, req.user.id, body.proofUrl);
+    async uploadProof(req, id, file) {
+        if (!file) {
+            throw new common_1.BadRequestException('No file uploaded');
+        }
+        const fileInfo = await (0, file_type_1.fromBuffer)(file.buffer);
+        const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
+        if (!fileInfo || !allowedMimeTypes.includes(fileInfo.mime)) {
+            throw new common_1.BadRequestException('Malicious or corrupted file detected. Magic bytes do not match expected image formats.');
+        }
+        const relativeUrl = await this.storageService.upload(file.buffer, file.originalname);
+        return this.upgradesService.uploadProof(id, req.user.id, relativeUrl);
     }
     async verifyRequest(req, id, body) {
         return this.upgradesService.verifyRequest(id, req.user.id, body.internalNote);
@@ -91,9 +105,18 @@ __decorate([
 ], UpgradesController.prototype, "createRequest", null);
 __decorate([
     (0, common_1.Patch)(':id/proof'),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('proof', {
+        limits: { fileSize: 10 * 1024 * 1024 },
+        fileFilter: (req, file, cb) => {
+            if (!file.mimetype.match(/^image\/(jpeg|png|webp)$/)) {
+                return cb(new common_1.BadRequestException('Invalid file type. Only JPEG, PNG, and WebP are allowed.'), false);
+            }
+            cb(null, true);
+        },
+    })),
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Param)('id')),
-    __param(2, (0, common_1.Body)()),
+    __param(2, (0, common_1.UploadedFile)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, String, Object]),
     __metadata("design:returntype", Promise)
@@ -131,6 +154,7 @@ exports.UpgradesController = UpgradesController = __decorate([
     (0, common_1.Controller)('upgrades'),
     (0, common_1.UseGuards)(guards_1.JwtAuthGuard, guards_1.RolesGuard),
     __metadata("design:paramtypes", [upgrades_service_1.UpgradesService,
-        config_service_1.ConfigService])
+        config_service_1.ConfigService,
+        storage_service_1.StorageService])
 ], UpgradesController);
 //# sourceMappingURL=upgrades.controller.js.map

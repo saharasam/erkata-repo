@@ -26,7 +26,7 @@ class ProfileScreen extends ConsumerWidget {
         'icon': Icons.person,
         'label': 'Personal Information',
         'sub': 'Edit your details',
-        'route': '/settings',
+        'route': '/profile/personal',
       },
       {
         'icon': Icons.notifications,
@@ -38,13 +38,13 @@ class ProfileScreen extends ConsumerWidget {
         'icon': Icons.security,
         'label': 'Security & Privacy',
         'sub': 'Password, 2FA',
-        'route': '/privacy',
+        'route': '/profile/security',
       },
       {
         'icon': Icons.settings,
         'label': 'Preferences',
         'sub': 'Language, Theme',
-        'route': '/settings',
+        'route': '/profile/preferences',
       },
       {
         'icon': Icons.help_outline,

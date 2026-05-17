@@ -1,7 +1,10 @@
+import 'dart:io';
 import 'package:cookie_jar/cookie_jar.dart';
 import 'package:dio/dio.dart';
+import 'package:dio/io.dart';
 import 'package:dio_cookie_manager/dio_cookie_manager.dart';
 import 'package:flutter/foundation.dart';
+import 'package:http_certificate_pinning/http_certificate_pinning.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../config/env_config.dart';
@@ -37,6 +40,21 @@ class ApiClient {
       ),
     );
 
+    // SSL Pinning Enforcement (Production only)
+    if (!kDebugMode && EnvConfig.sslFingerprint.isNotEmpty) {
+      dio.httpClientAdapter = IOHttpClientAdapter(
+        createHttpClient: () {
+          final client = HttpClient();
+          // Note: This is a basic setup. http_certificate_pinning 
+          // provides a more robust background check.
+          return client;
+        },
+      );
+      
+      // Run an initial pinning check
+      await _enforceSslPinning();
+    }
+
     // Cookie persistence for the httpOnly refresh token
     final appDocDir = await getApplicationDocumentsDirectory();
     final cookieJar = PersistCookieJar(
@@ -49,6 +67,7 @@ class ApiClient {
       dio: dio,
       tokenStorage: _tokenStorage,
       baseUrl: EnvConfig.baseUrl,
+      cookieJar: cookieJar,
     );
     dio.interceptors.add(authInterceptor);
 
@@ -62,6 +81,30 @@ class ApiClient {
         ),
       );
     }
+  }
+
+  Future<void> _enforceSslPinning() async {
+    if (kDebugMode || EnvConfig.sslFingerprint.isEmpty) return;
+    
+    try {
+      await HttpCertificatePinning.check(
+        serverURL: EnvConfig.baseUrl,
+        sha: SHA.SHA256,
+        allowedSHAFingerprints: [EnvConfig.sslFingerprint],
+        timeout: 10,
+      );
+      debugPrint('✅ SSL Pinning Verified');
+    } catch (e) {
+      debugPrint('❌ SSL Pinning Failed: $e');
+      // In production, we might want to throw or set a global error state
+      throw Exception('Security breach: Certificate pinning failed.');
+    }
+  }
+
+  static String getAssetUrl(String path) {
+    if (path.startsWith('http')) return path;
+    final cleanPath = path.startsWith('/') ? path.substring(1) : path;
+    return '${EnvConfig.baseUrl}/$cleanPath';
   }
 
   void dispose() {

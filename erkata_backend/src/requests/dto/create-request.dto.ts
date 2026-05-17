@@ -1,7 +1,6 @@
 import {
   IsEnum,
   IsNumber,
-  IsObject,
   IsOptional,
   IsPositive,
   IsString,
@@ -11,14 +10,45 @@ import { Type } from 'class-transformer';
 
 export class RequestDetailsDto {
   @IsString()
+  title: string;
+
+  @IsString()
   description: string;
 
   @IsOptional()
   @IsNumber()
   @IsPositive()
   budget?: number;
+}
 
-  [key: string]: any;
+export class RequestMetadataDto {
+  @IsOptional()
+  @IsString()
+  intent?: string;
+
+  @IsOptional()
+  @IsString()
+  constructionStatus?: string;
+
+  @IsOptional()
+  @IsString()
+  bedrooms?: string;
+
+  @IsOptional()
+  @IsString()
+  bankLoan?: string;
+
+  @IsOptional()
+  @IsString()
+  customization?: string;
+
+  @IsOptional()
+  @IsString()
+  targetRoom?: string;
+
+  @IsOptional()
+  @IsString()
+  paymentPlan?: string;
 }
 
 export class LocationZoneDto {
@@ -42,8 +72,9 @@ export class CreateRequestDto {
   details: RequestDetailsDto;
 
   @IsOptional()
-  @IsObject()
-  metadata?: Record<string, any>;
+  @ValidateNested()
+  @Type(() => RequestMetadataDto)
+  metadata?: RequestMetadataDto;
 
   @ValidateNested()
   @Type(() => LocationZoneDto)

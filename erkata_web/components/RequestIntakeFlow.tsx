@@ -1,32 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ShoppingBag, 
   TrendingUp, 
   Tag, 
   DollarSign, 
-  MapPin, 
-  FileText, 
-  ChevronRight, 
-  ArrowRight,
+  Bed, 
+  CreditCard, 
+  ChevronLeft, 
+  ChevronRight,
   ShieldCheck,
   Zap,
   Home as HomeIcon,
   LayoutGrid,
   Hammer,
   CheckCircle,
-  Bed,
-  CreditCard,
-  ChevronLeft,
   Globe
 } from 'lucide-react';
 import CustomSelect from './CustomSelect';
-import api from '../utils/api';
 import { useAuth } from '../hooks/useAuth';
-import { useModal } from '../contexts/ModalContext';
-
-type RequestIntent = 'buy' | 'sell' | null;
-type RequestCategory = 'Home' | 'Furniture' | null;
+import { useRequestIntake } from '../hooks/useRequestIntake';
 
 interface RequestIntakeFlowProps {
   onSuccess?: () => void;
@@ -36,181 +29,36 @@ interface RequestIntakeFlowProps {
 
 const RequestIntakeFlow: React.FC<RequestIntakeFlowProps> = ({ onSuccess, onCancel, embedded = false }) => {
   const { isAuthenticated } = useAuth();
-  const { showAlert } = useModal();
-  const [step, setStep] = useState(0);
-  const [intent, setIntent] = useState<RequestIntent>(null);
-  const [category, setCategory] = useState<RequestCategory>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isAutoSubmitting, setIsAutoSubmitting] = useState(false);
-  const submissionLock = React.useRef(false);
+  
+  const {
+    state,
+    currentSteps,
+    setIntent,
+    setCategory,
+    updateMetadata,
+    setArea,
+    setWoreda,
+    setBudget,
+    setAdditionalDetails,
+    handleNext,
+    handleBack
+  } = useRequestIntake(isAuthenticated, onSuccess);
 
-  // Load draft from localStorage on mount
-  useEffect(() => {
-    const savedDraft = localStorage.getItem('erkata_pending_request');
-    if (savedDraft) {
-      try {
-        const parsed = JSON.parse(savedDraft);
-        const { intent: savedIntent, category: savedCategory, metadata: savedMetadata, area: savedArea, woreda: savedWoreda, budget: savedBudget, description: savedDetails, autoSubmit } = parsed;
-        
-        if (savedIntent) setIntent(savedIntent);
-        if (savedCategory) setCategory(savedCategory);
-        if (savedMetadata) setMetadata(savedMetadata);
-        if (savedArea) setArea(savedArea);
-        if (savedWoreda) setWoreda(savedWoreda);
-        if (savedBudget) setBudget(savedBudget);
-        if (savedDetails) setAdditionalDetails(savedDetails);
-
-        // Advance to a reasonable step based on data
-        if (savedCategory) {
-           setStep(2); // Start at questions
-        } else if (savedIntent) {
-           setStep(1); // Start at category selection
-        }
-        
-        console.log('[RequestIntake] Loaded draft from localStorage');
-
-        // Automatic submission logic if redirected from login
-        if (autoSubmit && isAuthenticated && !submissionLock.current) {
-            console.log('[RequestIntake] Auto-submitting draft...');
-            setIsAutoSubmitting(true);
-            submissionLock.current = true;
-            
-            // Clear autoSubmit flag
-            localStorage.setItem('erkata_pending_request', JSON.stringify({
-                ...parsed,
-                autoSubmit: false
-            }));
-
-            performSubmission(parsed);
-        }
-      } catch (e) {
-        console.error('[RequestIntake] Failed to parse saved draft:', e);
-      }
-    }
-  }, [isAuthenticated]);
-
-
-  const [metadata, setMetadata] = useState<Record<string, any>>({});
-  const [area, setArea] = useState('Bole');
-  const [woreda, setWoreda] = useState('');
-  const [budget, setBudget] = useState('');
-  const [additionalDetails, setAdditionalDetails] = useState('');
+  const {
+    step,
+    category,
+    metadata,
+    area,
+    woreda,
+    budget,
+    additionalDetails,
+    isSubmitting,
+    isAutoSubmitting
+  } = state;
 
   const kifleKetemas = [
     'Bole', 'Yeka', 'Arada', 'Kirkos', 'Nifas Silk', 'Akaki Kality', 'Gullele', 'Addis Ketema', 'Kolfe Keranio', 'Lideta'
   ];
-
-  // Steps definition for Home
-  const homeSteps = [
-    { id: 'intent', title: 'Intent' }, // step 0
-    { id: 'category', title: 'Category' }, // step 1
-    { id: 'construction', title: 'Status' }, // step 2
-    { id: 'bedrooms', title: 'Bedrooms' }, // step 3
-    { id: 'loan', title: 'Financial' }, // step 4
-    { id: 'area', title: 'Location' }, // step 5
-    { id: 'budget', title: 'Budget' }, // step 6
-    { id: 'additional', title: 'Details' } // step 7
-  ];
-
-  // Steps definition for Furniture
-  const furnitureSteps = [
-    { id: 'intent', title: 'Intent' }, // step 0
-    { id: 'category', title: 'Category' }, // step 1
-    { id: 'customization', title: 'Custom' }, // step 2
-    { id: 'room', title: 'Room' }, // step 3
-    { id: 'payment', title: 'Payment' }, // step 4
-    { id: 'delivery', title: 'Delivery' }, // step 5
-    { id: 'budget', title: 'Budget' }, // step 6
-    { id: 'additional', title: 'Details' } // step 7
-  ];
-
-  const currentSteps = category === 'Furniture' ? furnitureSteps : homeSteps;
-  const isLastStep = step === currentSteps.length - 1;
-
-  const handleNext = () => {
-    if (isLastStep) {
-      handleSubmit();
-    } else {
-      setStep(s => s + 1);
-    }
-  };
-
-  const handleBack = () => {
-    if (step > 0) setStep(s => s - 1);
-  };
-
-  const updateMetadata = (key: string, value: any) => {
-    setMetadata(prev => ({ ...prev, [key]: value }));
-    handleNext();
-  };
-
-  const performSubmission = async (finalData: any) => {
-    setIsSubmitting(true);
-    try {
-      await api.post('/requests', {
-        category: finalData.category,
-        type: finalData.category === 'Home' ? 'real_estate' : 'furniture',
-        details: {
-          title: finalData.title,
-          description: finalData.description,
-          budget: parseFloat(finalData.budget) || undefined,
-        },
-        metadata: finalData.metadata,
-        locationZone: {
-          kifleKetema: finalData.area,
-          woreda: finalData.woreda
-        }
-      });
-
-      localStorage.removeItem('erkata_pending_request');
-      if (onSuccess) onSuccess();
-    } catch (error: any) {
-      console.error('Error submitting request:', error);
-      setIsAutoSubmitting(false);
-      submissionLock.current = false;
-      showAlert({
-        title: 'Submission Failed',
-        message: error.response?.data?.message || 'There was an error. Please try again.',
-        type: 'error'
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleSubmit = async () => {
-    const finalData = {
-      category,
-      intent,
-      area,
-      woreda,
-      budget,
-      metadata,
-      description: additionalDetails,
-      title: category === 'Home' 
-        ? `${metadata.bedrooms || ''} Bedroom ${category} in ${area}`
-        : `Furniture for ${metadata.targetRoom || 'Room'}`
-    };
-
-    if (!isAuthenticated) {
-      localStorage.setItem('erkata_pending_request', JSON.stringify({
-        ...finalData,
-        autoSubmit: true,
-        timestamp: new Date().getTime()
-      }));
-      showAlert({
-        title: 'Save your progress',
-        message: 'You need to be logged in to submit. Redirecting to register...',
-        type: 'info'
-      });
-      setTimeout(() => { window.location.href = '/#/register?fromRequest=true'; }, 500);
-      return;
-    }
-
-    if (submissionLock.current) return;
-    submissionLock.current = true;
-    await performSubmission(finalData);
-  };
 
   // UI Selection Button
   const SelectionCard = ({ 
@@ -298,14 +146,14 @@ const RequestIntakeFlow: React.FC<RequestIntakeFlowProps> = ({ onSuccess, onCanc
               title="I want to Buy / Find"
               description="Looking for property or items? We'll find them for you."
               icon={ShoppingBag}
-              onClick={() => { setIntent('buy'); setStep(1); }}
+              onClick={() => setIntent('buy')}
             />
             <SelectionCard 
               title="I want to Sell / List"
               description="Want to list your assets? Start here."
               icon={TrendingUp}
               dark
-              onClick={() => { setIntent('sell'); setStep(1); }}
+              onClick={() => setIntent('sell')}
             />
           </motion.div>
         )}
@@ -323,13 +171,13 @@ const RequestIntakeFlow: React.FC<RequestIntakeFlowProps> = ({ onSuccess, onCanc
               title="Home / Real Estate"
               description="Houses, apartments, lands, or villas."
               icon={HomeIcon}
-              onClick={() => { setCategory('Home'); setStep(2); }}
+              onClick={() => setCategory('Home')}
             />
             <SelectionCard 
               title="Furniture"
               description="Sofa sets, beds, office furniture, etc."
               icon={LayoutGrid}
-              onClick={() => { setCategory('Furniture'); setStep(2); }}
+              onClick={() => setCategory('Furniture')}
             />
           </motion.div>
         )}
@@ -549,4 +397,3 @@ const RequestIntakeFlow: React.FC<RequestIntakeFlowProps> = ({ onSuccess, onCanc
 };
 
 export default RequestIntakeFlow;
-

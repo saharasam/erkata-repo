@@ -18,7 +18,6 @@ class RegisterDto {
     phone;
     password;
     role;
-    tier;
     inviteToken;
 }
 exports.RegisterDto = RegisterDto;
@@ -33,11 +32,17 @@ __decorate([
 ], RegisterDto.prototype, "fullName", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
+    (0, class_validator_1.Matches)(/^(?:\+251|251|0)?([79]\d{8})$/, {
+        message: 'Invalid Ethiopian phone number. Please use a valid format starting with 09, 07, +2519, or +2517 followed by 8 digits.',
+    }),
     __metadata("design:type", String)
 ], RegisterDto.prototype, "phone", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.MinLength)(8),
+    (0, class_validator_1.Matches)(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).{8,}$/, {
+        message: 'Password is too weak. It must be at least 8 characters long and contain at least one uppercase letter, one number, and one special character.',
+    }),
     __metadata("design:type", String)
 ], RegisterDto.prototype, "password", void 0);
 __decorate([
@@ -45,11 +50,6 @@ __decorate([
     (0, class_validator_1.IsEnum)(client_1.UserRole),
     __metadata("design:type", String)
 ], RegisterDto.prototype, "role", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsEnum)(client_1.Tier),
-    __metadata("design:type", String)
-], RegisterDto.prototype, "tier", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),

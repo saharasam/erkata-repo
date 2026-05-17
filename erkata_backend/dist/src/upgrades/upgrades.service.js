@@ -39,6 +39,11 @@ let UpgradesService = class UpgradesService {
         });
         if (!agent)
             throw new common_1.NotFoundException('Agent not found');
+        const currentPriority = users_service_1.TierPriority[agent.tier || 'FREE'] || 0;
+        const targetPriority = users_service_1.TierPriority[targetTier] || 0;
+        if (targetPriority <= currentPriority) {
+            throw new common_1.BadRequestException(`Invalid upgrade target. Your current tier is ${agent.tier}, and you cannot request a lateral or downward change.`);
+        }
         const existing = await this.prisma.upgradeRequest.findFirst({
             where: {
                 agentId,
@@ -66,6 +71,14 @@ let UpgradesService = class UpgradesService {
         if (request.agentId !== agentId) {
             throw new common_1.ForbiddenException('Not your request');
         }
+        await this.prisma.attachment.create({
+            data: {
+                fileName: `proof_${requestId}_${Date.now()}`,
+                mimeType: 'image/jpeg',
+                url: proofUrl,
+                ownerId: agentId,
+            },
+        });
         const updated = await this.prisma.upgradeRequest.update({
             where: { id: requestId },
             data: { proofUrl },
@@ -100,6 +113,9 @@ let UpgradesService = class UpgradesService {
         });
         if (!request)
             throw new common_1.NotFoundException('Request not found');
+        if (request.status !== 'SUBMITTED') {
+            throw new common_1.BadRequestException(`Invalid transition. Request must be in SUBMITTED state, but is currently ${request.status}.`);
+        }
         const updated = await this.prisma.upgradeRequest.update({
             where: { id: requestId },
             data: {
@@ -179,6 +195,10 @@ let UpgradesService = class UpgradesService {
         });
         if (!request)
             throw new common_1.NotFoundException('Request not found');
+        const validInitialStates = ['SUBMITTED', 'OPERATOR_VERIFIED'];
+        if (!validInitialStates.includes(request.status)) {
+            throw new common_1.BadRequestException(`Cannot reject request in ${request.status} state. Only pending requests can be rejected.`);
+        }
         await this.prisma.upgradeRequest.update({
             where: { id: requestId },
             data: {

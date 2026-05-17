@@ -1,3 +1,4 @@
+import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { UserRole, Prisma } from '@prisma/client';
 import { ConfigService } from '../common/config.service';
@@ -21,8 +22,11 @@ export declare class UsersService {
     private readonly aglpService;
     private readonly configService;
     private readonly notificationsGateway;
-    constructor(prisma: PrismaService, aglpService: AglpService, configService: ConfigService, notificationsGateway: NotificationsGateway);
-    getCurrentProfile(userId: string): Promise<{
+    private readonly jwtService;
+    constructor(prisma: PrismaService, aglpService: AglpService, configService: ConfigService, notificationsGateway: NotificationsGateway, jwtService: JwtService);
+    getCurrentProfile(userId: string, callerId?: string, callerRole?: UserRole): Promise<{
+        aglpBalance: any;
+        aglpWithdrawn: any;
         performanceStats: PerformanceStats;
         lastLoginAt: Date | null;
         lastLoginIp: string | null;
@@ -32,16 +36,16 @@ export declare class UsersService {
                 id: string;
                 createdAt: Date;
                 name: string;
-                metadata: Prisma.JsonValue | null;
                 type: string;
+                metadata: Prisma.JsonValue | null;
             } | null;
         } & {
             id: string;
             zoneId: string | null;
             createdAt: Date;
             agentId: string;
-            kifleKetema: string;
             woreda: string;
+            kifleKetema: string;
         })[];
         referrals: {
             id: string;
@@ -76,7 +80,6 @@ export declare class UsersService {
         };
         id: string;
         email: string;
-        referralCode: string | null;
         passwordHash: string | null;
         fullName: string;
         phone: string;
@@ -86,8 +89,7 @@ export declare class UsersService {
         zoneId: string | null;
         referredById: string | null;
         createdAt: Date;
-        aglpBalance: Prisma.Decimal;
-        aglpWithdrawn: Prisma.Decimal;
+        referralCode: string | null;
         isOnline: boolean;
         lastAssignmentAt: Date | null;
         missedAssignments: number;
@@ -143,7 +145,7 @@ export declare class UsersService {
     }>;
     canModifyUser(callerRole: UserRole, targetRole: UserRole): boolean;
     getScopeFilter(userId: string, role: UserRole): Prisma.ProfileWhereInput;
-    findAll(callerRole: UserRole, filters: {
+    findAll(callerId: string, callerRole: UserRole, filters: {
         role?: UserRole;
         isActive?: boolean;
     }): Promise<({
@@ -152,16 +154,16 @@ export declare class UsersService {
                 id: string;
                 createdAt: Date;
                 name: string;
-                metadata: Prisma.JsonValue | null;
                 type: string;
+                metadata: Prisma.JsonValue | null;
             } | null;
         } & {
             id: string;
             zoneId: string | null;
             createdAt: Date;
             agentId: string;
-            kifleKetema: string;
             woreda: string;
+            kifleKetema: string;
         })[];
         referredBy: {
             id: string;
@@ -185,8 +187,6 @@ export declare class UsersService {
     } & {
         id: string;
         email: string;
-        referralCode: string | null;
-        passwordHash: string | null;
         fullName: string;
         phone: string;
         role: import(".prisma/client").$Enums.UserRole;
@@ -197,6 +197,7 @@ export declare class UsersService {
         createdAt: Date;
         aglpBalance: Prisma.Decimal;
         aglpWithdrawn: Prisma.Decimal;
+        referralCode: string | null;
         isOnline: boolean;
         lastAssignmentAt: Date | null;
         missedAssignments: number;
@@ -219,8 +220,8 @@ export declare class UsersService {
         zoneId: string | null;
         createdAt: Date;
         agentId: string;
-        kifleKetema: string;
         woreda: string;
+        kifleKetema: string;
     }>;
     private getZoneLimit;
     updateTier(callerRole: UserRole, agentId: string, tier: string): Promise<{
@@ -249,7 +250,6 @@ export declare class UsersService {
     suspendUser(callerRole: UserRole, userId: string): Promise<{
         id: string;
         email: string;
-        referralCode: string | null;
         passwordHash: string | null;
         fullName: string;
         phone: string;
@@ -261,6 +261,7 @@ export declare class UsersService {
         createdAt: Date;
         aglpBalance: Prisma.Decimal;
         aglpWithdrawn: Prisma.Decimal;
+        referralCode: string | null;
         isOnline: boolean;
         lastAssignmentAt: Date | null;
         missedAssignments: number;
@@ -277,9 +278,8 @@ export declare class UsersService {
     }): Promise<{
         id: string;
         createdAt: Date;
-        type: import(".prisma/client").$Enums.AglpTransactionType;
-        profileId: string;
         status: import(".prisma/client").$Enums.AglpTransactionStatus;
+        type: import(".prisma/client").$Enums.AglpTransactionType;
         amount: Prisma.Decimal;
         etbEquivalent: Prisma.Decimal | null;
         conversionRate: Prisma.Decimal | null;
@@ -289,11 +289,11 @@ export declare class UsersService {
         bankAccountHolder: string | null;
         bankAccountNumber: string | null;
         bankName: string | null;
+        profileId: string;
     }>;
     activateUser(callerRole: UserRole, userId: string): Promise<{
         id: string;
         email: string;
-        referralCode: string | null;
         passwordHash: string | null;
         fullName: string;
         phone: string;
@@ -305,6 +305,7 @@ export declare class UsersService {
         createdAt: Date;
         aglpBalance: Prisma.Decimal;
         aglpWithdrawn: Prisma.Decimal;
+        referralCode: string | null;
         isOnline: boolean;
         lastAssignmentAt: Date | null;
         missedAssignments: number;
@@ -319,12 +320,11 @@ export declare class UsersService {
         link: string;
     }>;
     updateBusinessProfile(userId: string, data: {
-        tinNumber: string;
-        tradeLicenseNumber: string;
+        tinNumber?: string;
+        tradeLicenseNumber?: string;
     }): Promise<{
         id: string;
         email: string;
-        referralCode: string | null;
         passwordHash: string | null;
         fullName: string;
         phone: string;
@@ -336,6 +336,7 @@ export declare class UsersService {
         createdAt: Date;
         aglpBalance: Prisma.Decimal;
         aglpWithdrawn: Prisma.Decimal;
+        referralCode: string | null;
         isOnline: boolean;
         lastAssignmentAt: Date | null;
         missedAssignments: number;
@@ -344,5 +345,23 @@ export declare class UsersService {
         tinNumber: string | null;
         tradeLicenseNumber: string | null;
         isVerified: boolean;
+    }>;
+    updateProfile(userId: string, data: {
+        fullName?: string;
+        phone?: string;
+    }): Promise<{
+        fullName: string;
+        phone: string;
+        email: string;
+    }>;
+    private sanitizePhone;
+    changePassword(userId: string, dto: {
+        currentPassword: string;
+        newPassword: string;
+    }): Promise<{
+        accessToken: string;
+    }>;
+    updateAvatar(userId: string, avatarUrl: string | null): Promise<{
+        avatarUrl: string | null;
     }>;
 }

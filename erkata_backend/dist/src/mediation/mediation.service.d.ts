@@ -9,8 +9,8 @@ export declare class MediationService {
     constructor(prisma: PrismaService, config: ConfigService, mediationQueue: Queue);
     submitFeedback(transactionId: string, authorId: string, content: string, rating: number, categories?: string[]): Promise<{
         id: string;
-        transactionId: string;
         createdAt: Date;
+        transactionId: string;
         rating: number;
         authorId: string;
         comment: string | null;
@@ -28,9 +28,9 @@ export declare class MediationService {
         proposedById: string;
     }>;
     finalizeResolution(proposalId: string, actorId: string, approved: boolean, comment?: string): Promise<{
-        description: string | null;
         id: string;
         createdAt: Date;
+        description: string | null;
         comment: string | null;
         approved: boolean;
         finalDecision: string | null;
@@ -41,9 +41,9 @@ export declare class MediationService {
         escalated: boolean;
     }>;
     overrideResolution(resolutionId: string, superAdminId: string, newApproved: boolean, comment: string): Promise<{
-        description: string | null;
         id: string;
         createdAt: Date;
+        description: string | null;
         comment: string | null;
         approved: boolean;
         finalDecision: string | null;
@@ -80,15 +80,15 @@ export declare class MediationService {
         [x: symbol]: never;
     } & {
         id: string;
-        transactionId: string;
         createdAt: Date;
+        transactionId: string;
         state: import(".prisma/client").$Enums.FeedbackBundleState;
         stateHistory: import("@prisma/client/runtime/library").JsonValue | null;
     })[]>;
     finalizeBundleDirectly(bundleId: string, actorId: string, resolutionText: string): Promise<{
-        description: string | null;
         id: string;
         createdAt: Date;
+        description: string | null;
         comment: string | null;
         approved: boolean;
         finalDecision: string | null;

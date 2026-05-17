@@ -19,6 +19,8 @@ import { Action, PermissionMatrix } from '../auth/permissions';
 import { UserRole } from '@prisma/client';
 import { WithdrawalDto } from './dto/withdrawal.dto';
 import { UpdateBusinessProfileDto } from './dto/update-business-profile.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -32,7 +34,7 @@ export class UsersController {
     @Query('role') role?: UserRole,
     @Query('isActive') isActive?: string,
   ) {
-    return this.usersService.findAll(req.user.role, {
+    return this.usersService.findAll(req.user.id, req.user.role, {
       role,
       isActive:
         isActive === 'true' ? true : isActive === 'false' ? false : undefined,
@@ -41,7 +43,11 @@ export class UsersController {
 
   @Get('me')
   async getMe(@Req() req: AuthenticatedRequest) {
-    return this.usersService.getCurrentProfile(req.user.id);
+    return this.usersService.getCurrentProfile(
+      req.user.id,
+      req.user.id,
+      req.user.role,
+    );
   }
 
   @Get('me/finance')
@@ -70,6 +76,33 @@ export class UsersController {
   @HttpCode(HttpStatus.OK)
   async generateReferralCode(@Req() req: AuthenticatedRequest) {
     return this.usersService.generateReferralCode(req.user.id);
+  }
+
+  @Patch('me')
+  @HttpCode(HttpStatus.OK)
+  async updateMe(
+    @Req() req: AuthenticatedRequest,
+    @Body() body: UpdateProfileDto,
+  ) {
+    return this.usersService.updateProfile(req.user.id, body);
+  }
+
+  @Patch('me/password')
+  @HttpCode(HttpStatus.OK)
+  async changePassword(
+    @Req() req: AuthenticatedRequest,
+    @Body() dto: ChangePasswordDto,
+  ) {
+    return this.usersService.changePassword(req.user.id, dto);
+  }
+
+  @Patch('me/avatar')
+  @HttpCode(HttpStatus.OK)
+  async updateAvatar(
+    @Req() req: AuthenticatedRequest,
+    @Body() body: { avatarUrl: string | null },
+  ) {
+    return this.usersService.updateAvatar(req.user.id, body.avatarUrl ?? null);
   }
 
   @Post('agent/:id/zones')
@@ -165,7 +198,7 @@ export class UsersController {
       }
     }
 
-    return this.usersService.getCurrentProfile(userId);
+    return this.usersService.getCurrentProfile(userId, callerId, callerRole);
   }
 
   @Get(':id/finance')

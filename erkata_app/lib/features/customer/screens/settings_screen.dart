@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import '../../../core/theme/colors.dart';
-import '../../../core/theme/theme_provider.dart';
 import '../../../shared/widgets/erkata_screen_header.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -19,13 +19,6 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _requestUpdates = true;
   bool _paymentAlerts = true;
   bool _promotionalMessages = false;
-
-  // Security
-  bool _twoFactorAuth = false;
-  bool _biometricLogin = false;
-
-  // Preferences
-  String _selectedLanguage = 'English';
 
   @override
   Widget build(BuildContext context) {
@@ -52,21 +45,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           icon: Icons.person_outline,
                           title: 'Personal Information',
                           subtitle: 'Name, email, phone number',
-                          onTap: () {},
+                          onTap: () => context.push('/profile/personal'),
                         ),
                         const Divider(height: 1),
                         _SettingsTile(
-                          icon: Icons.location_on_outlined,
-                          title: 'Address',
-                          subtitle: 'Update your location',
-                          onTap: () {},
+                          icon: Icons.lock_outline,
+                          title: 'Password & Security',
+                          subtitle: 'Update your password',
+                          onTap: () => context.push('/profile/security'),
                         ),
                         const Divider(height: 1),
                         _SettingsTile(
-                          icon: Icons.camera_alt_outlined,
-                          title: 'Profile Photo',
-                          subtitle: 'Change your avatar',
-                          onTap: () {},
+                          icon: Icons.tune_outlined,
+                          title: 'App Preferences',
+                          subtitle: 'Language, Theme',
+                          onTap: () => context.push('/profile/preferences'),
                         ),
                       ],
                     ),
@@ -133,104 +126,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
                     // Security
                     _SectionHeader(
-                      title: 'Security',
+                      title: 'Privacy',
                       icon: Icons.shield_outlined,
                     ),
-                    const SizedBox(height: 12),
-                    _SettingsCard(
-                      children: [
-                        _SettingsTile(
-                          icon: Icons.lock_outline,
-                          title: 'Change Password',
-                          subtitle: 'Update your password',
-                          onTap: () {},
-                        ),
-                        const Divider(height: 1),
-                        _ToggleTile(
-                          title: 'Two-Factor Authentication',
-                          subtitle: 'Add extra security to your account',
-                          value: _twoFactorAuth,
-                          onChanged: (v) => setState(() => _twoFactorAuth = v),
-                        ),
-                        const Divider(height: 1),
-                        _ToggleTile(
-                          title: 'Biometric Login',
-                          subtitle: 'Use fingerprint or face to login',
-                          value: _biometricLogin,
-                          onChanged: (v) => setState(() => _biometricLogin = v),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 28),
-
-                    // Preferences
-                    _SectionHeader(title: 'Preferences', icon: Icons.tune),
-                    const SizedBox(height: 12),
-                    _SettingsCard(
-                      children: [
-                        ListTile(
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 4,
-                          ),
-                          leading: Container(
-                            padding: const EdgeInsets.all(10),
-                            decoration: BoxDecoration(
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.surfaceContainerHighest,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Icon(
-                              Icons.language,
-                              size: 20,
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                          title: const Text(
-                            'Language',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                            ),
-                          ),
-                          trailing: DropdownButton<String>(
-                            value: _selectedLanguage,
-                            underline: const SizedBox.shrink(),
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.onSurface,
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
-                            ),
-                            items: ['English', 'Amharic'].map((lang) {
-                              return DropdownMenuItem(
-                                value: lang,
-                                child: Text(lang),
-                              );
-                            }).toList(),
-                            onChanged: (v) =>
-                                setState(() => _selectedLanguage = v!),
-                          ),
-                        ),
-                        const Divider(height: 1),
-                        _ToggleTile(
-                          title: 'Dark Mode',
-                          subtitle: 'Switch to dark theme',
-                          value: ref.watch(themeProvider) == ThemeMode.dark,
-                          onChanged: (v) {
-                            ref.read(themeProvider.notifier).toggleTheme();
-                          },
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 28),
-
-                    // Legal
-                    _SectionHeader(title: 'Legal', icon: Icons.gavel),
                     const SizedBox(height: 12),
                     _SettingsCard(
                       children: [
@@ -238,17 +136,18 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           icon: Icons.description_outlined,
                           title: 'Terms of Service',
                           subtitle: 'Read our terms',
-                          onTap: () => Navigator.pushNamed(context, '/terms'),
+                          onTap: () => context.push('/terms'),
                         ),
                         const Divider(height: 1),
                         _SettingsTile(
                           icon: Icons.privacy_tip_outlined,
                           title: 'Privacy Policy',
                           subtitle: 'How we handle your data',
-                          onTap: () => Navigator.pushNamed(context, '/privacy'),
+                          onTap: () => context.push('/privacy'),
                         ),
                       ],
                     ),
+
 
                     const SizedBox(height: 100),
                   ],

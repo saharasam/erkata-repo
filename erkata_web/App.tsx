@@ -106,6 +106,7 @@ const AnimatedRoutes = () => {
 };
 import { SocketProvider } from './contexts/SocketProvider';
 import { NotificationProvider } from './contexts/NotificationContext';
+import { GlobalErrorInterceptor } from './components/GlobalErrorInterceptor';
 
 const App: React.FC = () => {
   return (
@@ -113,6 +114,7 @@ const App: React.FC = () => {
       <SocketProvider>
         <ModalProvider>
           <NotificationProvider>
+            <GlobalErrorInterceptor />
             <HashRouter>
               <AnimatedRoutes />
             </HashRouter>

@@ -13,6 +13,7 @@ interface AgentAssignmentModalProps {
   isOpen: boolean;
   onClose: () => void;
   requestId: string;
+  zoneId?: string;
   onAssigned: (agentId: string) => void;
 }
 
@@ -20,6 +21,7 @@ const AgentAssignmentModal: React.FC<AgentAssignmentModalProps> = ({
   isOpen, 
   onClose, 
   requestId, 
+  zoneId,
   onAssigned 
 }) => {
   const [agents, setAgents] = useState<Agent[]>([]);
@@ -31,7 +33,9 @@ const AgentAssignmentModal: React.FC<AgentAssignmentModalProps> = ({
       const fetchAgents = async () => {
         setIsLoading(true);
         try {
-          const res = await api.get('/requests/eligible-agents');
+          const res = await api.get('/requests/eligible-agents', {
+            params: { zoneId }
+          });
           setAgents(res.data);
         } catch (error) {
           console.error('Failed to fetch eligible agents:', error);

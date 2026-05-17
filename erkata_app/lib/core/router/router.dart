@@ -30,6 +30,9 @@ import '../../shared/screens/privacy_screen.dart';
 import '../../features/auth/screens/splash_screen.dart';
 import '../../shared/screens/terms_screen.dart';
 import '../../shared/screens/feedback_form_screen.dart';
+import '../../features/customer/screens/personal_info_screen.dart';
+import '../../features/customer/screens/preferences_screen.dart';
+import '../../features/customer/screens/security_settings_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
@@ -208,6 +211,18 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/privacy',
             builder: (context, state) => const PrivacyScreen(),
+          ),
+          GoRoute(
+            path: '/profile/personal',
+            builder: (context, state) => const PersonalInformationScreen(),
+          ),
+          GoRoute(
+            path: '/profile/preferences',
+            builder: (context, state) => const PreferencesScreen(),
+          ),
+          GoRoute(
+            path: '/profile/security',
+            builder: (context, state) => const SecuritySettingsScreen(),
           ),
           GoRoute(
             path: '/terms',

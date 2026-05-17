@@ -11,6 +11,7 @@ export declare class JwtStrategy extends JwtStrategy_base {
         email: string;
         role?: string;
         tier?: string;
+        tokenType?: string;
     }): Promise<{
         id: string;
         email: string;

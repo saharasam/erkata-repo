@@ -30,6 +30,9 @@ let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(pas
     }
     async validate(payload) {
         const userId = payload.sub;
+        if (payload.tokenType !== 'access') {
+            throw new common_1.UnauthorizedException('Invalid token type: Only access tokens are allowed');
+        }
         if (!userId) {
             throw new common_1.UnauthorizedException('Invalid token: sub missing');
         }

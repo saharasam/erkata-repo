@@ -106,7 +106,7 @@ export class RequestsService implements OnModuleInit {
         type: dto.type || 'real_estate',
         description: dto.details.description,
         budget: budget,
-        metadata: dto.metadata || {},
+        metadata: dto.metadata ? { ...dto.metadata } : {},
         zoneId: zone.id,
         woreda: dto.locationZone.woreda,
         status: RequestStatus.pending,
@@ -285,6 +285,9 @@ export class RequestsService implements OnModuleInit {
       throw new ForbiddenException('Cannot assign a suspended agent.');
     }
 
+    // Geofencing bypassed as per platform update
+
+
     const operator = await this.prisma.profile.findUnique({
       where: { id: operatorId },
       select: { isActive: true },
@@ -381,8 +384,10 @@ export class RequestsService implements OnModuleInit {
         );
       }
 
+      const requestData = { ...request };
+      delete (requestData as { matches?: any }).matches;
       return {
-        ...request,
+        ...requestData,
         customer: request.customer,
         match: activeMatch ? { ...activeMatch, agent: agentInfo } : null,
       };
@@ -405,16 +410,29 @@ export class RequestsService implements OnModuleInit {
       };
     }
 
+    if (role === UserRole.agent) {
+      const isMatched = request.matches.some((m) => m.agentId === userId);
+      if (!isMatched) {
+        throw new ForbiddenException(
+          'You are not assigned to this request and cannot view its details.',
+        );
+      }
+    }
+
     return request;
   }
 
   // Logic for finding agents sorted by level and location
-  async findEligibleAgents() {
+  async findEligibleAgents(zoneId?: string) {
+    const whereClause: Prisma.ProfileWhereInput = {
+      role: UserRole.agent,
+      isActive: true,
+    };
+
+
+
     const agents = await this.prisma.profile.findMany({
-      where: {
-        role: UserRole.agent,
-        isActive: true,
-      },
+      where: whereClause,
       include: {
         agentZones: {
           include: { zone: { select: { id: true, name: true } } },
@@ -448,7 +466,7 @@ export class RequestsService implements OnModuleInit {
 
   // Logic for showing a customer their own requests
   async getCustomerRequests(customerId: string) {
-    return this.prisma.request.findMany({
+    const requests = await this.prisma.request.findMany({
       where: { customerId },
       include: {
         zone: true,
@@ -467,6 +485,32 @@ export class RequestsService implements OnModuleInit {
         },
       },
       orderBy: { createdAt: 'desc' },
+    });
+
+    return requests.map((request) => {
+      const activeMatch = request.matches[0];
+      // ERK-SEC-003 Remediation: Hide agent identity for 'assigned' status
+      if (activeMatch && activeMatch.status === 'assigned') {
+        const redactedAgent = this.redact(
+          {
+            id: activeMatch.agent.id,
+            fullName: activeMatch.agent.fullName,
+            phone: '',
+            avatarUrl: activeMatch.agent.avatarUrl,
+          },
+          'Verifying Agent...',
+        );
+        return {
+          ...request,
+          matches: [
+            {
+              ...activeMatch,
+              agent: redactedAgent,
+            },
+          ],
+        };
+      }
+      return request;
     });
   }
 

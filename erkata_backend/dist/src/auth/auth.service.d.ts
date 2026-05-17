@@ -23,9 +23,11 @@ export declare class AuthService {
             tier: import(".prisma/client").$Enums.Tier;
         };
         accessToken: string;
+        csrfToken: `${string}-${string}-${string}-${string}-${string}`;
     }>;
-    refresh(refreshToken: string): Promise<{
+    refresh(refreshToken: string, res: Response): Promise<{
         accessToken: string;
+        csrfToken: `${string}-${string}-${string}-${string}-${string}`;
     }>;
     logout(res: Response): Promise<{
         message: string;
@@ -50,5 +52,15 @@ export declare class AuthService {
             tier: import(".prisma/client").$Enums.Tier;
         };
         accessToken: string;
+        csrfToken: `${string}-${string}-${string}-${string}-${string}`;
+    }>;
+    getMe(userId: string): Promise<{
+        id: string;
+        email: string;
+        fullName: string;
+        phone: string;
+        role: import(".prisma/client").$Enums.UserRole;
+        tier: import(".prisma/client").$Enums.Tier;
+        zoneId: string | null;
     }>;
 }

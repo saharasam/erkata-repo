@@ -13,6 +13,12 @@ export const setAuthReady = (ready: boolean) => {
 
 export const getAccessToken = () => accessToken;
 
+const getCookie = (name: string) => {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()?.split(";").shift();
+};
+
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "http://localhost:3000",
   withCredentials: true,
@@ -38,6 +44,15 @@ api.interceptors.request.use(
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
     }
+
+    // Attach CSRF Token for all mutating requests
+    if (config.method && config.method.toUpperCase() !== "GET") {
+      const csrfToken = getCookie("csrfToken");
+      if (csrfToken) {
+        config.headers["X-CSRF-Token"] = csrfToken;
+      }
+    }
+
     return config;
   },
   (error) => Promise.reject(error),
@@ -60,10 +75,14 @@ api.interceptors.response.use(
 
       try {
         // Attempt to refresh the token
+        const csrfToken = getCookie("csrfToken");
         const res = await axios.post(
           `${import.meta.env.VITE_API_URL || "http://localhost:3000"}/auth/refresh`,
           {},
-          { withCredentials: true },
+          { 
+            withCredentials: true,
+            headers: csrfToken ? { "X-CSRF-Token": csrfToken } : {}
+          },
         );
 
         if (res.status === 201 || res.status === 200) {
@@ -78,14 +97,40 @@ api.interceptors.response.use(
         // Refresh failed, clear session
         setAccessToken("");
         setAuthReady(false);
-        localStorage.removeItem("erkata_user"); // Still using as a "is logged in" hint only
         window.location.href = "/#/login"; // HashRouter friendly
         return Promise.reject(refreshError);
       }
     }
 
+    // Handle global errors (excluding auth flow)
+    if (error.response && error.response.status !== 401) {
+        const status = error.response.status;
+        const data = error.response.data;
+        
+        // Extract message from NestJS common response structure
+        const message = data.message || data.error || "An unexpected system error occurred.";
+        const title = status === 400 ? "Validation Failed" : 
+                      status === 403 ? "Access Restricted" : "Service Error";
+
+        // Dispatch global event for ModalContext to pick up
+        window.dispatchEvent(new CustomEvent('erkata:api-error', { 
+            detail: { 
+                message: Array.isArray(message) ? message[0] : message,
+                title,
+                type: 'error'
+            } 
+        }));
+    }
+
     return Promise.reject(error);
   },
 );
+
+export const getAssetUrl = (path: string | null) => {
+    if (!path) return '';
+    if (path.startsWith('http')) return path;
+    const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+    return `${baseUrl}${path.startsWith('/') ? '' : '/'}${path}`;
+};
 
 export default api;

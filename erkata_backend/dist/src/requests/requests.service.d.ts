@@ -23,18 +23,18 @@ export declare class RequestsService implements OnModuleInit {
         id: string;
         zoneId: string;
         createdAt: Date;
-        metadata: Prisma.JsonValue;
-        woreda: string;
-        type: string;
         status: import(".prisma/client").$Enums.RequestStatus;
-        description: string;
+        customerId: string;
         category: string;
+        type: string;
+        description: string;
+        metadata: Prisma.JsonValue;
         budget: Prisma.Decimal | null;
+        woreda: string;
+        assignedOperatorId: string | null;
         assignmentPushedAt: Date | null;
         completedAt: Date | null;
         isEscalated: boolean;
-        customerId: string;
-        assignedOperatorId: string | null;
     }>;
     assignToNextReadyOperator(requestId: string): Promise<void>;
     handleOperatorReady(): Promise<void>;
@@ -49,8 +49,8 @@ export declare class RequestsService implements OnModuleInit {
             id: string;
             createdAt: Date;
             name: string;
-            metadata: Prisma.JsonValue | null;
             type: string;
+            metadata: Prisma.JsonValue | null;
         };
         customer: {
             id: string;
@@ -61,25 +61,25 @@ export declare class RequestsService implements OnModuleInit {
         id: string;
         zoneId: string;
         createdAt: Date;
-        metadata: Prisma.JsonValue;
-        woreda: string;
-        type: string;
         status: import(".prisma/client").$Enums.RequestStatus;
-        description: string;
+        customerId: string;
         category: string;
+        type: string;
+        description: string;
+        metadata: Prisma.JsonValue;
         budget: Prisma.Decimal | null;
+        woreda: string;
+        assignedOperatorId: string | null;
         assignmentPushedAt: Date | null;
         completedAt: Date | null;
         isEscalated: boolean;
-        customerId: string;
-        assignedOperatorId: string | null;
     })[]>;
     assignAgent(requestId: string, agentId: string, operatorId: string): Promise<{
         id: string;
-        agentId: string;
-        status: string;
         requestId: string;
+        agentId: string;
         operatorId: string | null;
+        status: string;
         assignedAt: Date;
     }>;
     getRequest(requestId: string, userId: string, role: UserRole): Promise<({
@@ -87,8 +87,8 @@ export declare class RequestsService implements OnModuleInit {
             id: string;
             createdAt: Date;
             name: string;
-            metadata: Prisma.JsonValue | null;
             type: string;
+            metadata: Prisma.JsonValue | null;
         };
         customer: {
             id: string;
@@ -106,10 +106,10 @@ export declare class RequestsService implements OnModuleInit {
             transaction: {
                 id: string;
                 createdAt: Date;
-                metadata: Prisma.JsonValue | null;
                 status: string;
-                amount: Prisma.Decimal;
+                metadata: Prisma.JsonValue | null;
                 matchId: string;
+                amount: Prisma.Decimal;
                 currency: string;
                 commissionRate: Prisma.Decimal;
                 commissionAmount: Prisma.Decimal | null;
@@ -119,28 +119,28 @@ export declare class RequestsService implements OnModuleInit {
             } | null;
         } & {
             id: string;
-            agentId: string;
-            status: string;
             requestId: string;
+            agentId: string;
             operatorId: string | null;
+            status: string;
             assignedAt: Date;
         })[];
     } & {
         id: string;
         zoneId: string;
         createdAt: Date;
-        metadata: Prisma.JsonValue;
-        woreda: string;
-        type: string;
         status: import(".prisma/client").$Enums.RequestStatus;
-        description: string;
+        customerId: string;
         category: string;
+        type: string;
+        description: string;
+        metadata: Prisma.JsonValue;
         budget: Prisma.Decimal | null;
+        woreda: string;
+        assignedOperatorId: string | null;
         assignmentPushedAt: Date | null;
         completedAt: Date | null;
         isEscalated: boolean;
-        customerId: string;
-        assignedOperatorId: string | null;
     }) | {
         customer: {
             id: string;
@@ -158,10 +158,10 @@ export declare class RequestsService implements OnModuleInit {
             transaction: {
                 id: string;
                 createdAt: Date;
-                metadata: Prisma.JsonValue | null;
                 status: string;
-                amount: Prisma.Decimal;
+                metadata: Prisma.JsonValue | null;
                 matchId: string;
+                amount: Prisma.Decimal;
                 currency: string;
                 commissionRate: Prisma.Decimal;
                 commissionAmount: Prisma.Decimal | null;
@@ -170,18 +170,18 @@ export declare class RequestsService implements OnModuleInit {
                 paymentProofUrl: string | null;
             } | null;
             id: string;
-            agentId: string;
-            status: string;
             requestId: string;
+            agentId: string;
             operatorId: string | null;
+            status: string;
             assignedAt: Date;
         } | null;
         zone: {
             id: string;
             createdAt: Date;
             name: string;
-            metadata: Prisma.JsonValue | null;
             type: string;
+            metadata: Prisma.JsonValue | null;
         };
         matches: ({
             agent: {
@@ -193,10 +193,10 @@ export declare class RequestsService implements OnModuleInit {
             transaction: {
                 id: string;
                 createdAt: Date;
-                metadata: Prisma.JsonValue | null;
                 status: string;
-                amount: Prisma.Decimal;
+                metadata: Prisma.JsonValue | null;
                 matchId: string;
+                amount: Prisma.Decimal;
                 currency: string;
                 commissionRate: Prisma.Decimal;
                 commissionAmount: Prisma.Decimal | null;
@@ -206,29 +206,29 @@ export declare class RequestsService implements OnModuleInit {
             } | null;
         } & {
             id: string;
-            agentId: string;
-            status: string;
             requestId: string;
+            agentId: string;
             operatorId: string | null;
+            status: string;
             assignedAt: Date;
         })[];
         id: string;
         zoneId: string;
         createdAt: Date;
-        metadata: Prisma.JsonValue;
-        woreda: string;
-        type: string;
         status: import(".prisma/client").$Enums.RequestStatus;
-        description: string;
+        customerId: string;
         category: string;
+        type: string;
+        description: string;
+        metadata: Prisma.JsonValue;
         budget: Prisma.Decimal | null;
+        woreda: string;
+        assignedOperatorId: string | null;
         assignmentPushedAt: Date | null;
         completedAt: Date | null;
         isEscalated: boolean;
-        customerId: string;
-        assignedOperatorId: string | null;
     }>;
-    findEligibleAgents(): Promise<{
+    findEligibleAgents(zoneId?: string): Promise<{
         id: string;
         fullName: string;
         isActive: boolean;
@@ -240,8 +240,8 @@ export declare class RequestsService implements OnModuleInit {
             id: string;
             createdAt: Date;
             name: string;
-            metadata: Prisma.JsonValue | null;
             type: string;
+            metadata: Prisma.JsonValue | null;
         };
         matches: ({
             agent: {
@@ -257,28 +257,28 @@ export declare class RequestsService implements OnModuleInit {
             } | null;
         } & {
             id: string;
-            agentId: string;
-            status: string;
             requestId: string;
+            agentId: string;
             operatorId: string | null;
+            status: string;
             assignedAt: Date;
         })[];
     } & {
         id: string;
         zoneId: string;
         createdAt: Date;
-        metadata: Prisma.JsonValue;
-        woreda: string;
-        type: string;
         status: import(".prisma/client").$Enums.RequestStatus;
-        description: string;
+        customerId: string;
         category: string;
+        type: string;
+        description: string;
+        metadata: Prisma.JsonValue;
         budget: Prisma.Decimal | null;
+        woreda: string;
+        assignedOperatorId: string | null;
         assignmentPushedAt: Date | null;
         completedAt: Date | null;
         isEscalated: boolean;
-        customerId: string;
-        assignedOperatorId: string | null;
     })[]>;
     confirmFulfillment(requestId: string, customerId: string, confirmed: boolean): Promise<{
         success: boolean;
@@ -288,7 +288,6 @@ export declare class RequestsService implements OnModuleInit {
         customer: {
             id: string;
             email: string;
-            referralCode: string | null;
             passwordHash: string | null;
             fullName: string;
             phone: string;
@@ -300,6 +299,7 @@ export declare class RequestsService implements OnModuleInit {
             createdAt: Date;
             aglpBalance: Prisma.Decimal;
             aglpWithdrawn: Prisma.Decimal;
+            referralCode: string | null;
             isOnline: boolean;
             lastAssignmentAt: Date | null;
             missedAssignments: number;
@@ -313,7 +313,6 @@ export declare class RequestsService implements OnModuleInit {
             agent: {
                 id: string;
                 email: string;
-                referralCode: string | null;
                 passwordHash: string | null;
                 fullName: string;
                 phone: string;
@@ -325,6 +324,7 @@ export declare class RequestsService implements OnModuleInit {
                 createdAt: Date;
                 aglpBalance: Prisma.Decimal;
                 aglpWithdrawn: Prisma.Decimal;
+                referralCode: string | null;
                 isOnline: boolean;
                 lastAssignmentAt: Date | null;
                 missedAssignments: number;
@@ -336,62 +336,62 @@ export declare class RequestsService implements OnModuleInit {
             };
         } & {
             id: string;
-            agentId: string;
-            status: string;
             requestId: string;
+            agentId: string;
             operatorId: string | null;
+            status: string;
             assignedAt: Date;
         })[];
     } & {
         id: string;
         zoneId: string;
         createdAt: Date;
-        metadata: Prisma.JsonValue;
-        woreda: string;
-        type: string;
         status: import(".prisma/client").$Enums.RequestStatus;
-        description: string;
+        customerId: string;
         category: string;
+        type: string;
+        description: string;
+        metadata: Prisma.JsonValue;
         budget: Prisma.Decimal | null;
+        woreda: string;
+        assignedOperatorId: string | null;
         assignmentPushedAt: Date | null;
         completedAt: Date | null;
         isEscalated: boolean;
-        customerId: string;
-        assignedOperatorId: string | null;
     }>;
     escalateDispute(requestId: string, operatorId: string, note?: string): Promise<{
         id: string;
         zoneId: string;
         createdAt: Date;
-        metadata: Prisma.JsonValue;
-        woreda: string;
-        type: string;
         status: import(".prisma/client").$Enums.RequestStatus;
-        description: string;
+        customerId: string;
         category: string;
+        type: string;
+        description: string;
+        metadata: Prisma.JsonValue;
         budget: Prisma.Decimal | null;
+        woreda: string;
+        assignedOperatorId: string | null;
         assignmentPushedAt: Date | null;
         completedAt: Date | null;
         isEscalated: boolean;
-        customerId: string;
-        assignedOperatorId: string | null;
     }>;
     voidDispute(requestId: string, operatorId: string, note?: string): Promise<{
         id: string;
         zoneId: string;
         createdAt: Date;
-        metadata: Prisma.JsonValue;
-        woreda: string;
-        type: string;
         status: import(".prisma/client").$Enums.RequestStatus;
-        description: string;
+        customerId: string;
         category: string;
+        type: string;
+        description: string;
+        metadata: Prisma.JsonValue;
         budget: Prisma.Decimal | null;
+        woreda: string;
+        assignedOperatorId: string | null;
         assignmentPushedAt: Date | null;
         completedAt: Date | null;
         isEscalated: boolean;
-        customerId: string;
-        assignedOperatorId: string | null;
     }>;
     getDisputeHistory(pagination?: {
         limit?: number;
@@ -401,8 +401,8 @@ export declare class RequestsService implements OnModuleInit {
             id: string;
             createdAt: Date;
             name: string;
-            metadata: Prisma.JsonValue | null;
             type: string;
+            metadata: Prisma.JsonValue | null;
         };
         customer: {
             id: string;
@@ -417,10 +417,10 @@ export declare class RequestsService implements OnModuleInit {
             };
         } & {
             id: string;
-            agentId: string;
-            status: string;
             requestId: string;
+            agentId: string;
             operatorId: string | null;
+            status: string;
             assignedAt: Date;
         })[];
         assignedOperator: {
@@ -432,24 +432,23 @@ export declare class RequestsService implements OnModuleInit {
         id: string;
         zoneId: string;
         createdAt: Date;
-        metadata: Prisma.JsonValue;
-        woreda: string;
-        type: string;
         status: import(".prisma/client").$Enums.RequestStatus;
-        description: string;
+        customerId: string;
         category: string;
+        type: string;
+        description: string;
+        metadata: Prisma.JsonValue;
         budget: Prisma.Decimal | null;
+        woreda: string;
+        assignedOperatorId: string | null;
         assignmentPushedAt: Date | null;
         completedAt: Date | null;
         isEscalated: boolean;
-        customerId: string;
-        assignedOperatorId: string | null;
     })[]>;
     forceComplete(requestId: string, operatorId: string, note?: string): Promise<{
         customer: {
             id: string;
             email: string;
-            referralCode: string | null;
             passwordHash: string | null;
             fullName: string;
             phone: string;
@@ -461,6 +460,7 @@ export declare class RequestsService implements OnModuleInit {
             createdAt: Date;
             aglpBalance: Prisma.Decimal;
             aglpWithdrawn: Prisma.Decimal;
+            referralCode: string | null;
             isOnline: boolean;
             lastAssignmentAt: Date | null;
             missedAssignments: number;
@@ -474,7 +474,6 @@ export declare class RequestsService implements OnModuleInit {
             agent: {
                 id: string;
                 email: string;
-                referralCode: string | null;
                 passwordHash: string | null;
                 fullName: string;
                 phone: string;
@@ -486,6 +485,7 @@ export declare class RequestsService implements OnModuleInit {
                 createdAt: Date;
                 aglpBalance: Prisma.Decimal;
                 aglpWithdrawn: Prisma.Decimal;
+                referralCode: string | null;
                 isOnline: boolean;
                 lastAssignmentAt: Date | null;
                 missedAssignments: number;
@@ -497,28 +497,28 @@ export declare class RequestsService implements OnModuleInit {
             };
         } & {
             id: string;
-            agentId: string;
-            status: string;
             requestId: string;
+            agentId: string;
             operatorId: string | null;
+            status: string;
             assignedAt: Date;
         })[];
     } & {
         id: string;
         zoneId: string;
         createdAt: Date;
-        metadata: Prisma.JsonValue;
-        woreda: string;
-        type: string;
         status: import(".prisma/client").$Enums.RequestStatus;
-        description: string;
+        customerId: string;
         category: string;
+        type: string;
+        description: string;
+        metadata: Prisma.JsonValue;
         budget: Prisma.Decimal | null;
+        woreda: string;
+        assignedOperatorId: string | null;
         assignmentPushedAt: Date | null;
         completedAt: Date | null;
         isEscalated: boolean;
-        customerId: string;
-        assignedOperatorId: string | null;
     }>;
 }
 export {};

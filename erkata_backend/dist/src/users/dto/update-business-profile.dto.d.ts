@@ -1,4 +1,4 @@
 export declare class UpdateBusinessProfileDto {
-    tinNumber: string;
-    tradeLicenseNumber: string;
+    tinNumber?: string;
+    tradeLicenseNumber?: string;
 }

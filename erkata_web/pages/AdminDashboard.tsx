@@ -1,20 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, lazy, Suspense } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
-import SystemHealth from '../components/admin/SystemHealth';
-import EscalatedDisputes from '../components/admin/EscalatedDisputes';
-import AdminAgentList from '../components/admin/AdminAgentList';
-import AdminOperatorList from '../components/admin/AdminOperatorList';
-import PendingActions from '../components/admin/PendingActions';
-import ZoneCoverage from '../components/admin/ZoneCoverage';
-import ProposalHistory from '../components/admin/ProposalHistory';
+import { Can } from '../components/ui/Can';
+import { Action } from '../hooks/usePermissions';
+import AccessDenied from '../components/ui/AccessDenied';
+import ViewNotFound from '../components/ui/ViewNotFound';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Loader2 } from 'lucide-react';
 
-// Placeholder imports for the new components (Create these files next)
-import OperationsHub from '../components/admin/OperationsHub';
-import FinancialDesk from '../components/admin/FinancialDesk';
-import NetworkIntelligence from '../components/admin/NetworkIntelligence';
-import BroadcastInbox from '../components/shared/BroadcastInbox';
-import UserDeepDive from '../components/shared/UserDeepDive';
+// Lazy load view components
+const OperationsHub = lazy(() => import('../components/admin/OperationsHub'));
+const FinancialDesk = lazy(() => import('../components/admin/FinancialDesk'));
+const NetworkIntelligence = lazy(() => import('../components/admin/NetworkIntelligence'));
+const BroadcastInbox = lazy(() => import('../components/shared/BroadcastInbox'));
+const ZoneCoverage = lazy(() => import('../components/admin/ZoneCoverage'));
+const EscalatedDisputes = lazy(() => import('../components/admin/EscalatedDisputes'));
+const PendingActions = lazy(() => import('../components/admin/PendingActions'));
+const ProposalHistory = lazy(() => import('../components/admin/ProposalHistory'));
+const AdminAgentList = lazy(() => import('../components/admin/AdminAgentList'));
+const AdminOperatorList = lazy(() => import('../components/admin/AdminOperatorList'));
+const UserDeepDive = lazy(() => import('../components/shared/UserDeepDive'));
+
+const LoadingFallback = () => (
+    <div className="flex items-center justify-center h-[50vh]">
+        <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+    </div>
+);
+
+const VIEWS_REGISTRY: Record<string, { component: React.ComponentType<any>; permission: Action }> = {
+    'overview': { component: OperationsHub, permission: Action.VIEW_QUEUE },
+    'finance': { component: FinancialDesk, permission: Action.VIEW_FINANCIAL_REPORTS },
+    'network': { component: NetworkIntelligence, permission: Action.VIEW_SYSTEM_STATISTICS },
+    'notices': { component: BroadcastInbox, permission: Action.VIEW_BROADCASTS },
+    'zones': { component: ZoneCoverage, permission: Action.VIEW_QUEUE },
+    'disputes': { component: EscalatedDisputes, permission: Action.PROPOSE_RESOLUTION },
+    'actions': { component: PendingActions, permission: Action.PROPOSE_RESOLUTION },
+    'history': { component: ProposalHistory, permission: Action.PROPOSE_RESOLUTION },
+    'agents': { component: AdminAgentList, permission: Action.MANAGE_AGENTS },
+    'operators': { component: AdminOperatorList, permission: Action.MANAGE_OPERATORS }
+};
 
 const AdminDashboard: React.FC = () => {
     const [currentView, setCurrentView] = useState('overview');
@@ -25,6 +48,33 @@ const AdminDashboard: React.FC = () => {
         setPreviousView(currentView);
         setSelectedUserId(id);
         setCurrentView('user-details');
+    };
+
+    const renderContent = () => {
+        if (currentView === 'user-details' && selectedUserId) {
+            return (
+                <Can perform={Action.VIEW_USER_DETAILS_ANY_ROLE} fallback={<AccessDenied />}>
+                    <UserDeepDive 
+                        userId={selectedUserId} 
+                        viewerRole="admin"
+                        onBack={() => {
+                            setSelectedUserId(null);
+                            setCurrentView(previousView);
+                        }} 
+                    />
+                </Can>
+            );
+        }
+
+        const viewConfig = VIEWS_REGISTRY[currentView];
+        if (!viewConfig) return <ViewNotFound />;
+
+        const Component = viewConfig.component;
+        return (
+            <Can perform={viewConfig.permission} fallback={<AccessDenied />}>
+                <Component onViewDetails={handleViewDetails} />
+            </Can>
+        );
     };
 
     return (
@@ -43,30 +93,9 @@ const AdminDashboard: React.FC = () => {
                         exit={{ opacity: 0, y: -10 }}
                         transition={{ duration: 0.3 }}
                     >
-                        {/* New Views */}
-                        {currentView === 'overview' && <OperationsHub />}
-                        {currentView === 'finance' && <FinancialDesk />}
-                        {currentView === 'network' && <NetworkIntelligence />}
-                        {currentView === 'notices' && <BroadcastInbox />}
-
-                        {/* Existing Views */}
-                        {currentView === 'zones' && <ZoneCoverage />}
-                        {currentView === 'disputes' && <EscalatedDisputes />}
-                        {currentView === 'actions' && <PendingActions />}
-                        {currentView === 'history' && <ProposalHistory />}
-                        {currentView === 'agents' && <AdminAgentList onViewDetails={handleViewDetails} />}
-                        {currentView === 'operators' && <AdminOperatorList onViewDetails={handleViewDetails} />}
-
-                        {currentView === 'user-details' && selectedUserId && (
-                            <UserDeepDive 
-                                userId={selectedUserId} 
-                                viewerRole="admin"
-                                onBack={() => {
-                                    setSelectedUserId(null);
-                                    setCurrentView(previousView);
-                                }} 
-                            />
-                        )}
+                        <Suspense fallback={<LoadingFallback />}>
+                            {renderContent()}
+                        </Suspense>
                     </motion.div>
                 </AnimatePresence>
             </div>
@@ -74,4 +103,4 @@ const AdminDashboard: React.FC = () => {
     );
 };
 
-export default AdminDashboard;
+export default AdminDashboard;

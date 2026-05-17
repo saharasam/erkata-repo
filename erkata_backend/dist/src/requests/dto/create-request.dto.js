@@ -9,14 +9,19 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CreateRequestDto = exports.LocationZoneDto = exports.RequestDetailsDto = void 0;
+exports.CreateRequestDto = exports.LocationZoneDto = exports.RequestMetadataDto = exports.RequestDetailsDto = void 0;
 const class_validator_1 = require("class-validator");
 const class_transformer_1 = require("class-transformer");
 class RequestDetailsDto {
+    title;
     description;
     budget;
 }
 exports.RequestDetailsDto = RequestDetailsDto;
+__decorate([
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], RequestDetailsDto.prototype, "title", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
@@ -27,6 +32,51 @@ __decorate([
     (0, class_validator_1.IsPositive)(),
     __metadata("design:type", Number)
 ], RequestDetailsDto.prototype, "budget", void 0);
+class RequestMetadataDto {
+    intent;
+    constructionStatus;
+    bedrooms;
+    bankLoan;
+    customization;
+    targetRoom;
+    paymentPlan;
+}
+exports.RequestMetadataDto = RequestMetadataDto;
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], RequestMetadataDto.prototype, "intent", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], RequestMetadataDto.prototype, "constructionStatus", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], RequestMetadataDto.prototype, "bedrooms", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], RequestMetadataDto.prototype, "bankLoan", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], RequestMetadataDto.prototype, "customization", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], RequestMetadataDto.prototype, "targetRoom", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], RequestMetadataDto.prototype, "paymentPlan", void 0);
 class LocationZoneDto {
     kifleKetema;
     woreda;
@@ -64,8 +114,9 @@ __decorate([
 ], CreateRequestDto.prototype, "details", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsObject)(),
-    __metadata("design:type", Object)
+    (0, class_validator_1.ValidateNested)(),
+    (0, class_transformer_1.Type)(() => RequestMetadataDto),
+    __metadata("design:type", RequestMetadataDto)
 ], CreateRequestDto.prototype, "metadata", void 0);
 __decorate([
     (0, class_validator_1.ValidateNested)(),

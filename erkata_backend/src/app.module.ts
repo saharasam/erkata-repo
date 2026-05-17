@@ -12,13 +12,16 @@ import { TransactionsModule } from './transactions/transactions.module';
 import { MediationModule } from './mediation/mediation.module';
 import { APP_INTERCEPTOR, APP_GUARD } from '@nestjs/core';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor';
+import { CacheControlInterceptor } from './common/interceptors/cache-control.interceptor';
 import { LockdownGuard } from './common/guards/lockdown.guard';
+import { CsrfGuard } from './common/guards/csrf.guard';
 import { CommonModule } from './common/common.module';
 import { AdminModule } from './admin/admin.module';
 import { AglpModule } from './aglp/aglp.module';
 import { RedisModule } from './common/redis/redis.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { UpgradesModule } from './upgrades/upgrades.module';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 
 @Module({
   imports: [
@@ -31,6 +34,12 @@ import { UpgradesModule } from './upgrades/upgrades.module';
     TransactionsModule,
     MediationModule,
     NotificationsModule,
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 100, // Global limit: 100 requests per minute per IP
+      },
+    ]),
     BullModule.forRoot({
       connection: {
         host: process.env.REDIS_HOST || 'localhost',
@@ -51,8 +60,20 @@ import { UpgradesModule } from './upgrades/upgrades.module';
       useClass: AuditInterceptor,
     },
     {
+      provide: APP_INTERCEPTOR,
+      useClass: CacheControlInterceptor,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+    {
       provide: APP_GUARD,
       useClass: LockdownGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: CsrfGuard,
     },
   ],
 })

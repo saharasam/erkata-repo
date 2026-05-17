@@ -13,7 +13,7 @@ import { InviteModule } from './invite/invite.module';
     PassportModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET,
-      signOptions: { expiresIn: '1d' },
+      signOptions: { expiresIn: '15m' }, // ERK-SEC-005 Remediation: Shortened from 1d to 15m
     }),
     InviteModule,
   ],

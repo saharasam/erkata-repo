@@ -2,6 +2,7 @@ import {
   Injectable,
   BadRequestException,
   NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { FeedbackBundleState, UserRole, RequestStatus } from '@prisma/client';
@@ -53,6 +54,21 @@ export class MediationService {
     if (author.role !== UserRole.customer && author.role !== UserRole.agent) {
       throw new BadRequestException(
         'Only Customers and Agents can submit feedback',
+      );
+    }
+
+    // ERK-SEC-001 Remediation: Cross-reference authorId with transaction participants
+    if (author.role === UserRole.customer && request.customerId !== authorId) {
+      throw new ForbiddenException(
+        'You are not an authorized participant in this transaction',
+      );
+    }
+    if (
+      author.role === UserRole.agent &&
+      transaction.match.agentId !== authorId
+    ) {
+      throw new ForbiddenException(
+        'You are not the authorized agent for this transaction',
       );
     }
 

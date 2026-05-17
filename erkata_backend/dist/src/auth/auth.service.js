@@ -48,6 +48,7 @@ const jwt_1 = require("@nestjs/jwt");
 const prisma_service_1 = require("../prisma/prisma.service");
 const invite_service_1 = require("./invite/invite.service");
 const bcrypt = __importStar(require("bcrypt"));
+const client_1 = require("@prisma/client");
 const crypto_1 = require("crypto");
 const notifications_gateway_1 = require("../notifications/notifications.gateway");
 let AuthService = class AuthService {
@@ -64,17 +65,18 @@ let AuthService = class AuthService {
     sanitizePhone(phone) {
         if (!phone)
             return '';
-        let sanitized = phone.replace(/\D/g, '');
-        if (sanitized.startsWith('0') && sanitized.length === 10) {
-            sanitized = '251' + sanitized.substring(1);
+        const match = phone.match(/^(?:\+251|251|0)?([79]\d{8})$/);
+        if (match) {
+            return `+251${match[1]}`;
         }
-        else if (sanitized.startsWith('9') && sanitized.length === 9) {
-            sanitized = '251' + sanitized;
+        const digits = phone.replace(/\D/g, '');
+        if (digits.length >= 9) {
+            const core = digits.slice(-9);
+            if (core.startsWith('9') || core.startsWith('7')) {
+                return `+251${core}`;
+            }
         }
-        else if (sanitized.startsWith('7') && sanitized.length === 9) {
-            sanitized = '251' + sanitized;
-        }
-        return sanitized.startsWith('+') ? sanitized : `+${sanitized}`;
+        return phone.startsWith('+') ? phone : `+${digits}`;
     }
     async login(credentials, res, req) {
         console.log(`[AuthService] Attempting login for email: ${credentials.identifier}`);
@@ -98,13 +100,28 @@ let AuthService = class AuthService {
             email: profile.email,
             role: profile.role,
             tier: profile.tier,
+            tokenType: 'access',
         };
         const accessToken = this.jwtService.sign(payload);
-        const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+        const refreshPayload = {
+            ...payload,
+            tokenType: 'refresh',
+        };
+        const refreshToken = this.jwtService.sign(refreshPayload, {
+            expiresIn: '7d',
+        });
         res.cookie('refreshToken', refreshToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
+            sameSite: 'strict',
+            maxAge: 7 * 24 * 60 * 60 * 1000,
+        });
+        const csrfToken = (0, crypto_1.randomUUID)();
+        res.cookie('csrfToken', csrfToken, {
+            httpOnly: false,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            path: '/',
             maxAge: 7 * 24 * 60 * 60 * 1000,
         });
         void this.prisma.auditLog
@@ -131,11 +148,15 @@ let AuthService = class AuthService {
                 tier: profile.tier,
             },
             accessToken,
+            csrfToken,
         };
     }
-    async refresh(refreshToken) {
+    async refresh(refreshToken, res) {
         try {
             const payload = this.jwtService.verify(refreshToken);
+            if (payload.tokenType !== 'refresh') {
+                throw new common_1.UnauthorizedException('Invalid token type');
+            }
             const profile = await this.prisma.profile.findUnique({
                 where: { id: payload.sub },
                 select: {
@@ -154,9 +175,18 @@ let AuthService = class AuthService {
                 email: profile.email,
                 role: profile.role,
                 tier: profile.tier,
+                tokenType: 'access',
             };
             const newAccessToken = this.jwtService.sign(newPayload);
-            return { accessToken: newAccessToken };
+            const newCsrfToken = (0, crypto_1.randomUUID)();
+            res.cookie('csrfToken', newCsrfToken, {
+                httpOnly: false,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'strict',
+                path: '/',
+                maxAge: 7 * 24 * 60 * 60 * 1000,
+            });
+            return { accessToken: newAccessToken, csrfToken: newCsrfToken };
         }
         catch (err) {
             if (err instanceof common_1.UnauthorizedException)
@@ -166,6 +196,7 @@ let AuthService = class AuthService {
     }
     async logout(res) {
         res.clearCookie('refreshToken');
+        res.clearCookie('csrfToken');
         await Promise.resolve();
         return { message: 'Logged out' };
     }
@@ -179,114 +210,172 @@ let AuthService = class AuthService {
         }
         let finalRole = (data.role || 'customer').toLowerCase();
         console.log(`[AuthService] Initial finalRole from data.role: ${data.role}, normalized to: ${finalRole}`);
-        if (data.inviteToken) {
-            const invite = await this.inviteService.validateInvite(data.inviteToken, data.email);
-            console.log(`[AuthService] Valid invite token provided. Changing role from ${finalRole} to ${invite.role}`);
-            finalRole = String(invite.role);
-            if (!data.fullName) {
-                data.fullName = invite.fullName;
-            }
-        }
-        else {
-            console.log(`[AuthService] Handling non-administrative role: ${finalRole}`);
-            if (finalRole !== 'customer' && finalRole !== 'agent') {
-                console.warn(`[AuthService] Role ${finalRole} is not allowed without an invite. Defaulting to customer.`);
-                finalRole = 'customer';
-            }
-        }
-        console.log(`[AuthService] Final role determined: ${finalRole}`);
-        const saltRoutes = 10;
-        const passwordHash = await bcrypt.hash(data.password, saltRoutes);
-        let referredById = undefined;
-        if (data.referralCode) {
-            const referrer = await this.prisma.profile.findUnique({
-                where: { referralCode: data.referralCode },
-                include: { referralLink: true, referrals: { select: { id: true } } },
-            });
-            if (!referrer) {
-                throw new common_1.BadRequestException('Invalid referral code');
-            }
-            const tierLimits = {
-                ABUNDANT_LIFE: 31,
-                UNITY: 23,
-                LOVE: 16,
-                PEACE: 7,
-                FREE: 3,
-            };
-            const referrerWithRefs = referrer;
-            const tier = String(referrerWithRefs.referralLink?.tier ?? 'FREE');
-            const limit = tierLimits[tier] ?? 3;
-            const referralCount = referrerWithRefs.referrals.length;
-            if (referralCount >= limit) {
-                throw new common_1.BadRequestException(`The referrer has reached their referral slot limit`);
-            }
-            referredById = referrer.id;
-        }
-        const newProfile = await this.prisma.profile.create({
-            data: {
-                id: (0, crypto_1.randomUUID)(),
-                email: data.email,
-                passwordHash,
-                fullName: data.fullName,
-                phone: this.sanitizePhone(data.phone),
-                role: finalRole,
-                tier: (data.tier || 'FREE'),
-                ...(referredById ? { referredById } : {}),
-            },
-        });
-        if (data.inviteToken) {
-            const invite = await this.inviteService.markInviteAsUsed(data.inviteToken);
-            if (invite && invite.createdById) {
-                this.notificationsGateway.sendToUser(invite.createdById, 'notification', {
-                    type: 'invite.claimed',
-                    inviteId: invite.id,
-                    message: `The invitation for ${invite.email} has been claimed.`,
+        return await this.prisma.$transaction(async (tx) => {
+            if (data.inviteToken) {
+                const updateResult = await tx.invite.updateMany({
+                    where: {
+                        token: data.inviteToken,
+                        usedAt: null,
+                        expiresAt: { gt: new Date() },
+                    },
+                    data: { usedAt: new Date() },
                 });
+                if (updateResult.count === 0) {
+                    throw new common_1.BadRequestException('Token has already been used or is invalid');
+                }
+                const invite = await tx.invite.findUnique({
+                    where: { token: data.inviteToken },
+                });
+                if (!invite ||
+                    invite.email.toLowerCase() !== data.email.toLowerCase()) {
+                    throw new common_1.BadRequestException('This invite was intended for a different email address');
+                }
+                console.log(`[AuthService] Valid invite token provided. Changing role from ${finalRole} to ${invite.role}`);
+                finalRole = String(invite.role);
+                if (!data.fullName) {
+                    data.fullName = invite.fullName;
+                }
+                if (invite.createdById) {
+                    this.notificationsGateway.sendToUser(invite.createdById, 'notification', {
+                        type: 'invite.claimed',
+                        inviteId: invite.id,
+                        message: `The invitation for ${invite.email} has been claimed.`,
+                    });
+                }
             }
-        }
-        console.log(`[AuthService] User created successfully: ${newProfile.id}`);
-        const payload = {
-            sub: newProfile.id,
-            email: newProfile.email,
-            role: newProfile.role,
-            tier: newProfile.tier,
-        };
-        const accessToken = this.jwtService.sign(payload);
-        const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
-        if (res) {
-            res.cookie('refreshToken', refreshToken, {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
-                sameSite: 'lax',
-                maxAge: 7 * 24 * 60 * 60 * 1000,
-            });
-        }
-        void this.prisma.auditLog
-            .create({
-            data: {
-                actorId: newProfile.id,
-                action: 'USER_REGISTER',
-                targetTable: 'profiles',
-                targetId: newProfile.id,
-                metadata: {
-                    ip: req?.ip,
-                    userAgent: req?.headers?.['user-agent'],
+            else {
+                console.log(`[AuthService] Handling non-administrative role: ${finalRole}`);
+                if (finalRole !== 'customer' && finalRole !== 'agent') {
+                    console.warn(`[AuthService] Role ${finalRole} is not allowed without an invite. Defaulting to customer.`);
+                    finalRole = 'customer';
+                }
+            }
+            console.log(`[AuthService] Final role determined: ${finalRole}`);
+            const saltRoutes = 10;
+            const passwordHash = await bcrypt.hash(data.password, saltRoutes);
+            let referredById = undefined;
+            if (data.referralCode) {
+                const lockedReferrers = await tx.$queryRaw `
+          SELECT id FROM profiles 
+          WHERE referral_code = ${data.referralCode} 
+          FOR UPDATE
+        `;
+                if (!lockedReferrers || lockedReferrers.length === 0) {
+                    throw new common_1.BadRequestException('Invalid referral code');
+                }
+                const referrer = await tx.profile.findUnique({
+                    where: { referralCode: data.referralCode },
+                    include: { referralLink: true, referrals: { select: { id: true } } },
+                });
+                if (!referrer) {
+                    throw new common_1.BadRequestException('Invalid referral code');
+                }
+                const tierLimits = {
+                    ABUNDANT_LIFE: 31,
+                    UNITY: 23,
+                    LOVE: 16,
+                    PEACE: 7,
+                    FREE: 3,
+                };
+                const referrerWithRefs = referrer;
+                const tier = String(referrerWithRefs.referralLink?.tier ?? 'FREE');
+                const limit = tierLimits[tier] ?? 3;
+                const referralCount = referrerWithRefs.referrals.length;
+                if (referralCount >= limit) {
+                    throw new common_1.BadRequestException(`The referrer has reached their referral slot limit`);
+                }
+                referredById = referrer.id;
+            }
+            const newProfile = await tx.profile.create({
+                data: {
+                    id: (0, crypto_1.randomUUID)(),
+                    email: data.email,
+                    passwordHash,
+                    fullName: data.fullName,
+                    phone: this.sanitizePhone(data.phone),
+                    role: finalRole,
+                    tier: client_1.Tier.FREE,
+                    ...(referredById ? { referredById } : {}),
                 },
-            },
-        })
-            .catch((err) => console.error('[AuthService] Failed to log registration:', err));
-        return {
-            message: 'Registration successful.',
-            user: {
-                id: newProfile.id,
+            });
+            console.log(`[AuthService] User created successfully: ${newProfile.id}`);
+            const payload = {
+                sub: newProfile.id,
                 email: newProfile.email,
-                phone: newProfile.phone,
-                fullName: newProfile.fullName,
                 role: newProfile.role,
                 tier: newProfile.tier,
+                tokenType: 'access',
+            };
+            const accessToken = this.jwtService.sign(payload);
+            const refreshPayload = {
+                ...payload,
+                tokenType: 'refresh',
+            };
+            const refreshToken = this.jwtService.sign(refreshPayload, {
+                expiresIn: '7d',
+            });
+            const csrfToken = (0, crypto_1.randomUUID)();
+            if (res) {
+                res.cookie('refreshToken', refreshToken, {
+                    httpOnly: true,
+                    secure: process.env.NODE_ENV === 'production',
+                    sameSite: 'strict',
+                    maxAge: 7 * 24 * 60 * 60 * 1000,
+                });
+                res.cookie('csrfToken', csrfToken, {
+                    httpOnly: false,
+                    secure: process.env.NODE_ENV === 'production',
+                    sameSite: 'strict',
+                    path: '/',
+                    maxAge: 7 * 24 * 60 * 60 * 1000,
+                });
+            }
+            void tx.auditLog
+                .create({
+                data: {
+                    actorId: newProfile.id,
+                    action: 'USER_REGISTER',
+                    targetTable: 'profiles',
+                    targetId: newProfile.id,
+                    metadata: {
+                        ip: req?.ip,
+                        userAgent: req?.headers?.['user-agent'],
+                    },
+                },
+            })
+                .catch((err) => console.error('[AuthService] Failed to log registration:', err));
+            return {
+                message: 'Registration successful.',
+                user: {
+                    id: newProfile.id,
+                    email: newProfile.email,
+                    phone: newProfile.phone,
+                    fullName: newProfile.fullName,
+                    role: newProfile.role,
+                    tier: newProfile.tier,
+                },
+                accessToken,
+                csrfToken,
+            };
+        });
+    }
+    async getMe(userId) {
+        const profile = await this.prisma.profile.findUnique({
+            where: { id: userId },
+            select: {
+                id: true,
+                email: true,
+                phone: true,
+                fullName: true,
+                role: true,
+                tier: true,
+                zoneId: true,
             },
-            accessToken,
-        };
+        });
+        if (!profile) {
+            throw new common_1.UnauthorizedException('User not found');
+        }
+        return profile;
     }
 };
 exports.AuthService = AuthService;

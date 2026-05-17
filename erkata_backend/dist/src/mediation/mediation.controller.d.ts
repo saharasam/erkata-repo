@@ -8,8 +8,8 @@ export declare class MediationController {
     constructor(mediationService: MediationService);
     submitFeedback(transactionId: string, req: AuthenticatedRequest, body: FeedbackDto): Promise<{
         id: string;
-        transactionId: string;
         createdAt: Date;
+        transactionId: string;
         rating: number;
         authorId: string;
         comment: string | null;
@@ -26,9 +26,9 @@ export declare class MediationController {
         proposedById: string;
     }>;
     finalizeResolution(proposalId: string, req: AuthenticatedRequest, body: FinalizeResolutionDto): Promise<{
-        description: string | null;
         id: string;
         createdAt: Date;
+        description: string | null;
         comment: string | null;
         approved: boolean;
         finalDecision: string | null;
@@ -36,9 +36,9 @@ export declare class MediationController {
         finalizedById: string;
     }>;
     finalizeBundle(bundleId: string, req: AuthenticatedRequest, body: FinalizeBundleDto): Promise<{
-        description: string | null;
         id: string;
         createdAt: Date;
+        description: string | null;
         comment: string | null;
         approved: boolean;
         finalDecision: string | null;
@@ -75,8 +75,8 @@ export declare class MediationController {
         [x: symbol]: never;
     } & {
         id: string;
-        transactionId: string;
         createdAt: Date;
+        transactionId: string;
         state: import(".prisma/client").$Enums.FeedbackBundleState;
         stateHistory: import("@prisma/client/runtime/library").JsonValue | null;
     })[]>;

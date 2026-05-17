@@ -1,8 +1,11 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:lottie/lottie.dart';
 import '../../../core/theme/colors.dart';
+import '../../../core/services/security_service.dart';
 import '../state/auth_provider.dart';
 
 class SplashScreen extends HookConsumerWidget {
@@ -28,9 +31,18 @@ class SplashScreen extends HookConsumerWidget {
           ),
         );
 
-    // 🔹 4. Hydrate auth state from secure storage
+    // 🔹 4. Security & Hydration
     useEffect(() {
       Future.microtask(() async {
+        // 🛡️ Security Check
+        final isCompromised = await SecurityService.isDeviceCompromised();
+        if (isCompromised && !kDebugMode) {
+          if (context.mounted) {
+            _showSecurityAlert(context);
+          }
+          return;
+        }
+
         // ApiClient is already initialized in main() — just hydrate auth state
         await ref.read(authProvider.notifier).hydrate();
       });
@@ -95,6 +107,38 @@ class SplashScreen extends HookConsumerWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showSecurityAlert(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => PopScope(
+        canPop: false,
+        child: AlertDialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Row(
+            children: [
+              Icon(Icons.security_rounded, color: Colors.red),
+              SizedBox(width: 12),
+              Text('Security Alert'),
+            ],
+          ),
+          content: const Text(
+            'This application cannot run on a compromised device (Rooted/Jailbroken) '
+            'due to security compliance requirements. Please use a secure device.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => exit(0),
+              child:
+                  const Text('Exit App', style: TextStyle(color: Colors.red)),
+            ),
+          ],
+        ),
       ),
     );
   }

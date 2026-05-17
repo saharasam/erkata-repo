@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, User, Mail, Phone, Lock, CheckCircle2, ShieldCheck, Loader2, Shield, UserCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
+import { useModal } from '../contexts/ModalContext';
 import api from '../utils/api';
 
 type Role = 'customer' | 'agent' | 'operator' | 'admin' | 'super_admin';
@@ -13,6 +14,7 @@ interface RegisterProps {
 
 const Register: React.FC<RegisterProps> = ({ initialRole = 'customer' }) => {
   const { signup } = useAuth();
+  const { showAlert } = useModal();
   const [searchParams] = useSearchParams();
   const [role, setRole] = useState<Role>(initialRole);
   
@@ -27,7 +29,6 @@ const Register: React.FC<RegisterProps> = ({ initialRole = 'customer' }) => {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState('');
   
   // Invite State
   const inviteToken = searchParams.get('token');
@@ -63,16 +64,15 @@ const Register: React.FC<RegisterProps> = ({ initialRole = 'customer' }) => {
   }, [inviteToken, isFromRequest]);
 
   const handleRegister = async () => {
-    setError('');
     setIsSubmitting(true);
     if (!formData.phone) {
-      setError('Phone number is required');
+      showAlert({ title: 'Validation Error', message: 'Phone number is required', type: 'warning' });
       setIsSubmitting(false);
       return;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      showAlert({ title: 'Validation Error', message: 'Passwords do not match', type: 'warning' });
       setIsSubmitting(false);
       return;
     }
@@ -93,17 +93,18 @@ const Register: React.FC<RegisterProps> = ({ initialRole = 'customer' }) => {
       const pendingRequest = localStorage.getItem('erkata_pending_request');
       
       if (pendingRequest && role === 'customer') {
-        navigate('/submit-request');
+        navigate('/submit-request', { replace: true });
       } else {
         // Default Role-based navigation
-        if (role === 'agent') navigate('/agent-dashboard');
-        else if (role === 'operator') navigate('/operator-dashboard');
-        else if (role === 'admin') navigate('/admin-dashboard');
-        else if (role === 'super_admin') navigate('/superadmin');
-        else navigate('/customer');
+        if (role === 'agent') navigate('/agent-dashboard', { replace: true });
+        else if (role === 'operator') navigate('/operator-dashboard', { replace: true });
+        else if (role === 'admin') navigate('/admin-dashboard', { replace: true });
+        else if (role === 'super_admin') navigate('/superadmin', { replace: true });
+        else navigate('/dashboard', { replace: true });
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Registration failed. Please try again.');
+      // API errors are now handled by GlobalErrorInterceptor
+      console.error('[Register] Signup failed:', err);
     } finally {
       setIsSubmitting(false);
     }
@@ -261,15 +262,6 @@ const Register: React.FC<RegisterProps> = ({ initialRole = 'customer' }) => {
                     </motion.div>
                   )}
 
-                  {error && (
-                    <motion.div 
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm"
-                    >
-                      {error}
-                    </motion.div>
-                  )}
 
                   {/* Role indicator */}
                   <div className="flex justify-center mb-10">

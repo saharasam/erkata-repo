@@ -68,6 +68,20 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }
   };
 
+  React.useEffect(() => {
+    const handleApiError = (event: any) => {
+        const { message, title, type } = event.detail;
+        showAlert({
+            title: title || 'System Error',
+            message: message || 'An unexpected error occurred. Please try again.',
+            type: type || 'error'
+        });
+    };
+
+    window.addEventListener('erkata:api-error' as any, handleApiError);
+    return () => window.removeEventListener('erkata:api-error' as any, handleApiError);
+  }, []);
+
   return (
     <ModalContext.Provider value={{ showAlert, showConfirm }}>
       {children}

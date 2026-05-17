@@ -11,6 +11,9 @@ class TokenStorage {
   static const _keyUserFullName = 'user_full_name';
   static const _keyUserEmail = 'user_email';
   static const _keyHasLaunched = 'has_launched';
+  static const _keyCsrfToken = 'csrf_token';
+  static const _keyAvatarUrl = 'avatar_url';
+  static const _keyPhone = 'user_phone';
 
   final FlutterSecureStorage _storage;
 
@@ -48,6 +51,8 @@ class TokenStorage {
     String? tier,
     String? fullName,
     String? email,
+    String? avatarUrl,
+    String? phone,
   }) async {
     await Future.wait([
       _storage.write(key: _keyUserId, value: userId),
@@ -56,11 +61,19 @@ class TokenStorage {
       if (fullName != null)
         _storage.write(key: _keyUserFullName, value: fullName),
       if (email != null) _storage.write(key: _keyUserEmail, value: email),
+      if (avatarUrl != null)
+        _storage.write(key: _keyAvatarUrl, value: avatarUrl)
+      else
+        _storage.delete(key: _keyAvatarUrl),
+      if (phone != null) _storage.write(key: _keyPhone, value: phone),
     ]);
   }
 
   Future<void> saveAccessToken(String token) =>
       _storage.write(key: _keyAccessToken, value: token);
+
+  Future<void> saveCsrfToken(String token) =>
+      _storage.write(key: _keyCsrfToken, value: token);
 
   // ──────── Read ────────
 
@@ -70,6 +83,9 @@ class TokenStorage {
   Future<String?> getUserTier() => _storage.read(key: _keyUserTier);
   Future<String?> getUserFullName() => _storage.read(key: _keyUserFullName);
   Future<String?> getUserEmail() => _storage.read(key: _keyUserEmail);
+  Future<String?> getCsrfToken() => _storage.read(key: _keyCsrfToken);
+  Future<String?> getAvatarUrl() => _storage.read(key: _keyAvatarUrl);
+  Future<String?> getPhone() => _storage.read(key: _keyPhone);
 
   Future<bool> isFirstLaunch() async {
     final value = await _storage.read(key: _keyHasLaunched);

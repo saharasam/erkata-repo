@@ -14,6 +14,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/guards/roles.decorator';
 import { UserRole } from '@prisma/client';
 import { TransferDto } from './dto/transfer.dto';
+import { PaginationDto } from '../common/dto/pagination.dto';
 
 interface RequestWithUser {
   user: {
@@ -73,15 +74,11 @@ export class TransactionsController {
   // Operator fetches all active matches/transactions
   @Get()
   @Roles(UserRole.operator, UserRole.admin, UserRole.super_admin)
-  getAll(
-    @Query('status') status?: string,
-    @Query('limit') limit?: number,
-    @Query('offset') offset?: number,
-  ) {
+  getAll(@Query() query: PaginationDto, @Query('status') status?: string) {
     return this.transactionsService.getOperatorTransactions({
       status,
-      limit,
-      offset,
+      limit: query.limit,
+      offset: query.offset,
     });
   }
 }

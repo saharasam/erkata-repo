@@ -56,6 +56,8 @@ dependencies:
   url_launcher: ^6.3.2
   image_picker: ^1.2.2
   path: ^1.9.1
+  flutter_jailbreak_detection: ^1.1.1
+  http_certificate_pinning: ^3.0.1
 
 dev_dependencies:
   flutter_test:

@@ -126,6 +126,7 @@ let TransactionsService = class TransactionsService {
     async transferAssignment(matchId, fromAgentId, toAgentId) {
         const match = await this.prisma.match.findUnique({
             where: { id: matchId },
+            include: { request: true },
         });
         if (!match)
             throw new common_1.NotFoundException('Match not found');
@@ -137,11 +138,17 @@ let TransactionsService = class TransactionsService {
         }
         const targetAgent = await this.prisma.profile.findUnique({
             where: { id: toAgentId },
+            include: { agentZones: true },
         });
         if (!targetAgent ||
             targetAgent.referredById !== fromAgentId ||
             targetAgent.role !== 'agent') {
             throw new common_1.BadRequestException('Target agent must be one of your referrals');
+        }
+        const isAuthorizedForZone = targetAgent.agentZones.some((z) => z.zoneId === match.request.zoneId);
+        const hasGlobalRights = targetAgent.tier === 'ABUNDANT_LIFE';
+        if (!isAuthorizedForZone && !hasGlobalRights) {
+            throw new common_1.ForbiddenException('Target agent does not hold geographic rights for this request zone.');
         }
         const existingMatch = await this.prisma.match.findUnique({
             where: {

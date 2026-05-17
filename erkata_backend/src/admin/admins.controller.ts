@@ -25,6 +25,7 @@ import { UserRole, Prisma } from '@prisma/client';
 import type { AuthenticatedRequest } from '../auth/guards';
 import { InviteService } from '../auth/invite/invite.service';
 import { InviteDto } from './dto/invite.dto';
+import { PaginationDto } from '../common/dto/pagination.dto';
 
 @Controller('admin/users')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -39,9 +40,8 @@ export class AdminsController {
   @Roles('admin')
   async getPersonnel(
     @Req() req: AuthenticatedRequest,
+    @Query() query: PaginationDto,
     @Query('role') role?: string,
-    @Query('limit') limit?: number,
-    @Query('offset') offset?: number,
   ) {
     const callerRole = req.user.role;
     const normalizedRole = role?.toLowerCase() as UserRole | undefined;
@@ -76,8 +76,8 @@ export class AdminsController {
       }
     }
 
-    const take = limit ? Number(limit) : 50;
-    const skip = offset ? Number(offset) : 0;
+    const take = query.limit;
+    const skip = query.offset;
 
     const profiles = await this.prisma.profile.findMany({
       where: queryWhere,

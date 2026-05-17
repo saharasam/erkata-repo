@@ -13,6 +13,7 @@ import { JwtAuthGuard, RolesGuard, RequirePermission } from '../auth/guards';
 import { Action } from '../auth/permissions';
 import { AglpTransactionStatus, AglpTransactionType } from '@prisma/client';
 import { AglpService } from '../aglp/aglp.service';
+import { PaginationDto } from '../common/dto/pagination.dto';
 
 @Controller('admin/payouts')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -24,12 +25,9 @@ export class PayoutsController {
 
   @Get('pending')
   @RequirePermission(Action.APPROVE_PAYOUT)
-  async getPendingPayouts(
-    @Query('limit') limit?: number,
-    @Query('offset') offset?: number,
-  ) {
-    const take = limit ? Number(limit) : 50;
-    const skip = offset ? Number(offset) : 0;
+  async getPendingPayouts(@Query() query: PaginationDto) {
+    const take = query.limit;
+    const skip = query.offset;
 
     return this.prisma.aglpTransaction.findMany({
       where: {
@@ -77,14 +75,13 @@ export class PayoutsController {
   @Get('ledger')
   @RequirePermission(Action.MODIFY_GOVERNANCE) // Super Admin restricted
   async getGlobalLedger(
+    @Query() query: PaginationDto,
     @Query('type') type?: AglpTransactionType,
     @Query('status') status?: AglpTransactionStatus,
     @Query('profileId') profileId?: string,
-    @Query('limit') limit?: number,
-    @Query('offset') offset?: number,
   ) {
-    const take = limit ? Number(limit) : 50;
-    const skip = offset ? Number(offset) : 0;
+    const take = query.limit;
+    const skip = query.offset;
 
     return this.prisma.aglpTransaction.findMany({
       where: {

@@ -1,21 +1,58 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
     var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
     if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UsersService = exports.TierPriority = void 0;
 const common_1 = require("@nestjs/common");
+const jwt_1 = require("@nestjs/jwt");
 const prisma_service_1 = require("../prisma/prisma.service");
 const client_1 = require("@prisma/client");
 const config_service_1 = require("../common/config.service");
 const aglp_service_1 = require("../aglp/aglp.service");
 const notifications_gateway_1 = require("../notifications/notifications.gateway");
+const bcrypt = __importStar(require("bcrypt"));
+const promises_1 = require("fs/promises");
+const path_1 = require("path");
 exports.TierPriority = {
     ABUNDANT_LIFE: 5,
     UNITY: 4,
@@ -28,15 +65,36 @@ let UsersService = class UsersService {
     aglpService;
     configService;
     notificationsGateway;
-    constructor(prisma, aglpService, configService, notificationsGateway) {
+    jwtService;
+    constructor(prisma, aglpService, configService, notificationsGateway, jwtService) {
         this.prisma = prisma;
         this.aglpService = aglpService;
         this.configService = configService;
         this.notificationsGateway = notificationsGateway;
+        this.jwtService = jwtService;
     }
-    async getCurrentProfile(userId) {
+    async getCurrentProfile(userId, callerId, callerRole) {
+        const isOwner = callerId === userId;
+        const isAdmin = callerRole === client_1.UserRole.admin || callerRole === client_1.UserRole.super_admin;
+        const globalOmit = {
+            passwordHash: true,
+        };
+        const privacyOmit = !isOwner && !isAdmin
+            ? {
+                aglpBalance: true,
+                aglpWithdrawn: true,
+                warningCount: true,
+                missedAssignments: true,
+                tinNumber: true,
+                tradeLicenseNumber: true,
+            }
+            : {};
         const profile = await this.prisma.profile.findUnique({
             where: { id: userId },
+            omit: {
+                ...globalOmit,
+                ...privacyOmit,
+            },
             include: {
                 agentZones: {
                     include: {
@@ -125,6 +183,8 @@ let UsersService = class UsersService {
         const loginMetadata = lastLoginLog?.metadata || {};
         return {
             ...profile,
+            aglpBalance: profile.aglpBalance?.toNumber() || 0,
+            aglpWithdrawn: profile.aglpWithdrawn?.toNumber() || 0,
             performanceStats,
             lastLoginAt: lastLoginLog?.createdAt || null,
             lastLoginIp: loginMetadata.ip || null,
@@ -339,7 +399,7 @@ let UsersService = class UsersService {
         }
         return { id: userId };
     }
-    async findAll(callerRole, filters) {
+    async findAll(callerId, callerRole, filters) {
         if (callerRole !== client_1.UserRole.admin && callerRole !== client_1.UserRole.super_admin) {
             throw new common_1.ForbiddenException('Only admins can list all users');
         }
@@ -347,6 +407,9 @@ let UsersService = class UsersService {
             where: {
                 role: filters.role,
                 isActive: filters.isActive,
+            },
+            omit: {
+                passwordHash: true,
             },
             include: {
                 referredBy: {
@@ -674,6 +737,89 @@ let UsersService = class UsersService {
             },
         });
     }
+    async updateProfile(userId, data) {
+        if (!data.fullName && !data.phone) {
+            throw new common_1.BadRequestException('At least one field (fullName or phone) must be provided.');
+        }
+        const updateData = {};
+        if (data.fullName)
+            updateData.fullName = data.fullName.trim();
+        if (data.phone)
+            updateData.phone = this.sanitizePhone(data.phone);
+        const updated = await this.prisma.profile.update({
+            where: { id: userId },
+            data: updateData,
+            select: { fullName: true, phone: true, email: true, avatarUrl: true },
+        });
+        return updated;
+    }
+    sanitizePhone(phone) {
+        if (!phone)
+            return '';
+        const match = phone.match(/^(?:\+251|251|0)?([79]\d{8})$/);
+        if (match)
+            return `+251${match[1]}`;
+        const digits = phone.replace(/\D/g, '');
+        if (digits.length >= 9) {
+            const core = digits.slice(-9);
+            if (core.startsWith('9') || core.startsWith('7'))
+                return `+251${core}`;
+        }
+        return phone.startsWith('+') ? phone : `+${digits}`;
+    }
+    async changePassword(userId, dto) {
+        const profile = await this.prisma.profile.findUnique({
+            where: { id: userId },
+            select: { passwordHash: true, email: true, role: true, tier: true },
+        });
+        if (!profile?.passwordHash) {
+            throw new common_1.UnauthorizedException('Account is not password-authenticated.');
+        }
+        const isMatch = await bcrypt.compare(dto.currentPassword, profile.passwordHash);
+        if (!isMatch) {
+            throw new common_1.ForbiddenException('Current password is incorrect.');
+        }
+        const isSame = await bcrypt.compare(dto.newPassword, profile.passwordHash);
+        if (isSame) {
+            throw new common_1.BadRequestException('New password must be different from the current password.');
+        }
+        const newHash = await bcrypt.hash(dto.newPassword, 10);
+        await this.prisma.profile.update({
+            where: { id: userId },
+            data: { passwordHash: newHash },
+        });
+        const accessToken = this.jwtService.sign({
+            sub: userId,
+            email: profile.email,
+            role: profile.role,
+            tier: profile.tier,
+            tokenType: 'access',
+        });
+        return { accessToken };
+    }
+    async updateAvatar(userId, avatarUrl) {
+        const profile = await this.prisma.profile.findUnique({
+            where: { id: userId },
+            select: { avatarUrl: true },
+        });
+        if (!profile)
+            throw new common_1.NotFoundException('Profile not found');
+        if (profile.avatarUrl) {
+            const oldFileName = (0, path_1.basename)(profile.avatarUrl);
+            const oldPath = (0, path_1.join)(process.cwd(), 'uploads', oldFileName);
+            try {
+                await (0, promises_1.unlink)(oldPath);
+            }
+            catch {
+            }
+        }
+        const updated = await this.prisma.profile.update({
+            where: { id: userId },
+            data: { avatarUrl },
+            select: { avatarUrl: true },
+        });
+        return updated;
+    }
 };
 exports.UsersService = UsersService;
 exports.UsersService = UsersService = __decorate([
@@ -681,6 +827,7 @@ exports.UsersService = UsersService = __decorate([
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         aglp_service_1.AglpService,
         config_service_1.ConfigService,
-        notifications_gateway_1.NotificationsGateway])
+        notifications_gateway_1.NotificationsGateway,
+        jwt_1.JwtService])
 ], UsersService);
 //# sourceMappingURL=users.service.js.map

@@ -14,10 +14,10 @@ export declare class TransactionsService {
     private lockRequest;
     acceptAssignment(matchId: string, agentId: string): Promise<{
         id: string;
-        agentId: string;
-        status: string;
         requestId: string;
+        agentId: string;
         operatorId: string | null;
+        status: string;
         assignedAt: Date;
     }>;
     declineAssignment(matchId: string, agentId: string): Promise<{
@@ -25,10 +25,10 @@ export declare class TransactionsService {
     }>;
     transferAssignment(matchId: string, fromAgentId: string, toAgentId: string): Promise<{
         id: string;
-        agentId: string;
-        status: string;
         requestId: string;
+        agentId: string;
         operatorId: string | null;
+        status: string;
         assignedAt: Date;
     }>;
     markComplete(matchId: string, agentId: string): Promise<{
@@ -36,7 +36,6 @@ export declare class TransactionsService {
             referredBy: {
                 id: string;
                 email: string;
-                referralCode: string | null;
                 passwordHash: string | null;
                 fullName: string;
                 phone: string;
@@ -48,6 +47,7 @@ export declare class TransactionsService {
                 createdAt: Date;
                 aglpBalance: Prisma.Decimal;
                 aglpWithdrawn: Prisma.Decimal;
+                referralCode: string | null;
                 isOnline: boolean;
                 lastAssignmentAt: Date | null;
                 missedAssignments: number;
@@ -60,7 +60,6 @@ export declare class TransactionsService {
         } & {
             id: string;
             email: string;
-            referralCode: string | null;
             passwordHash: string | null;
             fullName: string;
             phone: string;
@@ -72,6 +71,7 @@ export declare class TransactionsService {
             createdAt: Date;
             aglpBalance: Prisma.Decimal;
             aglpWithdrawn: Prisma.Decimal;
+            referralCode: string | null;
             isOnline: boolean;
             lastAssignmentAt: Date | null;
             missedAssignments: number;
@@ -85,25 +85,25 @@ export declare class TransactionsService {
             id: string;
             zoneId: string;
             createdAt: Date;
-            metadata: Prisma.JsonValue;
-            woreda: string;
-            type: string;
             status: import(".prisma/client").$Enums.RequestStatus;
-            description: string;
+            customerId: string;
             category: string;
+            type: string;
+            description: string;
+            metadata: Prisma.JsonValue;
             budget: Prisma.Decimal | null;
+            woreda: string;
+            assignedOperatorId: string | null;
             assignmentPushedAt: Date | null;
             completedAt: Date | null;
             isEscalated: boolean;
-            customerId: string;
-            assignedOperatorId: string | null;
         };
     } & {
         id: string;
-        agentId: string;
-        status: string;
         requestId: string;
+        agentId: string;
         operatorId: string | null;
+        status: string;
         assignedAt: Date;
     }>;
     getAgentJobs(agentId: string): Promise<{
@@ -151,8 +151,8 @@ export declare class TransactionsService {
                 id: string;
                 createdAt: Date;
                 name: string;
-                metadata: Prisma.JsonValue | null;
                 type: string;
+                metadata: Prisma.JsonValue | null;
             };
             customer: {
                 id: string;
@@ -163,25 +163,25 @@ export declare class TransactionsService {
             id: string;
             zoneId: string;
             createdAt: Date;
-            metadata: Prisma.JsonValue;
-            woreda: string;
-            type: string;
             status: import(".prisma/client").$Enums.RequestStatus;
-            description: string;
+            customerId: string;
             category: string;
+            type: string;
+            description: string;
+            metadata: Prisma.JsonValue;
             budget: Prisma.Decimal | null;
+            woreda: string;
+            assignedOperatorId: string | null;
             assignmentPushedAt: Date | null;
             completedAt: Date | null;
             isEscalated: boolean;
-            customerId: string;
-            assignedOperatorId: string | null;
         };
     } & {
         id: string;
-        agentId: string;
-        status: string;
         requestId: string;
+        agentId: string;
         operatorId: string | null;
+        status: string;
         assignedAt: Date;
     })[]>;
 }

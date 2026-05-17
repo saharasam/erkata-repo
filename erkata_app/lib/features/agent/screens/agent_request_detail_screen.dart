@@ -544,16 +544,23 @@ class AgentRequestDetailScreen extends HookConsumerWidget {
                                     child: Divider(height: 1),
                                   ),
                                   GestureDetector(
-                                    onTap: () =>
-                                        _makePhoneCall(req.customerPhone!),
+                                    onTap: req.status == RequestStatus.pending
+                                        ? null
+                                        : () => _makePhoneCall(req.customerPhone!),
                                     child: _MinimalDetailRow(
                                       icon: Icons.phone,
                                       label: 'Contact',
                                       value: req.customerPhone!,
-                                      valueColor: Theme.of(
-                                        context,
-                                      ).colorScheme.primary,
-                                      isActionable: true,
+                                      valueColor: req.status ==
+                                              RequestStatus.pending
+                                          ? Theme.of(context)
+                                              .colorScheme
+                                              .onSurfaceVariant
+                                          : Theme.of(context)
+                                              .colorScheme
+                                              .primary,
+                                      isActionable: req.status !=
+                                          RequestStatus.pending,
                                     ),
                                   ),
                                 ],

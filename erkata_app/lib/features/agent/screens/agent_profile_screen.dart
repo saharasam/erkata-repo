@@ -22,6 +22,12 @@ class AgentProfileScreen extends ConsumerWidget {
 
     final menuItems = [
       {
+        'icon': Icons.person,
+        'label': 'Personal Information',
+        'sub': 'Edit your details',
+        'route': '/profile/personal',
+      },
+      {
         'icon': Icons.history,
         'label': 'History',
         'sub': 'View past requests',
@@ -31,25 +37,31 @@ class AgentProfileScreen extends ConsumerWidget {
         'icon': Icons.business,
         'label': 'Business Verification',
         'sub': 'Verify your business details',
-        'route': null,
+        'route': '/agent/business',
       },
       {
         'icon': Icons.account_balance_wallet,
         'label': 'Payout Settings',
         'sub': 'Manage your bank accounts',
-        'route': null,
+        'route': '/agent/payout',
       },
       {
         'icon': Icons.notifications,
         'label': 'Notifications',
         'sub': 'Manage alerts',
         'route': '/agent/settings',
-      }, // Linking to settings for now
+      },
       {
         'icon': Icons.security,
         'label': 'Security & Privacy',
         'sub': 'Password, 2FA',
-        'route': '/agent/settings',
+        'route': '/profile/security',
+      },
+      {
+        'icon': Icons.settings,
+        'label': 'App Preferences',
+        'sub': 'Language, Theme',
+        'route': '/profile/preferences',
       },
       {
         'icon': Icons.help_outline,
@@ -126,20 +138,25 @@ class AgentProfileScreen extends ConsumerWidget {
                           Positioned(
                             bottom: 0,
                             right: 0,
-                            child: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.primary,
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Theme.of(context).colorScheme.surface,
-                                  width: 4,
+                            child: GestureDetector(
+                              onTap: () => context.push('/profile/personal'),
+                              child: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Theme.of(context).colorScheme.surface,
+                                    width: 4,
+                                  ),
                                 ),
-                              ),
-                              child: Icon(
-                                Icons.edit,
-                                size: 14,
-                                color: Theme.of(context).colorScheme.onPrimary,
+                                child: Icon(
+                                  Icons.edit,
+                                  size: 14,
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onPrimary,
+                                ),
                               ),
                             ),
                           ),

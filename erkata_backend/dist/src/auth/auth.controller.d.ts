@@ -1,5 +1,5 @@
 import { AuthService } from './auth.service';
-import type { Response } from 'express';
+import type { Response, Request } from 'express';
 import type { AuthenticatedRequest } from './guards/authenticated-request.interface';
 import { RedisPresenceService } from '../common/redis/redis-presence.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -12,7 +12,7 @@ export declare class AuthController {
     login(body: {
         identifier: string;
         password: string;
-    }, res: Response, req: any): Promise<{
+    }, res: Response, req: Request): Promise<{
         user: {
             id: string;
             email: string;
@@ -22,14 +22,16 @@ export declare class AuthController {
             tier: import(".prisma/client").$Enums.Tier;
         };
         accessToken: string;
+        csrfToken: `${string}-${string}-${string}-${string}-${string}`;
     }>;
-    refresh(req: any): Promise<{
+    refresh(req: Request, res: Response): Promise<{
         accessToken: string;
+        csrfToken: `${string}-${string}-${string}-${string}-${string}`;
     }>;
     logout(res: Response): Promise<{
         message: string;
     }>;
-    register(body: RegisterDto, res: Response, req: any): Promise<{
+    register(body: RegisterDto, res: Response, req: Request): Promise<{
         message: string;
         user: {
             id: string;
@@ -40,10 +42,20 @@ export declare class AuthController {
             tier: import(".prisma/client").$Enums.Tier;
         };
         accessToken: string;
+        csrfToken: `${string}-${string}-${string}-${string}-${string}`;
     }>;
     heartbeat(req: AuthenticatedRequest): Promise<{
         status: string;
         assignmentFound: boolean;
         requestId: string | null;
+    }>;
+    getMe(req: AuthenticatedRequest): Promise<{
+        id: string;
+        email: string;
+        fullName: string;
+        phone: string;
+        role: import(".prisma/client").$Enums.UserRole;
+        tier: import(".prisma/client").$Enums.Tier;
+        zoneId: string | null;
     }>;
 }

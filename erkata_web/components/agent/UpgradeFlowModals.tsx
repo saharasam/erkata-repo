@@ -17,6 +17,8 @@ interface UpgradeFlowModalsProps {
   onSuccess: () => void;
 }
 
+const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
 export const UpgradeFlowModals: React.FC<UpgradeFlowModalsProps> = ({
   isOpen,
   onClose,
@@ -71,6 +73,12 @@ export const UpgradeFlowModals: React.FC<UpgradeFlowModalsProps> = ({
         return;
       }
 
+      // Validation: File Type Check (UX Only)
+      if (!ALLOWED_MIME_TYPES.includes(selectedFile.type)) {
+        setError('Invalid file type. Please upload a PNG, JPG, or WEBP image.');
+        return;
+      }
+
       setFile(selectedFile);
       setPreview(URL.createObjectURL(selectedFile));
       setError(null);
@@ -83,17 +91,12 @@ export const UpgradeFlowModals: React.FC<UpgradeFlowModalsProps> = ({
     setIsSubmitting(true);
     setError(null);
     try {
-      // Read file as Base64
-      const reader = new FileReader();
-      const base64Promise = new Promise<string>((resolve, reject) => {
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-
-      const base64Data = await base64Promise;
+      const formData = new FormData();
+      formData.append('proof', file);
       
-      await api.patch(`/upgrades/${requestId}/proof`, { proofUrl: base64Data });
+      await api.patch(`/upgrades/${requestId}/proof`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
       setStep('success');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Failed to upload proof.');
@@ -218,7 +221,7 @@ export const UpgradeFlowModals: React.FC<UpgradeFlowModalsProps> = ({
                     type="file"
                     id="proof-upload"
                     className="hidden"
-                    accept="image/*"
+                    accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
                     onChange={handleFileChange}
                   />
                   <label

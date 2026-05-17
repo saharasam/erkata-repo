@@ -69,7 +69,7 @@ class ServiceRequest {
     if (raw != null) {
       final budgetNum = double.tryParse(raw.toString());
       if (budgetNum != null && budgetNum > 0) {
-        budgetStr = NumberFormat('#,###', 'en_US').format(budgetNum) + ' ETB';
+        budgetStr = '${NumberFormat('#,###', 'en_US').format(budgetNum)} ETB';
       }
     }
 
@@ -139,6 +139,26 @@ class ServiceRequest {
       }
     }
 
+    // 🛡️ PII Masking Logic (Data Minimization)
+    // Only reveal full details if the request is "Accepted" (Assigned in UI) or further.
+    // For Agents, "Incoming" (Pending) should be masked.
+    String? rawName = customer?['fullName'] as String?;
+    String? rawPhone = customer?['phone'] as String?;
+
+    if (isNestedMatch && status == RequestStatus.pending) {
+      if (rawName != null && rawName.length > 2) {
+        final parts = rawName.split(' ');
+        rawName = parts.map((p) {
+          if (p.length <= 1) return p;
+          return '${p[0]}${'*' * (p.length - 1)}';
+        }).join(' ');
+      }
+      if (rawPhone != null && rawPhone.length > 4) {
+        rawPhone =
+            '${rawPhone.substring(0, rawPhone.length - 4)}****';
+      }
+    }
+
     return ServiceRequest(
       id:
           json['id'] as String? ??
@@ -152,8 +172,8 @@ class ServiceRequest {
       location: '$zoneName${woreda.isNotEmpty ? ", Woreda $woreda" : ""}',
       budget: budgetStr,
       description: dataSource['description'] as String?,
-      customerName: customer?['fullName'] as String?,
-      customerPhone: customer?['phone'] as String?,
+      customerName: rawName,
+      customerPhone: rawPhone,
       createdAt: dataSource['createdAt'] as String?,
       assignmentPushedAt: json['assignedAt'] as String?,
       completedAt: dataSource['completedAt'] as String?,

@@ -71,9 +71,6 @@ const DisputesBoard: React.FC = () => {
                 setResolutionNote('');
                 fetchDisputes();
                 await refreshNotifications();
-            } catch (error) {
-                console.error('Failed to resolve dispute:', error);
-                showAlert({ title: 'Error', message: 'Failed to resolve dispute.', type: 'error' });
             } finally {
                 setProcessingId(null);
             }
@@ -101,9 +98,6 @@ const DisputesBoard: React.FC = () => {
                 setResolutionNote('');
                 fetchDisputes();
                 await refreshNotifications();
-            } catch (error) {
-                console.error('Failed to void dispute:', error);
-                showAlert({ title: 'Error', message: 'Failed to void dispute.', type: 'error' });
             } finally {
                 setProcessingId(null);
             }
@@ -121,9 +115,6 @@ const DisputesBoard: React.FC = () => {
             setEscalationNote('');
             fetchDisputes();
             await refreshNotifications();
-        } catch (error) {
-            console.error('Failed to escalate dispute:', error);
-            showAlert({ title: 'Error', message: 'Failed to escalate dispute.', type: 'error' });
         } finally {
             setProcessingId(null);
         }

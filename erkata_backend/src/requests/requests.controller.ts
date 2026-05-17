@@ -14,6 +14,7 @@ import { CreateRequestDto } from './dto/create-request.dto';
 import { Action } from '../auth/permissions';
 import { JwtAuthGuard, RolesGuard, RequirePermission } from '../auth/guards';
 import type { RequestWithUser } from '../common/interfaces/request-with-user.interface';
+import { PaginationDto } from '../common/dto/pagination.dto';
 
 @Controller('requests')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -30,12 +31,12 @@ export class RequestsController {
 
   @Get('queue')
   @RequirePermission(Action.VIEW_QUEUE)
-  getQueue(
-    @Query('zoneId') zoneId?: string,
-    @Query('limit') limit?: number,
-    @Query('offset') offset?: number,
-  ) {
-    return this.requestsService.getOperatorQueue({ zoneId, limit, offset });
+  getQueue(@Query() query: PaginationDto, @Query('zoneId') zoneId?: string) {
+    return this.requestsService.getOperatorQueue({
+      zoneId,
+      limit: query.limit,
+      offset: query.offset,
+    });
   }
 
   // Customer views their own request history
@@ -49,18 +50,18 @@ export class RequestsController {
   // Operator fetches all active agents (sorted by tier, then zone)
   @Get('eligible-agents')
   @RequirePermission(Action.VIEW_AGENTS_LIST)
-  findEligibleAgents() {
-    return this.requestsService.findEligibleAgents();
+  findEligibleAgents(@Query('zoneId') zoneId?: string) {
+    return this.requestsService.findEligibleAgents(zoneId);
   }
 
   // Fetch all historical disputes (Resolved/Escalated) for Admin Audit
   @Get('admin/dispute-history')
   @RequirePermission(Action.VIEW_SYSTEM_STATISTICS) // This action fits global administration permissions
-  getDisputeHistory(
-    @Query('limit') limit?: number,
-    @Query('offset') offset?: number,
-  ) {
-    return this.requestsService.getDisputeHistory({ limit, offset });
+  getDisputeHistory(@Query() query: PaginationDto) {
+    return this.requestsService.getDisputeHistory({
+      limit: query.limit,
+      offset: query.offset,
+    });
   }
 
   // Operator fetching their pushed request details

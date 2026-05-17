@@ -15,7 +15,7 @@ import {
   MessageSquare,
   Search
 } from 'lucide-react';
-import api from '../../utils/api';
+import api, { getAssetUrl } from '../../utils/api';
 import { useModal } from '../../contexts/ModalContext';
 import { useSocket } from '../../contexts/SocketContext';
 
@@ -269,7 +269,7 @@ const UpgradeApprovalsAudit: React.FC<UpgradeApprovalsAuditProps> = ({ onViewDet
                     onClick={() => setFullPreview(selectedRequest.proofUrl)}
                     className="aspect-video bg-slate-100 rounded-[2rem] overflow-hidden border border-slate-200 group relative cursor-pointer"
                   >
-                    <img src={selectedRequest.proofUrl} alt="Proof" className="w-full h-full object-cover" />
+                    <img src={getAssetUrl(selectedRequest.proofUrl)} alt="Proof" className="w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2 text-white">
                       <ExternalLink className="w-6 h-6" />
                       <span className="text-[10px] font-black uppercase tracking-widest">Verify Full Document</span>
@@ -357,7 +357,7 @@ const UpgradeApprovalsAudit: React.FC<UpgradeApprovalsAuditProps> = ({ onViewDet
             className="relative max-w-5xl w-full h-full flex items-center justify-center"
             onClick={(e) => e.stopPropagation()}
           >
-            <img src={fullPreview} alt="Full Proof" className="max-w-full max-h-full object-contain rounded-3xl shadow-2xl" />
+            <img src={getAssetUrl(fullPreview)} alt="Full Proof" className="max-w-full max-h-full object-contain rounded-3xl shadow-2xl" />
             <button 
               onClick={() => setFullPreview(null)}
               className="absolute top-0 right-0 -mt-12 text-white/60 hover:text-white transition-colors"

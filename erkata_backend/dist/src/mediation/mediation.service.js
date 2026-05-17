@@ -50,6 +50,13 @@ let MediationService = class MediationService {
         if (author.role !== client_1.UserRole.customer && author.role !== client_1.UserRole.agent) {
             throw new common_1.BadRequestException('Only Customers and Agents can submit feedback');
         }
+        if (author.role === client_1.UserRole.customer && request.customerId !== authorId) {
+            throw new common_1.ForbiddenException('You are not an authorized participant in this transaction');
+        }
+        if (author.role === client_1.UserRole.agent &&
+            transaction.match.agentId !== authorId) {
+            throw new common_1.ForbiddenException('You are not the authorized agent for this transaction');
+        }
         const existingFeedback = transaction.feedbacks.find((f) => f.authorId === authorId);
         if (existingFeedback)
             throw new common_1.BadRequestException('Feedback already submitted for this transaction');

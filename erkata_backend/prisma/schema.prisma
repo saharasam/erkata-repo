@@ -1,5 +1,6 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["omitApi"]
 }
 
 datasource db {
@@ -205,6 +206,7 @@ model Profile {
   upgradeRequests   UpgradeRequest[]   @relation("AgentUpgradeRequests")
   verifications     UpgradeRequest[]   @relation("OperatorVerifications")
   approvals         UpgradeRequest[]   @relation("AdminApprovals")
+  attachments       Attachment[]       @relation("UserAttachments")
 
   @@map("profiles")
 }
@@ -341,7 +343,9 @@ model Attachment {
   fileName  String   @map("file_name")
   mimeType  String   @map("mime_type")
   url       String
+  ownerId   String?  @map("owner_id") @db.Uuid
   createdAt DateTime @default(now()) @map("created_at")
+  owner     Profile? @relation("UserAttachments", fields: [ownerId], references: [id])
 
   @@map("attachments")
 }

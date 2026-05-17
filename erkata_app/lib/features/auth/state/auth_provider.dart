@@ -232,11 +232,103 @@ class AuthNotifier extends StateNotifier<AuthState> {
         tier: profile.tier,
         fullName: profile.fullName,
         email: profile.email,
+        avatarUrl: profile.avatarUrl,
+        phone: profile.phone,
       );
 
       state = state.copyWith(user: profile);
     } catch (e) {
       // If refresh fails, we keep the old data for now
+    }
+  }
+
+  /// Updates the current user's profile information.
+  Future<void> updateProfile({String? fullName, String? phone}) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final data = <String, dynamic>{};
+      if (fullName != null) data['fullName'] = fullName;
+      if (phone != null) data['phone'] = phone;
+
+      final updatedProfile = await _repo.updateProfile(data);
+
+      await _tokenStorage.saveUserProfile(
+        userId: updatedProfile.id,
+        role: updatedProfile.role ?? 'customer',
+        tier: updatedProfile.tier,
+        fullName: updatedProfile.fullName,
+        email: updatedProfile.email,
+        avatarUrl: updatedProfile.avatarUrl,
+        phone: updatedProfile.phone,
+      );
+
+      state = state.copyWith(user: updatedProfile, isLoading: false);
+    } on AppException catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: e.message);
+      rethrow;
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Failed to update profile',
+      );
+      rethrow;
+    }
+  }
+
+  /// Changes the user's password.
+  Future<void> changePassword(String currentPassword, String newPassword) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      await _repo.changePassword(currentPassword, newPassword);
+      state = state.copyWith(isLoading: false);
+    } on AppException catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: e.message);
+      rethrow;
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Failed to change password',
+      );
+      rethrow;
+    }
+  }
+
+  /// Uploads a new avatar and updates the profile.
+  Future<void> uploadAvatar(String filePath) async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final url = await _repo.uploadImage(filePath);
+      await _repo.updateAvatar(url);
+      await refreshProfile();
+      state = state.copyWith(isLoading: false);
+    } on AppException catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: e.message);
+      rethrow;
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Failed to upload avatar',
+      );
+      rethrow;
+    }
+  }
+
+  /// Removes the user's avatar.
+  Future<void> deleteAvatar() async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      await _repo.updateAvatar(null);
+      await refreshProfile();
+      state = state.copyWith(isLoading: false);
+    } on AppException catch (e) {
+      state = state.copyWith(isLoading: false, errorMessage: e.message);
+      rethrow;
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        errorMessage: 'Failed to remove avatar',
+      );
+      rethrow;
     }
   }
 
@@ -261,6 +353,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
       fullName: await _tokenStorage.getUserFullName(),
       role: await _tokenStorage.getUserRole(),
       tier: await _tokenStorage.getUserTier(),
+      avatarUrl: await _tokenStorage.getAvatarUrl(),
+      phone: await _tokenStorage.getPhone(),
     );
   }
 

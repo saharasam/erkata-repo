@@ -1,9 +1,11 @@
-import { IsString } from 'class-validator';
+import { IsOptional, IsString } from 'class-validator';
 
 export class UpdateBusinessProfileDto {
+  @IsOptional()
   @IsString()
-  tinNumber: string;
+  tinNumber?: string;
 
+  @IsOptional()
   @IsString()
-  tradeLicenseNumber: string;
+  tradeLicenseNumber?: string;
 }

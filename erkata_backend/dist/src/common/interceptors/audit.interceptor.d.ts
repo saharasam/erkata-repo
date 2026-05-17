@@ -5,4 +5,5 @@ export declare class AuditInterceptor implements NestInterceptor {
     private readonly prisma;
     constructor(prisma: PrismaService);
     intercept(context: ExecutionContext, next: CallHandler): Observable<any>;
+    private redact;
 }

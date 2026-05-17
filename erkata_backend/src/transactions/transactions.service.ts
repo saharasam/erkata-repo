@@ -153,6 +153,7 @@ export class TransactionsService {
   ) {
     const match = await this.prisma.match.findUnique({
       where: { id: matchId },
+      include: { request: true },
     });
 
     if (!match) throw new NotFoundException('Match not found');
@@ -168,6 +169,7 @@ export class TransactionsService {
     // Verify toAgentId is referred by fromAgentId
     const targetAgent = await this.prisma.profile.findUnique({
       where: { id: toAgentId },
+      include: { agentZones: true },
     });
 
     if (
@@ -177,6 +179,18 @@ export class TransactionsService {
     ) {
       throw new BadRequestException(
         'Target agent must be one of your referrals',
+      );
+    }
+
+    // ERK-SEC-002 Remediation: Enforce geographic authorization
+    const isAuthorizedForZone = targetAgent.agentZones.some(
+      (z) => z.zoneId === match.request.zoneId,
+    );
+    const hasGlobalRights = targetAgent.tier === 'ABUNDANT_LIFE';
+
+    if (!isAuthorizedForZone && !hasGlobalRights) {
+      throw new ForbiddenException(
+        'Target agent does not hold geographic rights for this request zone.',
       );
     }
 

@@ -30,6 +30,9 @@ export enum Action {
   VIEW_COMMISSION_EARNINGS = "VIEW_COMMISSION_EARNINGS",
   REQUEST_PAYOUT = "REQUEST_PAYOUT",
   VIEW_PAYOUT_HISTORY = "VIEW_PAYOUT_HISTORY",
+  VIEW_OWN_FINANCES = "VIEW_OWN_FINANCES",
+  VIEW_UPGRADES = "VIEW_UPGRADES",
+  VIEW_REFERRALS = "VIEW_REFERRALS",
 
   // --- Operator (Neutral Mediator) ---
   VIEW_QUEUE = "VIEW_QUEUE",
@@ -74,6 +77,7 @@ export enum Action {
   EXPORT_FINANCIAL_AUDIT = "EXPORT_FINANCIAL_AUDIT",
   VIEW_BROADCASTS = "VIEW_BROADCASTS",
   VERIFY_UPGRADE = "VERIFY_UPGRADE",
+  APPROVE_UPGRADE = "APPROVE_UPGRADE",
 }
 
 export const usePermissions = () => {
@@ -113,6 +117,9 @@ export const usePermissions = () => {
         Action.VIEW_COMMISSION_EARNINGS,
         Action.REQUEST_PAYOUT,
         Action.VIEW_PAYOUT_HISTORY,
+        Action.VIEW_OWN_FINANCES,
+        Action.VIEW_UPGRADES,
+        Action.VIEW_REFERRALS,
         Action.VIEW_BROADCASTS,
       ],
       [UserRole.OPERATOR]: [
@@ -178,6 +185,7 @@ export const usePermissions = () => {
         Action.APPROVE_PAYOUT,
         Action.VIEW_FINANCIAL_REPORTS,
         Action.VIEW_BROADCASTS,
+        Action.APPROVE_UPGRADE,
       ],
     };
 

@@ -7,7 +7,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { Tier } from '@prisma/client';
 import { NotificationsGateway } from '../notifications/notifications.gateway';
-import { UsersService } from '../users/users.service';
+import { UsersService, TierPriority } from '../users/users.service';
 
 @Injectable()
 export class UpgradesService {
@@ -34,6 +34,16 @@ export class UpgradesService {
     });
 
     if (!agent) throw new NotFoundException('Agent not found');
+
+    // ERK-003 Remediation: Enforce TierPriority hierarchy to prevent lateral/downward commission exploitation
+    const currentPriority = TierPriority[agent.tier || 'FREE'] || 0;
+    const targetPriority = TierPriority[targetTier] || 0;
+
+    if (targetPriority <= currentPriority) {
+      throw new BadRequestException(
+        `Invalid upgrade target. Your current tier is ${agent.tier}, and you cannot request a lateral or downward change.`,
+      );
+    }
 
     // Check if there's already a pending request
     const existing = await this.prisma.upgradeRequest.findFirst({
@@ -68,6 +78,16 @@ export class UpgradesService {
     if (request.agentId !== agentId) {
       throw new ForbiddenException('Not your request');
     }
+
+    // Register in Attachment table for consistent serving/tracking
+    await this.prisma.attachment.create({
+      data: {
+        fileName: `proof_${requestId}_${Date.now()}`,
+        mimeType: 'image/jpeg', // Storage handles variety, but we ensure it's registered
+        url: proofUrl,
+        ownerId: agentId,
+      },
+    });
 
     const updated = await this.prisma.upgradeRequest.update({
       where: { id: requestId },
@@ -108,6 +128,13 @@ export class UpgradesService {
     });
 
     if (!request) throw new NotFoundException('Request not found');
+
+    // ER-006: State Machine Guard - Prevent verifying non-pending requests
+    if (request.status !== 'SUBMITTED') {
+      throw new BadRequestException(
+        `Invalid transition. Request must be in SUBMITTED state, but is currently ${request.status}.`,
+      );
+    }
 
     const updated = await this.prisma.upgradeRequest.update({
       where: { id: requestId },
@@ -210,6 +237,14 @@ export class UpgradesService {
     });
 
     if (!request) throw new NotFoundException('Request not found');
+
+    // ER-006: State Machine Guard - Prevent rejecting terminal states
+    const validInitialStates = ['SUBMITTED', 'OPERATOR_VERIFIED'];
+    if (!validInitialStates.includes(request.status)) {
+      throw new BadRequestException(
+        `Cannot reject request in ${request.status} state. Only pending requests can be rejected.`,
+      );
+    }
 
     await this.prisma.upgradeRequest.update({
       where: { id: requestId },

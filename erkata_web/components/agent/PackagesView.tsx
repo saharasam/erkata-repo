@@ -208,3 +208,4 @@ export const PackagesView: React.FC<PackagesViewProps> = ({ finance, profile, on
     </div>
   );
 };
+export default PackagesView;

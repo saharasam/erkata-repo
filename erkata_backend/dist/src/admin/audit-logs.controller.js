@@ -17,16 +17,17 @@ const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
 const guards_1 = require("../auth/guards");
 const permissions_1 = require("../auth/permissions");
+const pagination_dto_1 = require("../common/dto/pagination.dto");
 let AuditLogsController = class AuditLogsController {
     prisma;
     constructor(prisma) {
         this.prisma = prisma;
     }
-    async getAuditLogs(limit = 50, offset = 0, action) {
+    async getAuditLogs(query, action) {
         const logs = await this.prisma.auditLog.findMany({
             where: action ? { action } : {},
-            take: Number(limit),
-            skip: Number(offset),
+            take: query.limit,
+            skip: query.offset,
             orderBy: { createdAt: 'desc' },
             include: {
                 actor: {
@@ -48,11 +49,10 @@ exports.AuditLogsController = AuditLogsController;
 __decorate([
     (0, common_1.Get)(),
     (0, guards_1.RequirePermission)(permissions_1.Action.VIEW_FULL_AUDIT_LOGS),
-    __param(0, (0, common_1.Query)('limit')),
-    __param(1, (0, common_1.Query)('offset')),
-    __param(2, (0, common_1.Query)('action')),
+    __param(0, (0, common_1.Query)()),
+    __param(1, (0, common_1.Query)('action')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, Object, String]),
+    __metadata("design:paramtypes", [pagination_dto_1.PaginationDto, String]),
     __metadata("design:returntype", Promise)
 ], AuditLogsController.prototype, "getAuditLogs", null);
 exports.AuditLogsController = AuditLogsController = __decorate([

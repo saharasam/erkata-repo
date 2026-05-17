@@ -8,15 +8,19 @@ import {
   UseInterceptors,
   BadRequestException,
   NotFoundException,
+  ForbiddenException,
   UseGuards,
+  Req,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { fromBuffer } from 'file-type';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from './storage.service';
 import { JwtAuthGuard } from '../auth/guards';
-import { Attachment } from '@prisma/client';
+import { Attachment, UserRole } from '@prisma/client';
 import type { Response } from 'express';
-import { join } from 'path';
+import type { AuthenticatedRequest } from '../auth/guards';
+import { join, basename } from 'path';
 import { createReadStream, existsSync } from 'fs';
 import { stat } from 'fs/promises';
 
@@ -49,9 +53,22 @@ export class UploadsController {
       },
     }),
   )
-  async uploadFile(@UploadedFile() file: MulterFile) {
+  async uploadFile(
+    @UploadedFile() file: MulterFile,
+    @Req() req: AuthenticatedRequest,
+  ) {
     if (!file) {
       throw new BadRequestException('No file uploaded');
+    }
+
+    // CRITICAL: Magic Bytes Validation
+    const fileInfo = await fromBuffer(file.buffer);
+    const allowedMimeTypes = ['image/jpeg', 'image/png', 'application/pdf'];
+
+    if (!fileInfo || !allowedMimeTypes.includes(fileInfo.mime)) {
+      throw new BadRequestException(
+        'Malicious or corrupted file detected. Magic bytes do not match expected formats.',
+      );
     }
 
     const relativeUrl = await this.storageService.upload(
@@ -64,6 +81,7 @@ export class UploadsController {
         fileName: file.originalname,
         mimeType: file.mimetype,
         url: relativeUrl,
+        ownerId: req.user.id,
       },
     });
 
@@ -75,31 +93,93 @@ export class UploadsController {
   }
 
   @Get(':id')
-  async getFile(@Param('id') id: string, @Res() res: Response) {
-    const attachment: Attachment | null =
-      await this.prisma.attachment.findUnique({
+  @UseGuards(JwtAuthGuard)
+  async getFile(
+    @Param('id') id: string,
+    @Res() res: Response,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    let attachment: Attachment | null = await this.prisma.attachment.findUnique(
+      {
         where: { id },
-      });
+      },
+    );
 
+    // BOLA Remediation: If ID lookup fails, try searching by filename in the URL
     if (!attachment) {
-      throw new NotFoundException('File metadata not found');
+      attachment = await this.prisma.attachment.findFirst({
+        where: {
+          url: { contains: basename(id) },
+        },
+      });
     }
 
-    const urlParts = attachment.url.split('/');
-    const fileName = urlParts[urlParts.length - 1];
+    const user = req.user;
+    const isPrivileged = (
+      [
+        UserRole.super_admin,
+        UserRole.admin,
+        UserRole.operator,
+        UserRole.financial_operator,
+      ] as string[]
+    ).includes(user.role);
+
+    let fileName: string;
+    let mimeType: string;
+    let originalName: string;
+
+    if (attachment) {
+      // IDOR Check: Only owner or staff can access
+      if (!isPrivileged && attachment.ownerId !== user.id) {
+        throw new ForbiddenException(
+          'Access denied. You do not have permission to view this file.',
+        );
+      }
+
+      const urlParts = attachment.url.split('/');
+      fileName = urlParts[urlParts.length - 1];
+      mimeType = attachment.mimeType;
+      originalName = attachment.fileName;
+    } else {
+      // DISK FALLBACK (No DB entry found): Strictly limited to staff
+      if (!isPrivileged) {
+        throw new ForbiddenException(
+          'Access denied. File is not registered or you lack sufficient privileges.',
+        );
+      }
+
+      // Path Traversal Protection: Stripping directory info and validating UUID pattern
+      fileName = basename(id);
+      if (!/^[a-f0-9-]+\.[a-z0-9]+$/.test(fileName)) {
+        throw new BadRequestException(
+          'Invalid filename pattern or traversal detected.',
+        );
+      }
+      const fallbackPath = join(process.cwd(), 'uploads', fileName);
+
+      if (!existsSync(fallbackPath)) {
+        throw new NotFoundException('File not found');
+      }
+
+      // Detection for fallback files
+      mimeType = 'application/octet-stream';
+      if (fileName.match(/\.(jpg|jpeg)$/i)) mimeType = 'image/jpeg';
+      else if (fileName.match(/\.png$/i)) mimeType = 'image/png';
+      else if (fileName.match(/\.webp$/i)) mimeType = 'image/webp';
+      else if (fileName.match(/\.pdf$/i)) mimeType = 'application/pdf';
+
+      originalName = fileName;
+    }
+
     const filePath = join(process.cwd(), 'uploads', fileName);
-
-    if (!existsSync(filePath)) {
-      throw new NotFoundException('Physical file not found on disk');
-    }
 
     try {
       const fileStat = await stat(filePath);
 
       res.set({
-        'Content-Type': attachment.mimeType,
+        'Content-Type': mimeType,
         'Content-Length': fileStat.size,
-        'Content-Disposition': `inline; filename="${attachment.fileName}"`,
+        'Content-Disposition': `inline; filename="${originalName}"`,
       });
 
       const stream = createReadStream(filePath);

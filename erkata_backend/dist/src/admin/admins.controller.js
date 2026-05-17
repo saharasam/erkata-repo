@@ -21,6 +21,7 @@ const users_service_1 = require("../users/users.service");
 const client_1 = require("@prisma/client");
 const invite_service_1 = require("../auth/invite/invite.service");
 const invite_dto_1 = require("./dto/invite.dto");
+const pagination_dto_1 = require("../common/dto/pagination.dto");
 let AdminsController = class AdminsController {
     prisma;
     inviteService;
@@ -30,7 +31,7 @@ let AdminsController = class AdminsController {
         this.inviteService = inviteService;
         this.usersService = usersService;
     }
-    async getPersonnel(req, role, limit, offset) {
+    async getPersonnel(req, query, role) {
         const callerRole = req.user.role;
         const normalizedRole = role?.toLowerCase();
         const queryWhere = {};
@@ -59,8 +60,8 @@ let AdminsController = class AdminsController {
                 };
             }
         }
-        const take = limit ? Number(limit) : 50;
-        const skip = offset ? Number(offset) : 0;
+        const take = query.limit;
+        const skip = query.offset;
         const profiles = await this.prisma.profile.findMany({
             where: queryWhere,
             take,
@@ -134,11 +135,10 @@ __decorate([
     (0, common_1.Get)(),
     (0, guards_1.Roles)('admin'),
     __param(0, (0, common_1.Req)()),
-    __param(1, (0, common_1.Query)('role')),
-    __param(2, (0, common_1.Query)('limit')),
-    __param(3, (0, common_1.Query)('offset')),
+    __param(1, (0, common_1.Query)()),
+    __param(2, (0, common_1.Query)('role')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, String, Number, Number]),
+    __metadata("design:paramtypes", [Object, pagination_dto_1.PaginationDto, String]),
     __metadata("design:returntype", Promise)
 ], AdminsController.prototype, "getPersonnel", null);
 __decorate([

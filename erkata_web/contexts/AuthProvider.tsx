@@ -1,5 +1,4 @@
 import React, { useState, useEffect, ReactNode } from 'react';
-import { jwtDecode } from 'jwt-decode';
 import api, { setAccessToken, setAuthReady } from '../utils/api';
 import { UserRole } from '../utils/constants';
 import { AuthContext, User } from './AuthContext';
@@ -31,30 +30,27 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         const { accessToken } = response.data;
         
         if (accessToken) {
-          console.log('[Auth] Session refreshed successfully.');
           setAccessToken(accessToken);
           
-          const decoded: any = jwtDecode(accessToken);
-          console.log('[Auth] Decoded Token:', decoded);
+          // Hydrate user state from /auth/me to ensure fresh data and no PII in localStorage
+          const userRes = await api.get('/auth/me');
+          const userData = userRes.data;
           
-          const userData: User = {
-            id: decoded.sub || decoded.id,
-            role: normalizeRole(decoded.role || 'customer'),
-            fullName: decoded.fullName || 'User',
-            email: decoded.email || '',
-            zoneId: decoded.zoneId
+          const authenticatedUser: User = {
+            id: userData.id,
+            role: normalizeRole(userData.role),
+            fullName: userData.fullName || 'User',
+            email: userData.email,
+            phone: userData.phone ?? undefined,
+            avatarUrl: userData.avatarUrl ?? null,
+            zoneId: userData.zoneId
           };
           
-          console.log('[Auth] Setting user state:', userData);
-          setUser(userData);
-          localStorage.setItem('erkata_user', JSON.stringify(userData));
+          setUser(authenticatedUser);
           setAuthReady(true);
         } else {
-          console.log('[Auth] No session found.');
         }
       } catch (e) {
-        console.log('[Auth] Session check failed or expired.');
-        localStorage.removeItem('erkata_user');
         setAccessToken('');
       } finally {
         setAuthReady(true);
@@ -70,8 +66,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       console.log('[Auth] Attempting login for:', email);
       const response = await api.post('/auth/login', { identifier: email, password });
       const { user: userData, accessToken } = response.data;
-      
-      console.log('[Auth] Login response data:', response.data);
       setAccessToken(accessToken);
 
       const authenticatedUser: User = {
@@ -79,30 +73,27 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         role: normalizeRole(userData.role),
         fullName: userData.fullName || 'User',
         email: userData.email,
+        phone: userData.phone ?? undefined,
+        avatarUrl: userData.avatarUrl ?? null,
         zoneId: userData.zoneId
       };
 
-      console.log('[Auth] Setting authenticated user:', authenticatedUser);
       setUser(authenticatedUser);
-      localStorage.setItem('erkata_user', JSON.stringify(authenticatedUser));
       setAuthReady(true);
       return { success: true };
     } catch (error: any) {
       console.error('[Auth] Login failed:', error);
-      const message = error.response?.data?.message || 'Login failed. Please check your credentials.';
-      return { success: false, error: message };
+      return { success: false };
     }
   };
 
   const logout = async () => {
     try {
-      console.log('[Auth] Logging out...');
       await api.post('/auth/logout');
     } finally {
       setUser(null);
       setAccessToken('');
       setAuthReady(false);
-      localStorage.removeItem('erkata_user');
     }
   };
 
@@ -124,7 +115,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const { user: userData, accessToken } = response.data;
       
       if (accessToken && userData) {
-        console.log('[Auth] Auto-login successful after registration.');
         setAccessToken(accessToken);
 
         const authenticatedUser: User = {
@@ -132,11 +122,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           role: normalizeRole(userData.role),
           fullName: userData.fullName || 'User',
           email: userData.email,
+          phone: userData.phone ?? undefined,
+          avatarUrl: userData.avatarUrl ?? null,
           zoneId: userData.zoneId
         };
 
         setUser(authenticatedUser);
-        localStorage.setItem('erkata_user', JSON.stringify(authenticatedUser));
         setAuthReady(true);
       }
     } catch (error) {
@@ -145,8 +136,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  /**
+   * Merges a partial user object into the in-memory auth state.
+   * Call this immediately after a successful profile/avatar update API call
+   * so the UI reflects changes without a full page reload.
+   */
+  const updateUser = (partial: Partial<User>) => {
+    setUser((prev) => (prev ? { ...prev, ...partial } : prev));
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, signup, isAuthenticated: !!user, isLoading }}>
+    <AuthContext.Provider value={{ user, login, logout, signup, updateUser, isAuthenticated: !!user, isLoading }}>
       {isLoading ? (
         <div className="h-screen w-full flex items-center justify-center bg-erkata-surface font-sans">
           <div className="flex flex-col items-center gap-4">

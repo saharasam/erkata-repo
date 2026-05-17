@@ -4,12 +4,17 @@ import {
   ForbiddenException,
   ConflictException,
   BadRequestException,
+  UnauthorizedException,
 } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { UserRole, Prisma, Tier } from '@prisma/client';
 import { ConfigService } from '../common/config.service';
 import { AglpService } from '../aglp/aglp.service';
 import { NotificationsGateway } from '../notifications/notifications.gateway';
+import * as bcrypt from 'bcrypt';
+import { unlink } from 'fs/promises';
+import { join, basename } from 'path';
 
 interface AgentMatchStats {
   agent_id: string;
@@ -64,11 +69,44 @@ export class UsersService {
     private readonly aglpService: AglpService,
     private readonly configService: ConfigService,
     private readonly notificationsGateway: NotificationsGateway,
+    private readonly jwtService: JwtService,
   ) {}
 
-  async getCurrentProfile(userId: string) {
+  async getCurrentProfile(
+    userId: string,
+    callerId?: string,
+    callerRole?: UserRole,
+  ) {
+    const isOwner = callerId === userId;
+    const isAdmin =
+      callerRole === UserRole.admin || callerRole === UserRole.super_admin;
+
+    // Mandatory Omission (Security/Privacy) - NEVER expose credentials
+    const globalOmit: Prisma.ProfileOmit = {
+      passwordHash: true,
+    };
+
+    // Conditional Omission (BOLA/GDPR Directive)
+    // Referring agents should not see financial/performance stats of their downline,
+    // nor should they see business identifiers (TIN/Trade License).
+    const privacyOmit: Prisma.ProfileOmit =
+      !isOwner && !isAdmin
+        ? {
+            aglpBalance: true,
+            aglpWithdrawn: true,
+            warningCount: true,
+            missedAssignments: true,
+            tinNumber: true,
+            tradeLicenseNumber: true,
+          }
+        : {};
+
     const profile = await this.prisma.profile.findUnique({
       where: { id: userId },
+      omit: {
+        ...globalOmit,
+        ...privacyOmit,
+      },
       include: {
         agentZones: {
           include: {
@@ -175,6 +213,8 @@ export class UsersService {
 
     return {
       ...profile,
+      aglpBalance: (profile as any).aglpBalance?.toNumber() || 0,
+      aglpWithdrawn: (profile as any).aglpWithdrawn?.toNumber() || 0,
       performanceStats,
       lastLoginAt: lastLoginLog?.createdAt || null,
       lastLoginIp: loginMetadata.ip || null,
@@ -448,6 +488,7 @@ export class UsersService {
   }
 
   async findAll(
+    callerId: string,
     callerRole: UserRole,
     filters: { role?: UserRole; isActive?: boolean },
   ) {
@@ -455,10 +496,14 @@ export class UsersService {
       throw new ForbiddenException('Only admins can list all users');
     }
 
+    // Admins/SuperAdmins can see more, but still omit credentials
     const profiles = await this.prisma.profile.findMany({
       where: {
         role: filters.role,
         isActive: filters.isActive,
+      },
+      omit: {
+        passwordHash: true,
       },
       include: {
         referredBy: {
@@ -910,7 +955,7 @@ export class UsersService {
    */
   async updateBusinessProfile(
     userId: string,
-    data: { tinNumber: string; tradeLicenseNumber: string },
+    data: { tinNumber?: string; tradeLicenseNumber?: string },
   ) {
     const profile = await this.prisma.profile.findUnique({
       where: { id: userId },
@@ -930,5 +975,137 @@ export class UsersService {
         tradeLicenseNumber: data.tradeLicenseNumber,
       },
     });
+  }
+
+  /**
+   * Updates a user's general profile info (fullName and/or phone).
+   * Phone is normalized to E.164 (+251XXXXXXXXX) before persisting.
+   */
+  async updateProfile(
+    userId: string,
+    data: { fullName?: string; phone?: string },
+  ): Promise<{ fullName: string; phone: string; email: string }> {
+    if (!data.fullName && !data.phone) {
+      throw new BadRequestException(
+        'At least one field (fullName or phone) must be provided.',
+      );
+    }
+
+    const updateData: Prisma.ProfileUpdateInput = {};
+    if (data.fullName) updateData.fullName = data.fullName.trim();
+    if (data.phone) updateData.phone = this.sanitizePhone(data.phone);
+
+    const updated = await this.prisma.profile.update({
+      where: { id: userId },
+      data: updateData,
+      select: { fullName: true, phone: true, email: true, avatarUrl: true },
+    });
+
+    return updated;
+  }
+
+  /**
+   * Normalizes an Ethiopian phone number to E.164 format (+251XXXXXXXXX).
+   * Mirrors the logic in AuthService to ensure consistency.
+   */
+  private sanitizePhone(phone: string): string {
+    if (!phone) return '';
+    const match = phone.match(/^(?:\+251|251|0)?([79]\d{8})$/);
+    if (match) return `+251${match[1]}`;
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length >= 9) {
+      const core = digits.slice(-9);
+      if (core.startsWith('9') || core.startsWith('7')) return `+251${core}`;
+    }
+    return phone.startsWith('+') ? phone : `+${digits}`;
+  }
+
+  /**
+   * Changes a user's password after verifying the current one.
+   * Returns a fresh access token so the frontend doesn't use a stale JWT.
+   * Security: throws ForbiddenException (not UnauthorizedException) on bad
+   * current password to avoid leaking session-validity information.
+   */
+  async changePassword(
+    userId: string,
+    dto: { currentPassword: string; newPassword: string },
+  ): Promise<{ accessToken: string }> {
+    const profile = await this.prisma.profile.findUnique({
+      where: { id: userId },
+      select: { passwordHash: true, email: true, role: true, tier: true },
+    });
+
+    if (!profile?.passwordHash) {
+      throw new UnauthorizedException('Account is not password-authenticated.');
+    }
+
+    const isMatch = await bcrypt.compare(
+      dto.currentPassword,
+      profile.passwordHash,
+    );
+    if (!isMatch) {
+      throw new ForbiddenException('Current password is incorrect.');
+    }
+
+    // Reject trivial case: new == old
+    const isSame = await bcrypt.compare(dto.newPassword, profile.passwordHash);
+    if (isSame) {
+      throw new BadRequestException(
+        'New password must be different from the current password.',
+      );
+    }
+
+    const newHash = await bcrypt.hash(dto.newPassword, 10);
+    await this.prisma.profile.update({
+      where: { id: userId },
+      data: { passwordHash: newHash },
+    });
+
+    // Issue a fresh access token so the caller can immediately replace their
+    // in-memory token without waiting for the next refresh cycle.
+    const accessToken = this.jwtService.sign({
+      sub: userId,
+      email: profile.email,
+      role: profile.role,
+      tier: profile.tier,
+      tokenType: 'access',
+    });
+
+    return { accessToken };
+  }
+
+  /**
+   * Sets or clears the avatarUrl on a user's profile.
+   * When clearing (url === null), the physical file is deleted from disk.
+   */
+  async updateAvatar(
+    userId: string,
+    avatarUrl: string | null,
+  ): Promise<{ avatarUrl: string | null }> {
+    const profile = await this.prisma.profile.findUnique({
+      where: { id: userId },
+      select: { avatarUrl: true },
+    });
+
+    if (!profile) throw new NotFoundException('Profile not found');
+
+    // Delete the old physical file when overwriting or clearing
+    if (profile.avatarUrl) {
+      const oldFileName = basename(profile.avatarUrl);
+      const oldPath = join(process.cwd(), 'uploads', oldFileName);
+      try {
+        await unlink(oldPath);
+      } catch {
+        // File may already be gone — not fatal
+      }
+    }
+
+    const updated = await this.prisma.profile.update({
+      where: { id: userId },
+      data: { avatarUrl },
+      select: { avatarUrl: true },
+    });
+
+    return updated;
   }
 }

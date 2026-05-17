@@ -1,18 +1,20 @@
 import { UpgradesService } from './upgrades.service';
+import { StorageService } from '../common/storage.service';
 import { ConfigService } from '../common/config.service';
 import type { AuthenticatedRequest } from '../auth/guards';
 import { Tier } from '@prisma/client';
 export declare class UpgradesController {
     private readonly upgradesService;
     private readonly configService;
-    constructor(upgradesService: UpgradesService, configService: ConfigService);
+    private readonly storageService;
+    constructor(upgradesService: UpgradesService, configService: ConfigService, storageService: StorageService);
     getMyActiveRequest(req: AuthenticatedRequest): Promise<{
         id: string;
         createdAt: Date;
         agentId: string;
+        operatorId: string | null;
         status: import(".prisma/client").$Enums.UpgradeRequestStatus;
         updatedAt: Date;
-        operatorId: string | null;
         currentTier: import(".prisma/client").$Enums.Tier;
         targetTier: import(".prisma/client").$Enums.Tier;
         proofUrl: string | null;
@@ -31,9 +33,9 @@ export declare class UpgradesController {
         id: string;
         createdAt: Date;
         agentId: string;
+        operatorId: string | null;
         status: import(".prisma/client").$Enums.UpgradeRequestStatus;
         updatedAt: Date;
-        operatorId: string | null;
         currentTier: import(".prisma/client").$Enums.Tier;
         targetTier: import(".prisma/client").$Enums.Tier;
         proofUrl: string | null;
@@ -55,9 +57,9 @@ export declare class UpgradesController {
         id: string;
         createdAt: Date;
         agentId: string;
+        operatorId: string | null;
         status: import(".prisma/client").$Enums.UpgradeRequestStatus;
         updatedAt: Date;
-        operatorId: string | null;
         currentTier: import(".prisma/client").$Enums.Tier;
         targetTier: import(".prisma/client").$Enums.Tier;
         proofUrl: string | null;
@@ -70,24 +72,22 @@ export declare class UpgradesController {
         id: string;
         createdAt: Date;
         agentId: string;
+        operatorId: string | null;
         status: import(".prisma/client").$Enums.UpgradeRequestStatus;
         updatedAt: Date;
-        operatorId: string | null;
         currentTier: import(".prisma/client").$Enums.Tier;
         targetTier: import(".prisma/client").$Enums.Tier;
         proofUrl: string | null;
         internalNote: string | null;
         adminId: string | null;
     }>;
-    uploadProof(req: AuthenticatedRequest, id: string, body: {
-        proofUrl: string;
-    }): Promise<{
+    uploadProof(req: AuthenticatedRequest, id: string, file: Express.Multer.File): Promise<{
         id: string;
         createdAt: Date;
         agentId: string;
+        operatorId: string | null;
         status: import(".prisma/client").$Enums.UpgradeRequestStatus;
         updatedAt: Date;
-        operatorId: string | null;
         currentTier: import(".prisma/client").$Enums.Tier;
         targetTier: import(".prisma/client").$Enums.Tier;
         proofUrl: string | null;
@@ -100,9 +100,9 @@ export declare class UpgradesController {
         id: string;
         createdAt: Date;
         agentId: string;
+        operatorId: string | null;
         status: import(".prisma/client").$Enums.UpgradeRequestStatus;
         updatedAt: Date;
-        operatorId: string | null;
         currentTier: import(".prisma/client").$Enums.Tier;
         targetTier: import(".prisma/client").$Enums.Tier;
         proofUrl: string | null;

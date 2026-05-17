@@ -67,6 +67,7 @@ export default tseslint.config(
         "@nestjs/passport": "^11.0.5",
         "@nestjs/platform-express": "^11.0.1",
         "@nestjs/platform-socket.io": "^11.1.18",
+        "@nestjs/throttler": "^6.5.0",
         "@nestjs/websockets": "^11.1.18",
         "bcrypt": "^6.0.0",
         "bullmq": "^5.69.3",
@@ -74,6 +75,8 @@ export default tseslint.config(
         "class-validator": "^0.14.1",
         "cookie-parser": "^1.4.7",
         "dotenv": "^17.3.1",
+        "file-type": "^16.5.4",
+        "helmet": "^8.1.0",
         "ioredis": "^5.9.3",
         "jwks-rsa": "^3.2.2",
         "passport": "^0.7.0",
@@ -792,9 +795,9 @@ export default tseslint.config(
       "license": "MIT"
     },
     "node_modules/@borewit/text-codec": {
-      "version": "0.2.1",
-      "resolved": "https://registry.npmjs.org/@borewit/text-codec/-/text-codec-0.2.1.tgz",
-      "integrity": "sha512-k7vvKPbf7J2fZ5klGRD9AeKfUvojuZIQ3BT5u7Jfv+puwXkUBUT5PVyMDfJZpy30CBDXGMgw7fguK/lpOMBvgw==",
+      "version": "0.2.2",
+      "resolved": "https://registry.npmjs.org/@borewit/text-codec/-/text-codec-0.2.2.tgz",
+      "integrity": "sha512-DDaRehssg1aNrH4+2hnj1B7vnUGEjU6OIlyRdkMd0aUdIUvKXrJfXsy8LVtXAy7DRvYVluWbMspsRhz2lcW0mQ==",
       "license": "MIT",
       "funding": {
         "type": "github",
@@ -2348,6 +2351,58 @@ export default tseslint.config(
         }
       }
     },
+    "node_modules/@nestjs/common/node_modules/file-type": {
+      "version": "21.3.0",
+      "resolved": "https://registry.npmjs.org/file-type/-/file-type-21.3.0.tgz",
+      "integrity": "sha512-8kPJMIGz1Yt/aPEwOsrR97ZyZaD1Iqm8PClb1nYFclUCkBi0Ma5IsYNQzvSFS9ib51lWyIw5mIT9rWzI/xjpzA==",
+      "license": "MIT",
+      "dependencies": {
+        "@tokenizer/inflate": "^0.4.1",
+        "strtok3": "^10.3.4",
+        "token-types": "^6.1.1",
+        "uint8array-extras": "^1.4.0"
+      },
+      "engines": {
+        "node": ">=20"
+      },
+      "funding": {
+        "url": "https://github.com/sindresorhus/file-type?sponsor=1"
+      }
+    },
+    "node_modules/@nestjs/common/node_modules/strtok3": {
+      "version": "10.3.5",
+      "resolved": "https://registry.npmjs.org/strtok3/-/strtok3-10.3.5.tgz",
+      "integrity": "sha512-ki4hZQfh5rX0QDLLkOCj+h+CVNkqmp/CMf8v8kZpkNVK6jGQooMytqzLZYUVYIZcFZ6yDB70EfD8POcFXiF5oA==",
+      "license": "MIT",
+      "dependencies": {
+        "@tokenizer/token": "^0.3.0"
+      },
+      "engines": {
+        "node": ">=18"
+      },
+      "funding": {
+        "type": "github",
+        "url": "https://github.com/sponsors/Borewit"
+      }
+    },
+    "node_modules/@nestjs/common/node_modules/token-types": {
+      "version": "6.1.2",
+      "resolved": "https://registry.npmjs.org/token-types/-/token-types-6.1.2.tgz",
+      "integrity": "sha512-dRXchy+C0IgK8WPC6xvCHFRIWYUbqqdEIKPaKo/AcTUNzwLTK6AH7RjdLWsEZcAN/TBdtfUw3PYEgPr5VPr6ww==",
+      "license": "MIT",
+      "dependencies": {
+        "@borewit/text-codec": "^0.2.1",
+        "@tokenizer/token": "^0.3.0",
+        "ieee754": "^1.2.1"
+      },
+      "engines": {
+        "node": ">=14.16"
+      },
+      "funding": {
+        "type": "github",
+        "url": "https://github.com/sponsors/Borewit"
+      }
+    },
     "node_modules/@nestjs/core": {
       "version": "11.1.13",
       "resolved": "https://registry.npmjs.org/@nestjs/core/-/core-11.1.13.tgz",
@@ -2616,6 +2671,17 @@ export default tseslint.config(
         }
       }
     },
+    "node_modules/@nestjs/throttler": {
+      "version": "6.5.0",
+      "resolved": "https://registry.npmjs.org/@nestjs/throttler/-/throttler-6.5.0.tgz",
+      "integrity": "sha512-9j0ZRfH0QE1qyrj9JjIRDz5gQLPqq9yVC2nHsrosDVAfI5HHw08/aUAWx9DZLSdQf4HDkmhTTEGLrRFHENvchQ==",
+      "license": "MIT",
+      "peerDependencies": {
+        "@nestjs/common": "^7.0.0 || ^8.0.0 || ^9.0.0 || ^10.0.0 || ^11.0.0",
+        "@nestjs/core": "^7.0.0 || ^8.0.0 || ^9.0.0 || ^10.0.0 || ^11.0.0",
+        "reflect-metadata": "^0.1.13 || ^0.2.0"
+      }
+    },
     "node_modules/@nestjs/websockets": {
       "version": "11.1.18",
       "resolved": "https://registry.npmjs.org/@nestjs/websockets/-/websockets-11.1.18.tgz",
@@ -2831,6 +2897,24 @@ export default tseslint.config(
       },
       "engines": {
         "node": ">=18"
+      },
+      "funding": {
+        "type": "github",
+        "url": "https://github.com/sponsors/Borewit"
+      }
+    },
+    "node_modules/@tokenizer/inflate/node_modules/token-types": {
+      "version": "6.1.2",
+      "resolved": "https://registry.npmjs.org/token-types/-/token-types-6.1.2.tgz",
+      "integrity": "sha512-dRXchy+C0IgK8WPC6xvCHFRIWYUbqqdEIKPaKo/AcTUNzwLTK6AH7RjdLWsEZcAN/TBdtfUw3PYEgPr5VPr6ww==",
+      "license": "MIT",
+      "dependencies": {
+        "@borewit/text-codec": "^0.2.1",
+        "@tokenizer/token": "^0.3.0",
+        "ieee754": "^1.2.1"
+      },
+      "engines": {
+        "node": ">=14.16"
       },
       "funding": {
         "type": "github",
@@ -3834,6 +3918,18 @@ export default tseslint.config(
       "dev": true,
       "license": "Apache-2.0"
     },
+    "node_modules/abort-controller": {
+      "version": "3.0.0",
+      "resolved": "https://registry.npmjs.org/abort-controller/-/abort-controller-3.0.0.tgz",
+      "integrity": "sha512-h8lQ8tacZYnR3vNQTgibj+tODHI5/+l06Au2Pcriv/Gmet0eaj4TwWH41sO9wnHDiQsEj19q0drzdWdeAHtweg==",
+      "license": "MIT",
+      "dependencies": {
+        "event-target-shim": "^5.0.0"
+      },
+      "engines": {
+        "node": ">=6.5"
+      }
+    },
     "node_modules/accepts": {
       "version": "2.0.0",
       "resolved": "https://registry.npmjs.org/accepts/-/accepts-2.0.0.tgz",
@@ -4143,7 +4239,6 @@ export default tseslint.config(
       "version": "1.5.1",
       "resolved": "https://registry.npmjs.org/base64-js/-/base64-js-1.5.1.tgz",
       "integrity": "sha512-AKpaYlHn8t4SVbOHCy+b5+KKgvR4vrsD8vbvrbiQJps7fKDTkjkDry6ji0rUJjC0kzbNePLwzxq8iypo41qeWA==",
-      "dev": true,
       "funding": [
         {
           "type": "github",
@@ -5653,6 +5748,15 @@ export default tseslint.config(
         "node": ">= 0.6"
       }
     },
+    "node_modules/event-target-shim": {
+      "version": "5.0.1",
+      "resolved": "https://registry.npmjs.org/event-target-shim/-/event-target-shim-5.0.1.tgz",
+      "integrity": "sha512-i/2XbnSz/uxRCU6+NdVJgKWDTM427+MqYbkQzD321DuCQJUqOuJKIA0IM2+W2xtYHdKOmZ4dR6fExsd4SXL+WQ==",
+      "license": "MIT",
+      "engines": {
+        "node": ">=6"
+      }
+    },
     "node_modules/eventemitter2": {
       "version": "6.4.9",
       "resolved": "https://registry.npmjs.org/eventemitter2/-/eventemitter2-6.4.9.tgz",
@@ -5663,7 +5767,6 @@ export default tseslint.config(
       "version": "3.3.0",
       "resolved": "https://registry.npmjs.org/events/-/events-3.3.0.tgz",
       "integrity": "sha512-mQw+2fkQbALzQ7V0MY0IqdnXNOeTtP4r0lN9z7AAawCXgqea7bDii20AYrIBrFd/Hx0M2Ocz6S111CaFkUcb0Q==",
-      "dev": true,
       "license": "MIT",
       "engines": {
         "node": ">=0.8.x"
@@ -5918,18 +6021,17 @@ export default tseslint.config(
       }
     },
     "node_modules/file-type": {
-      "version": "21.3.0",
-      "resolved": "https://registry.npmjs.org/file-type/-/file-type-21.3.0.tgz",
-      "integrity": "sha512-8kPJMIGz1Yt/aPEwOsrR97ZyZaD1Iqm8PClb1nYFclUCkBi0Ma5IsYNQzvSFS9ib51lWyIw5mIT9rWzI/xjpzA==",
+      "version": "16.5.4",
+      "resolved": "https://registry.npmjs.org/file-type/-/file-type-16.5.4.tgz",
+      "integrity": "sha512-/yFHK0aGjFEgDJjEKP0pWCplsPFPhwyfwevf/pVxiN0tmE4L9LmwWxWukdJSHdoCli4VgQLehjJtwQBnqmsKcw==",
       "license": "MIT",
       "dependencies": {
-        "@tokenizer/inflate": "^0.4.1",
-        "strtok3": "^10.3.4",
-        "token-types": "^6.1.1",
-        "uint8array-extras": "^1.4.0"
+        "readable-web-to-node-stream": "^3.0.0",
+        "strtok3": "^6.2.4",
+        "token-types": "^4.1.1"
       },
       "engines": {
-        "node": ">=20"
+        "node": ">=10"
       },
       "funding": {
         "url": "https://github.com/sindresorhus/file-type?sponsor=1"
@@ -6423,6 +6525,15 @@ export default tseslint.config(
       },
       "engines": {
         "node": ">= 0.4"
+      }
+    },
+    "node_modules/helmet": {
+      "version": "8.1.0",
+      "resolved": "https://registry.npmjs.org/helmet/-/helmet-8.1.0.tgz",
+      "integrity": "sha512-jOiHyAZsmnr8LqoPGmCjYAaiuWwjAPLgY8ZX2XrmHawt99/u1y6RgrZMTeoPfpUbV96HOalYgz1qzkRbw54Pmg==",
+      "license": "MIT",
+      "engines": {
+        "node": ">=18.0.0"
       }
     },
     "node_modules/html-escaper": {
@@ -8854,6 +8965,19 @@ export default tseslint.config(
       "resolved": "https://registry.npmjs.org/pause/-/pause-0.0.1.tgz",
       "integrity": "sha512-KG8UEiEVkR3wGEb4m5yZkVCzigAD+cVEJck2CzYZO37ZGJfctvVptVO192MwrtPhzONn6go8ylnOdMhKqi4nfg=="
     },
+    "node_modules/peek-readable": {
+      "version": "4.1.0",
+      "resolved": "https://registry.npmjs.org/peek-readable/-/peek-readable-4.1.0.tgz",
+      "integrity": "sha512-ZI3LnwUv5nOGbQzD9c2iDG6toheuXSZP5esSHBjopsXH4dg19soufvpUGA3uohi5anFtGb2lhAVdHzH6R/Evvg==",
+      "license": "MIT",
+      "engines": {
+        "node": ">=8"
+      },
+      "funding": {
+        "type": "github",
+        "url": "https://github.com/sponsors/Borewit"
+      }
+    },
     "node_modules/pg": {
       "version": "8.20.0",
       "resolved": "https://registry.npmjs.org/pg/-/pg-8.20.0.tgz",
@@ -9178,6 +9302,15 @@ export default tseslint.config(
         "fsevents": "2.3.3"
       }
     },
+    "node_modules/process": {
+      "version": "0.11.10",
+      "resolved": "https://registry.npmjs.org/process/-/process-0.11.10.tgz",
+      "integrity": "sha512-cdGef/drWFoydD1JsMzuFf8100nZl+GT+yacc2bEced5f9Rjk4z+WtFUTBu9PhOi9j/jfmBPu0mMEY4wIdAF8A==",
+      "license": "MIT",
+      "engines": {
+        "node": ">= 0.6.0"
+      }
+    },
     "node_modules/proxy-addr": {
       "version": "2.0.7",
       "resolved": "https://registry.npmjs.org/proxy-addr/-/proxy-addr-2.0.7.tgz",
@@ -9287,6 +9420,62 @@ export default tseslint.config(
       },
       "engines": {
         "node": ">= 6"
+      }
+    },
+    "node_modules/readable-web-to-node-stream": {
+      "version": "3.0.4",
+      "resolved": "https://registry.npmjs.org/readable-web-to-node-stream/-/readable-web-to-node-stream-3.0.4.tgz",
+      "integrity": "sha512-9nX56alTf5bwXQ3ZDipHJhusu9NTQJ/CVPtb/XHAJCXihZeitfJvIRS4GqQ/mfIoOE3IelHMrpayVrosdHBuLw==",
+      "license": "MIT",
+      "dependencies": {
+        "readable-stream": "^4.7.0"
+      },
+      "engines": {
+        "node": ">=8"
+      },
+      "funding": {
+        "type": "github",
+        "url": "https://github.com/sponsors/Borewit"
+      }
+    },
+    "node_modules/readable-web-to-node-stream/node_modules/buffer": {
+      "version": "6.0.3",
+      "resolved": "https://registry.npmjs.org/buffer/-/buffer-6.0.3.tgz",
+      "integrity": "sha512-FTiCpNxtwiZZHEZbcbTIcZjERVICn9yq/pDFkTl95/AxzD1naBctN7YO68riM/gLSDY7sdrMby8hofADYuuqOA==",
+      "funding": [
+        {
+          "type": "github",
+          "url": "https://github.com/sponsors/feross"
+        },
+        {
+          "type": "patreon",
+          "url": "https://www.patreon.com/feross"
+        },
+        {
+          "type": "consulting",
+          "url": "https://feross.org/support"
+        }
+      ],
+      "license": "MIT",
+      "dependencies": {
+        "base64-js": "^1.3.1",
+        "ieee754": "^1.2.1"
+      }
+    },
+    "node_modules/readable-web-to-node-stream/node_modules/readable-stream": {
+      "version": "4.7.0",
+      "resolved": "https://registry.npmjs.org/readable-stream/-/readable-stream-4.7.0.tgz",
+      "integrity": "sha512-oIGGmcpTLwPga8Bn6/Z75SVaH1z5dUut2ibSyAMVhmUggWpmDn2dapB0n7f8nwaSiRtepAsfJyfXIO5DCVAODg==",
+      "license": "MIT",
+      "dependencies": {
+        "abort-controller": "^3.0.0",
+        "buffer": "^6.0.3",
+        "events": "^3.3.0",
+        "process": "^0.11.10",
+        "string_decoder": "^1.3.0"
+      },
+      "engines": {
+        "node": "^12.22.0 || ^14.17.0 || >=16.0.0"
       }
     },
     "node_modules/readdirp": {
@@ -10052,15 +10241,16 @@ export default tseslint.config(
       }
     },
     "node_modules/strtok3": {
-      "version": "10.3.4",
-      "resolved": "https://registry.npmjs.org/strtok3/-/strtok3-10.3.4.tgz",
-      "integrity": "sha512-KIy5nylvC5le1OdaaoCJ07L+8iQzJHGH6pWDuzS+d07Cu7n1MZ2x26P8ZKIWfbK02+XIL8Mp4RkWeqdUCrDMfg==",
+      "version": "6.3.0",
+      "resolved": "https://registry.npmjs.org/strtok3/-/strtok3-6.3.0.tgz",
+      "integrity": "sha512-fZtbhtvI9I48xDSywd/somNqgUHl2L2cstmXCCif0itOf96jeW18MBSyrLuNicYQVkvpOxkZtkzujiTJ9LW5Jw==",
       "license": "MIT",
       "dependencies": {
-        "@tokenizer/token": "^0.3.0"
+        "@tokenizer/token": "^0.3.0",
+        "peek-readable": "^4.1.0"
       },
       "engines": {
-        "node": ">=18"
+        "node": ">=10"
       },
       "funding": {
         "type": "github",
@@ -10430,17 +10620,16 @@ export default tseslint.config(
       }
     },
     "node_modules/token-types": {
-      "version": "6.1.2",
-      "resolved": "https://registry.npmjs.org/token-types/-/token-types-6.1.2.tgz",
-      "integrity": "sha512-dRXchy+C0IgK8WPC6xvCHFRIWYUbqqdEIKPaKo/AcTUNzwLTK6AH7RjdLWsEZcAN/TBdtfUw3PYEgPr5VPr6ww==",
+      "version": "4.2.1",
+      "resolved": "https://registry.npmjs.org/token-types/-/token-types-4.2.1.tgz",
+      "integrity": "sha512-6udB24Q737UD/SDsKAHI9FCRP7Bqc9D/MQUV02ORQg5iskjtLJlZJNdN4kKtcdtwCeWIwIHDGaUsTsCCAa8sFQ==",
       "license": "MIT",
       "dependencies": {
-        "@borewit/text-codec": "^0.2.1",
         "@tokenizer/token": "^0.3.0",
         "ieee754": "^1.2.1"
       },
       "engines": {
-        "node": ">=14.16"
+        "node": ">=10"
       },
       "funding": {
         "type": "github",
@@ -11311,11 +11500,16 @@ export default tseslint.config(
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/platform-socket.io": "^11.1.18",
+    "@nestjs/throttler": "^6.5.0",
     "@nestjs/websockets": "^11.1.18",
     "bcrypt": "^6.0.0",
     "bullmq": "^5.69.3",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.1",
     "cookie-parser": "^1.4.7",
     "dotenv": "^17.3.1",
+    "file-type": "^16.5.4",
+    "helmet": "^8.1.0",
     "ioredis": "^5.9.3",
     "jwks-rsa": "^3.2.2",
     "passport": "^0.7.0",
@@ -11324,9 +11518,7 @@ export default tseslint.config(
     "pg": "^8.20.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
-    "socket.io": "^4.8.3",
-    "class-validator": "^0.14.1",
-    "class-transformer": "^0.5.1"
+    "socket.io": "^4.8.3"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
@@ -12062,7 +12254,8 @@ provider = "postgresql"
 
 ===== FILE: prisma\schema.prisma =====
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["omitApi"]
 }
 
 datasource db {
@@ -12268,6 +12461,7 @@ model Profile {
   upgradeRequests   UpgradeRequest[]   @relation("AgentUpgradeRequests")
   verifications     UpgradeRequest[]   @relation("OperatorVerifications")
   approvals         UpgradeRequest[]   @relation("AdminApprovals")
+  attachments       Attachment[]       @relation("UserAttachments")
 
   @@map("profiles")
 }
@@ -12404,7 +12598,9 @@ model Attachment {
   fileName  String   @map("file_name")
   mimeType  String   @map("mime_type")
   url       String
+  ownerId   String?  @map("owner_id") @db.Uuid
   createdAt DateTime @default(now()) @map("created_at")
+  owner     Profile? @relation("UserAttachments", fields: [ownerId], references: [id])
 
   @@map("attachments")
 }
@@ -12490,6 +12686,9 @@ import { PrismaClient, UserRole } from '@prisma/client';
 async function main() {
   const prisma = new PrismaClient();
 
+  const superAdminEmail =
+    process.env.SUPER_ADMIN_EMAIL || 'superadmin@erkata.com';
+
   const testUsers = [
     {
       id: '11111111-1111-1111-1111-111111111111',
@@ -12518,7 +12717,7 @@ async function main() {
     },
     {
       id: '55555555-5555-5555-5555-555555555555',
-      email: 'superadmin@erkata.com',
+      email: superAdminEmail,
       fullName: 'Super Admin',
       role: 'super_admin' as UserRole,
     },
@@ -12936,6 +13135,7 @@ import { UserRole, Prisma } from '@prisma/client';
 import type { AuthenticatedRequest } from '../auth/guards';
 import { InviteService } from '../auth/invite/invite.service';
 import { InviteDto } from './dto/invite.dto';
+import { PaginationDto } from '../common/dto/pagination.dto';
 
 @Controller('admin/users')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -12950,9 +13150,8 @@ export class AdminsController {
   @Roles('admin')
   async getPersonnel(
     @Req() req: AuthenticatedRequest,
+    @Query() query: PaginationDto,
     @Query('role') role?: string,
-    @Query('limit') limit?: number,
-    @Query('offset') offset?: number,
   ) {
     const callerRole = req.user.role;
     const normalizedRole = role?.toLowerCase() as UserRole | undefined;
@@ -12987,8 +13186,8 @@ export class AdminsController {
       }
     }
 
-    const take = limit ? Number(limit) : 50;
-    const skip = offset ? Number(offset) : 0;
+    const take = query.limit;
+    const skip = query.offset;
 
     const profiles = await this.prisma.profile.findMany({
       where: queryWhere,
@@ -13581,6 +13780,7 @@ import { Controller, Get, UseGuards, Query } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard, RolesGuard, RequirePermission } from '../auth/guards';
 import { Action } from '../auth/permissions';
+import { PaginationDto } from '../common/dto/pagination.dto';
 
 @Controller('admin/audit-logs')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -13590,14 +13790,13 @@ export class AuditLogsController {
   @Get()
   @RequirePermission(Action.VIEW_FULL_AUDIT_LOGS)
   async getAuditLogs(
-    @Query('limit') limit = 50,
-    @Query('offset') offset = 0,
+    @Query() query: PaginationDto,
     @Query('action') action?: string,
   ) {
     const logs = await this.prisma.auditLog.findMany({
       where: action ? { action } : {},
-      take: Number(limit),
-      skip: Number(offset),
+      take: query.limit,
+      skip: query.offset,
       orderBy: { createdAt: 'desc' },
       include: {
         actor: {
@@ -13910,7 +14109,7 @@ export class AdminConfigController {
 
 
 ===== FILE: src\admin\dto\invite.dto.ts =====
-import { IsEmail, IsEnum, IsString } from 'class-validator';
+import { IsEmail, IsEnum, IsString, Matches } from 'class-validator';
 import { UserRole } from '@prisma/client';
 
 export class InviteDto {
@@ -13921,6 +14120,10 @@ export class InviteDto {
   fullName: string;
 
   @IsString()
+  @Matches(/^(?:\+251|251|0)?([79]\d{8})$/, {
+    message:
+      'Invalid Ethiopian phone number. Please use a valid format starting with 09, 07, +2519, or +2517 followed by 8 digits.',
+  })
   phone: string;
 
   @IsEnum(UserRole)
@@ -14015,6 +14218,7 @@ import { JwtAuthGuard, RolesGuard, RequirePermission } from '../auth/guards';
 import { Action } from '../auth/permissions';
 import { AglpTransactionStatus, AglpTransactionType } from '@prisma/client';
 import { AglpService } from '../aglp/aglp.service';
+import { PaginationDto } from '../common/dto/pagination.dto';
 
 @Controller('admin/payouts')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -14026,12 +14230,9 @@ export class PayoutsController {
 
   @Get('pending')
   @RequirePermission(Action.APPROVE_PAYOUT)
-  async getPendingPayouts(
-    @Query('limit') limit?: number,
-    @Query('offset') offset?: number,
-  ) {
-    const take = limit ? Number(limit) : 50;
-    const skip = offset ? Number(offset) : 0;
+  async getPendingPayouts(@Query() query: PaginationDto) {
+    const take = query.limit;
+    const skip = query.offset;
 
     return this.prisma.aglpTransaction.findMany({
       where: {
@@ -14079,14 +14280,13 @@ export class PayoutsController {
   @Get('ledger')
   @RequirePermission(Action.MODIFY_GOVERNANCE) // Super Admin restricted
   async getGlobalLedger(
+    @Query() query: PaginationDto,
     @Query('type') type?: AglpTransactionType,
     @Query('status') status?: AglpTransactionStatus,
     @Query('profileId') profileId?: string,
-    @Query('limit') limit?: number,
-    @Query('offset') offset?: number,
   ) {
-    const take = limit ? Number(limit) : 50;
-    const skip = offset ? Number(offset) : 0;
+    const take = query.limit;
+    const skip = query.offset;
 
     return this.prisma.aglpTransaction.findMany({
       where: {
@@ -14886,13 +15086,16 @@ import { TransactionsModule } from './transactions/transactions.module';
 import { MediationModule } from './mediation/mediation.module';
 import { APP_INTERCEPTOR, APP_GUARD } from '@nestjs/core';
 import { AuditInterceptor } from './common/interceptors/audit.interceptor';
+import { CacheControlInterceptor } from './common/interceptors/cache-control.interceptor';
 import { LockdownGuard } from './common/guards/lockdown.guard';
+import { CsrfGuard } from './common/guards/csrf.guard';
 import { CommonModule } from './common/common.module';
 import { AdminModule } from './admin/admin.module';
 import { AglpModule } from './aglp/aglp.module';
 import { RedisModule } from './common/redis/redis.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { UpgradesModule } from './upgrades/upgrades.module';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 
 @Module({
   imports: [
@@ -14905,6 +15108,12 @@ import { UpgradesModule } from './upgrades/upgrades.module';
     TransactionsModule,
     MediationModule,
     NotificationsModule,
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 100, // Global limit: 100 requests per minute per IP
+      },
+    ]),
     BullModule.forRoot({
       connection: {
         host: process.env.REDIS_HOST || 'localhost',
@@ -14925,8 +15134,20 @@ import { UpgradesModule } from './upgrades/upgrades.module';
       useClass: AuditInterceptor,
     },
     {
+      provide: APP_INTERCEPTOR,
+      useClass: CacheControlInterceptor,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+    {
       provide: APP_GUARD,
       useClass: LockdownGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: CsrfGuard,
     },
   ],
 })
@@ -14959,16 +15180,18 @@ export class AppService {
 ===== FILE: src\auth\auth.controller.ts =====
 import {
   Controller,
+  Get,
   Post,
   Body,
   Res,
   Req,
-  UnauthorizedException,
-  InternalServerErrorException,
+  Header,
   UseGuards,
+  UnauthorizedException,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
-import type { Response } from 'express';
+import type { Response, Request } from 'express';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import type { AuthenticatedRequest } from './guards/authenticated-request.interface';
 import { RedisPresenceService } from '../common/redis/redis-presence.service';
@@ -14985,10 +15208,11 @@ export class AuthController {
   ) {}
 
   @Post('login')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   async login(
     @Body() body: { identifier: string; password: string },
     @Res({ passthrough: true }) res: Response,
-    @Req() req: any,
+    @Req() req: Request,
   ) {
     return await this.authService.login(
       { identifier: body.identifier, pass: body.password },
@@ -14998,17 +15222,20 @@ export class AuthController {
   }
 
   @Post('refresh')
-  async refresh(@Req() req: any) {
-    const cookies = (
-      req as unknown as {
-        cookies?: Record<string, string>;
-      }
-    ).cookies;
-    const refreshToken = cookies?.['refreshToken'];
+  async refresh(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const { cookies } = req as Request & {
+      cookies?: { refreshToken?: string };
+    };
+    const refreshToken = cookies?.refreshToken;
+
     if (!refreshToken) {
       throw new UnauthorizedException('Refresh token missing');
     }
-    return await this.authService.refresh(refreshToken);
+
+    return await this.authService.refresh(refreshToken, res);
   }
 
   @Post('logout')
@@ -15017,17 +15244,13 @@ export class AuthController {
   }
 
   @Post('register')
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
   async register(
     @Body() body: RegisterDto,
     @Res({ passthrough: true }) res: Response,
-    @Req() req: any,
+    @Req() req: Request,
   ) {
-    try {
-      return await this.authService.register(body, res, req);
-    } catch (e: unknown) {
-      const message = e instanceof Error ? e.message : 'Registration failed';
-      throw new InternalServerErrorException(message);
-    }
+    return await this.authService.register(body, res, req);
   }
 
   @UseGuards(JwtAuthGuard)
@@ -15063,6 +15286,16 @@ export class AuthController {
       requestId,
     };
   }
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  @Header(
+    'Cache-Control',
+    'no-store, no-cache, must-revalidate, proxy-revalidate',
+  )
+  async getMe(@Req() req: AuthenticatedRequest) {
+    const user = req.user;
+    return await this.authService.getMe(user.id);
+  }
 }
 
 
@@ -15082,7 +15315,7 @@ import { InviteModule } from './invite/invite.module';
     PassportModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET,
-      signOptions: { expiresIn: '1d' },
+      signOptions: { expiresIn: '15m' }, // ERK-SEC-005 Remediation: Shortened from 1d to 15m
     }),
     InviteModule,
   ],
@@ -15099,10 +15332,11 @@ import {
   UnauthorizedException,
   ConflictException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
-import { Response } from 'express';
+import { Request, Response } from 'express'; // Added Request import
 import { InviteService } from './invite/invite.service';
 import * as bcrypt from 'bcrypt';
 import { UserRole, Tier } from '@prisma/client';
@@ -15114,6 +15348,7 @@ interface JwtPayload {
   email: string;
   role: UserRole;
   tier: Tier;
+  tokenType: 'access' | 'refresh';
 }
 
 @Injectable()
@@ -15127,25 +15362,32 @@ export class AuthService {
 
   private sanitizePhone(phone: string): string {
     if (!phone) return '';
-    let sanitized = phone.replace(/\D/g, '');
 
-    // Ensure it has the 251 prefix if it's an Ethiopian number
-    if (sanitized.startsWith('0') && sanitized.length === 10) {
-      sanitized = '251' + sanitized.substring(1);
-    } else if (sanitized.startsWith('9') && sanitized.length === 9) {
-      sanitized = '251' + sanitized;
-    } else if (sanitized.startsWith('7') && sanitized.length === 9) {
-      sanitized = '251' + sanitized;
+    // Regex to match Ethiopian mobile numbers and extract the core 9 digits
+    const match = phone.match(/^(?:\+251|251|0)?([79]\d{8})$/);
+    if (match) {
+      // Group 1 contains the 9 digits starting with 7 or 9
+      return `+251${match[1]}`;
     }
 
-    // Expect E.164 format (with +)
-    return sanitized.startsWith('+') ? sanitized : `+${sanitized}`;
+    // Fallback: If regex doesn't match (e.g., bypass or invalid internal data),
+    // try to extract the last 9 digits if they look like an Ethiopian mobile number.
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length >= 9) {
+      const core = digits.slice(-9);
+      if (core.startsWith('9') || core.startsWith('7')) {
+        return `+251${core}`;
+      }
+    }
+
+    // Last resort fallback (non-Ethiopian or completely invalid)
+    return phone.startsWith('+') ? phone : `+${digits}`;
   }
 
   async login(
     credentials: { identifier: string; pass: string },
     res: Response,
-    req?: any,
+    req?: Request, // Changed any to Request
   ) {
     console.log(
       `[AuthService] Attempting login for email: ${credentials.identifier}`,
@@ -15178,19 +15420,36 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const payload = {
+    const payload: JwtPayload = {
       sub: profile.id,
       email: profile.email,
       role: profile.role,
       tier: profile.tier,
+      tokenType: 'access',
     };
     const accessToken = this.jwtService.sign(payload);
-    const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
+
+    const refreshPayload: JwtPayload = {
+      ...payload,
+      tokenType: 'refresh',
+    };
+    const refreshToken = this.jwtService.sign(refreshPayload, {
+      expiresIn: '7d',
+    });
 
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    const csrfToken = randomUUID();
+    res.cookie('csrfToken', csrfToken, {
+      httpOnly: false, // Must be accessible by JS
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      path: '/',
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
@@ -15220,12 +15479,17 @@ export class AuthService {
         tier: profile.tier,
       },
       accessToken,
+      csrfToken,
     };
   }
 
-  async refresh(refreshToken: string) {
+  async refresh(refreshToken: string, res: Response) {
     try {
       const payload = this.jwtService.verify<JwtPayload>(refreshToken);
+
+      if (payload.tokenType !== 'refresh') {
+        throw new UnauthorizedException('Invalid token type');
+      }
 
       // Verify user in database to ensure they are still active and get latest roles/tier
       const profile = await this.prisma.profile.findUnique({
@@ -15248,10 +15512,22 @@ export class AuthService {
         email: profile.email,
         role: profile.role,
         tier: profile.tier,
+        tokenType: 'access',
       };
 
       const newAccessToken = this.jwtService.sign(newPayload);
-      return { accessToken: newAccessToken };
+
+      // Rotate CSRF token
+      const newCsrfToken = randomUUID();
+      res.cookie('csrfToken', newCsrfToken, {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        path: '/',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+      });
+
+      return { accessToken: newAccessToken, csrfToken: newCsrfToken };
     } catch (err) {
       if (err instanceof UnauthorizedException) throw err;
       throw new UnauthorizedException('Invalid refresh token');
@@ -15260,6 +15536,7 @@ export class AuthService {
 
   async logout(res: Response) {
     res.clearCookie('refreshToken');
+    res.clearCookie('csrfToken');
     await Promise.resolve();
     return { message: 'Logged out' };
   }
@@ -15276,7 +15553,7 @@ export class AuthService {
       referralCode?: string;
     },
     res?: Response,
-    req?: any,
+    req?: Request, // Changed any to Request
   ) {
     console.log(
       `[AuthService] Registering user: ${data.fullName}, Email: ${data.email}`,
@@ -15295,165 +15572,232 @@ export class AuthService {
       `[AuthService] Initial finalRole from data.role: ${data.role}, normalized to: ${finalRole}`,
     );
 
-    // 1. Check if this is the Super Admin from ENV
-    const superAdminEmail = process.env.SUPER_ADMIN_EMAIL;
-    if (
-      superAdminEmail &&
-      data.email.toLowerCase() === superAdminEmail.toLowerCase()
-    ) {
-      console.log(
-        `[AuthService] Matching Super Admin email found. Granting super_admin role.`,
-      );
-      finalRole = 'super_admin';
-    }
-    // 2. Validate invite token if present
-    else if (data.inviteToken) {
-      const invite = await this.inviteService.validateInvite(
-        data.inviteToken,
-        data.email,
-      );
+    return await this.prisma.$transaction(async (tx) => {
+      // 1. Validate invite token if present (Required for administrative roles)
+      if (data.inviteToken) {
+        // Atomic Check-and-Update to prevent race conditions (TOCTOU)
+        const updateResult = await tx.invite.updateMany({
+          where: {
+            token: data.inviteToken,
+            usedAt: null,
+            expiresAt: { gt: new Date() },
+          },
+          data: { usedAt: new Date() },
+        });
 
-      console.log(
-        `[AuthService] Valid invite token provided. Changing role from ${finalRole} to ${invite.role}`,
-      );
+        if (updateResult.count === 0) {
+          throw new BadRequestException(
+            'Token has already been used or is invalid',
+          );
+        }
 
-      finalRole = String(invite.role);
-      if (!data.fullName) {
-        data.fullName = invite.fullName;
-      }
-    } else {
-      console.log(
-        `[AuthService] Handling non-administrative role: ${finalRole}`,
-      );
-      if (finalRole !== 'customer' && finalRole !== 'agent') {
-        console.warn(
-          `[AuthService] Role ${finalRole} is not customer or agent. Defaulting to customer.`,
+        // Fetch the invite details after marking it as used
+        const invite = await tx.invite.findUnique({
+          where: { token: data.inviteToken },
+        });
+
+        if (
+          !invite ||
+          invite.email.toLowerCase() !== data.email.toLowerCase()
+        ) {
+          throw new BadRequestException(
+            'This invite was intended for a different email address',
+          );
+        }
+
+        console.log(
+          `[AuthService] Valid invite token provided. Changing role from ${finalRole} to ${invite.role}`,
         );
-        finalRole = 'customer';
+
+        finalRole = String(invite.role);
+        if (!data.fullName) {
+          data.fullName = invite.fullName;
+        }
+
+        // Notify the inviting admin (Real-time)
+        if (invite.createdById) {
+          this.notificationsGateway.sendToUser(
+            invite.createdById,
+            'notification',
+            {
+              type: 'invite.claimed',
+              inviteId: invite.id,
+              message: `The invitation for ${invite.email} has been claimed.`,
+            },
+          );
+        }
+      } else {
+        console.log(
+          `[AuthService] Handling non-administrative role: ${finalRole}`,
+        );
+        // Logic for public registration (No token provided)
+        // Only allow 'customer' or 'agent' roles for public signups
+        if (finalRole !== 'customer' && finalRole !== 'agent') {
+          console.warn(
+            `[AuthService] Role ${finalRole} is not allowed without an invite. Defaulting to customer.`,
+          );
+          finalRole = 'customer';
+        }
       }
-    }
-    console.log(`[AuthService] Final role determined: ${finalRole}`);
+      console.log(`[AuthService] Final role determined: ${finalRole}`);
 
-    const saltRoutes = 10;
-    const passwordHash = await bcrypt.hash(data.password, saltRoutes);
+      const saltRoutes = 10;
+      const passwordHash = await bcrypt.hash(data.password, saltRoutes);
 
-    // Resolve referrer if a referral code was provided
-    let referredById: string | undefined = undefined;
-    if (data.referralCode) {
-      const referrer = await this.prisma.profile.findUnique({
-        where: { referralCode: data.referralCode },
-        include: { referralLink: true, referrals: { select: { id: true } } },
+      // Resolve referrer if a referral code was provided
+      let referredById: string | undefined = undefined;
+      if (data.referralCode) {
+        // ERK-SEC-004 Remediation: Use pessimistic locking to prevent referral slot bypass (TOCTOU)
+        // We must lock the referrer row before checking their current referral count
+        const lockedReferrers = await tx.$queryRaw<any[]>`
+          SELECT id FROM profiles 
+          WHERE referral_code = ${data.referralCode} 
+          FOR UPDATE
+        `;
+
+        if (!lockedReferrers || lockedReferrers.length === 0) {
+          throw new BadRequestException('Invalid referral code');
+        }
+
+        const referrer = await tx.profile.findUnique({
+          where: { referralCode: data.referralCode },
+          include: { referralLink: true, referrals: { select: { id: true } } },
+        });
+
+        if (!referrer) {
+          throw new BadRequestException('Invalid referral code');
+        }
+
+        // Check that the referrer has available slots
+        const tierLimits: Record<string, number> = {
+          ABUNDANT_LIFE: 31,
+          UNITY: 23,
+          LOVE: 16,
+          PEACE: 7,
+          FREE: 3,
+        };
+
+        const referrerWithRefs = referrer as typeof referrer & {
+          referralLink: { tier: string } | null;
+          referrals: { id: string }[];
+        };
+
+        const tier = String(referrerWithRefs.referralLink?.tier ?? 'FREE');
+        const limit = tierLimits[tier] ?? 3;
+        const referralCount = referrerWithRefs.referrals.length;
+
+        if (referralCount >= limit) {
+          throw new BadRequestException(
+            `The referrer has reached their referral slot limit`,
+          );
+        }
+        referredById = referrer.id;
+      }
+
+      const newProfile = await tx.profile.create({
+        data: {
+          id: randomUUID(),
+          email: data.email,
+          passwordHash,
+          fullName: data.fullName,
+          phone: this.sanitizePhone(data.phone),
+          role: finalRole as UserRole,
+          tier: Tier.FREE, // ERK-001 Remediation: Hardcoded to FREE for public signups
+          ...(referredById ? { referredById } : {}),
+        },
       });
-      if (!referrer) {
-        throw new BadRequestException('Invalid referral code');
-      }
-      // Check that the referrer has available slots
-      const tierLimits: Record<string, number> = {
-        ABUNDANT_LIFE: 31,
-        UNITY: 23,
-        LOVE: 16,
-        PEACE: 7,
-        FREE: 3,
-      };
-      const referrerWithRefs = referrer as typeof referrer & {
-        referralLink: { tier: string } | null;
-        referrals: { id: string }[];
-      };
-      const tier = String(referrerWithRefs.referralLink?.tier ?? 'FREE');
-      const limit = tierLimits[tier] ?? 3;
-      const referralCount = referrerWithRefs.referrals.length;
-      if (referralCount >= limit) {
-        throw new BadRequestException(
-          `The referrer has reached their referral slot limit`,
-        );
-      }
-      referredById = referrer.id;
-    }
 
-    const newProfile = await this.prisma.profile.create({
-      data: {
-        id: randomUUID(),
-        email: data.email,
-        passwordHash,
-        fullName: data.fullName,
-        phone: this.sanitizePhone(data.phone),
-        role: finalRole as UserRole,
-        tier: (data.tier || 'FREE') as Tier,
-        ...(referredById ? { referredById } : {}),
+      console.log(`[AuthService] User created successfully: ${newProfile.id}`);
+
+      // AUTOMATIC LOGIN LOGIC
+      const payload: JwtPayload = {
+        sub: newProfile.id,
+        email: newProfile.email,
+        role: newProfile.role,
+        tier: newProfile.tier,
+        tokenType: 'access',
+      };
+      const accessToken = this.jwtService.sign(payload);
+
+      const refreshPayload: JwtPayload = {
+        ...payload,
+        tokenType: 'refresh',
+      };
+      const refreshToken = this.jwtService.sign(refreshPayload, {
+        expiresIn: '7d',
+      });
+
+      const csrfToken = randomUUID();
+      if (res) {
+        res.cookie('refreshToken', refreshToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'strict',
+          maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        });
+
+        res.cookie('csrfToken', csrfToken, {
+          httpOnly: false,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'strict',
+          path: '/',
+          maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        });
+      }
+
+      // Log successful registration
+      void tx.auditLog
+        .create({
+          data: {
+            actorId: newProfile.id,
+            action: 'USER_REGISTER',
+            targetTable: 'profiles',
+            targetId: newProfile.id,
+            metadata: {
+              ip: req?.ip,
+              userAgent: req?.headers?.['user-agent'],
+            },
+          },
+        })
+        .catch((err) =>
+          console.error('[AuthService] Failed to log registration:', err),
+        );
+
+      return {
+        message: 'Registration successful.',
+        user: {
+          id: newProfile.id,
+          email: newProfile.email,
+          phone: newProfile.phone,
+          fullName: newProfile.fullName,
+          role: newProfile.role,
+          tier: newProfile.tier,
+        },
+        accessToken,
+        csrfToken,
+      };
+    });
+  }
+
+  async getMe(userId: string) {
+    const profile = await this.prisma.profile.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        email: true,
+        phone: true,
+        fullName: true,
+        role: true,
+        tier: true,
+        zoneId: true,
       },
     });
 
-    // Mark invite as used if applicable
-    if (data.inviteToken) {
-      const invite = await this.inviteService.markInviteAsUsed(
-        data.inviteToken,
-      );
-
-      // Notify the inviting admin so their "Pending Invites" list refreshes in real-time
-      if (invite && invite.createdById) {
-        this.notificationsGateway.sendToUser(
-          invite.createdById,
-          'notification',
-          {
-            type: 'invite.claimed',
-            inviteId: invite.id,
-            message: `The invitation for ${invite.email} has been claimed.`,
-          },
-        );
-      }
+    if (!profile) {
+      throw new UnauthorizedException('User not found');
     }
 
-    console.log(`[AuthService] User created successfully: ${newProfile.id}`);
-
-    // AUTOMATIC LOGIN LOGIC
-    const payload = {
-      sub: newProfile.id,
-      email: newProfile.email,
-      role: newProfile.role,
-      tier: newProfile.tier,
-    };
-    const accessToken = this.jwtService.sign(payload);
-    const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
-
-    if (res) {
-      res.cookie('refreshToken', refreshToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      });
-    }
-
-    // Log successful registration
-    void this.prisma.auditLog
-      .create({
-        data: {
-          actorId: newProfile.id,
-          action: 'USER_REGISTER',
-          targetTable: 'profiles',
-          targetId: newProfile.id,
-          metadata: {
-            ip: req?.ip,
-            userAgent: req?.headers?.['user-agent'],
-          },
-        },
-      })
-      .catch((err) =>
-        console.error('[AuthService] Failed to log registration:', err),
-      );
-
-    return {
-      message: 'Registration successful.',
-      user: {
-        id: newProfile.id,
-        email: newProfile.email,
-        phone: newProfile.phone,
-        fullName: newProfile.fullName,
-        role: newProfile.role,
-        tier: newProfile.tier,
-      },
-      accessToken,
-    };
+    return profile;
   }
 }
 
@@ -15465,8 +15809,9 @@ import {
   IsOptional,
   IsString,
   MinLength,
+  Matches,
 } from 'class-validator';
-import { UserRole, Tier } from '@prisma/client';
+import { UserRole } from '@prisma/client';
 
 export class RegisterDto {
   @IsEmail()
@@ -15477,19 +15822,23 @@ export class RegisterDto {
   fullName: string;
 
   @IsString()
+  @Matches(/^(?:\+251|251|0)?([79]\d{8})$/, {
+    message:
+      'Invalid Ethiopian phone number. Please use a valid format starting with 09, 07, +2519, or +2517 followed by 8 digits.',
+  })
   phone: string;
 
   @IsString()
   @MinLength(8)
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).{8,}$/, {
+    message:
+      'Password is too weak. It must be at least 8 characters long and contain at least one uppercase letter, one number, and one special character.',
+  })
   password: string;
 
   @IsOptional()
   @IsEnum(UserRole)
   role?: UserRole;
-
-  @IsOptional()
-  @IsEnum(Tier)
-  tier?: Tier;
 
   @IsOptional()
   @IsString()
@@ -16156,8 +16505,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     email: string;
     role?: string;
     tier?: string;
+    tokenType?: string;
   }) {
     const userId = payload.sub;
+
+    if (payload.tokenType !== 'access') {
+      throw new UnauthorizedException(
+        'Invalid token type: Only access tokens are allowed',
+      );
+    }
 
     if (!userId) {
       throw new UnauthorizedException('Invalid token: sub missing');
@@ -16444,6 +16800,26 @@ export class ConfigService implements OnModuleInit {
 }
 
 
+===== FILE: src\common\dto\pagination.dto.ts =====
+import { Type } from 'class-transformer';
+import { IsInt, Max, Min, IsOptional } from 'class-validator';
+
+export class PaginationDto {
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(500)
+  limit: number = 50;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  offset: number = 0;
+}
+
+
 ===== FILE: src\common\events\request.events.ts =====
 import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
@@ -16691,6 +17067,123 @@ export class RequestEventListener {
 }
 
 
+===== FILE: src\common\filters\all-exceptions.filter.ts =====
+import {
+  ExceptionFilter,
+  Catch,
+  ArgumentsHost,
+  HttpException,
+  HttpStatus,
+  Logger,
+} from '@nestjs/common';
+import { HttpAdapterHost } from '@nestjs/core';
+
+@Catch()
+export class AllExceptionsFilter implements ExceptionFilter {
+  private readonly logger = new Logger('AllExceptionsFilter');
+
+  constructor(private readonly httpAdapterHost: HttpAdapterHost) {}
+
+  catch(exception: unknown, host: ArgumentsHost): void {
+    // In certain situations `httpAdapterHost` might not be available in the
+    // constructor method, thus we should resolve it here.
+    const { httpAdapter } = this.httpAdapterHost;
+
+    const ctx = host.switchToHttp();
+
+    const httpStatus =
+      exception instanceof HttpException
+        ? exception.getStatus()
+        : HttpStatus.INTERNAL_SERVER_ERROR;
+
+    const responseBody = {
+      statusCode: httpStatus,
+      timestamp: new Date().toISOString(),
+      path: httpAdapter.getRequestUrl(ctx.getRequest()) as string,
+      message:
+        exception instanceof HttpException
+          ? (() => {
+              const res = exception.getResponse() as
+                | string
+                | { message?: string | string[] };
+              return typeof res === 'object' && res !== null && 'message' in res
+                ? res.message
+                : exception.message;
+            })()
+          : 'Internal server error',
+    };
+
+    // Log the actual error for developers
+    if (httpStatus >= 500) {
+      const errorMsg =
+        exception instanceof Error ? exception.message : String(exception);
+      this.logger.error(
+        `Exception occurred: ${errorMsg}`,
+        exception instanceof Error ? exception.stack : undefined,
+      );
+    }
+
+    httpAdapter.reply(ctx.getResponse(), responseBody, httpStatus);
+  }
+}
+
+
+===== FILE: src\common\guards\csrf.guard.ts =====
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+  Logger,
+} from '@nestjs/common';
+import { Request } from 'express';
+
+@Injectable()
+export class CsrfGuard implements CanActivate {
+  private readonly logger = new Logger(CsrfGuard.name);
+
+  canActivate(context: ExecutionContext): boolean {
+    const request = context.switchToHttp().getRequest<Request>();
+    const method = request.method.toUpperCase();
+    const path = request.path; // Use path to exclude query parameters
+
+    // 1. Explicitly Allow "safe" methods
+    const safeMethods = ['GET', 'HEAD', 'OPTIONS'];
+    if (safeMethods.includes(method)) {
+      return true;
+    }
+
+    // 2. Strict Path Matching for Exclusions
+    // We allow login/register (no session yet) and refresh (needed to rotate/recover CSRF)
+    const publicRoutes = ['/auth/login', '/auth/register', '/auth/refresh'];
+    if (publicRoutes.some((route) => path === route || path === `${route}/`)) {
+      return true;
+    }
+
+    // 3. Double Submit Cookie Validation for all other methods (POST, PUT, PATCH, DELETE, etc.)
+    const csrfTokenHeader = request.headers['x-csrf-token'];
+    const cookies = request.cookies as Record<string, string> | undefined;
+    const csrfTokenCookie = cookies?.['csrfToken'];
+
+    if (!csrfTokenHeader || !csrfTokenCookie) {
+      this.logger.warn(
+        `CSRF token missing: header=${!!csrfTokenHeader}, cookie=${!!csrfTokenCookie} for ${path}`,
+      );
+      throw new ForbiddenException('CSRF token missing');
+    }
+
+    if (csrfTokenHeader !== csrfTokenCookie) {
+      this.logger.error(
+        `CSRF token mismatch for ${path}: Header value does not match Cookie value. Possible sync issue in client storage.`,
+      );
+      throw new ForbiddenException('CSRF token mismatch');
+    }
+
+    return true;
+  }
+}
+
+
 ===== FILE: src\common\guards\lockdown.guard.ts =====
 import {
   Injectable,
@@ -16933,13 +17426,10 @@ export class AuditInterceptor implements NestInterceptor {
                 targetTable,
                 targetId: targetIdFromContext,
                 metadata: {
-                  requestBody: body as object,
+                  requestBody: this.redact(body),
                   ip: request.ip,
                   userAgent: request.headers['user-agent'],
-                  response:
-                    response && typeof response === 'object'
-                      ? { ...response }
-                      : null,
+                  response: response ? this.redact(response) : null,
                 },
               },
             });
@@ -16950,6 +17440,83 @@ export class AuditInterceptor implements NestInterceptor {
             );
           }
         })();
+      }),
+    );
+  }
+
+  private redact(data: any): any {
+    if (!data || typeof data !== 'object') return data;
+
+    const sensitiveKeys = [
+      'password',
+      'currentPassword',
+      'oldPassword',
+      'newPassword',
+      'pass',
+      'token',
+      'refreshToken',
+      'csrfToken',
+      'tinNumber',
+      'tradeLicenseNumber',
+      'phone',
+      'accountNumber',
+      'bankAccountNumber',
+      'bankAccountHolder',
+      'email',
+      'fullName',
+      'customerName',
+      'avatarUrl',
+    ];
+
+    if (Array.isArray(data)) {
+      return data.map((item) => this.redact(item));
+    }
+
+    const redacted = { ...data };
+    for (const key in redacted) {
+      if (
+        sensitiveKeys.some((sk) => key.toLowerCase().includes(sk.toLowerCase()))
+      ) {
+        redacted[key] = '[REDACTED]';
+      } else if (typeof redacted[key] === 'object') {
+        redacted[key] = this.redact(redacted[key]);
+      }
+    }
+    return redacted;
+  }
+}
+
+
+===== FILE: src\common\interceptors\cache-control.interceptor.ts =====
+import {
+  Injectable,
+  NestInterceptor,
+  ExecutionContext,
+  CallHandler,
+} from '@nestjs/common';
+import { Observable } from 'rxjs';
+import { tap } from 'rxjs/operators';
+import { Response, Request } from 'express';
+
+@Injectable()
+export class CacheControlInterceptor implements NestInterceptor {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+    const http = context.switchToHttp();
+    const request = http.getRequest<Request & { user?: any }>();
+    const response = http.getResponse<Response>();
+
+    return next.handle().pipe(
+      tap(() => {
+        // Only apply to authenticated requests (those with a user object from JwtStrategy)
+        // and only on GET requests to prevent caching of PII/sensitive state.
+        if (request.user && request.method === 'GET') {
+          response.setHeader(
+            'Cache-Control',
+            'no-store, no-cache, must-revalidate, proxy-revalidate',
+          );
+          response.setHeader('Pragma', 'no-cache');
+          response.setHeader('Expires', '0');
+        }
       }),
     );
   }
@@ -17243,15 +17810,19 @@ import {
   UseInterceptors,
   BadRequestException,
   NotFoundException,
+  ForbiddenException,
   UseGuards,
+  Req,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { fromBuffer } from 'file-type';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from './storage.service';
 import { JwtAuthGuard } from '../auth/guards';
-import { Attachment } from '@prisma/client';
+import { Attachment, UserRole } from '@prisma/client';
 import type { Response } from 'express';
-import { join } from 'path';
+import type { AuthenticatedRequest } from '../auth/guards';
+import { join, basename } from 'path';
 import { createReadStream, existsSync } from 'fs';
 import { stat } from 'fs/promises';
 
@@ -17284,9 +17855,22 @@ export class UploadsController {
       },
     }),
   )
-  async uploadFile(@UploadedFile() file: MulterFile) {
+  async uploadFile(
+    @UploadedFile() file: MulterFile,
+    @Req() req: AuthenticatedRequest,
+  ) {
     if (!file) {
       throw new BadRequestException('No file uploaded');
+    }
+
+    // CRITICAL: Magic Bytes Validation
+    const fileInfo = await fromBuffer(file.buffer);
+    const allowedMimeTypes = ['image/jpeg', 'image/png', 'application/pdf'];
+
+    if (!fileInfo || !allowedMimeTypes.includes(fileInfo.mime)) {
+      throw new BadRequestException(
+        'Malicious or corrupted file detected. Magic bytes do not match expected formats.',
+      );
     }
 
     const relativeUrl = await this.storageService.upload(
@@ -17299,6 +17883,7 @@ export class UploadsController {
         fileName: file.originalname,
         mimeType: file.mimetype,
         url: relativeUrl,
+        ownerId: req.user.id,
       },
     });
 
@@ -17310,31 +17895,93 @@ export class UploadsController {
   }
 
   @Get(':id')
-  async getFile(@Param('id') id: string, @Res() res: Response) {
-    const attachment: Attachment | null =
-      await this.prisma.attachment.findUnique({
+  @UseGuards(JwtAuthGuard)
+  async getFile(
+    @Param('id') id: string,
+    @Res() res: Response,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    let attachment: Attachment | null = await this.prisma.attachment.findUnique(
+      {
         where: { id },
-      });
+      },
+    );
 
+    // BOLA Remediation: If ID lookup fails, try searching by filename in the URL
     if (!attachment) {
-      throw new NotFoundException('File metadata not found');
+      attachment = await this.prisma.attachment.findFirst({
+        where: {
+          url: { contains: basename(id) },
+        },
+      });
     }
 
-    const urlParts = attachment.url.split('/');
-    const fileName = urlParts[urlParts.length - 1];
+    const user = req.user;
+    const isPrivileged = (
+      [
+        UserRole.super_admin,
+        UserRole.admin,
+        UserRole.operator,
+        UserRole.financial_operator,
+      ] as string[]
+    ).includes(user.role);
+
+    let fileName: string;
+    let mimeType: string;
+    let originalName: string;
+
+    if (attachment) {
+      // IDOR Check: Only owner or staff can access
+      if (!isPrivileged && attachment.ownerId !== user.id) {
+        throw new ForbiddenException(
+          'Access denied. You do not have permission to view this file.',
+        );
+      }
+
+      const urlParts = attachment.url.split('/');
+      fileName = urlParts[urlParts.length - 1];
+      mimeType = attachment.mimeType;
+      originalName = attachment.fileName;
+    } else {
+      // DISK FALLBACK (No DB entry found): Strictly limited to staff
+      if (!isPrivileged) {
+        throw new ForbiddenException(
+          'Access denied. File is not registered or you lack sufficient privileges.',
+        );
+      }
+
+      // Path Traversal Protection: Stripping directory info and validating UUID pattern
+      fileName = basename(id);
+      if (!/^[a-f0-9-]+\.[a-z0-9]+$/.test(fileName)) {
+        throw new BadRequestException(
+          'Invalid filename pattern or traversal detected.',
+        );
+      }
+      const fallbackPath = join(process.cwd(), 'uploads', fileName);
+
+      if (!existsSync(fallbackPath)) {
+        throw new NotFoundException('File not found');
+      }
+
+      // Detection for fallback files
+      mimeType = 'application/octet-stream';
+      if (fileName.match(/\.(jpg|jpeg)$/i)) mimeType = 'image/jpeg';
+      else if (fileName.match(/\.png$/i)) mimeType = 'image/png';
+      else if (fileName.match(/\.webp$/i)) mimeType = 'image/webp';
+      else if (fileName.match(/\.pdf$/i)) mimeType = 'application/pdf';
+
+      originalName = fileName;
+    }
+
     const filePath = join(process.cwd(), 'uploads', fileName);
-
-    if (!existsSync(filePath)) {
-      throw new NotFoundException('Physical file not found on disk');
-    }
 
     try {
       const fileStat = await stat(filePath);
 
       res.set({
-        'Content-Type': attachment.mimeType,
+        'Content-Type': mimeType,
         'Content-Length': fileStat.size,
-        'Content-Disposition': `inline; filename="${attachment.fileName}"`,
+        'Content-Disposition': `inline; filename="${originalName}"`,
       });
 
       const stream = createReadStream(filePath);
@@ -17349,14 +17996,23 @@ export class UploadsController {
 ===== FILE: src\main.ts =====
 import * as dotenv from 'dotenv';
 dotenv.config();
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, HttpAdapterHost } from '@nestjs/core';
 import { AppModule } from './app.module';
+import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import { json, urlencoded } from 'express';
 import { ValidationPipe } from '@nestjs/common';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  const httpAdapterHost = app.get(HttpAdapterHost);
+  app.useGlobalFilters(new AllExceptionsFilter(httpAdapterHost));
+
+  // Security Headers (CSP, X-Frame-Options, X-Content-Type-Options, HSTS, etc.)
+  app.use(helmet());
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -17367,18 +18023,18 @@ async function bootstrap() {
   app.use(json({ limit: '15mb' }));
   app.use(urlencoded({ extended: true, limit: '15mb' }));
   app.use(cookieParser());
-  const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-  const allowedOrigins = [
-    frontendUrl,
-    'http://localhost:5173',
-    'http://localhost:5174',
-    'http://localhost:5175',
-  ];
+
+  // Hardened CORS Policy
+  const allowedOrigins = process.env.CORS_ALLOWED_ORIGINS
+    ? process.env.CORS_ALLOWED_ORIGINS.split(',').map((o) => o.trim())
+    : [process.env.FRONTEND_URL || 'http://localhost:5173'];
 
   app.enableCors({
     origin: allowedOrigins,
     credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
   });
+
   await app.listen(process.env.PORT ?? 3000);
 }
 bootstrap().catch((err) => {
@@ -17712,6 +18368,7 @@ import {
   Injectable,
   BadRequestException,
   NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { FeedbackBundleState, UserRole, RequestStatus } from '@prisma/client';
@@ -17763,6 +18420,21 @@ export class MediationService {
     if (author.role !== UserRole.customer && author.role !== UserRole.agent) {
       throw new BadRequestException(
         'Only Customers and Agents can submit feedback',
+      );
+    }
+
+    // ERK-SEC-001 Remediation: Cross-reference authorId with transaction participants
+    if (author.role === UserRole.customer && request.customerId !== authorId) {
+      throw new ForbiddenException(
+        'You are not an authorized participant in this transaction',
+      );
+    }
+    if (
+      author.role === UserRole.agent &&
+      transaction.match.agentId !== authorId
+    ) {
+      throw new ForbiddenException(
+        'You are not the authorized agent for this transaction',
       );
     }
 
@@ -18669,7 +19341,6 @@ export class AssignmentProcessor extends WorkerHost {
 import {
   IsEnum,
   IsNumber,
-  IsObject,
   IsOptional,
   IsPositive,
   IsString,
@@ -18679,14 +19350,45 @@ import { Type } from 'class-transformer';
 
 export class RequestDetailsDto {
   @IsString()
+  title: string;
+
+  @IsString()
   description: string;
 
   @IsOptional()
   @IsNumber()
   @IsPositive()
   budget?: number;
+}
 
-  [key: string]: any;
+export class RequestMetadataDto {
+  @IsOptional()
+  @IsString()
+  intent?: string;
+
+  @IsOptional()
+  @IsString()
+  constructionStatus?: string;
+
+  @IsOptional()
+  @IsString()
+  bedrooms?: string;
+
+  @IsOptional()
+  @IsString()
+  bankLoan?: string;
+
+  @IsOptional()
+  @IsString()
+  customization?: string;
+
+  @IsOptional()
+  @IsString()
+  targetRoom?: string;
+
+  @IsOptional()
+  @IsString()
+  paymentPlan?: string;
 }
 
 export class LocationZoneDto {
@@ -18710,8 +19412,9 @@ export class CreateRequestDto {
   details: RequestDetailsDto;
 
   @IsOptional()
-  @IsObject()
-  metadata?: Record<string, any>;
+  @ValidateNested()
+  @Type(() => RequestMetadataDto)
+  metadata?: RequestMetadataDto;
 
   @ValidateNested()
   @Type(() => LocationZoneDto)
@@ -18736,6 +19439,7 @@ import { CreateRequestDto } from './dto/create-request.dto';
 import { Action } from '../auth/permissions';
 import { JwtAuthGuard, RolesGuard, RequirePermission } from '../auth/guards';
 import type { RequestWithUser } from '../common/interfaces/request-with-user.interface';
+import { PaginationDto } from '../common/dto/pagination.dto';
 
 @Controller('requests')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -18752,12 +19456,12 @@ export class RequestsController {
 
   @Get('queue')
   @RequirePermission(Action.VIEW_QUEUE)
-  getQueue(
-    @Query('zoneId') zoneId?: string,
-    @Query('limit') limit?: number,
-    @Query('offset') offset?: number,
-  ) {
-    return this.requestsService.getOperatorQueue({ zoneId, limit, offset });
+  getQueue(@Query() query: PaginationDto, @Query('zoneId') zoneId?: string) {
+    return this.requestsService.getOperatorQueue({
+      zoneId,
+      limit: query.limit,
+      offset: query.offset,
+    });
   }
 
   // Customer views their own request history
@@ -18771,18 +19475,18 @@ export class RequestsController {
   // Operator fetches all active agents (sorted by tier, then zone)
   @Get('eligible-agents')
   @RequirePermission(Action.VIEW_AGENTS_LIST)
-  findEligibleAgents() {
-    return this.requestsService.findEligibleAgents();
+  findEligibleAgents(@Query('zoneId') zoneId?: string) {
+    return this.requestsService.findEligibleAgents(zoneId);
   }
 
   // Fetch all historical disputes (Resolved/Escalated) for Admin Audit
   @Get('admin/dispute-history')
   @RequirePermission(Action.VIEW_SYSTEM_STATISTICS) // This action fits global administration permissions
-  getDisputeHistory(
-    @Query('limit') limit?: number,
-    @Query('offset') offset?: number,
-  ) {
-    return this.requestsService.getDisputeHistory({ limit, offset });
+  getDisputeHistory(@Query() query: PaginationDto) {
+    return this.requestsService.getDisputeHistory({
+      limit: query.limit,
+      offset: query.offset,
+    });
   }
 
   // Operator fetching their pushed request details
@@ -19003,7 +19707,7 @@ export class RequestsService implements OnModuleInit {
         type: dto.type || 'real_estate',
         description: dto.details.description,
         budget: budget,
-        metadata: dto.metadata || {},
+        metadata: dto.metadata ? { ...dto.metadata } : {},
         zoneId: zone.id,
         woreda: dto.locationZone.woreda,
         status: RequestStatus.pending,
@@ -19182,6 +19886,9 @@ export class RequestsService implements OnModuleInit {
       throw new ForbiddenException('Cannot assign a suspended agent.');
     }
 
+    // Geofencing bypassed as per platform update
+
+
     const operator = await this.prisma.profile.findUnique({
       where: { id: operatorId },
       select: { isActive: true },
@@ -19278,8 +19985,10 @@ export class RequestsService implements OnModuleInit {
         );
       }
 
+      const requestData = { ...request };
+      delete (requestData as { matches?: any }).matches;
       return {
-        ...request,
+        ...requestData,
         customer: request.customer,
         match: activeMatch ? { ...activeMatch, agent: agentInfo } : null,
       };
@@ -19302,16 +20011,29 @@ export class RequestsService implements OnModuleInit {
       };
     }
 
+    if (role === UserRole.agent) {
+      const isMatched = request.matches.some((m) => m.agentId === userId);
+      if (!isMatched) {
+        throw new ForbiddenException(
+          'You are not assigned to this request and cannot view its details.',
+        );
+      }
+    }
+
     return request;
   }
 
   // Logic for finding agents sorted by level and location
-  async findEligibleAgents() {
+  async findEligibleAgents(zoneId?: string) {
+    const whereClause: Prisma.ProfileWhereInput = {
+      role: UserRole.agent,
+      isActive: true,
+    };
+
+
+
     const agents = await this.prisma.profile.findMany({
-      where: {
-        role: UserRole.agent,
-        isActive: true,
-      },
+      where: whereClause,
       include: {
         agentZones: {
           include: { zone: { select: { id: true, name: true } } },
@@ -19345,7 +20067,7 @@ export class RequestsService implements OnModuleInit {
 
   // Logic for showing a customer their own requests
   async getCustomerRequests(customerId: string) {
-    return this.prisma.request.findMany({
+    const requests = await this.prisma.request.findMany({
       where: { customerId },
       include: {
         zone: true,
@@ -19364,6 +20086,32 @@ export class RequestsService implements OnModuleInit {
         },
       },
       orderBy: { createdAt: 'desc' },
+    });
+
+    return requests.map((request) => {
+      const activeMatch = request.matches[0];
+      // ERK-SEC-003 Remediation: Hide agent identity for 'assigned' status
+      if (activeMatch && activeMatch.status === 'assigned') {
+        const redactedAgent = this.redact(
+          {
+            id: activeMatch.agent.id,
+            fullName: activeMatch.agent.fullName,
+            phone: '',
+            avatarUrl: activeMatch.agent.avatarUrl,
+          },
+          'Verifying Agent...',
+        );
+        return {
+          ...request,
+          matches: [
+            {
+              ...activeMatch,
+              agent: redactedAgent,
+            },
+          ],
+        };
+      }
+      return request;
     });
   }
 
@@ -19648,6 +20396,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/guards/roles.decorator';
 import { UserRole } from '@prisma/client';
 import { TransferDto } from './dto/transfer.dto';
+import { PaginationDto } from '../common/dto/pagination.dto';
 
 interface RequestWithUser {
   user: {
@@ -19707,15 +20456,11 @@ export class TransactionsController {
   // Operator fetches all active matches/transactions
   @Get()
   @Roles(UserRole.operator, UserRole.admin, UserRole.super_admin)
-  getAll(
-    @Query('status') status?: string,
-    @Query('limit') limit?: number,
-    @Query('offset') offset?: number,
-  ) {
+  getAll(@Query() query: PaginationDto, @Query('status') status?: string) {
     return this.transactionsService.getOperatorTransactions({
       status,
-      limit,
-      offset,
+      limit: query.limit,
+      offset: query.offset,
     });
   }
 }
@@ -19898,6 +20643,7 @@ export class TransactionsService {
   ) {
     const match = await this.prisma.match.findUnique({
       where: { id: matchId },
+      include: { request: true },
     });
 
     if (!match) throw new NotFoundException('Match not found');
@@ -19913,6 +20659,7 @@ export class TransactionsService {
     // Verify toAgentId is referred by fromAgentId
     const targetAgent = await this.prisma.profile.findUnique({
       where: { id: toAgentId },
+      include: { agentZones: true },
     });
 
     if (
@@ -19922,6 +20669,18 @@ export class TransactionsService {
     ) {
       throw new BadRequestException(
         'Target agent must be one of your referrals',
+      );
+    }
+
+    // ERK-SEC-002 Remediation: Enforce geographic authorization
+    const isAuthorizedForZone = targetAgent.agentZones.some(
+      (z) => z.zoneId === match.request.zoneId,
+    );
+    const hasGlobalRights = targetAgent.tier === 'ABUNDANT_LIFE';
+
+    if (!isAuthorizedForZone && !hasGlobalRights) {
+      throw new ForbiddenException(
+        'Target agent does not hold geographic rights for this request zone.',
       );
     }
 
@@ -20143,8 +20902,14 @@ import {
   Param,
   UseGuards,
   Req,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { fromBuffer } from 'file-type';
 import { UpgradesService } from './upgrades.service';
+import { StorageService } from '../common/storage.service';
 import { ConfigService } from '../common/config.service';
 import { JwtAuthGuard, RolesGuard, RequirePermission } from '../auth/guards';
 import type { AuthenticatedRequest } from '../auth/guards';
@@ -20157,6 +20922,7 @@ export class UpgradesController {
   constructor(
     private readonly upgradesService: UpgradesService,
     private readonly configService: ConfigService,
+    private readonly storageService: StorageService,
   ) {}
 
   @Get('active')
@@ -20190,12 +20956,47 @@ export class UpgradesController {
   }
 
   @Patch(':id/proof')
+  @UseInterceptors(
+    FileInterceptor('proof', {
+      limits: { fileSize: 10 * 1024 * 1024 }, // Strict 10MB limit
+      fileFilter: (req, file, cb) => {
+        if (!file.mimetype.match(/^image\/(jpeg|png|webp)$/)) {
+          return cb(
+            new BadRequestException(
+              'Invalid file type. Only JPEG, PNG, and WebP are allowed.',
+            ),
+            false,
+          );
+        }
+        cb(null, true);
+      },
+    }),
+  )
   async uploadProof(
     @Req() req: AuthenticatedRequest,
     @Param('id') id: string,
-    @Body() body: { proofUrl: string },
+    @UploadedFile() file: Express.Multer.File,
   ) {
-    return this.upgradesService.uploadProof(id, req.user.id, body.proofUrl);
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+
+    // CRITICAL: Magic Bytes Validation
+    const fileInfo = await fromBuffer(file.buffer);
+    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
+
+    if (!fileInfo || !allowedMimeTypes.includes(fileInfo.mime)) {
+      throw new BadRequestException(
+        'Malicious or corrupted file detected. Magic bytes do not match expected image formats.',
+      );
+    }
+
+    const relativeUrl = await this.storageService.upload(
+      file.buffer,
+      file.originalname,
+    );
+
+    return this.upgradesService.uploadProof(id, req.user.id, relativeUrl);
   }
 
   @Patch(':id/verify')
@@ -20260,7 +21061,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { Tier } from '@prisma/client';
 import { NotificationsGateway } from '../notifications/notifications.gateway';
-import { UsersService } from '../users/users.service';
+import { UsersService, TierPriority } from '../users/users.service';
 
 @Injectable()
 export class UpgradesService {
@@ -20287,6 +21088,16 @@ export class UpgradesService {
     });
 
     if (!agent) throw new NotFoundException('Agent not found');
+
+    // ERK-003 Remediation: Enforce TierPriority hierarchy to prevent lateral/downward commission exploitation
+    const currentPriority = TierPriority[agent.tier || 'FREE'] || 0;
+    const targetPriority = TierPriority[targetTier] || 0;
+
+    if (targetPriority <= currentPriority) {
+      throw new BadRequestException(
+        `Invalid upgrade target. Your current tier is ${agent.tier}, and you cannot request a lateral or downward change.`,
+      );
+    }
 
     // Check if there's already a pending request
     const existing = await this.prisma.upgradeRequest.findFirst({
@@ -20321,6 +21132,16 @@ export class UpgradesService {
     if (request.agentId !== agentId) {
       throw new ForbiddenException('Not your request');
     }
+
+    // Register in Attachment table for consistent serving/tracking
+    await this.prisma.attachment.create({
+      data: {
+        fileName: `proof_${requestId}_${Date.now()}`,
+        mimeType: 'image/jpeg', // Storage handles variety, but we ensure it's registered
+        url: proofUrl,
+        ownerId: agentId,
+      },
+    });
 
     const updated = await this.prisma.upgradeRequest.update({
       where: { id: requestId },
@@ -20361,6 +21182,13 @@ export class UpgradesService {
     });
 
     if (!request) throw new NotFoundException('Request not found');
+
+    // ER-006: State Machine Guard - Prevent verifying non-pending requests
+    if (request.status !== 'SUBMITTED') {
+      throw new BadRequestException(
+        `Invalid transition. Request must be in SUBMITTED state, but is currently ${request.status}.`,
+      );
+    }
 
     const updated = await this.prisma.upgradeRequest.update({
       where: { id: requestId },
@@ -20464,6 +21292,14 @@ export class UpgradesService {
 
     if (!request) throw new NotFoundException('Request not found');
 
+    // ER-006: State Machine Guard - Prevent rejecting terminal states
+    const validInitialStates = ['SUBMITTED', 'OPERATOR_VERIFIED'];
+    if (!validInitialStates.includes(request.status)) {
+      throw new BadRequestException(
+        `Cannot reject request in ${request.status} state. Only pending requests can be rejected.`,
+      );
+    }
+
     await this.prisma.upgradeRequest.update({
       where: { id: requestId },
       data: {
@@ -20504,15 +21340,54 @@ export class UpgradesService {
 }
 
 
+===== FILE: src\users\dto\change-password.dto.ts =====
+import { IsString, MinLength, Matches } from 'class-validator';
+
+export class ChangePasswordDto {
+  @IsString()
+  @MinLength(8, { message: 'Current password is required.' })
+  currentPassword: string;
+
+  @IsString()
+  @MinLength(8, { message: 'New password must be at least 8 characters.' })
+  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\w\s]).{8,}$/, {
+    message:
+      'New password does not meet complexity requirements. It must contain at least one uppercase letter, one number, and one special character.',
+  })
+  newPassword: string;
+}
+
+
 ===== FILE: src\users\dto\update-business-profile.dto.ts =====
-import { IsString } from 'class-validator';
+import { IsOptional, IsString } from 'class-validator';
 
 export class UpdateBusinessProfileDto {
+  @IsOptional()
   @IsString()
-  tinNumber: string;
+  tinNumber?: string;
 
+  @IsOptional()
   @IsString()
-  tradeLicenseNumber: string;
+  tradeLicenseNumber?: string;
+}
+
+
+===== FILE: src\users\dto\update-profile.dto.ts =====
+import { IsOptional, IsString, MinLength, Matches } from 'class-validator';
+
+export class UpdateProfileDto {
+  @IsOptional()
+  @IsString()
+  @MinLength(3, { message: 'Full name must be at least 3 characters.' })
+  fullName?: string;
+
+  @IsOptional()
+  @IsString()
+  @Matches(/^(?:\+251|251|0)?([79]\d{8})$/, {
+    message:
+      'Invalid Ethiopian phone number. Please use a valid format (e.g. 0911234567 or +251911234567).',
+  })
+  phone?: string;
 }
 
 
@@ -20557,6 +21432,8 @@ import { Action, PermissionMatrix } from '../auth/permissions';
 import { UserRole } from '@prisma/client';
 import { WithdrawalDto } from './dto/withdrawal.dto';
 import { UpdateBusinessProfileDto } from './dto/update-business-profile.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -20570,7 +21447,7 @@ export class UsersController {
     @Query('role') role?: UserRole,
     @Query('isActive') isActive?: string,
   ) {
-    return this.usersService.findAll(req.user.role, {
+    return this.usersService.findAll(req.user.id, req.user.role, {
       role,
       isActive:
         isActive === 'true' ? true : isActive === 'false' ? false : undefined,
@@ -20579,7 +21456,11 @@ export class UsersController {
 
   @Get('me')
   async getMe(@Req() req: AuthenticatedRequest) {
-    return this.usersService.getCurrentProfile(req.user.id);
+    return this.usersService.getCurrentProfile(
+      req.user.id,
+      req.user.id,
+      req.user.role,
+    );
   }
 
   @Get('me/finance')
@@ -20608,6 +21489,33 @@ export class UsersController {
   @HttpCode(HttpStatus.OK)
   async generateReferralCode(@Req() req: AuthenticatedRequest) {
     return this.usersService.generateReferralCode(req.user.id);
+  }
+
+  @Patch('me')
+  @HttpCode(HttpStatus.OK)
+  async updateMe(
+    @Req() req: AuthenticatedRequest,
+    @Body() body: UpdateProfileDto,
+  ) {
+    return this.usersService.updateProfile(req.user.id, body);
+  }
+
+  @Patch('me/password')
+  @HttpCode(HttpStatus.OK)
+  async changePassword(
+    @Req() req: AuthenticatedRequest,
+    @Body() dto: ChangePasswordDto,
+  ) {
+    return this.usersService.changePassword(req.user.id, dto);
+  }
+
+  @Patch('me/avatar')
+  @HttpCode(HttpStatus.OK)
+  async updateAvatar(
+    @Req() req: AuthenticatedRequest,
+    @Body() body: { avatarUrl: string | null },
+  ) {
+    return this.usersService.updateAvatar(req.user.id, body.avatarUrl ?? null);
   }
 
   @Post('agent/:id/zones')
@@ -20703,7 +21611,7 @@ export class UsersController {
       }
     }
 
-    return this.usersService.getCurrentProfile(userId);
+    return this.usersService.getCurrentProfile(userId, callerId, callerRole);
   }
 
   @Get(':id/finance')
@@ -20715,13 +21623,14 @@ export class UsersController {
 
 
 ===== FILE: src\users\users.module.ts =====
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
 import { AglpModule } from '../aglp/aglp.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
-  imports: [AglpModule],
+  imports: [AglpModule, forwardRef(() => AuthModule)],
   providers: [UsersService],
   controllers: [UsersController],
   exports: [UsersService],
@@ -20736,12 +21645,17 @@ import {
   ForbiddenException,
   ConflictException,
   BadRequestException,
+  UnauthorizedException,
 } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { UserRole, Prisma, Tier } from '@prisma/client';
 import { ConfigService } from '../common/config.service';
 import { AglpService } from '../aglp/aglp.service';
 import { NotificationsGateway } from '../notifications/notifications.gateway';
+import * as bcrypt from 'bcrypt';
+import { unlink } from 'fs/promises';
+import { join, basename } from 'path';
 
 interface AgentMatchStats {
   agent_id: string;
@@ -20796,11 +21710,44 @@ export class UsersService {
     private readonly aglpService: AglpService,
     private readonly configService: ConfigService,
     private readonly notificationsGateway: NotificationsGateway,
+    private readonly jwtService: JwtService,
   ) {}
 
-  async getCurrentProfile(userId: string) {
+  async getCurrentProfile(
+    userId: string,
+    callerId?: string,
+    callerRole?: UserRole,
+  ) {
+    const isOwner = callerId === userId;
+    const isAdmin =
+      callerRole === UserRole.admin || callerRole === UserRole.super_admin;
+
+    // Mandatory Omission (Security/Privacy) - NEVER expose credentials
+    const globalOmit: Prisma.ProfileOmit = {
+      passwordHash: true,
+    };
+
+    // Conditional Omission (BOLA/GDPR Directive)
+    // Referring agents should not see financial/performance stats of their downline,
+    // nor should they see business identifiers (TIN/Trade License).
+    const privacyOmit: Prisma.ProfileOmit =
+      !isOwner && !isAdmin
+        ? {
+            aglpBalance: true,
+            aglpWithdrawn: true,
+            warningCount: true,
+            missedAssignments: true,
+            tinNumber: true,
+            tradeLicenseNumber: true,
+          }
+        : {};
+
     const profile = await this.prisma.profile.findUnique({
       where: { id: userId },
+      omit: {
+        ...globalOmit,
+        ...privacyOmit,
+      },
       include: {
         agentZones: {
           include: {
@@ -20907,6 +21854,8 @@ export class UsersService {
 
     return {
       ...profile,
+      aglpBalance: (profile as any).aglpBalance?.toNumber() || 0,
+      aglpWithdrawn: (profile as any).aglpWithdrawn?.toNumber() || 0,
       performanceStats,
       lastLoginAt: lastLoginLog?.createdAt || null,
       lastLoginIp: loginMetadata.ip || null,
@@ -21180,6 +22129,7 @@ export class UsersService {
   }
 
   async findAll(
+    callerId: string,
     callerRole: UserRole,
     filters: { role?: UserRole; isActive?: boolean },
   ) {
@@ -21187,10 +22137,14 @@ export class UsersService {
       throw new ForbiddenException('Only admins can list all users');
     }
 
+    // Admins/SuperAdmins can see more, but still omit credentials
     const profiles = await this.prisma.profile.findMany({
       where: {
         role: filters.role,
         isActive: filters.isActive,
+      },
+      omit: {
+        passwordHash: true,
       },
       include: {
         referredBy: {
@@ -21642,7 +22596,7 @@ export class UsersService {
    */
   async updateBusinessProfile(
     userId: string,
-    data: { tinNumber: string; tradeLicenseNumber: string },
+    data: { tinNumber?: string; tradeLicenseNumber?: string },
   ) {
     const profile = await this.prisma.profile.findUnique({
       where: { id: userId },
@@ -21662,6 +22616,138 @@ export class UsersService {
         tradeLicenseNumber: data.tradeLicenseNumber,
       },
     });
+  }
+
+  /**
+   * Updates a user's general profile info (fullName and/or phone).
+   * Phone is normalized to E.164 (+251XXXXXXXXX) before persisting.
+   */
+  async updateProfile(
+    userId: string,
+    data: { fullName?: string; phone?: string },
+  ): Promise<{ fullName: string; phone: string; email: string }> {
+    if (!data.fullName && !data.phone) {
+      throw new BadRequestException(
+        'At least one field (fullName or phone) must be provided.',
+      );
+    }
+
+    const updateData: Prisma.ProfileUpdateInput = {};
+    if (data.fullName) updateData.fullName = data.fullName.trim();
+    if (data.phone) updateData.phone = this.sanitizePhone(data.phone);
+
+    const updated = await this.prisma.profile.update({
+      where: { id: userId },
+      data: updateData,
+      select: { fullName: true, phone: true, email: true, avatarUrl: true },
+    });
+
+    return updated;
+  }
+
+  /**
+   * Normalizes an Ethiopian phone number to E.164 format (+251XXXXXXXXX).
+   * Mirrors the logic in AuthService to ensure consistency.
+   */
+  private sanitizePhone(phone: string): string {
+    if (!phone) return '';
+    const match = phone.match(/^(?:\+251|251|0)?([79]\d{8})$/);
+    if (match) return `+251${match[1]}`;
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length >= 9) {
+      const core = digits.slice(-9);
+      if (core.startsWith('9') || core.startsWith('7')) return `+251${core}`;
+    }
+    return phone.startsWith('+') ? phone : `+${digits}`;
+  }
+
+  /**
+   * Changes a user's password after verifying the current one.
+   * Returns a fresh access token so the frontend doesn't use a stale JWT.
+   * Security: throws ForbiddenException (not UnauthorizedException) on bad
+   * current password to avoid leaking session-validity information.
+   */
+  async changePassword(
+    userId: string,
+    dto: { currentPassword: string; newPassword: string },
+  ): Promise<{ accessToken: string }> {
+    const profile = await this.prisma.profile.findUnique({
+      where: { id: userId },
+      select: { passwordHash: true, email: true, role: true, tier: true },
+    });
+
+    if (!profile?.passwordHash) {
+      throw new UnauthorizedException('Account is not password-authenticated.');
+    }
+
+    const isMatch = await bcrypt.compare(
+      dto.currentPassword,
+      profile.passwordHash,
+    );
+    if (!isMatch) {
+      throw new ForbiddenException('Current password is incorrect.');
+    }
+
+    // Reject trivial case: new == old
+    const isSame = await bcrypt.compare(dto.newPassword, profile.passwordHash);
+    if (isSame) {
+      throw new BadRequestException(
+        'New password must be different from the current password.',
+      );
+    }
+
+    const newHash = await bcrypt.hash(dto.newPassword, 10);
+    await this.prisma.profile.update({
+      where: { id: userId },
+      data: { passwordHash: newHash },
+    });
+
+    // Issue a fresh access token so the caller can immediately replace their
+    // in-memory token without waiting for the next refresh cycle.
+    const accessToken = this.jwtService.sign({
+      sub: userId,
+      email: profile.email,
+      role: profile.role,
+      tier: profile.tier,
+      tokenType: 'access',
+    });
+
+    return { accessToken };
+  }
+
+  /**
+   * Sets or clears the avatarUrl on a user's profile.
+   * When clearing (url === null), the physical file is deleted from disk.
+   */
+  async updateAvatar(
+    userId: string,
+    avatarUrl: string | null,
+  ): Promise<{ avatarUrl: string | null }> {
+    const profile = await this.prisma.profile.findUnique({
+      where: { id: userId },
+      select: { avatarUrl: true },
+    });
+
+    if (!profile) throw new NotFoundException('Profile not found');
+
+    // Delete the old physical file when overwriting or clearing
+    if (profile.avatarUrl) {
+      const oldFileName = basename(profile.avatarUrl);
+      const oldPath = join(process.cwd(), 'uploads', oldFileName);
+      try {
+        await unlink(oldPath);
+      } catch {
+        // File may already be gone — not fatal
+      }
+    }
+
+    const updated = await this.prisma.profile.update({
+      where: { id: userId },
+      data: { avatarUrl },
+      select: { avatarUrl: true },
+    });
+
+    return updated;
   }
 }
 

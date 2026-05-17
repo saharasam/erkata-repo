@@ -18,6 +18,7 @@ const requests_service_1 = require("./requests.service");
 const create_request_dto_1 = require("./dto/create-request.dto");
 const permissions_1 = require("../auth/permissions");
 const guards_1 = require("../auth/guards");
+const pagination_dto_1 = require("../common/dto/pagination.dto");
 let RequestsController = class RequestsController {
     requestsService;
     constructor(requestsService) {
@@ -27,18 +28,25 @@ let RequestsController = class RequestsController {
         const user = req.user;
         return this.requestsService.createRequest(user.id, dto);
     }
-    getQueue(zoneId, limit, offset) {
-        return this.requestsService.getOperatorQueue({ zoneId, limit, offset });
+    getQueue(query, zoneId) {
+        return this.requestsService.getOperatorQueue({
+            zoneId,
+            limit: query.limit,
+            offset: query.offset,
+        });
     }
     getMyRequests(req) {
         const user = req.user;
         return this.requestsService.getCustomerRequests(user.id);
     }
-    findEligibleAgents() {
-        return this.requestsService.findEligibleAgents();
+    findEligibleAgents(zoneId) {
+        return this.requestsService.findEligibleAgents(zoneId);
     }
-    getDisputeHistory(limit, offset) {
-        return this.requestsService.getDisputeHistory({ limit, offset });
+    getDisputeHistory(query) {
+        return this.requestsService.getDisputeHistory({
+            limit: query.limit,
+            offset: query.offset,
+        });
     }
     getRequest(id, req) {
         const user = req.user;
@@ -80,11 +88,10 @@ __decorate([
 __decorate([
     (0, common_1.Get)('queue'),
     (0, guards_1.RequirePermission)(permissions_1.Action.VIEW_QUEUE),
-    __param(0, (0, common_1.Query)('zoneId')),
-    __param(1, (0, common_1.Query)('limit')),
-    __param(2, (0, common_1.Query)('offset')),
+    __param(0, (0, common_1.Query)()),
+    __param(1, (0, common_1.Query)('zoneId')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Number, Number]),
+    __metadata("design:paramtypes", [pagination_dto_1.PaginationDto, String]),
     __metadata("design:returntype", void 0)
 ], RequestsController.prototype, "getQueue", null);
 __decorate([
@@ -98,17 +105,17 @@ __decorate([
 __decorate([
     (0, common_1.Get)('eligible-agents'),
     (0, guards_1.RequirePermission)(permissions_1.Action.VIEW_AGENTS_LIST),
+    __param(0, (0, common_1.Query)('zoneId')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], RequestsController.prototype, "findEligibleAgents", null);
 __decorate([
     (0, common_1.Get)('admin/dispute-history'),
     (0, guards_1.RequirePermission)(permissions_1.Action.VIEW_SYSTEM_STATISTICS),
-    __param(0, (0, common_1.Query)('limit')),
-    __param(1, (0, common_1.Query)('offset')),
+    __param(0, (0, common_1.Query)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Number, Number]),
+    __metadata("design:paramtypes", [pagination_dto_1.PaginationDto]),
     __metadata("design:returntype", void 0)
 ], RequestsController.prototype, "getDisputeHistory", null);
 __decorate([

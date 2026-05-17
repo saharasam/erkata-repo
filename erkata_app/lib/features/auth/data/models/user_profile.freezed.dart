@@ -27,6 +27,7 @@ mixin _$UserProfile {
   String? get fullName => throw _privateConstructorUsedError;
   String? get role => throw _privateConstructorUsedError;
   String? get tier => throw _privateConstructorUsedError;
+  String? get avatarUrl => throw _privateConstructorUsedError;
   String? get tinNumber => throw _privateConstructorUsedError;
   String? get tradeLicenseNumber => throw _privateConstructorUsedError;
   bool? get isVerified => throw _privateConstructorUsedError;
@@ -57,6 +58,7 @@ abstract class $UserProfileCopyWith<$Res> {
     String? fullName,
     String? role,
     String? tier,
+    String? avatarUrl,
     String? tinNumber,
     String? tradeLicenseNumber,
     bool? isVerified,
@@ -86,6 +88,7 @@ class _$UserProfileCopyWithImpl<$Res, $Val extends UserProfile>
     Object? fullName = freezed,
     Object? role = freezed,
     Object? tier = freezed,
+    Object? avatarUrl = freezed,
     Object? tinNumber = freezed,
     Object? tradeLicenseNumber = freezed,
     Object? isVerified = freezed,
@@ -117,6 +120,10 @@ class _$UserProfileCopyWithImpl<$Res, $Val extends UserProfile>
             tier: freezed == tier
                 ? _value.tier
                 : tier // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            avatarUrl: freezed == avatarUrl
+                ? _value.avatarUrl
+                : avatarUrl // ignore: cast_nullable_to_non_nullable
                       as String?,
             tinNumber: freezed == tinNumber
                 ? _value.tinNumber
@@ -160,6 +167,7 @@ abstract class _$$UserProfileImplCopyWith<$Res>
     String? fullName,
     String? role,
     String? tier,
+    String? avatarUrl,
     String? tinNumber,
     String? tradeLicenseNumber,
     bool? isVerified,
@@ -188,6 +196,7 @@ class __$$UserProfileImplCopyWithImpl<$Res>
     Object? fullName = freezed,
     Object? role = freezed,
     Object? tier = freezed,
+    Object? avatarUrl = freezed,
     Object? tinNumber = freezed,
     Object? tradeLicenseNumber = freezed,
     Object? isVerified = freezed,
@@ -219,6 +228,10 @@ class __$$UserProfileImplCopyWithImpl<$Res>
         tier: freezed == tier
             ? _value.tier
             : tier // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        avatarUrl: freezed == avatarUrl
+            ? _value.avatarUrl
+            : avatarUrl // ignore: cast_nullable_to_non_nullable
                   as String?,
         tinNumber: freezed == tinNumber
             ? _value.tinNumber
@@ -255,6 +268,7 @@ class _$UserProfileImpl implements _UserProfile {
     this.fullName,
     this.role,
     this.tier,
+    this.avatarUrl,
     this.tinNumber,
     this.tradeLicenseNumber,
     this.isVerified,
@@ -278,6 +292,8 @@ class _$UserProfileImpl implements _UserProfile {
   @override
   final String? tier;
   @override
+  final String? avatarUrl;
+  @override
   final String? tinNumber;
   @override
   final String? tradeLicenseNumber;
@@ -298,7 +314,7 @@ class _$UserProfileImpl implements _UserProfile {
 
   @override
   String toString() {
-    return 'UserProfile(id: $id, email: $email, phone: $phone, fullName: $fullName, role: $role, tier: $tier, tinNumber: $tinNumber, tradeLicenseNumber: $tradeLicenseNumber, isVerified: $isVerified, referrals: $referrals, referralCode: $referralCode)';
+    return 'UserProfile(id: $id, email: $email, phone: $phone, fullName: $fullName, role: $role, tier: $tier, avatarUrl: $avatarUrl, tinNumber: $tinNumber, tradeLicenseNumber: $tradeLicenseNumber, isVerified: $isVerified, referrals: $referrals, referralCode: $referralCode)';
   }
 
   @override
@@ -313,6 +329,8 @@ class _$UserProfileImpl implements _UserProfile {
                 other.fullName == fullName) &&
             (identical(other.role, role) || other.role == role) &&
             (identical(other.tier, tier) || other.tier == tier) &&
+            (identical(other.avatarUrl, avatarUrl) ||
+                other.avatarUrl == avatarUrl) &&
             (identical(other.tinNumber, tinNumber) ||
                 other.tinNumber == tinNumber) &&
             (identical(other.tradeLicenseNumber, tradeLicenseNumber) ||
@@ -337,6 +355,7 @@ class _$UserProfileImpl implements _UserProfile {
     fullName,
     role,
     tier,
+    avatarUrl,
     tinNumber,
     tradeLicenseNumber,
     isVerified,
@@ -366,6 +385,7 @@ abstract class _UserProfile implements UserProfile {
     final String? fullName,
     final String? role,
     final String? tier,
+    final String? avatarUrl,
     final String? tinNumber,
     final String? tradeLicenseNumber,
     final bool? isVerified,
@@ -388,6 +408,8 @@ abstract class _UserProfile implements UserProfile {
   String? get role;
   @override
   String? get tier;
+  @override
+  String? get avatarUrl;
   @override
   String? get tinNumber;
   @override

@@ -1,5 +1,5 @@
 import 'dart:io';
-import 'dart:convert';
+// Removed unused import
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
@@ -223,13 +223,18 @@ class AgentRepository {
 
   Future<void> submitProof(String requestId, File imageFile) async {
     try {
-      final bytes = await imageFile.readAsBytes();
-      final ext = imageFile.path.toLowerCase();
-      final mime = ext.endsWith('.png') ? 'image/png' : 'image/jpeg';
-      final base64Data = 'data:$mime;base64,${base64Encode(bytes)}';
+      final fileName = p.basename(imageFile.path);
+      final formData = FormData.fromMap({
+        'proof': await MultipartFile.fromFile(
+          imageFile.path,
+          filename: fileName,
+        ),
+      });
+
       await _dio.patch(
         '/upgrades/$requestId/proof',
-        data: {'proofUrl': base64Data},
+        data: formData,
+        options: Options(contentType: 'multipart/form-data'),
       );
     } on DioException catch (e) {
       throw ErrorHandler.fromDioException(e);
